@@ -147,18 +147,23 @@ This order matters: if you click "Log in with EVE Online" first, AA creates a *s
 
 ✅ Dashboard shows your main character; `/admin/` opens.
 
-## H. Save the state (server + Bitwarden)
+## H. Save the state (PC + Bitwarden)
+
+Don't display `.env` on screen (it holds every secret; a screenshot or paste leaks all of them). Copy the file to your PC instead. **On your PC**, PowerShell:
+
+```powershell
+scp tony@167.99.207.145:aa-docker/.env "$HOME\Downloads\aa-docker.env"
+```
+
+Attach `aa-docker.env` to the Bitwarden entry (or open it in Notepad and paste into a secure note named **"aa-docker .env (prod)"**), then delete it from Downloads. If the server ever dies, this file plus a database dump is everything.
+
+If a secret *does* get exposed: regenerate the ESI secret on developers.eveonline.com and `AA_SECRET_KEY` (`openssl rand -hex 24`), edit `.env`, then
+`docker compose --env-file=.env up -d --force-recreate allianceauth_gunicorn allianceauth_beat allianceauth_worker allianceauth_worker_services`.
+
+Then start a first database backup (server), so the habit exists from day one:
 
 ```bash
 cd ~/aa-docker
-cat .env
-```
-
-Copy the whole output into Bitwarden as a secure note / attachment named **"aa-docker .env (prod)"**. If the server ever dies, this file plus a database dump is everything.
-
-Then start a first database backup, so the habit exists from day one:
-
-```bash
 mkdir -p ~/backups
 docker compose exec -T auth_mysql sh -c 'exec mariadb-dump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' | gzip > ~/backups/aa-$(date +%F).sql.gz
 ls -lh ~/backups
