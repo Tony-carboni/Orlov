@@ -36,10 +36,16 @@ Install a password manager if you don't have one (Bitwarden is free). Create one
 ## A. Server (VPS) — ~45 min, mostly waiting
 
 ### A1. Pick a provider and create an account
-Any of these is fine; price for the size we need is €4–8/month:
-- **Hetzner Cloud** (Germany/Finland/US) — `CX22`: 2 vCPU, 4 GB RAM, 40 GB — cheapest, recommended if you're in Europe.
-- **DigitalOcean** — "Basic, Regular, 2 vCPU / 4 GB".
-- **OVH / Vultr / Linode** — equivalent.
+Any of these is fine technically; prices differ a lot for the same 2 vCPU / 4 GB box:
+
+| Provider | Product name | Price (2 vCPU / 4 GB) |
+|---|---|---|
+| **Hetzner Cloud** (DE/FI/US) — recommended | *Server* → Shared vCPU → `CX22` | **~€4/mo** |
+| Netcup / Contabo | VPS | €5–8/mo |
+| DigitalOcean | *Droplet* → Basic → Regular → 4 GB | $24/mo |
+| Vultr / Linode | Cloud Compute / Nanode | $20–24/mo |
+
+Don't go below 4 GB RAM: the Alliance Auth stack (MariaDB, Redis, gunicorn, Celery workers, proxy, Grafana) won't fit in 1–2 GB.
 
 Sign up, add a payment method, enable 2FA on the provider account.
 

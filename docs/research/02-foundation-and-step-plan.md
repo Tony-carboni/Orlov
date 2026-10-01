@@ -14,7 +14,7 @@
 | EVE SSO / ESI | CCP developer licence | Free | Register an app on the dev portal; agree to the licence (no selling of data, respect rate limits/cache timers, one app per purpose). |
 | Discord bot/API | Discord developer ToS | Free | Verification is only required above 100 guilds — irrelevant here. |
 
-Hosting is the only real cost: one small VPS (2 vCPU / 4 GB RAM / 40 GB disk, ~€5–10/month) plus a domain (~€10/year). Everything else is free.
+Hosting is the only real cost: one small VPS (2 vCPU / 4 GB RAM / 40 GB disk — ~€4/month at Hetzner, ~$24/month at DigitalOcean for the same size) plus a domain (~€10/year). Everything else is free.
 
 ---
 
@@ -63,7 +63,7 @@ Secrets (SSO client secret, Discord bot token, DB passwords) stay in `.env` on t
 Each phase ends with a checkable outcome. Phases 0–3 get you a working auth + Discord system; that is the minimum before inviting members.
 
 ### Phase 0 — Prerequisites (an afternoon)
-1. **VPS**: Ubuntu 24.04 LTS, 2 vCPU / 4 GB / 40 GB SSD (Hetzner, OVH, DigitalOcean…). Create a non-root sudo user; enable `ufw` allowing 22/80/443.
+1. **VPS**: Ubuntu 24.04 LTS, 2 vCPU / 4 GB / 40 GB SSD (Hetzner ~€4/mo; DigitalOcean ~$24/mo for the same). Create a non-root sudo user; enable `ufw` allowing 22/80/443.
 2. **Domain**: buy one; create an `A` record `auth.<domain>` → VPS IP.
 3. **Install Docker** (Docker's official `apt` repo, includes `docker compose`), plus `git` and `curl`.
 4. **EVE Developer application** at <https://developers.eveonline.com/>: name it after the alliance; callback URL `https://auth.<domain>/sso/callback`; scopes: start with `publicData` plus the scopes `aa-memberaudit` lists (we can add more later). Save **Client ID** and **Secret Key**.
