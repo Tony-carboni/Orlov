@@ -177,22 +177,23 @@ Also: *User Settings → My Account →* enable **2FA** on your own Discord acco
 "+" in the server list → *Create My Own* → *For a club or community* → name it after the alliance → upload the alliance logo later.
 
 ### C3. Create roles (Server Settings → Roles)
-Create these; names are **case-sensitive and must later match Alliance Auth group names exactly**, so decide now and don't rename casually.
 
-| Role (top → bottom order in the list) | Colour | Who gets it | Managed by |
-|---|---|---|---|
-| *(bot role — appears automatically when the bot joins on Day 1; drag it to the very top then)* | — | the bot | Discord |
-| `Director` | red | alliance leadership | AA group |
-| `FC` | orange | fleet commanders | AA group |
-| `Recruiter` | yellow | recruiters | AA group |
-| `Member` | blue | every alliance member | AA state → group |
-| `Blue` | teal | allied pilots (optional) | AA state → group |
-| `Corp_<TICKER>` — one per member corp, e.g. `Corp_ORLV` | grey | members of that corp | AA auto-group |
-| `@everyone` | — | unauthenticated people | — |
+Roles as created on 2026-10-01. Names are **case-sensitive and must match Alliance Auth state/group names exactly**, so don't rename casually.
 
-Role settings: for all of them *Allow anyone to @mention this role: OFF*. Leave *Display separately* ON for `Director`, `FC`, `Member`.
+| Role (top → bottom order in the list) | Who gets it | Managed by (AA side) |
+|---|---|---|
+| *(bot role — appears automatically when the bot joins on Day 1; drag it to the very top then)* | the bot | Discord |
+| `Alliance Director` | alliance leadership | manual group `Alliance Director` |
+| `Corp Director` | directors/CEOs of member corps | manual group `Corp Director` (later: auto from in-game Director role) |
+| `FC` | fleet commanders | request group `FC` |
+| `Family Member` | every alliance member | **state** `Family Member` — AA syncs the state name as a role |
+| `Family Friend` | allied / blue pilots | **state** `Family Friend` |
+| `corp_<TICKER>` — one per member corp, e.g. `corp_OARMI` | members of that corp | AA auto-group: prefix `corp_`, source = ticker |
+| `@everyone` | unauthenticated people | — |
 
-Tip: in AA the auto-group names are generated as `Corp <Ticker>`/`Alliance <Ticker>` by default and can be configured; whichever naming you choose here you'll mirror in AA on Day 2. Pick a style and stick to it.
+Role settings: for all of them *Allow anyone to @mention this role: OFF*. *Display separately* ON for `Alliance Director`, `Corp Director`, `FC`, `Family Member`.
+
+When a new corp joins: create `corp_<TICKER>` here; AA creates the matching auto-group on its own.
 
 ### C4. Lock down `@everyone`
 *Server Settings → Roles → @everyone → Permissions*: turn **OFF** *View Channels*, *Send Messages*, *Connect*, *Create Invite*, *Change Nickname*. Save. This makes the server invisible to anyone who hasn't authenticated, except where we explicitly allow it.
@@ -203,10 +204,10 @@ Create categories and channels; the permissions column is what you set on the **
 | Category | Channels | Permissions |
 |---|---|---|
 | `WELCOME` | `#how-to-auth` (text), `#rules` (text) | `@everyone`: View Channel ✅, Read History ✅, Send Messages ❌ |
-| `ALLIANCE` | `#announcements`, `#general`, `#fleet-pings`, `#intel`, `#market-industry` | `Member`: View ✅ Send ✅ ; `Blue`: View ✅ on `#general` only |
-| `LEADERSHIP` | `#directors`, `#recruitment`, `#fc-chat` | `Director` ✅; `Recruiter` on `#recruitment`; `FC` on `#fc-chat`; everyone else ❌ |
-| `VOICE` | `Fleet 1`, `Fleet 2`, `Lounge` | `Member`: View ✅ Connect ✅ Speak ✅ |
-| `BOT` | `#auth-log`, `#bot-commands` | `Director`: View ✅; later the AA bot posts here |
+| `ALLIANCE` | `#announcements`, `#general`, `#fleet-pings`, `#intel`, `#market-industry` | `Family Member`: View ✅ Send ✅ ; `Family Friend`: View ✅ on `#general` and `#fleet-pings` only |
+| `LEADERSHIP` | `#directors`, `#corp-directors`, `#fc-chat` | `Alliance Director` ✅ all; `Corp Director` on `#corp-directors`; `FC` on `#fc-chat`; everyone else ❌ |
+| `VOICE` | `Fleet 1`, `Fleet 2`, `Lounge` | `Family Member`: View ✅ Connect ✅ Speak ✅ ; `Family Friend`: `Fleet 1/2` only |
+| `BOT` | `#auth-log`, `#bot-commands` | `Alliance Director`: View ✅; later the AA bot posts here |
 
 In `#how-to-auth` post a placeholder message now: "Authentication opens on <date>. You will log in with your EVE account at https://auth.<yourdomain> and link Discord from there." You'll replace it on Day 2.
 
@@ -288,28 +289,27 @@ Fill this in; it becomes the Alliance Auth configuration on Day 2. Keep it in `d
 ### F1. Entities
 | Entity | Type | ID | Ticker |
 |---|---|---|---|
-| Your alliance | alliance | *(from zkillboard / in-game "Show info")* | |
-| Member corp 1 | corporation | | |
+| Your alliance | alliance | *(when created)* | |
+| Member corp 1 | corporation | *(zkillboard URL)* | OARMI |
 | … | | | |
 | Allied alliance (blue) 1 | alliance | | |
 
 (Until the alliance exists in-game, list your executor corp; AA can be switched to the alliance ID the day the alliance is created.)
 
 ### F2. States (mutually exclusive, highest priority wins)
-| State | Priority | Qualifies if main character is in… | Gets Discord? |
+| State | Priority | Qualifies if main character is in… | Discord role (same name, synced by AA) |
 |---|---|---|---|
-| `Member` | 100 | the alliance | yes |
-| `Blue` | 50 | listed allied alliances/corps | yes, limited |
-| `Guest` | — | anything else (built in) | no |
+| `Family Member` | 100 | the alliance (today: corp OARMI) | `Family Member` |
+| `Family Friend` | 50 | listed allied alliances/corps | `Family Friend` |
+| `Guest` | — | anything else (built in) | none — removed from server |
 
 ### F3. Groups → Discord roles
 | AA group | Type | Discord role | Who grants |
 |---|---|---|---|
-| `Member` (state-derived) | automatic | `Member` | AA |
-| `Corp <TICKER>` | auto-group | `Corp_<TICKER>` | AA |
-| `Director` | manual, hidden | `Director` | you, in AA |
+| `corp_<TICKER>` | auto-group (prefix `corp_`, ticker) | `corp_<TICKER>` | AA |
+| `Alliance Director` | manual, hidden | `Alliance Director` | you, in AA admin |
+| `Corp Director` | manual, hidden (later: auto from ESI corp roles) | `Corp Director` | you / corp CEOs |
 | `FC` | request + approval | `FC` | FC lead |
-| `Recruiter` | request + approval | `Recruiter` | you |
 
 ### F4. Policies to decide now (write one sentence each)
 1. Must members register **all** characters, or only their main? (Member Audit compliance depends on this.)
@@ -324,7 +324,8 @@ Fill this in; it becomes the Alliance Auth configuration on Day 2. Keep it in `d
 
 - [ ] A: `ssh tony@<ip>` works with key; `docker compose version` works; root login disabled
 - [ ] B: `nslookup auth.<domain>` returns the VPS IP
-- [ ] C: Discord server exists, roles created, `@everyone` locked down, invite link saved, server ID in sheet
+- [x] C3: roles created (`Alliance Director`, `Corp Director`, `FC`, `Family Member`, `Family Friend`, `corp_OARMI`)
+- [ ] C: `@everyone` locked down, channels, invite link saved, server ID in sheet
 - [ ] D: Discord app with bot token, client secret, redirect `https://auth.<domain>/discord/callback/`
 - [ ] E: EVE app with all scopes, callback `https://auth.<domain>/sso/callback`, Client ID + Secret in sheet
 - [ ] F: membership worksheet filled in and committed to `docs/design/membership.md`

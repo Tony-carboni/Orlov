@@ -70,10 +70,10 @@ Each phase ends with a checkable outcome. Phases 0–3 get you a working auth + 
 5. **Discord application** at <https://discord.com/developers/applications>: create app → add Bot → copy **Bot Token**; OAuth2 → add redirect `https://auth.<domain>/discord/callback`; copy **Client ID / Secret**; enable *Server Members Intent*. Note your **Guild (server) ID** (Discord → User Settings → Advanced → Developer Mode → right-click server → Copy ID).
 6. **Dedicated EVE character for the system?** Not required. You will log in with your own main as the first superuser.
 7. **Decide the state model** on paper before touching settings:
-   - `Member` — main character in the alliance.
-   - `Blue` (optional) — allied alliances/corps (standings holders).
+   - `Family Member` — main character in the alliance.
+   - `Family Friend` — allied alliances/corps (standings holders).
    - `Guest` — everyone else (built in, cannot be removed).
-   And the Discord roles you want: e.g. `Member`, `Blue`, `<CorpTicker>` per corp, `FC`, `Director`, `Recruiter`.
+   Discord roles (decided 2026-10-01): `Alliance Director`, `Corp Director`, `FC`, `Family Member`, `Family Friend`, `corp_<TICKER>` per corp.
 
 **Outcome:** VPS reachable, DNS resolves, both developer apps created, state/role design written down.
 
@@ -90,9 +90,9 @@ Each phase ends with a checkable outcome. Phases 0–3 get you a working auth + 
 **Outcome:** you can log in to AA with your EVE character over HTTPS; admin works.
 
 ### Phase 2 — Configure membership (1 hour)
-1. **Admin → States**: create `Member` (priority 100) with your alliance in *member alliances*; create `Blue` (priority 50) with allied entities. Leave `Guest`.
-2. **Admin → Auto Groups** (`allianceauth.eveonline.autogroups`): enable *corp groups* and *alliance groups* so every member automatically lands in `Corp_<Ticker>` and `Alliance_<Ticker>` groups.
-3. **Groups**: create the manual ones you decided on (`FC`, `Recruiter`, `Director`…). Mark leadership groups as *hidden* / request-only as you like.
+1. **Admin → States**: create `Family Member` (priority 100) with your alliance (today: corp OARMI) in *member corporations/alliances*; create `Family Friend` (priority 50) with allied entities. Leave `Guest`. AA syncs the state name itself as a Discord role.
+2. **Admin → Auto Groups** (`allianceauth.eveonline.autogroups`): enable *corp groups* with prefix `corp_` and name source *ticker* so every member automatically lands in `corp_<TICKER>` (e.g. `corp_OARMI`). Leave alliance groups off (the state already covers it).
+3. **Groups**: create `Alliance Director` (hidden), `Corp Director` (hidden), `FC` (request + approval).
 4. **Permissions**: assign to the `Member` state what every member may use; give leadership groups the extra permissions (e.g. `corpstats.view_corp_corpstats`).
 5. Test with a second account/alt from another corp to confirm `Guest` behaviour.
 
@@ -101,8 +101,8 @@ Each phase ends with a checkable outcome. Phases 0–3 get you a working auth + 
 ### Phase 3 — Discord integration (1 hour)
 1. In `conf/local.py` add `'allianceauth.services.modules.discord'` to `INSTALLED_APPS`; set `DISCORD_GUILD_ID`, `DISCORD_CALLBACK_URL`, `DISCORD_APP_ID`, `DISCORD_APP_SECRET`, `DISCORD_BOT_TOKEN`, `DISCORD_SYNC_NAMES = True`; add the Discord Celery beat entries from the AA docs. Restart the stack, run `auth migrate`.
 2. **Services** page in AA → "Link Discord Server" → invites the bot to your guild with the right permissions. In Discord, drag the bot's role to the **top** of the role list.
-3. Create Discord roles with **exactly the same names** as your AA groups (`Member`, `Corp_XYZ`, `FC`…). Mark roles belonging to other bots (e.g. music bots) as *reserved* in AA so they are left alone.
-4. Give the `discord.access_discord` permission to the `Member` state (and `Blue` if blues get Discord).
+3. Discord roles already exist with **exactly the same names** as the AA states/groups (`Family Member`, `Family Friend`, `corp_OARMI`, `FC`, `Alliance Director`, `Corp Director`). Mark roles belonging to other bots (e.g. music bots) as *reserved* in AA so they are left alone.
+4. Give the `discord.access_discord` permission to the `Family Member` and `Family Friend` states.
 5. Test: as a member, Services → Discord → Activate → you are added to the server with the right roles and nickname. Remove yourself from a group → within the beat interval the role disappears.
 
 **Outcome:** Discord roles are driven entirely by AA; nobody needs manual role assignment anymore.
@@ -118,7 +118,7 @@ Each phase ends with a checkable outcome. Phases 0–3 get you a working auth + 
 
 ### Phase 5 — Roll out to members (ongoing)
 1. Write a one-page member guide: log in, add all characters, activate Discord. Pin it in Discord.
-2. Switch Discord to **auth-gated**: unverified users see only a `#how-to-auth` channel; everything else requires the `Member` role.
+2. Switch Discord to **auth-gated**: unverified users see only a `#how-to-auth` channel; everything else requires the `Family Member` role.
 3. Ask each corp CEO to add Corp Stats + Member Audit tokens (runbook in `docs/runbooks/`).
 4. Set a compliance date; after it, Member Audit's compliance group handles stragglers.
 
