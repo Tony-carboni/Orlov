@@ -328,7 +328,7 @@ Fill this in; it becomes the Alliance Auth configuration on Day 2. Keep it in `d
 - [ ] C: `@everyone` locked down, channels, invite link saved, server ID in sheet
 - [ ] D: Discord app with bot token, client secret, redirect `https://auth.<domain>/discord/callback/`
 - [ ] E: EVE app with all scopes, callback `https://auth.<domain>/sso/callback`, Client ID + Secret in sheet
-- [ ] F: membership worksheet filled in and committed to `docs/design/membership.md`
+- [x] F: membership worksheet filled in and committed to `docs/design/membership.md` (2026-10-01)
 - [ ] Secrets sheet complete in the password manager; nothing secret in git or Discord
 
 **Next:** Day 1 runbook — deploying Alliance Auth (`docs/runbooks/01-day-one-deploy-aa.md`).

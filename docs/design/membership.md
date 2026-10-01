@@ -1,0 +1,46 @@
+# Membership design — The Orlov Family
+
+*Decided 2026-10-01. This is the source of truth for the Alliance Auth configuration (Day 2) and the Discord role layout. No secrets in this file.*
+
+## 1. Entities
+
+| Entity | Type | Ticker | ID | Status |
+|---|---|---|---|---|
+| The Orlov Family | alliance | `ORLOV` | *(fill in once created in-game; zkillboard URL)* | not yet created |
+| Orlov Arms International | corporation | `OARMI` | *(zkillboard URL `/corporation/<id>/`)* | executor corp |
+| — | allied (Family Friend) | — | — | none yet |
+
+Until the alliance exists in-game, the `Family Member` state is keyed on corp OARMI. On alliance creation day: add alliance ORLOV to the state and leave OARMI in place (harmless).
+
+## 2. States (mutually exclusive; highest priority wins; AA syncs the state name as a Discord role)
+
+| State | Priority | Qualifies if main character is in… | Discord role | Discord access |
+|---|---|---|---|---|
+| `Family Member` | 100 | alliance ORLOV (today: corp OARMI) | `Family Member` | yes |
+| `Family Friend` | 50 | allied entities (none yet) | `Family Friend` | yes, limited channels |
+| `Guest` | — | anything else (built in) | none | no — removed from server |
+
+## 3. Groups → Discord roles
+
+| AA group | Type | Discord role | Who grants |
+|---|---|---|---|
+| `corp_<TICKER>` (e.g. `corp_OARMI`) | auto-group: prefix `corp_`, name source = ticker | `corp_<TICKER>` | AA, automatically |
+| `Alliance Director` | manual, hidden | `Alliance Director` | alliance executor, in AA admin |
+| `Corp Director` | manual, hidden (later: automatic from in-game Director role via plugin) | `Corp Director` | alliance executor / corp CEOs |
+| `FC` | request + approval | `FC` | FC lead |
+
+Discord role hierarchy (top → bottom): bot role · Alliance Director · Corp Director · FC · Family Member · Family Friend · corp_* · @everyone.
+
+## 4. Policies
+
+| # | Policy | Decision | Consequence for configuration |
+|---|---|---|---|
+| 1 | Character registration | **Main required; alts encouraged, not enforced.** | Member Audit compliance group is **not** used to strip roles. Corp Stats still shows unregistered characters so leadership can nudge people. |
+| 2 | Inactivity | **60 days** without logging in = inactive. | Member Audit / Corp Stats report flags >60 d. Action on inactive members is a leadership decision, not automated (can be automated later via a custom plugin that drops a group → role). |
+| 3 | Fleet participation (PAP) | **Not tracked.** | `allianceauth-afat` is **not** installed in Phase 4. Can be added later without migration pain. |
+| 4 | Corp token responsibility | **The CEO** of each member corp adds the Corp Stats / Member Audit director token. | Runbook for CEOs in `docs/runbooks/` (Phase 4). |
+| 5 | Discord nickname | **`[OARMI] Character Name`** — corp ticker in brackets, then the main character's name. | AA core Discord service only syncs the bare character name (`DISCORD_SYNC_NAMES`). The `[TICKER] Name` format needs `aa-discordbot`'s nickname sync or a small custom hook — scheduled for Phase 4. Discord nicknames are capped at 32 characters; long names are truncated. |
+
+## 5. Change log
+
+- 2026-10-01 — initial version (roles created in Discord; policies decided).

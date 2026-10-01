@@ -31,7 +31,7 @@ Why only AA: it is the one tool that covers all three requirements first-party (
 | Discord (optional, phase 4) | **`allianceauth-discordbot`** | `/lookup`, `/auth`, ticketing, reminders — in-Discord convenience for leadership |
 | Member mgmt | **`corpstats`** (built in) | Who in each corp is / isn't registered |
 | Member mgmt | **`aa-memberaudit`** | Per-character audit: login history, skills, assets, wallet, contacts; compliance reports |
-| Activity | **`allianceauth-afat`** | Fleet participation (PAP) tracking — if activity is measured by fleet attendance |
+| Activity | ~~`allianceauth-afat`~~ | Not installed — PAP tracking declined (policy 3, `docs/design/membership.md`). Can be added later. |
 | Later, as needed | `aa-structures`, `aa-timerboard`/`aa-opcalendar`, `aa-srp`, `aa-fleetfinder`, `aa-killtracker` | Structure fuel/timers, ops calendar, SRP, killboard feeds |
 | Later, optional | **SeAT** alongside AA | Only if leadership wants wallet/asset-level auditing across corps |
 | Custom (phase 6) | **Our own AA plugin(s)** in this repo | Alliance-specific policy that nothing covers (e.g. custom activity scoring → auto group) |
@@ -108,19 +108,18 @@ Each phase ends with a checkable outcome. Phases 0–3 get you a working auth + 
 **Outcome:** Discord roles are driven entirely by AA; nobody needs manual role assignment anymore.
 
 ### Phase 4 — Member tracking (2–3 hours, plus waiting on corp directors)
-1. `pip install aa-memberaudit allianceauth-afat allianceauth-discordbot` inside the container (or, better, in a custom image as the AA docs recommend); add to `INSTALLED_APPS`; migrate; add their beat schedules.
+1. `pip install aa-memberaudit allianceauth-discordbot` inside the container (or, better, in a custom image as the AA docs recommend); add to `INSTALLED_APPS`; migrate; add their beat schedules.
 2. **Corp Stats** (built in): each corp's CEO/director logs into AA and clicks *Add Corp Stats* — this stores a token with `esi-corporations.read_corporation_membership.v1`. You now see registered vs. unregistered members per corp.
-3. **Member Audit**: set compliance policy ("every member must register all characters"); members add characters; leadership sees login dates, skills, assets. Enable the compliance group so non-compliant members automatically lose a group (and therefore a Discord role).
-4. **AFAT**: FCs create FAT links from ESI fleet; participation is logged automatically.
-5. **aa-discordbot**: run as an extra container (`allianceauth_discordbot`); verify `/lookup <character>` works.
+3. **Member Audit**: members add characters (main required, alts encouraged — policy 1); leadership sees login dates (>60 days = inactive, policy 2), skills, assets. Compliance group left **off** since alts are not mandatory.
+4. **aa-discordbot**: run as an extra container (`allianceauth_discordbot`); verify `/lookup <character>` works; configure nickname format `[TICKER] Character Name` (policy 5).
 
 **Outcome:** you can answer "who is inactive", "who hasn't registered", "who attended fleets" from one place.
 
 ### Phase 5 — Roll out to members (ongoing)
 1. Write a one-page member guide: log in, add all characters, activate Discord. Pin it in Discord.
 2. Switch Discord to **auth-gated**: unverified users see only a `#how-to-auth` channel; everything else requires the `Family Member` role.
-3. Ask each corp CEO to add Corp Stats + Member Audit tokens (runbook in `docs/runbooks/`).
-4. Set a compliance date; after it, Member Audit's compliance group handles stragglers.
+3. Ask each corp CEO to add Corp Stats + Member Audit tokens (policy 4; runbook in `docs/runbooks/`).
+4. Set a date by which every member must have registered their main; chase stragglers via Corp Stats' unregistered list.
 
 ### Phase 6 — Operate and extend (ongoing)
 1. **Backups**: nightly `mariadb-dump` of the AA database + `.env` to off-box storage. Losing the token table means every member re-authenticates.
