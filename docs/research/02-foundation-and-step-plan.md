@@ -26,7 +26,7 @@ Why only AA: it is the one tool that covers all three requirements first-party (
 
 | Layer | Component | Role |
 |---|---|---|
-| Core | **Alliance Auth 5.x** (Docker Compose stack: gunicorn, Celery workers + beat, Redis, MariaDB, Nginx Proxy Manager, Grafana) | SSO login, main/alt characters, states, groups, permissions, admin UI |
+| Core | **Alliance Auth 5.x** (v5.4.0 image as of 2026-10-01; Docker Compose stack: gunicorn, nginx, Celery workers + beat, Redis, MariaDB 11.8, Nginx Proxy Manager, Grafana) | SSO login, main/alt characters, states, groups, permissions, admin UI |
 | Discord | **AA Discord service** (built in) | Links Discord accounts, assigns roles from groups, nick sync, auto-removal |
 | Discord (optional, phase 4) | **`allianceauth-discordbot`** | `/lookup`, `/auth`, ticketing, reminders — in-Discord convenience for leadership |
 | Member mgmt | **`corpstats`** (built in) | Who in each corp is / isn't registered |
@@ -82,7 +82,7 @@ Each phase ends with a checkable outcome. Phases 0–3 get you a working auth + 
 2. `./scripts/prepare-env.sh` → generates `.env` with random DB/Redis passwords and a Django secret.
 3. Edit `.env`: `AA_SITENAME`, `DOMAIN=auth.<domain>`, `PROTOCOL=https://`, `ESI_SSO_CLIENT_ID`, `ESI_SSO_CLIENT_SECRET`, `ESI_USER_CONTACT_EMAIL`.
 4. `docker compose --env-file=.env up -d`.
-5. Nginx Proxy Manager (port 81 initially): add proxy host `auth.<domain>` → `allianceauth_gunicorn:8000`, request a Let's Encrypt cert, force SSL. Then close port 81 externally.
+5. Nginx Proxy Manager (admin UI bound to localhost, reached via SSH tunnel): add proxy host `auth.<domain>` → `nginx:80`, request a Let's Encrypt cert, force SSL.
 6. `docker compose exec allianceauth_gunicorn bash` → `auth migrate`, `auth collectstatic`, `auth createsuperuser` (username + password; you'll attach your EVE character after first SSO login).
 7. Open `https://auth.<domain>` → log in with EVE SSO using your main → in Django admin (`/admin`) tie that character to the superuser.
 8. Commit the sanitized `docker-compose.yml`, `.env.example` and `conf/local.py` into `deploy/` in this repo.
