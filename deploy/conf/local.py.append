@@ -1,0 +1,29 @@
+#######################################
+# The Orlov Family — custom settings  #
+# Appended to aa-docker/conf/local.py #
+#######################################
+
+INSTALLED_APPS += [
+    "allianceauth.eveonline.autogroups",   # corp_<TICKER> groups
+]
+
+# --- Discord service -------------------------------------------------------
+# Redirect in the Discord developer portal must be exactly DISCORD_CALLBACK_URL
+# (trailing slash included). Secrets come from .env, never from this file.
+DISCORD_CALLBACK_URL = f"{SITE_URL}/discord/callback/"  # Do NOT change this line!
+DISCORD_GUILD_ID = os.environ.get("DISCORD_GUILD_ID", "")
+DISCORD_APP_ID = os.environ.get("DISCORD_APP_ID", "")
+DISCORD_APP_SECRET = os.environ.get("DISCORD_APP_SECRET", "")
+DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "")
+DISCORD_SYNC_NAMES = True   # nickname = main character name (ticker prefix comes later via discordbot)
+
+CELERYBEAT_SCHEDULE["discord.update_all_usernames"] = {
+    "task": "discord.update_all_usernames",
+    "schedule": crontab(minute="0", hour="*/12"),
+}
+
+# --- Corp Stats (registered vs unregistered members) -----------------------
+CELERYBEAT_SCHEDULE["update_all_corpstats"] = {
+    "task": "allianceauth.corputils.tasks.update_all_corpstats",
+    "schedule": crontab(minute="0", hour="*/6"),
+}
