@@ -73,7 +73,7 @@ crontab -l
 
 ✅ One line ending in `aa-backup.sh >> … backup.log 2>&1`. Tomorrow, `cat ~/backups/backup.log` should show a `backup ok` line.
 
-**A4. Restore procedure (read now, use never, hopefully).** With a dump file and the config tarball you can rebuild on any server: Day 1 sections B–D on a fresh VPS (skip `prepare-env.sh`; instead `tar xzf aa-config-….tgz` into `~/aa-docker`), start the stack, then load the dump:
+**A4. Restore procedure — ⚠️ REFERENCE ONLY, do not run today.** (Replace `<stamp>` with a real file name when the day comes, and run it from `~/aa-docker`.) With a dump file and the config tarball you can rebuild on any server: Day 1 sections B–D on a fresh VPS (skip `prepare-env.sh`; instead `tar xzf aa-config-….tgz` into `~/aa-docker`), start the stack, then load the dump:
 
 ```bash
 gunzip -c ~/backups/aa-db-<stamp>.sql.gz | docker compose exec -T auth_mysql sh -c 'exec mariadb -uroot -p"$MYSQL_ROOT_PASSWORD"'
