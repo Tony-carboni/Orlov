@@ -6,17 +6,17 @@
 
 | Entity | Type | Ticker | ID | Status |
 |---|---|---|---|---|
-| The Orlov Family | alliance | `ORLOV` | *(fill in once created in-game; zkillboard URL)* | not yet created |
+| The Orlov Family | alliance | `ORLOV` | *(zkillboard URL `/alliance/<id>/`)* | created in-game (before 2026-10-02) |
 | Orlov Arms International | corporation | `OARMI` | *(zkillboard URL `/corporation/<id>/`)* | executor corp |
 | — | allied (Family Friend) | — | — | none yet |
 
-Until the alliance exists in-game, the `Family Member` state is keyed on corp OARMI. On alliance creation day: add alliance ORLOV to the state and leave OARMI in place (harmless).
+The `Family Member` state is keyed on **alliance ORLOV** (member alliances) with corp OARMI also listed (harmless, kept as belt-and-braces). New corps joining the alliance are covered automatically.
 
 ## 2. States (mutually exclusive; highest priority wins; AA syncs the state name as a Discord role)
 
 | State | Priority | Qualifies if main character is in… | Discord role | Discord access |
 |---|---|---|---|---|
-| `Family Member` | 100 | alliance ORLOV (today: corp OARMI) | `Family Member` | yes |
+| `Family Member` | 100 | alliance ORLOV (+ corp OARMI) | `Family Member` | yes |
 | `Family Friend` | 50 | allied entities (none yet) | `Family Friend` | yes, limited channels |
 | `Guest` | — | anything else (built in) | none | no — removed from server |
 
@@ -44,3 +44,4 @@ Discord role hierarchy (top → bottom): bot role · Alliance Director · Corp D
 ## 5. Change log
 
 - 2026-10-01 — initial version (roles created in Discord; policies decided).
+- 2026-10-02 — alliance exists in-game; `Family Member` state keyed on alliance ORLOV.

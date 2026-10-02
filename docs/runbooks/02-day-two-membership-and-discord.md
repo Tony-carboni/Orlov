@@ -141,7 +141,7 @@ Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see 
 | Priority | `100` |
 | Member characters | leave empty |
 | Member corporations | move **Orlov Arms International** to *Chosen* |
-| Member alliances | leave empty (add *The Orlov Family* the day it exists in-game) |
+| Member alliances | move **The Orlov Family** to *Chosen* |
 | Member factions | leave empty |
 | Permissions | type `access_discord` in the filter box → move **discord \| user \| Can access the Discord Service** to *Chosen* |
 | Public | ☐ |
