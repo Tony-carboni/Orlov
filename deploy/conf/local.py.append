@@ -15,7 +15,7 @@ DISCORD_GUILD_ID = os.environ.get("DISCORD_GUILD_ID", "")
 DISCORD_APP_ID = os.environ.get("DISCORD_APP_ID", "")
 DISCORD_APP_SECRET = os.environ.get("DISCORD_APP_SECRET", "")
 DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "")
-DISCORD_SYNC_NAMES = True   # nickname = main character name (ticker prefix comes later via discordbot)
+DISCORD_SYNC_NAMES = False  # True breaks activation for the Discord server owner (403); nicknames via discordbot in Phase 4
 
 CELERYBEAT_SCHEDULE["discord.update_all_usernames"] = {
     "task": "discord.update_all_usernames",

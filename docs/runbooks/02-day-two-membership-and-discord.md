@@ -89,7 +89,7 @@ DISCORD_GUILD_ID = os.environ.get("DISCORD_GUILD_ID", "")
 DISCORD_APP_ID = os.environ.get("DISCORD_APP_ID", "")
 DISCORD_APP_SECRET = os.environ.get("DISCORD_APP_SECRET", "")
 DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "")
-DISCORD_SYNC_NAMES = True
+DISCORD_SYNC_NAMES = False  # True breaks activation for the server owner (403)
 
 CELERYBEAT_SCHEDULE["discord.update_all_usernames"] = {
     "task": "discord.update_all_usernames",
@@ -203,7 +203,7 @@ Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see 
 
 **E5.** In Discord, click yourself in the member list. Expected roles: `Family Member`, `corp_OARMI`, `Alliance Director`. Nickname: see note below.
 
-> **Server-owner note:** Discord never lets a bot change the **owner's** nickname, so for your account nickname sync logs an error and you set `[OARMI] Character Name` by hand. Everyone else gets their character name automatically (the `[OARMI]` prefix arrives with discordbot in Phase 4). The AA docs' fix, if it ever bothers you, is transferring ownership to a holding account.
+> **Server-owner note:** Discord never lets a bot change the **owner's** nickname. With `DISCORD_SYNC_NAMES = True`, AA sends nickname + roles in one request and the owner's activation fails with 403 "Missing Permissions" — which is why it's `False` in B2. Nicknames (`[OARMI] Character Name`) come from discordbot in Phase 4, which handles the owner gracefully.
 
 **E6. Removal test:** admin → Users → tony → remove `Alliance Director` from *Chosen* → Save. Within ~30 s the role vanishes in Discord. Add it back and Save.
 
@@ -244,5 +244,5 @@ Open **https://auth.orlovfamily.space/corpstats/** → **Add** → EVE SSO asks 
 | Activated but no roles | Bot role not at the top of the role list; or your Discord account lacks 2FA. Check auth's **Notifications** (bell icon) for the error text. |
 | Roles from other bots keep disappearing | admin → *Group Management → Reserved group names* → add those role names. |
 | `corp_OARMI` never appears | Autogroups config must list `Family Member` under States; re-save your user. |
-| Nickname error for you only | You're the server owner — expected (E5). |
+| Activation fails with 403 "Missing Permissions" for you | `DISCORD_SYNC_NAMES` is `True` and you're the server owner. Set it to `False` in `conf/local.py`, `docker compose restart allianceauth_gunicorn`, retry. |
 | Need logs | `docker compose logs -f --tail 100 allianceauth_worker` (Ctrl+C to stop) — Discord tasks run in the workers. |
