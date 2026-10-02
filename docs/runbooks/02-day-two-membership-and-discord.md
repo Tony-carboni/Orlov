@@ -177,7 +177,7 @@ Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see 
 
 **Save.** Prefix and name source are locked after saving — if you got them wrong, delete the config and add a new one.
 
-**D2. Manual groups** — open **https://auth.orlovfamily.space/admin/auth/group/add/** three times. The page has *Name* + *Permissions* at the top and an **Auth group** box below with the AA flags:
+**D2. Manual groups** — open **https://auth.orlovfamily.space/admin/groupmanagement/group/add/** three times. The page has *Name* + *Permissions* at the top and an **Auth group** box below with the AA flags:
 
 | Name | Internal | Hidden | Open | Public |
 |---|---|---|---|---|
@@ -189,7 +189,7 @@ Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see 
 
 **D3. Put yourself in `Alliance Director`:** admin → *Authentication and Authorization → Users* → **tony** → *Groups* → move `Alliance Director` to *Chosen* → **Save**.
 
-✅ Open **https://auth.orlovfamily.space/admin/auth/group/** — `corp_OARMI` is listed (created automatically) alongside your three. On the dashboard, *Groups* shows `corp_OARMI` and `Alliance Director`. If `corp_OARMI` is missing after a minute, open your user in admin and Save it without changes — that re-runs the auto-group evaluation.
+✅ Open **https://auth.orlovfamily.space/admin/groupmanagement/group/** — `corp_OARMI` is listed (created automatically) alongside your three. To see your own memberships: admin → *Authentication → Users → tony → Groups* (the 5.4 dashboard does not list groups). If `corp_OARMI` is missing after a minute, open your user in admin and Save it without changes — that re-runs the auto-group evaluation.
 
 ## E. Link the bot and test (browser + Discord)
 
