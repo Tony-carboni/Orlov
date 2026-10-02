@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | The Orlov Family | alliance | `ORLOV` | *(zkillboard URL `/alliance/<id>/`)* | created in-game (before 2026-10-02) |
 | Orlov Arms International | corporation | `OARMI` | *(zkillboard URL `/corporation/<id>/`)* | executor corp |
-| — | allied (Family Friend) | — | — | none yet |
+| — | allied (Family Friend) | — | — | not needed: Family Friend is a public state |
 
 The `Family Member` state is keyed on **alliance ORLOV** (member alliances) with corp OARMI also listed (harmless, kept as belt-and-braces). New corps joining the alliance are covered automatically.
 
@@ -17,8 +17,8 @@ The `Family Member` state is keyed on **alliance ORLOV** (member alliances) with
 | State | Priority | Qualifies if main character is in… | Discord role | Discord access |
 |---|---|---|---|---|
 | `Family Member` | 100 | alliance ORLOV (+ corp OARMI) | `Family Member` | yes |
-| `Family Friend` | 50 | allied entities (none yet) | `Family Friend` | yes, limited channels |
-| `Guest` | — | anything else (built in) | none | no — removed from server |
+| `Family Friend` | 50 | **any other character** (state is *Public*) — anyone who authenticates but isn't an alliance main | `Family Friend` | yes — role tag + `[TICKER] Name` nickname only; no extra channels |
+| `Guest` | — | only deactivated/unverified accounts now (built in) | none | no — removed from server |
 
 ## 3. Groups → Discord roles
 
@@ -45,4 +45,5 @@ Discord role hierarchy (top → bottom): bot role · Alliance Director · Corp D
 
 - 2026-10-01 — initial version (roles created in Discord; policies decided).
 - 2026-10-02 — alliance exists in-game; `Family Member` state keyed on alliance ORLOV.
+- 2026-10-02 — `Family Friend` made a **public state**: any authenticated non-member gets it (nickname + role tag, public channels only). Discord: `#public-chat` open to unauthenticated visitors too; `#how-to-auth`/`#rules` read-only.
 - 2026-10-02 — `DISCORD_SYNC_NAMES` temporarily `False` so the owner could activate (403 on owner nickname); re-enabled on Day 3 with the `[{corp_ticker}] {character_name}` formatter. discordbot deferred until there are members.

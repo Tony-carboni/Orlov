@@ -203,7 +203,7 @@ Create categories and channels; the permissions column is what you set on the **
 
 | Category | Channels | Permissions |
 |---|---|---|
-| `WELCOME` | `#how-to-auth` (text), `#rules` (text) | `@everyone`: View Channel ✅, Read History ✅, Send Messages ❌ |
+| `WELCOME` | `#how-to-auth`, `#rules`, `#public-chat` | `@everyone`: View ✅, Read History ✅, Send ❌ on the category; **`#public-chat` channel override: Send ✅** so visitors and friends can talk |
 | `ALLIANCE` | `#announcements`, `#general`, `#fleet-pings`, `#intel`, `#market-industry` | `Family Member`: View ✅ Send ✅ ; `Family Friend`: View ✅ on `#general` and `#fleet-pings` only |
 | `LEADERSHIP` | `#directors`, `#corp-directors`, `#fc-chat` | `Alliance Director` ✅ all; `Corp Director` on `#corp-directors`; `FC` on `#fc-chat`; everyone else ❌ |
 | `VOICE` | `Fleet 1`, `Fleet 2`, `Lounge` | `Family Member`: View ✅ Connect ✅ Speak ✅ ; `Family Friend`: `Fleet 1/2` only |
@@ -300,7 +300,7 @@ Fill this in; it becomes the Alliance Auth configuration on Day 2. Keep it in `d
 | State | Priority | Qualifies if main character is in… | Discord role (same name, synced by AA) |
 |---|---|---|---|
 | `Family Member` | 100 | the alliance (today: corp OARMI) | `Family Member` |
-| `Family Friend` | 50 | listed allied alliances/corps | `Family Friend` |
+| `Family Friend` | 50 | **Public** state — any authenticated character that isn't an alliance main | `Family Friend` |
 | `Guest` | — | anything else (built in) | none — removed from server |
 
 ### F3. Groups → Discord roles

@@ -18,7 +18,7 @@
 6. First time only: a **Registration** page asks for an email address. Type one and click **Register** — no confirmation mail is sent, it's just kept on file so leadership can reach you if needed.
 7. You're on the **Dashboard**. Your main's portrait is there with corp and alliance.
 
-✅ Done when the dashboard shows your main. If it shows *State: Guest*, your character isn't in an alliance corp yet — tell your CEO.
+✅ Done when the dashboard shows your main with *State: Family Member*. If it says *Family Friend*, that character isn't in an alliance corp — fine for visitors; members should log in with their alliance character instead (or tell your CEO if you think you should be in).
 
 ## Step 2 — Add your other characters (recommended)
 
@@ -41,9 +41,9 @@ Why: leadership can see who an alt belongs to, so you don't get kicked out of ch
 4. Discord asks: *"The Orlov Family auth wants to access your account — username, join servers for you"*. Click **Authorise**.
 5. You're sent back to auth; the Discord card now shows **Enabled** and your Discord name.
 
-Now look at Discord: you've been added to *The Orlov Family* server (if you weren't already), you have the **Family Member** role plus your corp's role (e.g. `corp_OARMI`), and your nickname has become `[CORP] Character Name`. The alliance channels are visible.
+Now look at Discord: you have the **Family Member** role plus your corp's role (e.g. `corp_OARMI`), your nickname has become `[CORP] Character Name`, and the alliance channels are visible. (Visitors who auth with a non-alliance character get **Family Friend** instead: nickname and tag, public channels only.)
 
-✅ Done when you can see `#general`. If you only see `#how-to-auth`, wait one minute and check again; still nothing → ask in `#how-to-auth`.
+✅ Done when you can see `#general`. If you only see the public channels, wait one minute and check again; still nothing → ask in `#public-chat`.
 
 ## Step 4 — Register in Member Audit (main required, alts welcome)
 
@@ -71,4 +71,4 @@ From now on everything is automatic: change corp → roles update within the hou
 - *Discord step says "Unknown error"* — you're logged into a different Discord account in the browser than in the app. Log out of Discord in the browser, log in with the right one, repeat step 3.
 - *A character shows under the wrong main / you sold or transferred a character* — tell a director; it's a two-click fix on our side.
 
-Questions: `#how-to-auth`, or tag an **Alliance Director** in `#general`.
+Questions: `#public-chat` (anyone can post there), or tag an **Alliance Director** in `#general`.
