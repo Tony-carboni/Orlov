@@ -5,7 +5,7 @@ Documentation and deployment config for **The Orlov Family** (EVE Online allianc
 
 - `docs/research/` — why Alliance Auth was chosen over SeAT/Neucore, and the phased plan
 - `docs/design/membership.md` — states, groups → Discord roles, policies (source of truth for AA config)
-- `docs/runbooks/` — step-by-step, beginner-level runbooks (`00` Day 0 prep, `01` deploy, `02` membership + Discord, `03` nicknames + Member Audit, `04` operations)
+- `docs/runbooks/` — step-by-step, beginner-level runbooks (`00` Day 0 prep, `01` deploy, `02` membership + Discord, `03` nicknames + Member Audit, `04` operations, `05` giving Claude SSH access)
 - `docs/guides/` — documents for other people: the member guide (for `#how-to-auth`) and the corp CEO onboarding checklist
 - `deploy/` — what differs from the upstream `aa-docker` stack on the server (sanitized; no secrets)
 
@@ -25,6 +25,10 @@ Use **descriptive, human-readable branch names**, never auto-generated ones like
 - Pattern: `claude/<topic-in-kebab-case>`, e.g. `claude/orlov-alliance-auth`, `claude/day-3-member-audit`, `claude/discordbot-nicknames`.
 - If a session is started on an auto-generated branch name, rename it to a descriptive one at the start of the work (`git branch -m <old> <new>`, push the new name, tell the user) rather than carrying the random name forward.
 - Same rule for anything else that gets a name the user will see later: files, docs, commit subjects.
+
+## Server access (once `docs/runbooks/05-claude-server-access.md` is done)
+The environment variable `ORLOV_SSH_KEY` holds a private key authorised for `tony@167.99.207.145`. At the start of a session that needs the server: write it to `~/.ssh/orlov-claude` (mode 600), connect with paramiko (no `ssh` binary in the cloud image; `pip install paramiko`) and verify with `docker compose ps` in `~/aa-docker`.
+Rules: read-only commands freely; any state change (config edits, restarts, `up -d`, migrations, backups) is announced in chat first with the reason, run one at a time, result shown. Never `rm -rf`, never touch `mysql-data/`, `authorized_keys`, `ufw`, or run `do-release-upgrade`. Backup (`~/bin/aa-backup.sh`) before migrations or package changes. Never print `.env` contents.
 
 ## Secrets
 Never commit `.env`, tokens, client secrets or passwords. They live on the server (`~/aa-docker/.env`) and in the owner's Bitwarden. Templates with placeholders go in `deploy/`.
