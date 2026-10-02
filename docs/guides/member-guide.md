@@ -67,6 +67,7 @@ From now on everything is automatic: change corp → roles update within the hou
 
 **Common hiccups**
 - *"redirect_uri mismatch" or an EVE error page* — go back to https://auth.orlovfamily.space and start the step again; it's a one-off glitch on EVE's side.
+- *Discord says "You need a verified email or phone number"* — your Discord account has no verified email. Discord → User Settings → My Account → verify it, then redo step 3.
 - *Discord step says "Unknown error"* — you're logged into a different Discord account in the browser than in the app. Log out of Discord in the browser, log in with the right one, repeat step 3.
 - *A character shows under the wrong main / you sold or transferred a character* — tell a director; it's a two-click fix on our side.
 
