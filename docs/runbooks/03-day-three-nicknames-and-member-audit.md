@@ -177,7 +177,7 @@ The formatter gets its real test with the first non-owner member (admin → Disc
 
 ## E. Register your characters in Member Audit (browser)
 
-https://auth.orlovfamily.space/memberaudit/ → **Register** (or *Add character*) → EVE SSO lists ~34 scopes → **Authorize** with your main. Repeat for each alt you want tracked (policy: alts encouraged, not required).
+left menu **Member Audit** (the badge is the number of your unregistered characters) → **Register** / *Add character* → EVE SSO lists ~34 scopes → **Authorize** with your main. Repeat for each alt you want tracked (policy: alts encouraged, not required).
 
 The first data pull per character takes a few minutes. Then:
 
