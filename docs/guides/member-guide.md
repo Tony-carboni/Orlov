@@ -15,7 +15,8 @@
 3. You land on EVE's login page (`login.eveonline.com` — check the address bar). Enter your EVE account email and password. If you have two-factor on your EVE account, it'll ask for the code.
 4. A list of characters on that account appears. Click your **main** — the character you play most.
 5. A page asks you to *Authorize* the app "The Orlov Family Auth" to read **public data**. Click **Authorize**.
-6. You're back on auth, looking at the **Dashboard**. Your main's portrait is there with corp and alliance.
+6. First time only: a **Registration** page asks for an email address. Type one and click **Register** — no confirmation mail is sent, it's just kept on file so leadership can reach you if needed.
+7. You're on the **Dashboard**. Your main's portrait is there with corp and alliance.
 
 ✅ Done when the dashboard shows your main. If it shows *State: Guest*, your character isn't in an alliance corp yet — tell your CEO.
 
