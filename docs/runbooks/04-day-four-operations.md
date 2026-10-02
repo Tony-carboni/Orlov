@@ -171,6 +171,8 @@ exit
 
 **C5. If it went wrong** — roll back the version in `.env` / `requirements.txt`, repeat C4. If the database migrated forward and the old version refuses to start, restore the C1 dump (A4).
 
+**Reminder:** a Claude routine named *Orlov monthly ops reminder* runs on the 1st of each month (08:51 Brussels) and emails/pushes this checklist with current-vs-latest version numbers. Manage it under *Routines* in claude.ai.
+
 ## D. Housekeeping (server) — monthly, 5 minutes
 
 Ubuntu security patches install themselves; everything else is this:
