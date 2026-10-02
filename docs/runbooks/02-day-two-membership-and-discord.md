@@ -131,7 +131,7 @@ docker compose ps | grep -E "gunicorn|beat|worker"
 
 ## C. States (browser)
 
-Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see `Guest` and `Member`.
+Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see `Guest`, `Member` and `Blue`.
 
 **C1.** Click **Member** and change it:
 
@@ -148,12 +148,12 @@ Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see 
 
 **Save.**
 
-**C2.** **Add State** (button top right):
+**C2.** Click **Blue** (AA's built-in "allies" state) and rename it the same way:
 
 | Field | Value |
 |---|---|
 | Name | `Family Friend` |
-| Priority | `50` |
+| Priority | `50` (already) |
 | Member corporations/alliances | empty for now |
 | Permissions | `discord | user | Can access the Discord Service` |
 
