@@ -90,7 +90,7 @@ Local dumps don't help if the Droplet is lost. Two layers, both cheap:
 **B2. Monthly copy to your PC** (the "DigitalOcean account died" case). On your **PC**, PowerShell, once a month:
 
 ```powershell
-scp "tony@167.99.207.145:backups/aa-db-*.sql.gz" "$HOME\Downloads\"
+scp "tony@167.99.207.145:backups/aa-db-*.sql.gz" "$HOME\Downloads"
 ```
 
 Then move the newest one somewhere that isn't `Downloads`. Along with the `.env` already in Bitwarden, that's a complete off-site copy.
