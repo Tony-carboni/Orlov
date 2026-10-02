@@ -57,7 +57,13 @@ grep -E '^DISCORD_' .env | sed 's/=.*/=<set>/'
 
 ```bash
 cd ~/aa-docker
-sed -i "s/^    # 'allianceauth.corputils',/    'allianceauth.corputils',/; s/^    # 'allianceauth.services.modules.discord',/    'allianceauth.services.modules.discord',/" conf/local.py
+grep -nE "corputils|modules.discord" conf/local.py
+```
+
+This prints two line numbers (upstream file as of v5.4.0: **64** and **71**). Remove the `# ` on exactly those lines — adjust the numbers if yours differ:
+
+```bash
+sed -i '64s/# //; 71s/# //' conf/local.py
 grep -nE "corputils|modules.discord" conf/local.py
 ```
 
