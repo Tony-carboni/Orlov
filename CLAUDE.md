@@ -16,6 +16,7 @@ The owner is new to servers/Docker/Linux: write runbooks as copy-paste blocks, s
 - Everything fine → confirm in one line and name the next step (e.g. "Step B looks good, continue with C").
 - Something wrong → say what, why, and give the exact fix, one command per block.
 - Don't restate what went right in detail; the owner wants to keep moving.
+- When pointing to the next runbook step, name it ("continue with D2") — don't summarize its contents; the owner has the runbook open alongside.
 
 ## Branch naming
 Use **descriptive, human-readable branch names**, never auto-generated ones like `claude/determined-pasteur-1denoh`.
