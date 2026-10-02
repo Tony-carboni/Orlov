@@ -187,7 +187,7 @@ Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see 
 
 (Internal = only admins assign it. `FC` with everything off = members can request it on the Groups page and you approve.)
 
-**D3. Put yourself in `Alliance Director`:** admin → *Authentication and Authorization → Users* → **tony** → *Groups* → move `Alliance Director` to *Chosen* → **Save**.
+**D3. Put yourself in the leadership groups.** Groups don't nest — you get exactly the Discord roles of the groups you're in — so as alliance executor, OARMI CEO and FC, add `tony` to all three: admin → Group Management → Groups → open `Alliance Director` → *Chosen Users* → add `tony` → **Save**; repeat for `Corp Director` and `FC`.
 
 ✅ Open **https://auth.orlovfamily.space/admin/groupmanagement/group/** — `corp_OARMI` is listed (created automatically) alongside your three. To see your own memberships: admin → *Authentication → Users → tony → Groups* (the 5.4 dashboard does not list groups). If `corp_OARMI` is missing after a minute, open your user in admin and Save it without changes — that re-runs the auto-group evaluation.
 
@@ -201,11 +201,11 @@ Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see 
 
 **E4.** Back on **Services** → Discord card → the orange **✓** (Activate) → Discord OAuth → **Authorize**. You're sent back; the row now shows your Discord username.
 
-**E5.** In Discord, click yourself in the member list. Expected roles: `Family Member`, `corp_OARMI`, `Alliance Director`. Nickname: see note below.
+**E5.** In Discord, click yourself in the member list. Expected roles: `Family Member`, `corp_OARMI`, `Alliance Director`, `Corp Director`, `FC`. Nickname unchanged (see note below).
 
 > **Server-owner note:** Discord never lets a bot change the **owner's** nickname. With `DISCORD_SYNC_NAMES = True`, AA sends nickname + roles in one request and the owner's activation fails with 403 "Missing Permissions" — which is why it's `False` in B2. Nicknames (`[OARMI] Character Name`) come from discordbot in Phase 4, which handles the owner gracefully.
 
-**E6. Removal test:** admin → Users → tony → remove `Alliance Director` from *Chosen* → Save. Within ~30 s the role vanishes in Discord. Add it back and Save.
+**E6. Removal test:** admin → Group Management → Groups → `FC` → remove `tony` from *Chosen Users* → Save. Within ~30 s the `FC` role vanishes in Discord. Add it back and Save.
 
 ✅ Roles appear and disappear in Discord without touching Discord.
 
@@ -217,7 +217,7 @@ Open **https://auth.orlovfamily.space/corpstats/** → **Add** → EVE SSO asks 
 
 ## Day 2 completion checklist
 
-- [ ] Dashboard: state `Family Member`; groups `corp_OARMI`, `Alliance Director`
+- [ ] State `Family Member`; groups `corp_OARMI`, `Alliance Director`, `Corp Director`, `FC`
 - [ ] Bot in the Discord server, its role at the top
 - [ ] Services → Discord activated; roles on you; removal test passed
 - [ ] Corp Stats for OARMI loads
@@ -233,6 +233,14 @@ Open **https://auth.orlovfamily.space/corpstats/** → **Add** → EVE SSO asks 
   ```
 
 **Next:** have 2–3 trusted OARMI members do *log in with EVE → Add Character → Services → Discord → Activate* and confirm their roles land. Then Phase 4: `aa-memberaudit` and `allianceauth-discordbot` (incl. `[OARMI]` nicknames).
+
+## Day-to-day: how people get leadership roles from now on
+
+**`FC` (requestable):** member → auth → *Groups* → **Request** on `FC` → status "Pending", nothing changes yet. You (or a *group leader* you assign on the `FC` group in admin, e.g. the FC lead) → *Group Management → Requests* → **Accept**/**Reject**. On accept, the `FC` role and `#fc-chat` appear in Discord within ~30 s. Remove via *Group Management → Members*.
+
+**`Corp Director` / `Alliance Director` (internal):** members can't see or request these. You add/remove people in admin → Group Management → Groups → the group → *Chosen Users*. Discord follows automatically. (Phase 4 option: fill `Corp Director` automatically from the in-game Director role once corp tokens exist.)
+
+**Always automatic:** leaving the alliance drops the state to `Guest`, which strips every group and Discord role. Roles only apply to people who have linked Discord on the Services page.
 
 ## Troubleshooting
 
