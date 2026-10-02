@@ -65,19 +65,7 @@ echo "aa-memberaudit==5.2.0" >> conf/requirements.txt
 cat conf/requirements.txt
 ```
 
-**B3. Switch docker-compose.yml from the stock image to the custom build.** The top of the file is:
-
-```
-x-allianceauth-base: &allianceauth-base
-  image: ${AA_DOCKER_TAG?err}
-  # build:
-  #   context: .
-  #   dockerfile: custom.dockerfile
-  #   args:
-  #     AA_DOCKER_TAG: ${AA_DOCKER_TAG?err}
-```
-
-Comment line 2, uncomment lines 3–7:
+**B3. Switch docker-compose.yml from the stock image to the custom build.** Lines 2–7 of the file are the `image:` line followed by a commented-out `build:` block; this comments line 2 and uncomments 3–7:
 
 ```bash
 sed -i '2s/^  image:/  # image:/; 3,7s/^  # /  /' docker-compose.yml
@@ -87,18 +75,7 @@ sed -i '2s/^  image:/  # image:/; 3,7s/^  # /  /' docker-compose.yml
 head -8 docker-compose.yml
 ```
 
-✅ Expected:
-
-```
-x-allianceauth-base: &allianceauth-base
-  # image: ${AA_DOCKER_TAG?err}
-  build:
-    context: .
-    dockerfile: custom.dockerfile
-    args:
-      AA_DOCKER_TAG: ${AA_DOCKER_TAG?err}
-  restart: always
-```
+✅ Expected output (not a command — don't paste): line 2 reads `# image: ${AA_DOCKER_TAG?err}`; lines 3–7 read `build:`, `context: .`, `dockerfile: custom.dockerfile`, `args:`, `AA_DOCKER_TAG: ${AA_DOCKER_TAG?err}` with no `#`.
 
 **B4. Member Audit settings** — **paste as one block** (ends at `PYEOF`):
 
