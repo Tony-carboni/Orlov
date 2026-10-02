@@ -111,13 +111,9 @@ Alliance Auth announces releases on its Discord and GitLab; Member Audit on GitH
 grep AA_DOCKER_TAG ~/aa-docker/.env
 ```
 
-To move to, say, v5.5.0:
+To move to a newer release, change the version at the end of that line with `nano ~/aa-docker/.env` — **only to a version that exists** (check https://pypi.org/project/allianceauth/ — the number at the top is the latest). Don't change it when there is nothing newer.
 
-```bash
-sed -i 's/auth:v5.4.0/auth:v5.5.0/' ~/aa-docker/.env
-```
-
-**C3. Extra packages** — edit the pin in `conf/requirements.txt` (e.g. `aa-memberaudit==5.3.0`):
+**C3. Extra packages** — only when https://pypi.org/project/aa-memberaudit/ shows a newer version, change the pin in `conf/requirements.txt`:
 
 ```bash
 nano ~/aa-docker/conf/requirements.txt
