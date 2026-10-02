@@ -195,11 +195,11 @@ Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see 
 
 **E1.** In Discord → *User Settings → My Account*: make sure **2FA is enabled on your account** (the bot belongs to you; Discord blocks role/kick operations by bots whose owner lacks 2FA).
 
-**E2.** auth → left menu **Services** → green **Link Discord Server** button → Discord asks which server → choose your alliance server → **Authorize**. The bot joins the server; a new role with your Discord application's name appears.
+**E2.** auth → left menu **Services** → on the Discord card click the **🔗 link icon** (this is "Link Discord Server") → Discord asks which server → choose your alliance server → **Authorize**. The bot joins the server; a new role with your Discord application's name appears.
 
 **E3.** In Discord → *Server Settings → Roles* → drag the **bot's role to the very top**, above `Alliance Director`. (Repeat whenever the bot is re-added.)
 
-**E4.** Back on **Services** → Discord row → **Activate** (the ✓ / plug icon) → Discord OAuth → **Authorize**. You're sent back; the row now shows your Discord username.
+**E4.** Back on **Services** → Discord card → the orange **✓** (Activate) → Discord OAuth → **Authorize**. You're sent back; the row now shows your Discord username.
 
 **E5.** In Discord, click yourself in the member list. Expected roles: `Family Member`, `corp_OARMI`, `Alliance Director`. Nickname: see note below.
 
