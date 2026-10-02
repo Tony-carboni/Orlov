@@ -211,7 +211,7 @@ Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see 
 
 ## F. Corp Stats (browser)
 
-Open **https://auth.orlovfamily.space/corpstats/** → **Add** → EVE SSO asks for the `read_corporation_membership` scope → authorize with your main. You now see OARMI's member list split into **registered** (have an auth account) and **unregistered** (red) — your "who hasn't authed yet" view. It refreshes every 6 h; the *Update* button forces it.
+Open **https://auth.orlovfamily.space/corpstats/add/** (the page's own add button is the person-plus icon top right, easy to miss) → EVE SSO asks for the `read_corporation_membership` scope → authorize with your main. You now see OARMI's member list split into **registered** (have an auth account) and **unregistered** (red) — your "who hasn't authed yet" view. It refreshes every 6 h; the *Update* button forces it.
 
 ---
 
