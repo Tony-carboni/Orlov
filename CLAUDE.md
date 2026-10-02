@@ -12,6 +12,11 @@ The owner is new to servers/Docker/Linux: write runbooks as copy-paste blocks, s
 
 **Command blocks: one code block = one Enter — in runbooks *and* in chat replies.** Put each command in its own fenced block, never several commands in one block, so the copy button yields exactly one command. A block that genuinely spans lines (a heredoc, a long `docker compose` invocation) is labelled "paste as one block". Keep single commands short enough not to need wrapping; split long argument lists into separate commands where possible. Reason: the owner pastes into PowerShell, where a wrapped line and two lines look identical.
 
+## Reply style when the owner shares terminal output or screenshots
+- Everything fine → confirm in one line and name the next step (e.g. "Step B looks good, continue with C").
+- Something wrong → say what, why, and give the exact fix, one command per block.
+- Don't restate what went right in detail; the owner wants to keep moving.
+
 ## Branch naming
 Use **descriptive, human-readable branch names**, never auto-generated ones like `claude/determined-pasteur-1denoh`.
 
