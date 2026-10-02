@@ -93,6 +93,8 @@ Local dumps don't help if the Droplet is lost. Two layers, both cheap:
 scp "tony@167.99.207.145:backups/aa-db-*.sql.gz" "$HOME\Downloads"
 ```
 
+(That's for **PowerShell**. In a plain *Command Prompt* window `$HOME` doesn't exist — use `"%USERPROFILE%\Downloads"` instead.)
+
 Then move the newest one somewhere that isn't `Downloads`. Along with the `.env` already in Bitwarden, that's a complete off-site copy.
 
 ## C. Update procedure (server) — monthly, or when a security release lands
