@@ -37,3 +37,9 @@ CELERYBEAT_SCHEDULE["memberaudit_run_regular_updates"] = {
     "task": "memberaudit.tasks.run_regular_updates",
     "schedule": crontab(minute="0", hour="*/1"),
 }
+
+# --- Discord: refresh nicknames periodically (corp changes don't trigger a nick update otherwise)
+CELERYBEAT_SCHEDULE["discord.update_all_nicknames"] = {
+    "task": "discord.update_all_nicknames",
+    "schedule": crontab(minute="30", hour="*/6"),
+}

@@ -45,5 +45,6 @@ Discord role hierarchy (top → bottom): bot role · Alliance Director · Corp D
 
 - 2026-10-01 — initial version (roles created in Discord; policies decided).
 - 2026-10-02 — alliance exists in-game; `Family Member` state keyed on alliance ORLOV.
+- 2026-10-02 — first real member's nickname stayed `[SWA]` after moving corp: AA only sets nicknames on activation/main change. Added `discord.update_all_nicknames` every 6 h.
 - 2026-10-02 — `Family Friend` made a **public state**: any authenticated non-member gets it (nickname + role tag, public channels only). Discord: `#public-chat` open to unauthenticated visitors too; `#how-to-auth`/`#rules` read-only.
 - 2026-10-02 — `DISCORD_SYNC_NAMES` temporarily `False` so the owner could activate (403 on owner nickname); re-enabled on Day 3 with the `[{corp_ticker}] {character_name}` formatter. discordbot deferred until there are members.
