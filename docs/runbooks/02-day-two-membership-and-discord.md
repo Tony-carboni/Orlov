@@ -2,6 +2,7 @@
 
 *Prerequisite: Day 1 complete — https://auth.orlovfamily.space works, you're logged in as superuser `tony` with your main character (Orlov Arms International) set.*
 *Time: ~1.5 hours. Sections A–B on the **server**; C–F in the **browser**.*
+*Convention: **one code block = one Enter**. Blocks that must be pasted whole are labelled.*
 
 **Goal:** logging into auth as an OARMI pilot yields state `Family Member` + group `corp_OARMI`, and activating Discord on the Services page puts the matching roles on that person in the Discord server.
 
@@ -69,7 +70,7 @@ grep -nE "corputils|modules.discord" conf/local.py
 
 ✅ Both lines print **without** a `#`.
 
-**B2. Append the Orlov settings** (paste the whole block as one; it ends at `PYEOF`):
+**B2. Append the Orlov settings** — **paste as one block** (it ends at `PYEOF`):
 
 ```bash
 cat >> conf/local.py <<'PYEOF'
@@ -220,9 +221,15 @@ Open **https://auth.orlovfamily.space/corpstats/** → **Add** → EVE SSO asks 
 - [ ] Bot in the Discord server, its role at the top
 - [ ] Services → Discord activated; roles on you; removal test passed
 - [ ] Corp Stats for OARMI loads
-- [ ] Fresh DB dump (server):
+- [ ] Fresh DB dump (server) — three blocks, one Enter each:
   ```bash
-  cd ~/aa-docker && docker compose exec -T auth_mysql sh -c 'exec mariadb-dump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' | gzip > ~/backups/aa-$(date +%F).sql.gz && ls -lh ~/backups
+  cd ~/aa-docker
+  ```
+  ```bash
+  docker compose exec -T auth_mysql sh -c 'exec mariadb-dump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' | gzip > ~/backups/aa-$(date +%F).sql.gz
+  ```
+  ```bash
+  ls -lh ~/backups
   ```
 
 **Next:** have 2–3 trusted OARMI members do *log in with EVE → Add Character → Services → Discord → Activate* and confirm their roles land. Then Phase 4: `aa-memberaudit` and `allianceauth-discordbot` (incl. `[OARMI]` nicknames).

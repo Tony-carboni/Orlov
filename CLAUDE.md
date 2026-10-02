@@ -10,6 +10,8 @@ Documentation and deployment config for **The Orlov Family** (EVE Online allianc
 
 The owner is new to servers/Docker/Linux: write runbooks as copy-paste blocks, say which machine each command runs on (PC `PS C:\` vs server `tony@ubuntu…:~$`), and give an "✅ done when" check per section.
 
+**Command blocks: one code block = one Enter.** Put each command in its own fenced block, never several commands in one block. A block that genuinely spans lines (a heredoc, a long `docker compose` invocation) is labelled "paste as one block". Keep single commands short enough not to need wrapping; split long argument lists into separate commands where possible. Reason: the owner pastes into PowerShell, where a wrapped line and two lines look identical.
+
 ## Branch naming
 Use **descriptive, human-readable branch names**, never auto-generated ones like `claude/determined-pasteur-1denoh`.
 
