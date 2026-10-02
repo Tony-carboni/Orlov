@@ -1,0 +1,3 @@
+# Extra packages baked into the custom Alliance Auth image (aa-docker/conf/requirements.txt).
+# Pin versions; bump deliberately and rebuild with `docker compose --env-file=.env build`.
+aa-memberaudit==5.2.0

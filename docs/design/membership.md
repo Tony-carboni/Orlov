@@ -39,10 +39,10 @@ Discord role hierarchy (top → bottom): bot role · Alliance Director · Corp D
 | 2 | Inactivity | **60 days** without logging in = inactive. | Member Audit / Corp Stats report flags >60 d. Action on inactive members is a leadership decision, not automated (can be automated later via a custom plugin that drops a group → role). |
 | 3 | Fleet participation (PAP) | **Not tracked.** | `allianceauth-afat` is **not** installed in Phase 4. Can be added later without migration pain. |
 | 4 | Corp token responsibility | **The CEO** of each member corp adds the Corp Stats / Member Audit director token. | Runbook for CEOs in `docs/runbooks/` (Phase 4). |
-| 5 | Discord nickname | **`[OARMI] Character Name`** — corp ticker in brackets, then the main character's name. | AA core nickname sync (`DISCORD_SYNC_NAMES`) is **off**: with it on, activation fails for the Discord server owner (Discord refuses bot nickname changes on the owner, 403). The `[TICKER] Name` format comes from `aa-discordbot`'s nickname sync in Phase 4, which skips the owner gracefully. Discord nicknames are capped at 32 characters. |
+| 5 | Discord nickname | **`[OARMI] Character Name`** — corp ticker in brackets, then the main character's name. | AA core: `DISCORD_SYNC_NAMES = True` + admin *Services → Name format config* for Discord: `[{corp_ticker}] {character_name}`. The server **owner** is the one account a bot can't rename (403) — the owner sets their own nickname by hand; AA's failed nickname task for the owner only logs an error (verified: it does not unlink or kick). Discord nicknames are capped at 32 characters. |
 
 ## 5. Change log
 
 - 2026-10-01 — initial version (roles created in Discord; policies decided).
 - 2026-10-02 — alliance exists in-game; `Family Member` state keyed on alliance ORLOV.
-- 2026-10-02 — `DISCORD_SYNC_NAMES = False` (owner-nickname 403 blocked activation); nicknames deferred to Phase 4.
+- 2026-10-02 — `DISCORD_SYNC_NAMES` temporarily `False` so the owner could activate (403 on owner nickname); re-enabled on Day 3 with the `[{corp_ticker}] {character_name}` formatter. discordbot deferred until there are members.
