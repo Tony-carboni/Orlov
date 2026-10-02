@@ -169,12 +169,11 @@ Member Audit is permission-driven; nothing shows until these are set.
 
 Save each.
 
-## D. Nickname check (browser + Discord)
+## D. Your own nickname (Discord)
 
-Nickname sync applies on the next update for each user. Force one for yourself to confirm the formatter is accepted: admin → Discord Service → **Discord users** → tick your row → Action **Update nicknames** → Go.
+Nickname sync applies automatically when a member activates Discord and whenever their main changes. There is nothing to force here, and for **you** (server owner) a bot can't change it anyway: right-click yourself in Discord → *Edit Server Profile* → nickname `[OARMI] <your main character>`.
 
-- For **you** (server owner) this will log an error — expected; set your own nickname to `[OARMI] Tony Carboni` manually in Discord (right-click yourself → Edit Server Profile).
-- For every other member it will "just work" when they activate Discord.
+The formatter gets its real test with the first non-owner member (admin → Discord Service → Discord users shows who is linked; AA 5.4 has no "update nicknames" admin action — the only action there is **delete**, don't use it).
 
 ## E. Register your characters in Member Audit (browser)
 
@@ -224,5 +223,5 @@ ls -lh ~/backups
 | Member Audit page says "no access" | C1 permission missing on your state, or you're not in `Family Member`. |
 | Register fails at SSO with "invalid scope" | The EVE developer application must have all `esi-*` scopes ticked (Day 0 step E2). Edit the app on developers.eveonline.com and tick them. |
 | Characters never update | Check dashboard *Task Queue* for failures; `docker compose logs --tail 100 allianceauth_worker` for `memberaudit` errors. |
-| Nicknames don't change for members | Name format config missing the member's **state**, or `DISCORD_SYNC_NAMES` still `False`. Updates happen on activation and on main-character changes; force via admin → Discord users → *Update nicknames*. |
+| Nicknames don't change for members | Name format config missing the member's **state**, or `DISCORD_SYNC_NAMES` still `False`. Updates happen on activation and on main-character changes; to force one for everyone, on the server: `docker compose exec allianceauth_gunicorn celery -A myauth call discord.update_all_nicknames` |
 | Nickname error for you only | Server owner — expected. Set manually. |
