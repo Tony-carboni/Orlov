@@ -1,7 +1,7 @@
 # Day 3 runbook — `[OARMI]` nicknames and Member Audit
 
 *Prerequisite: Day 2 complete (states, groups, Discord roles, Corp Stats working).*
-*Time: ~1.5 hours, of which ~20 min is waiting for an image build and a data load. Sections A, C–E in the **browser**; B and F on the **server**.*
+*Time: ~1.5 hours, of which ~1 h is waiting for the EVE data load (do sections C–D meanwhile). Sections A, C–E in the **browser**; B and F on the **server**.*
 *Convention: one code block = one Enter. Blocks that must be pasted whole are labelled.*
 
 **Goal:** members' Discord nicknames become `[OARMI] Character Name` automatically, and Member Audit gives you per-character login dates (your 60-day rule), skills, assets and a corp compliance view.
@@ -140,7 +140,7 @@ auth collectstatic --noinput
 auth memberaudit_load_eve
 ```
 
-It asks `Are you sure? (y/N)` → `y`. This *queues* background tasks that pull ship/skill/type data from ESI and returns immediately; the workers need **10–20 minutes** to finish. Then:
+It asks `Are you sure? (y/N)` → `y`. This *queues* background tasks that pull ship/skill/type data from ESI and returns immediately; the workers need **about an hour** (~70k tasks at ~20/s) to finish. Then:
 
 ```bash
 exit
