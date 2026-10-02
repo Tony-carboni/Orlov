@@ -192,7 +192,7 @@ ls -lh ~/backups
 |---|---|
 | `docker compose up` hangs on "Creating…" | Low entropy on fresh VPS — rare on DO. `sudo apt -y install haveged` then retry. |
 | `permission denied while trying to connect to the Docker daemon socket` | You're not in the `docker` group in this session. `exit`, SSH back in. |
-| Browser: "502 Bad Gateway" from the proxy | gunicorn still starting or static not collected. Wait 1 min; check `docker compose logs allianceauth_gunicorn --tail 50`. |
+| Browser: "502 Bad Gateway" | gunicorn still starting, or (after any `--force-recreate` of gunicorn) the `nginx` container cached its old IP: `docker compose restart nginx`. Else check `docker compose logs allianceauth_gunicorn --tail 50`. |
 | Let's Encrypt fails: "Internal Error" | DNS not propagated, or port 80 not reachable. `nslookup auth.orlovfamily.space` on your PC; `sudo ufw status` on server must list 80 and 443 ALLOW. |
 | EVE SSO returns "redirect_uri mismatch" | Callback in the EVE developer app must be exactly `https://auth.orlovfamily.space/sso/callback` (no trailing slash). |
 | Page loads but no CSS / looks broken | `auth collectstatic --noinput` wasn't run, or NPM forwards to `allianceauth_gunicorn:8000` instead of `nginx:80`. |

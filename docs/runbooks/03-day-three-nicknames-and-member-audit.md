@@ -110,7 +110,11 @@ docker compose --env-file=.env build
 docker compose --env-file=.env up -d
 ```
 
-(Recreates every auth container on the new image.)
+(Recreates every auth container on the new image.) The internal `nginx` container caches gunicorn's old address and answers **502 Bad Gateway** until restarted:
+
+```bash
+docker compose restart nginx
+```
 
 **B6. Migrate, collect static, load EVE data:**
 
@@ -214,6 +218,7 @@ ls -lh ~/backups
 
 | Symptom | Fix |
 |---|---|
+| Site shows **502 Bad Gateway** (nginx/1.x) after recreating containers | `docker compose restart nginx` — it cached gunicorn's old container IP. |
 | `build` fails with pip resolution error | Check the exact line in `conf/requirements.txt`; `aa-memberaudit==5.2.0` requires AA 4–5 (we run 5.4.0). Paste the last 20 lines of the build output. |
 | `auth check` complains about `eveuniverse` | `INSTALLED_APPS` order matters: `eveuniverse` must be listed before `memberaudit` (it is in B4). |
 | Member Audit page says "no access" | C1 permission missing on your state, or you're not in `Family Member`. |
