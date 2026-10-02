@@ -1,36 +1,59 @@
 # Day 2 runbook — states, groups and the Discord bot
 
-*Prerequisite: Day 1 complete — https://auth.orlovfamily.space works, you're logged in as superuser `tony` with your main character set.*
-*Time: ~1.5 hours. Sections A–B on the server; C–F in the browser.*
+*Prerequisite: Day 1 complete — https://auth.orlovfamily.space works, you're logged in as superuser `tony` with your main character (Orlov Arms International) set.*
+*Time: ~1.5 hours. Sections A–B on the **server**; C–F in the **browser**.*
 
-Goal of the day: logging into auth as an OARMI pilot yields state `Family Member` + group `corp_OARMI`, and activating Discord on the Services page puts the matching roles on the person in the Discord server.
+**Goal:** logging into auth as an OARMI pilot yields state `Family Member` + group `corp_OARMI`, and activating Discord on the Services page puts the matching roles on that person in the Discord server.
+
+## Known values
+
+| Item | Value |
+|---|---|
+| Server | `ssh tony@167.99.207.145` → stack in `~/aa-docker` |
+| Auth site | https://auth.orlovfamily.space |
+| Admin site | https://auth.orlovfamily.space/admin/ (login `tony` + Django admin password, or just be logged in via SSO as `tony`) |
+| Discord redirect (already set on Day 0) | `https://auth.orlovfamily.space/discord/callback/` |
+| Corp | Orlov Arms International — `OARMI` |
+| States to end with | `Family Member` (100), `Family Friend` (50), `Guest` (built in) |
+| Groups to end with | `corp_OARMI` (automatic), `Alliance Director`, `Corp Director`, `FC` |
+| Discord roles (exist since Day 0) | `Alliance Director`, `Corp Director`, `FC`, `Family Member`, `Family Friend`, `corp_OARMI` |
+
+**From Bitwarden, have ready:** Discord *Server ID*, Discord *Application ID*, Discord *Client Secret*, Discord *Bot Token*.
 
 ---
 
 ## A. Add the Discord secrets to `.env` (server)
 
-From Bitwarden you need: Discord **Server ID**, **Application ID**, **Client Secret**, **Bot Token**.
-
+```bash
+ssh tony@167.99.207.145
+```
+then:
 ```bash
 cd ~/aa-docker
 nano .env
 ```
 
-Go to the very end (Ctrl+End) and add four lines, with your real values:
+Ctrl+End to jump to the bottom, then type/paste (right-click pastes in PowerShell) these four lines with your real values — no quotes, no spaces around `=`:
 
 ```
 # Discord
-DISCORD_GUILD_ID=123456789012345678
-DISCORD_APP_ID=123456789012345678
-DISCORD_APP_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-DISCORD_BOT_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxx.xxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+DISCORD_GUILD_ID=<Server ID, 18–19 digits>
+DISCORD_APP_ID=<Application ID, 18–19 digits>
+DISCORD_APP_SECRET=<Client Secret, 32 characters>
+DISCORD_BOT_TOKEN=<Bot Token, ~72 characters with two dots>
 ```
 
-No quotes, no spaces around `=`. Ctrl+O, Enter, Ctrl+X.
+Ctrl+O, Enter, Ctrl+X. Verify the four keys exist (values hidden):
 
-## B. Enable the apps in `local.py` and restart (server)
+```bash
+grep -E '^DISCORD_' .env | sed 's/=.*/=<set>/'
+```
 
-Uncomment the two built-in apps and append our block (copy-paste the whole thing as one):
+✅ Four lines: `DISCORD_GUILD_ID=<set>` … `DISCORD_BOT_TOKEN=<set>`.
+
+## B. Enable the apps in `local.py`, check, restart (server)
+
+**B1. Uncomment the two built-in apps:**
 
 ```bash
 cd ~/aa-docker
@@ -38,7 +61,9 @@ sed -i "s/^    # 'allianceauth.corputils',/    'allianceauth.corputils',/; s/^  
 grep -nE "corputils|modules.discord" conf/local.py
 ```
 
-Both lines must now show **without** the `#`. Then append the custom block:
+✅ Both lines print **without** a `#`.
+
+**B2. Append the Orlov settings** (paste the whole block as one; it ends at `PYEOF`):
 
 ```bash
 cat >> conf/local.py <<'PYEOF'
@@ -70,99 +95,141 @@ CELERYBEAT_SCHEDULE["update_all_corpstats"] = {
     "schedule": crontab(minute="0", hour="*/6"),
 }
 PYEOF
-tail -5 conf/local.py
+tail -3 conf/local.py
 ```
 
-Restart the auth containers (they must be *recreated* to pick up the new `.env` values) and run the Django maintenance:
+✅ The last lines show the `update_all_corpstats` block closing with `}`.
+
+**B3. Recreate the auth containers** (needed so they read the new `.env`), then validate and migrate inside:
 
 ```bash
 docker compose --env-file=.env up -d --force-recreate allianceauth_gunicorn allianceauth_beat allianceauth_worker allianceauth_worker_services
 docker compose exec allianceauth_gunicorn bash
 ```
-inside the container:
+inside the container (prompt `allianceauth@…:~/myauth$`):
 ```bash
+auth check
 auth migrate
 auth collectstatic --noinput
 exit
 ```
-back on the host:
+
+`auth check` must say **"System check identified no issues"**. If it prints a Python traceback instead, the line number points at a typo in `conf/local.py`; fix with `nano conf/local.py` on the host and re-run from B3.
+
 ```bash
 docker compose ps | grep -E "gunicorn|beat|worker"
 ```
 
-✅ All four Up. If gunicorn is restarting: `docker compose logs allianceauth_gunicorn --tail 40` — a typo in `local.py` shows up here as a Python error with a line number.
+✅ All four `Up`. Open https://auth.orlovfamily.space — the left menu now has **Services** and **Corporation Stats**.
 
 ## C. States (browser)
 
-Go to **https://auth.orlovfamily.space/admin/** → *Authentication* → **States**. You'll see `Guest` and `Member`.
+Open **https://auth.orlovfamily.space/admin/authentication/state/** — you see `Guest` and `Member`.
 
-1. Click **Member** and rename it: Name `Family Member`, Priority `100`. In **Member corporations** pick **Orlov Arms International** (it's in the list because your main is in it). Leave *Member alliances* empty until the alliance exists. Under **Permissions**, find and add `discord | user | Can access the Discord Service` (search box: type `access_discord`). **Save**.
-2. **Add State**: Name `Family Friend`, Priority `50`, no corporations/alliances yet, permission `discord | user | Can access the Discord Service`. **Save**.
-3. Leave `Guest` as is.
-
-Reload the dashboard (https://auth.orlovfamily.space/) — your state now shows **Family Member**.
-
-## D. Auto-groups and manual groups (browser)
-
-**Auto-groups** — `/admin/` → *Eve_Autogroups* → **Autogroups configs → Add**:
+**C1.** Click **Member** and change it:
 
 | Field | Value |
 |---|---|
-| States | `Family Member` (and `Family Friend`) |
+| Name | `Family Member` |
+| Priority | `100` |
+| Member characters | leave empty |
+| Member corporations | move **Orlov Arms International** to *Chosen* |
+| Member alliances | leave empty (add *The Orlov Family* the day it exists in-game) |
+| Member factions | leave empty |
+| Permissions | type `access_discord` in the filter box → move **discord \| user \| Can access the Discord Service** to *Chosen* |
+| Public | ☐ |
+
+**Save.**
+
+**C2.** **Add State** (button top right):
+
+| Field | Value |
+|---|---|
+| Name | `Family Friend` |
+| Priority | `50` |
+| Member corporations/alliances | empty for now |
+| Permissions | `discord | user | Can access the Discord Service` |
+
+**Save.** Leave `Guest` untouched.
+
+✅ Reload https://auth.orlovfamily.space/ — the dashboard shows **State: Family Member**.
+
+## D. Groups (browser)
+
+**D1. Auto-groups** — open **https://auth.orlovfamily.space/admin/eve_autogroups/autogroupsconfig/add/**:
+
+| Field | Value |
+|---|---|
+| States | move `Family Member` and `Family Friend` to *Chosen* |
 | Corp groups | ☑ |
 | Corp group prefix | `corp_` |
 | Corp name source | **Ticker** |
-| Alliance groups | ☐ (the state already covers it) |
+| Alliance groups | ☐ |
+| Alliance group prefix / name source | leave default |
 | Replace spaces | ☐ |
 
-**Save.** The prefix/name-source can't be changed afterwards (you'd delete and recreate the config). Check *Authentication → Groups*: `corp_OARMI` should exist with you in it. If it doesn't appear within a minute, open your user in *Authentication → Users*, and Save without changes — that re-triggers group evaluation.
+**Save.** Prefix and name source are locked after saving — if you got them wrong, delete the config and add a new one.
 
-**Manual groups** — *Authentication* → **Groups → Add group**, three times:
+**D2. Manual groups** — open **https://auth.orlovfamily.space/admin/auth/group/add/** three times. The page has *Name* + *Permissions* at the top and an **Auth group** box below with the AA flags:
 
-| Name | Settings (the "Auth group" box on the same page) |
-|---|---|
-| `Alliance Director` | Internal ☑ (only admins assign it) |
-| `Corp Director` | Internal ☑ |
-| `FC` | Internal ☐, Hidden ☐, Open ☐ → members can *request*, a group leader or you approve |
+| Name | Internal | Hidden | Open | Public |
+|---|---|---|---|---|
+| `Alliance Director` | ☑ | ☐ | ☐ | ☐ |
+| `Corp Director` | ☑ | ☐ | ☐ | ☐ |
+| `FC` | ☐ | ☐ | ☐ | ☐ |
 
-Then add yourself to `Alliance Director`: *Users → tony → Groups*, move it to "Chosen", Save.
+(Internal = only admins assign it. `FC` with everything off = members can request it on the Groups page and you approve.)
 
-✅ Dashboard → *Groups* shows `corp_OARMI` and `Alliance Director` on you.
+**D3. Put yourself in `Alliance Director`:** admin → *Authentication and Authorization → Users* → **tony** → *Groups* → move `Alliance Director` to *Chosen* → **Save**.
+
+✅ Open **https://auth.orlovfamily.space/admin/auth/group/** — `corp_OARMI` is listed (created automatically) alongside your three. On the dashboard, *Groups* shows `corp_OARMI` and `Alliance Director`. If `corp_OARMI` is missing after a minute, open your user in admin and Save it without changes — that re-runs the auto-group evaluation.
 
 ## E. Link the bot and test (browser + Discord)
 
-1. In Discord, make sure **your own account has 2FA enabled** (User Settings → My Account). Discord refuses role/kick operations by bots whose owner lacks it.
-2. auth → top menu **Services**. Click the green **Link Discord Server** button → Discord asks which server → pick *The Orlov Family* → **Authorize**. The bot joins; a new role named after your Discord application appears.
-3. In Discord: *Server Settings → Roles* → drag the **bot's role to the very top**, above `Alliance Director`. Every time the bot is re-added you must do this again.
-4. Back on **Services**: the Discord row now has an **Activate** (✓) button. Click it → Discord OAuth → **Authorize**. You're redirected back; the row shows your Discord username.
-5. In Discord, look at yourself in the member list: roles `Family Member`, `corp_OARMI`, `Alliance Director` should be there, and (if you are **not** the server owner) your nickname is your character name.
+**E1.** In Discord → *User Settings → My Account*: make sure **2FA is enabled on your account** (the bot belongs to you; Discord blocks role/kick operations by bots whose owner lacks 2FA).
 
-Known limitation: Discord never lets a bot change the **server owner's** nickname, so for you specifically nickname sync logs an error and you set it by hand (`[OARMI] Character Name`). Everyone else gets it automatically. If that bothers you later, transfer server ownership to a throwaway "holding" account — that's what the AA docs recommend.
+**E2.** auth → left menu **Services** → green **Link Discord Server** button → Discord asks which server → choose your alliance server → **Authorize**. The bot joins the server; a new role with your Discord application's name appears.
 
-6. Test role removal: in `/admin/`, remove yourself from `Alliance Director`, Save, wait ~30 s → the role disappears in Discord. Add it back.
+**E3.** In Discord → *Server Settings → Roles* → drag the **bot's role to the very top**, above `Alliance Director`. (Repeat whenever the bot is re-added.)
+
+**E4.** Back on **Services** → Discord row → **Activate** (the ✓ / plug icon) → Discord OAuth → **Authorize**. You're sent back; the row now shows your Discord username.
+
+**E5.** In Discord, click yourself in the member list. Expected roles: `Family Member`, `corp_OARMI`, `Alliance Director`. Nickname: see note below.
+
+> **Server-owner note:** Discord never lets a bot change the **owner's** nickname, so for your account nickname sync logs an error and you set `[OARMI] Character Name` by hand. Everyone else gets their character name automatically (the `[OARMI]` prefix arrives with discordbot in Phase 4). The AA docs' fix, if it ever bothers you, is transferring ownership to a holding account.
+
+**E6. Removal test:** admin → Users → tony → remove `Alliance Director` from *Chosen* → Save. Within ~30 s the role vanishes in Discord. Add it back and Save.
+
+✅ Roles appear and disappear in Discord without touching Discord.
 
 ## F. Corp Stats (browser)
 
-auth → **Corporation Stats** (left menu) → **Add** → EVE SSO (it asks for the `read_corporation_membership` scope) → Authorize with your main (any OARMI member works for this one; director tokens come in Phase 4). You get the OARMI member list, split into *registered* / *unregistered* — this is your "who hasn't authed yet" view. It refreshes every 6 h.
+Open **https://auth.orlovfamily.space/corpstats/** → **Add** → EVE SSO asks for the `read_corporation_membership` scope → authorize with your main. You now see OARMI's member list split into **registered** (have an auth account) and **unregistered** (red) — your "who hasn't authed yet" view. It refreshes every 6 h; the *Update* button forces it.
 
 ---
 
 ## Day 2 completion checklist
 
-- [ ] Dashboard shows state `Family Member`, groups `corp_OARMI` + `Alliance Director`
-- [ ] Bot in the server, its role at the top of the list
-- [ ] Services → Discord activated; roles appear on you in Discord; removal test worked
-- [ ] Corp Stats for OARMI shows the member list
-- [ ] Fresh DB dump: `cd ~/aa-docker && docker compose exec -T auth_mysql sh -c 'exec mariadb-dump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' | gzip > ~/backups/aa-$(date +%F).sql.gz`
+- [ ] Dashboard: state `Family Member`; groups `corp_OARMI`, `Alliance Director`
+- [ ] Bot in the Discord server, its role at the top
+- [ ] Services → Discord activated; roles on you; removal test passed
+- [ ] Corp Stats for OARMI loads
+- [ ] Fresh DB dump (server):
+  ```bash
+  cd ~/aa-docker && docker compose exec -T auth_mysql sh -c 'exec mariadb-dump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' | gzip > ~/backups/aa-$(date +%F).sql.gz && ls -lh ~/backups
+  ```
 
-**Next:** rollout — have 2–3 trusted OARMI members go through *log in → Add Character → Services → Discord* and watch the roles land. Then Phase 4 (Member Audit, discordbot with `[OARMI]` nicknames).
+**Next:** have 2–3 trusted OARMI members do *log in with EVE → Add Character → Services → Discord → Activate* and confirm their roles land. Then Phase 4: `aa-memberaudit` and `allianceauth-discordbot` (incl. `[OARMI]` nicknames).
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| "Unknown Error" on the Discord site when activating | Redirect in Discord developer portal must be exactly `https://auth.orlovfamily.space/discord/callback/` — trailing slash. |
-| Activated, but no roles appear | Bot role not at the top; or the role names differ (`Family Member` ≠ `family member`? AA matches case-insensitively, but check for stray spaces); check *Notifications* (bell icon) in auth for the error text. |
-| Roles for other bots keep getting removed | `/admin/` → *Group Management → Reserved group names* → add those role names. |
-| `corp_OARMI` never appears | Autogroups config states must include `Family Member`; re-save your user to trigger. |
-| Nickname errors for you only | You're the server owner — expected (see E). |
+| `auth check` traceback | Typo in the appended block; the message names the line. `nano conf/local.py`, fix, re-run B3. |
+| Services page has no Discord row | `modules.discord` still commented out (B1), or containers weren't recreated (B3). |
+| "Unknown Error" on Discord when activating | Redirect in the Discord developer portal must be exactly `https://auth.orlovfamily.space/discord/callback/` — trailing slash. |
+| Activated but no roles | Bot role not at the top of the role list; or your Discord account lacks 2FA. Check auth's **Notifications** (bell icon) for the error text. |
+| Roles from other bots keep disappearing | admin → *Group Management → Reserved group names* → add those role names. |
+| `corp_OARMI` never appears | Autogroups config must list `Family Member` under States; re-save your user. |
+| Nickname error for you only | You're the server owner — expected (E5). |
+| Need logs | `docker compose logs -f --tail 100 allianceauth_worker` (Ctrl+C to stop) — Discord tasks run in the workers. |
