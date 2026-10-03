@@ -3,6 +3,7 @@
 *Why: the cloud sessions can only reach the internet over HTTPS, so they can never SSH to the server (verified 2026-10-03 with network access set to "Full"). Running Claude Code on your own PC removes that limit: it uses your PowerShell and your SSH key, and can run server commands itself.*
 
 *Time: ~20 min, one-off. Needs: the `orlov-claude` key from runbook 05 B–C (already created and authorised on the server).*
+*Status: **completed 2026-10-03** — local session verified, all 10 containers listed over `ssh orlov`.*
 *Convention: one code block = one Enter.*
 
 ## A. Install Git for Windows (PowerShell, 3 min)
@@ -64,7 +65,9 @@ The desktop app can run a session in two places, and only one of them can reach 
 | Session header shows | Where commands run | Server reachable? |
 |---|---|---|
 | ☁ cloud icon + `Orlov · Orlov` | a container in Anthropic's cloud | **no** (HTTPS-only) |
-| a folder path, e.g. `C:\Users\<you>\Orlov` | PowerShell on your PC | **yes** |
+| 💻 laptop icon + a chip with the **folder name** (`Orlov`) | PowerShell on your PC | **yes** |
+
+The chip shows the name of the folder the session was opened on. If it reads your user name (e.g. `Toon Budeners`) instead of `Orlov`, you opened the parent folder — start again and pick the `Orlov` subfolder.
 
 Everything until now has been the cloud kind. To start the local kind:
 
@@ -72,7 +75,7 @@ Everything until now has been the cloud kind. To start the local kind:
 2. **+ New** → do **not** pick the *Orlov* cloud environment; pick the **local / Open folder** option and choose `C:\Users\<you>\Orlov` (the clone from B).
 3. Say: *"check server access"*. `CLAUDE.md` tells it to run `ssh orlov "..."`; it should show the container list.
 
-✅ Done when the session header shows the folder path (no cloud icon) and Claude reports the containers from the server without you pasting anything.
+✅ Done when the session header shows the laptop icon with an `Orlov` chip (no cloud icon) and Claude reports the containers from the server without you pasting anything.
 
 ## E. How to work from now on
 
