@@ -1,4 +1,7 @@
-# Runbook — giving Claude direct access to the server
+# Runbook — giving Claude direct access to the server (cloud route — SUPERSEDED)
+
+> **Result 2026-10-03:** with network access set to *Full*, cloud sessions still only have HTTPS egress; SSH to the server is impossible. Steps B and C (the `orlov-claude` key) are reused by **runbook 06**, the local route. Don't do A or D.
+
 
 *Goal: Claude (in these cloud sessions) can run commands on `167.99.207.145` itself — checks, log reads, config edits, container restarts — instead of handing you commands to paste. You still see everything it runs in the session.*
 
