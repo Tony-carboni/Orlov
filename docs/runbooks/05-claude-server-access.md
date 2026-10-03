@@ -22,11 +22,11 @@
 
 1. In this session's title bar, open the **cloud environment** menu → **Edit**.
 2. *Network access*: choose the **full / unrestricted** option. (The *Custom* allow-list works via an HTTPS proxy and does not carry SSH; full access is required for this.)
-3. Save. Existing sessions pick it up on their next command.
+3. Save. **Only new sessions get the new policy** — the running session keeps the old one, so the test in D happens in a fresh session.
 
 Docs: https://code.claude.com/docs/en/cloud-environments#network-access
 
-✅ Done when Claude's port test (`port 22 reachable`) passes — ask it to re-run it.
+✅ Done when the setting shows **Full**. (The port test only passes in a session started after the change.)
 
 ## B. Create a dedicated key on your PC (PowerShell, 2 min)
 
