@@ -57,14 +57,22 @@ ssh orlov "hostname && docker compose -f ~/aa-docker/docker-compose.yml ps --for
 
 ✅ Prints the server's hostname and the container list, without asking for a passphrase.
 
-## D. Install Claude Code desktop (5 min)
+## D. Start a LOCAL session in the Claude Code desktop app (5 min)
 
-1. Download the Windows app from https://claude.com/download (Claude Code / desktop) and install it.
-2. Sign in with the same account you use on claude.ai.
-3. **Open folder** → pick `C:\Users\<you>\Orlov`.
-4. Start a session and say: *"check server access"*. `CLAUDE.md` tells it to run `ssh orlov "..."`; it should show you the container list.
+The desktop app can run a session in two places, and only one of them can reach the server:
 
-✅ Done when Claude reports the containers from the server without you pasting anything.
+| Session header shows | Where commands run | Server reachable? |
+|---|---|---|
+| ☁ cloud icon + `Orlov · Orlov` | a container in Anthropic's cloud | **no** (HTTPS-only) |
+| a folder path, e.g. `C:\Users\<you>\Orlov` | PowerShell on your PC | **yes** |
+
+Everything until now has been the cloud kind. To start the local kind:
+
+1. If you don't have the app yet: download from https://claude.com/download, install, sign in with your claude.ai account.
+2. **+ New** → do **not** pick the *Orlov* cloud environment; pick the **local / Open folder** option and choose `C:\Users\<you>\Orlov` (the clone from B).
+3. Say: *"check server access"*. `CLAUDE.md` tells it to run `ssh orlov "..."`; it should show the container list.
+
+✅ Done when the session header shows the folder path (no cloud icon) and Claude reports the containers from the server without you pasting anything.
 
 ## E. How to work from now on
 
