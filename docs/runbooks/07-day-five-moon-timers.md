@@ -40,6 +40,8 @@ Decisions baked in (research in `docs/research/03-moon-extraction-timers.md`):
 
 ## B. Install the three apps (server — local session)
 
+*Done 2026-10-04 by the local session; details in `docs/handoff.md`.*
+
 ```bash
 cd ~/aa-docker
 ```
@@ -150,10 +152,10 @@ auth collectstatic --noinput
 ```
 
 ```bash
-auth eveuniverse_load_eve map
+auth eveuniverse_load_data map
 ```
 
-(Loads all regions, constellations and solar systems so the timer board can pick "Piekura". Answer `y`. Queued in the background, ~30–45 min.)
+(Loads all regions, constellations and solar systems so the timer board can pick "Piekura". Answer `y`. Queued in the background; took under 10 min on 2026-10-04.)
 
 ```bash
 auth structures_load_eve
@@ -259,6 +261,6 @@ Say "run the backup script", then "commit the Day 5 config changes" — the depl
 - **Extraction shows in Moon Mining but no timer / no Discord post** → the `MoonminingExtractionStarted` notification is older than what ESI still returns (it keeps a few days). The timer endpoint is still right; aa-structures will post *Finished*/*Fracture* when they happen, and the next extraction you schedule will post normally. Add this first one by hand (section F, step 2) if you want the reminder.
 - **Discord post missing but admin → Structures → Notifications lists it as sent** → check the webhook URL; re-copy from Discord and paste again.
 - **Test notification fails** → the channel's webhook was deleted, or the URL was pasted with a trailing space.
-- **Tasks pile up in the queue** → normal during the map load; if still >0 an hour later, `docker compose logs --tail 50 allianceauth_worker` in the local session.
+- **Tasks pile up in the queue** → normal during the map load; if still >0 an hour later, `docker compose logs --tail 50 allianceauth_worker` in the local session. (The queue is split by priority in redis, so `llen celery` alone reads 0; trust the dashboard's *Task Queue* panel, or have the local session sum all `celery*` list keys.)
 
 **Next:** when the first chunk pops (Fri 16 Oct if scheduled as planned), check that `#moon-timers` got the reminder and the `@here`, and that Moon Mining → *Ledger* fills in once people mine. Then decide whether `aa-opcalendar` (pinned "upcoming events" embed) is worth adding.

@@ -4,6 +4,38 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-04 (14:15 UTC) — local session (PC) → cloud session
+
+**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — section B complete. Sections C–E are next (browser, owner + cloud session).
+
+### Done (local, on the server)
+- Backup before changes: `~/backups/aa-db-2026-10-04-1327.sql.gz` ("backup ok", exit 0). Copies of the pre-change config: `~/backups/requirements.txt.pre-day5`, `~/backups/local.py.pre-day5`.
+- B1: `conf/requirements.txt` now has the four package lines (memberaudit 5.2.0, structures 4.0.4, moonmining 3.1.0, structuretimers 3.2.0).
+- B2: Day 5 block appended to `conf/local.py` straight from `deploy/conf/local.py.append` (128 → 174 lines, syntax ok), so server and repo are identical for that block.
+- B3: build exit 0, `up -d` recreated gunicorn, beat and the three workers, nginx restarted. Site answers (302 to login, login page 200).
+- B4: `check` ok; `migrate` applied 24 migrations (moonmining 7, structures 9, structuretimers 8), all OK; `collectstatic` copied 119 files; all four data loads run.
+- Verified at 14:10 UTC: task queue **0** (all priorities); eveuniverse has 114 regions, 1184 constellations, 8490 solar systems, **Piekura present**; 460 moonmining ore types; Athanor type present; the new periodic tasks are firing (structures fetch/update, moonmining regular updates, structuretimers dispatch); no errors in the container logs or `allianceauth.log` since rollout. Structures owners 0, webhooks 0, timers 0 — as expected before C–E.
+
+### Differences from the runbook
+- `eveuniverse_load_eve` does not exist; the command is **`eveuniverse_load_data map`**. Runbook B4 corrected. The map load finished in under 10 minutes, not 30–45.
+- `structuretimers_load_eve` and `moonmining_load_eve` have no `--noinput`; `y` was piped on stdin. `structures_load_eve` and `eveuniverse_load_data` accept `--noinput`.
+- `redis-cli llen celery` always reads 0 here: Alliance Auth splits the queue into priority keys. The real number is the sum over all `celery*` list keys (or the dashboard's Task Queue panel). Runbook troubleshooting updated.
+- Extra safety step, not in the runbook: before `up -d`, `manage.py check` was run in a throwaway container from the new image (needs `--entrypoint python`, the image's entrypoint is gunicorn).
+
+### Findings (not acted on)
+- Django check warning **memberaudit.W001**: `CELERYBEAT_SCHEDULE["memberaudit_run_regular_updates"]` uses a crontab; Member Audit 5.2.0 wants a number of seconds (e.g. 3600). Dates from Day 3, harmless so far. Decide with the owner; fix needs an edit to `conf/local.py` + `deploy/conf/local.py.append` and a restart of beat.
+- Server `conf/requirements.txt` has no comment header (the repo copy has two comment lines); package lines match.
+- Local-session permissions: the app's Auto mode refuses state changes on the server ("Modify Shared Resources"). The owner switched this session to **Manual** mode and approves each command. Expect the same for future server work.
+
+### Owner does by hand (browser) — status not confirmed
+- A1: Add Character (Flapoor Hendrik) on the `tony` account + Member Audit registration.
+- A2–A3: `#moon-timers`, the two webhooks, URLs in Bitwarden.
+
+### Next — cloud session
+The task queue is empty, so E is no longer blocked by the data load. Walk the owner through C (webhooks and rules), D (permissions) and E (register the Athanor) in the browser. Ask first whether A1–A3 are done. When E is finished, hand back to the local session for G (backup + verify server matches `deploy/`).
+
+---
+
 ## 2026-10-04 — cloud session → local session
 
 **Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — section B (install the three apps).
