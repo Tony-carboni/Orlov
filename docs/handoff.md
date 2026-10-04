@@ -27,7 +27,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ### Open
 - **C (webhooks + rules):** the local session asked the owner to paste the two webhook URLs (`#moon-timers` "Moon Timers", `#directors` "Structure Alerts"); the owner accepted pasting them in chat (low stakes) but has not done so yet. Either the owner pastes them in the local session and it does C via Django as specified in the previous entry, or the owner does C in the browser per the runbook with the cloud session. Currently 0 structures webhooks, 0 structuretimers webhooks, 0 rules.
-- **E (owner, browser):** log out and in once on auth, then Structures → Add Owner and Moon Mining → Add Owner with Flapoor Hendrik. Can be done before C, but the "Extraction started" Discord post only goes out once the C1 webhook exists.
+- **E (owner, browser):** log out and in once on auth, then Structures → Add Owner and Moon Mining → Add Owner with Flapoor Hendrik. **Do C1 first:** aa-structures attaches the default webhooks to an owner when the owner is created, so an owner added before the webhooks exist gets none and would have to be linked by hand in the admin (Structures → Owners → webhooks).
 - **After E (local session):** step 6 of the previous entry (verify owners, Athanor, extraction, timer, notifications) and the rest of G (backup, verify server matches `deploy/`).
 
 ---
