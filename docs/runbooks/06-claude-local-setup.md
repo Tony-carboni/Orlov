@@ -92,3 +92,34 @@ sed -i '/orlov-claude/d' ~/.ssh/authorized_keys
 ```
 
 Your own key (`id_ed25519`) is unaffected.
+
+## G. Adding a second PC or laptop (10 min)
+
+The key and the repo live on the machine, not in your Claude account, so each device is set up once. The private key is in Bitwarden ("orlov-claude SSH private key"), so the first PC isn't needed.
+
+1. Sections **A** and **B** (Git, clone) on the new machine.
+2. Recreate the key file. Make the folder, then open an empty file in Notepad:
+
+```powershell
+New-Item -ItemType Directory -Force "$HOME\.ssh"
+```
+
+```powershell
+notepad "$HOME\.ssh\orlov-claude"
+```
+
+Yes to "create the file", paste the key from Bitwarden (BEGIN line to END line, one Enter after END), save. **Notepad appends `.txt`** — fix it:
+
+```powershell
+Rename-Item "$HOME\.ssh\orlov-claude.txt" "orlov-claude"
+```
+
+3. Section **C** (ssh config), then the test from C. First time it asks about the host fingerprint: type `yes`. If it says "UNPROTECTED PRIVATE KEY FILE":
+
+```powershell
+icacls "$HOME\.ssh\orlov-claude" /inheritance:r /grant:r "${env:USERNAME}:R"
+```
+
+4. Section **D** in the desktop app on that machine.
+
+✅ Done when `ssh orlov "hostname"` prints `ubuntu-s-2vcpu-4gb-lon1`. Done 2026-10-04 for the laptop.
