@@ -19,14 +19,14 @@ Decisions baked in (research in `docs/research/03-moon-extraction-timers.md`):
 | Server | `ssh orlov` → `~/aa-docker` (local session runs this) |
 | Admin | https://auth.orlovfamily.space/admin/ |
 | Packages added | `aa-structures==4.0.4`, `aa-moonmining==3.1.0`, `aa-structuretimers==3.2.0` |
-| Token character | your holding-corp CEO (the one that started the extraction) |
+| Token character | Flapoor Hendrik, CEO of "Kazen die stinken zijn lekkerder" [KHAAS] (started the extraction) |
 | Channels | `#moon-timers` (new, ALLIANCE category), `#directors` (exists) |
 
 ---
 
 ## A. Preparation (browser + Discord, 10 min)
 
-**A1. Register the holding-corp character on auth.** Log in to https://auth.orlovfamily.space with your main, then dashboard → **Add Character** → log in with the holding-corp character in the EVE SSO window → accept all scopes. It appears under your main as an alt. Your state stays `Family Member` (states follow the main).
+**A1. Register the holding-corp character on auth.** Done on the server side 2026-10-04 (Flapoor Hendrik was detached from the test user; see `docs/handoff.md`). What remains is yours: log in to https://auth.orlovfamily.space with your **own `tony` account** (SSO with Catherine Frey or any character already on it) → dashboard → **Add Character** → log in with **Flapoor Hendrik** in the EVE SSO window → accept all scopes. He appears as an alt with corp "Kazen die stinken zijn lekkerder", no alliance; your state stays `Family Member` (states follow the main). ⚠️ Don't log in with Flapoor Hendrik while logged out of auth — that creates a separate user. Then **Member Audit → Add character** → Flapoor Hendrik again (his old token only had public scopes).
 
 **A2. Create `#moon-timers`** in Discord: right-click the `ALLIANCE` category → **Create Channel** → text, name `moon-timers`. Channel → **Edit Channel → Permissions**: `Family Member` View ✅ Send ❌; `Family Friend` ❌; `@everyone` ❌ (friends don't mine our moons). Leave the category default otherwise.
 
@@ -129,7 +129,7 @@ docker compose --env-file=.env up -d
 docker compose restart nginx
 ```
 
-**B4. Migrate, static files, data loads:**
+**B4. Migrate, static files, data loads.** (Local session: `auth` is a shell alias that only exists in an interactive container shell; run `python /home/allianceauth/myauth/manage.py <command>` through `docker compose exec -T allianceauth_gunicorn` instead, with `--noinput` where the command accepts it.)
 
 ```bash
 docker compose exec allianceauth_gunicorn bash

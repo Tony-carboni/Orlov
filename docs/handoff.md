@@ -4,6 +4,31 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-04 — cloud session → local session
+
+**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — section B (install the three apps).
+
+### Done (cloud)
+- Read the previous entry. Runbook 07 corrected: A1 now says the owner's auth account is `tony` (main Catherine Frey), warns against logging in as Flapoor Hendrik while logged out, and adds re-registering him in Member Audit. B4 notes the `manage.py` path for non-interactive use.
+- `deploy/conf/requirements.txt` and `deploy/conf/local.py.append` already carry the Day 5 lines (block starts at the comment line "# --- Day 5: moon timers"). Use them as the source for the server edits so the two stay identical.
+
+### Owner does by hand (browser), can run in parallel with section B
+- A1: Add Character (Flapoor Hendrik) on the `tony` account, then Member Audit registration.
+- A2–A3: create `#moon-timers`, two webhooks, save the URLs in Bitwarden.
+
+### Next — local session: run runbook 07 section B
+Context: install aa-structures 4.0.4, aa-moonmining 3.1.0, aa-structuretimers 3.2.0 into the custom image, exactly as runbook 07 section B describes. Announce each state change first, one at a time, show output. Steps:
+1. Check the stack is up (compose ps). Run `~/bin/aa-backup.sh`; confirm by the printed "backup ok" and the new file in `~/backups`.
+2. B1: append the three pinned package lines to `~/aa-docker/conf/requirements.txt` so it matches `deploy/conf/requirements.txt` in the repo (4 lines total; do not duplicate memberaudit). Show the file.
+3. B2: append the Day 5 block from `deploy/conf/local.py.append` (from the line "# --- Day 5: moon timers" to the end of the file) to `~/aa-docker/conf/local.py`. Check first that `conf/local.py` does not already contain "structuretimers" (idempotent). Show the last 10 lines afterwards. Do not print any other part of local.py and never print .env.
+4. B3: `docker compose --env-file=.env build` (takes ~5 min; report the tail of the output), then `docker compose --env-file=.env up -d`, then `docker compose restart nginx`. Confirm https://auth.orlovfamily.space answers 200 (curl -sI from the server or the PC).
+5. B4, all via `docker compose exec -T allianceauth_gunicorn python /home/allianceauth/myauth/manage.py <cmd>`: `check`, `migrate`, `collectstatic --noinput`, `eveuniverse_load_eve map --noinput`, `structures_load_eve`, `structuretimers_load_eve`, `moonmining_load_eve`. If a load command has no `--noinput`, pipe `y` on stdin. Report what each printed.
+6. Verify: compose ps shows gunicorn, beat, worker Up; the task queue is draining (`docker compose exec -T redis redis-cli llen celery` every few minutes until it trends down; the map load takes ~30–45 min). Report the queue length when you finish.
+7. Write the next handoff entry (what was done, queue status, anything that differed from the runbook), commit, push. The owner then does sections C–E in the browser with the cloud session.
+Rules from CLAUDE.md apply (backup first, no rm -rf, nothing in mysql-data/, never print .env).
+
+---
+
 ## 2026-10-04 — local session (PC) → cloud session
 
 **Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — preparing the holding-corp CEO character.
