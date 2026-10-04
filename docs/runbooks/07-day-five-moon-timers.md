@@ -210,15 +210,17 @@ Leave the other filter clauses empty (apply to all moon timers, ours and public 
 
 ## D. Permissions (browser, 5 min)
 
-https://auth.orlovfamily.space/admin/groupmanagement/group/ → open each group → **Permissions** box (search by the text after the pipe):
+*Done 2026-10-04 by the local session (via Django, see `docs/handoff.md`).*
 
-| Group | Add permissions |
+`Family Member` is a **state**, not a group: https://auth.orlovfamily.space/admin/authentication/state/. The two director groups are at https://auth.orlovfamily.space/admin/groupmanagement/group/. Open each → **Permissions** box (search by the text after the pipe):
+
+| State / group | Add permissions |
 |---|---|
-| `Family Member` | `moonmining \| general \| Can access the moonmining app`, `moonmining \| general \| Can access extractions and view owned moons`, `structuretimers \| general \| Can access this app and see timers` |
-| `Alliance Director` | all of the above plus `moonmining \| general \| Can add refinery owner`, `moonmining \| general \| Can view moon ledgers`, `moonmining \| general \| Can access reports`, `structures \| general \| Can add new structure owner`, `structures \| general \| Can view all structures`, `structures \| general \| Can view structure fittings`, `structuretimers \| general \| Can create new timers and edit own timers`, `structuretimers \| general \| Can edit and delete any timer` |
-| `Corp Director` | `structures \| general \| Can view corporation structures`, `structuretimers \| general \| Can create new timers and edit own timers` |
+| `Family Member` (state) | `moonmining \| general \| Can access the moonmining app`, `moonmining \| general \| Can access extractions and view owned moons`, `structuretimers \| general \| Can access this app and see timers` |
+| `Alliance Director` (group) | all of the above plus `moonmining \| general \| Can add refinery owner`, `moonmining \| general \| Can view moon ledgers`, `moonmining \| general \| Can access reports`, `structures \| general \| Can access this app and view public pages`, `structures \| general \| Can add new structure owner`, `structures \| general \| Can view all structures`, `structures \| general \| Can view structure fit`, `structuretimers \| general \| Can create new timers and edit own timers`, `structuretimers \| general \| Can edit and delete any timer` |
+| `Corp Director` (group) | `structures \| general \| Can access this app and view public pages`, `structures \| general \| Can view corporation structures`, `structuretimers \| general \| Can create new timers and edit own timers` |
 
-**Save** each. Log out and in once so your own permissions refresh.
+The Structures "access this app" permission is required for the other Structures permissions to do anything. **Save** each. Log out and in once so your own permissions refresh.
 
 ## E. Register the Athanor (browser, 5 min — after the task queue is empty)
 

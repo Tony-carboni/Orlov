@@ -35,7 +35,7 @@ INSTALLED_APPS += [
 ]
 CELERYBEAT_SCHEDULE["memberaudit_run_regular_updates"] = {
     "task": "memberaudit.tasks.run_regular_updates",
-    "schedule": crontab(minute="0", hour="*/1"),
+    "schedule": 3600,  # seconds; memberaudit 5.x wants a number, not a crontab
 }
 
 # --- Discord: refresh nicknames periodically (corp changes don't trigger a nick update otherwise)
