@@ -4,6 +4,32 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-04 (14:40 UTC) — cloud session → local session
+
+**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — sections C and D moved to the local session (database rows, no browser needed). E stays with the owner (SSO login).
+
+### Status
+- Owner reports A1–A3 done (Flapoor Hendrik on the `tony` account, `#moon-timers` created, two webhook URLs saved in Bitwarden).
+- Section B done (previous entry). Task queue empty.
+
+### Next — local session: do runbook 07 sections C and D via Django, then hand E to the owner
+All through `docker compose exec -T allianceauth_gunicorn python /home/allianceauth/myauth/manage.py shell` with a script on stdin. Announce each write first, one at a time, show results. Never echo the webhook URLs back into chat, logs, or files; never commit them.
+1. Ask the owner to paste the two Discord webhook URLs into this chat: one for `#moon-timers` (name "Moon Timers"), one for `#directors` (name "Structure Alerts"). Treat them as secrets.
+2. C1, aa-structures: inspect `structures.models.Webhook` fields and the notification type choices (`structures.core.notification_types.NotificationType` or the field's choices). Create two webhooks: "Moon Timers" with every type whose value starts with `Moonmining` (ExtractionStarted, ExtractionFinished, AutomaticFracture, LaserFired, ExtractionCancelled); "Structure Alerts" with every type whose value starts with `Structure` (fuel alert, under attack, lost shields/armor, destroyed, low/high power, services offline, anchoring/unanchoring, reinforcement changed, refueled extra) — exclude Moonmining, sovereignty, orbital, tower, war and billing types. Both `is_active=True`, `is_default=True`, language `en`. Then send a test message through each (the model's test-message method, the one the admin action uses) and ask the owner to confirm both arrived in Discord.
+3. C2, aa-structuretimers: create `structuretimers.models.Webhook` "Moon Timers" (same `#moon-timers` URL, enabled). Create two `NotificationRule` rows, both enabled, webhook = that one, require timer types = the Moon Mining type only, all other filters empty: rule 1 trigger = scheduled time reached, 60 minutes before, ping type none; rule 2 trigger = scheduled time reached, 0 minutes (at the time), ping type `@here`. Inspect the model's choice constants first (trigger, scheduled_time, ping_type, timer type code for moon mining) and use those, don't guess numbers. No "new timer created" rule.
+4. D, permissions on the three groups, via `django.contrib.auth.models.Permission` looked up by `content_type__app_label` + `codename` (list the codenames of app labels `moonmining`, `structures`, `structuretimers` first and map by their descriptions):
+   - Family Member: moonmining basic access, moonmining extractions access, structuretimers basic access.
+   - Alliance Director: everything Family Member gets, plus moonmining add refinery owner, view moon ledgers, reports access; structures add structure owner, view all structures, view structure fittings; structuretimers create/edit own timers, manage (edit/delete any) timers.
+   - Corp Director: structures view corporation structures, structuretimers create/edit own timers.
+   Show the final permission list per group.
+5. Verify: 2 structures webhooks, 1 structuretimers webhook, 2 notification rules, permission counts per group. Then tell the owner: "log out and in once on auth, then do runbook 07 section E (Structures → Add Owner, Moon Mining → Add Owner, both with Flapoor Hendrik)".
+6. After the owner reports E done: check `structures` Owner rows (1, corp KHAAS), Structure rows (the Athanor, fuel expiry), `moonmining` Owner/Refinery/Extraction rows (chunk arrival time), `structuretimers` Timer rows (1 moon mining timer; if 0 after 15 min, say so — the "extraction started" notification may be too old, see runbook Troubleshooting), and the Notification rows for the Moonmining type and whether they were sent to the webhook. Report.
+7. Section G: run `~/bin/aa-backup.sh`; confirm server `conf/requirements.txt` and the Day 5 block of `conf/local.py` match `deploy/`. Also fix the Member Audit warning memberaudit.W001: in both server `conf/local.py` and repo `deploy/conf/local.py.append`, change the `memberaudit_run_regular_updates` schedule from the crontab to `3600` (seconds), then `docker compose restart allianceauth_beat` and confirm `check` has no warning. Commit the repo change.
+8. Write the next handoff entry (what was done, any model/field names that differed, E results), commit, push.
+Rules from CLAUDE.md apply.
+
+---
+
 ## 2026-10-04 (14:15 UTC) — local session (PC) → cloud session
 
 **Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — section B complete. Sections C–E are next (browser, owner + cloud session).
