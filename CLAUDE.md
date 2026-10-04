@@ -29,6 +29,7 @@ Use **descriptive, human-readable branch names**, never auto-generated ones like
 ## Server access
 Cloud sessions **cannot** reach the server (HTTPS-only egress, verified 2026-10-03 even with network access "Full") — don't try; say so and hand server work to a local session.
 In a **local session** (Claude Code desktop/CLI on the owner's Windows PC, set up per `docs/runbooks/06-claude-local-setup.md`), the server is reachable as `ssh orlov "<command>"` (alias in `~/.ssh/config`: tony@167.99.207.145 with the passphrase-less `orlov-claude` key). Verify at session start with `ssh orlov "docker compose -f ~/aa-docker/docker-compose.yml ps"`.
+**Division of labour (owner's rule, 2026-10-04):** for any runbook step the local session can execute (server commands, git, file edits), a cloud session does **not** hand the owner copy-paste commands. It writes one **prompt for the local session** instead: a single fenced block the owner pastes into the local session's chat, with context (what/why, runbook + section), the exact steps, verification, and the safety rules below. The owner only does what needs a human: browser clicks, Discord, EVE client, SSO logins.
 Rules: read-only commands freely; any state change (config edits, restarts, `up -d`, migrations, backups) is announced in chat first with the reason, run one at a time, result shown. Never `rm -rf`, never touch `mysql-data/`, `authorized_keys`, `ufw`, or run `do-release-upgrade`. Backup (`~/bin/aa-backup.sh`) before migrations or package changes. Never print `.env` contents.
 
 ## Secrets
