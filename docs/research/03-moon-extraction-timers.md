@@ -2,6 +2,8 @@
 
 *Research 2026-10-02. Question: show when each Athanor's moon chunk arrives ("moon pop"), ideally in Discord, acceptably in auth.*
 
+*Update 2026-10-04: the Athanor was anchored under a one-man **holding corp** (keeps OARMI/ORLOV war-immune), so tokens come from the holding-corp CEO, not OARMI. Public Athanors can't be read via ESI; they go on the board by hand via aa-structuretimers. Build steps: `docs/runbooks/07-day-five-moon-timers.md`.*
+
 ## 1. Where the information comes from (ESI)
 
 Two independent sources, both read with a corp-level token from a character **in the owning corp (OARMI)**:

@@ -43,3 +43,49 @@ CELERYBEAT_SCHEDULE["discord.update_all_nicknames"] = {
     "task": "discord.update_all_nicknames",
     "schedule": crontab(minute="30", hour="*/6"),
 }
+
+# --- Day 5: moon timers (aa-structures, aa-moonmining, aa-structuretimers) --
+INSTALLED_APPS += [
+    "structures",        # structures + EVE notifications -> Discord webhooks
+    "moonmining",        # extraction board, ore values, mining ledger
+    "structuretimers",   # timer board II (own extractions auto-added, others by hand)
+]
+
+# structures: owned by the holding corp only; no POS / POCO / skyhooks to track
+STRUCTURES_FEATURE_STARBASES = False
+STRUCTURES_FEATURE_CUSTOMS_OFFICES = False
+STRUCTURES_FEATURE_SKYHOOKS = False
+STRUCTURES_ADD_TIMERS = True                  # push extraction timers into structuretimers
+STRUCTURES_MOON_EXTRACTION_TIMERS_ENABLED = True
+STRUCTURES_NOTIFICATION_SHOW_MOON_ORE = True  # ore list in the Discord "extraction started" post
+
+CELERYBEAT_SCHEDULE["structures_update_all_structures"] = {
+    "task": "structures.tasks.update_all_structures",
+    "schedule": 1800,
+}
+CELERYBEAT_SCHEDULE["structures_fetch_all_notifications"] = {
+    "task": "structures.tasks.fetch_all_notifications",
+    "schedule": 300,
+}
+
+CELERYBEAT_SCHEDULE["moonmining_run_regular_updates"] = {
+    "task": "moonmining.tasks.run_regular_updates",
+    "schedule": crontab(minute="*/10"),
+}
+CELERYBEAT_SCHEDULE["moonmining_run_report_updates"] = {
+    "task": "moonmining.tasks.run_report_updates",
+    "schedule": crontab(minute="30", hour="*/1"),
+}
+CELERYBEAT_SCHEDULE["moonmining_run_value_updates"] = {
+    "task": "moonmining.tasks.run_calculated_properties_update",
+    "schedule": crontab(minute="30", hour="3"),
+}
+
+CELERYBEAT_SCHEDULE["structuretimers_housekeeping"] = {
+    "task": "structuretimers.tasks.housekeeping",
+    "schedule": 10800,
+}
+CELERYBEAT_SCHEDULE["structuretimers_dispatch_scheduled_notifications"] = {
+    "task": "structuretimers.tasks.dispatch_scheduled_notifications",
+    "schedule": 60,
+}
