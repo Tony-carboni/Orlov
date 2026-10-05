@@ -4,3 +4,4 @@ aa-memberaudit==5.2.0
 aa-structures==4.0.4
 aa-moonmining==3.1.0
 aa-structuretimers==3.2.0
+allianceauth-discordbot==5.0.1

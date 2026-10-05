@@ -89,3 +89,16 @@ CELERYBEAT_SCHEDULE["structuretimers_dispatch_scheduled_notifications"] = {
     "task": "structuretimers.tasks.dispatch_scheduled_notifications",
     "schedule": 60,
 }
+
+# --- Day 6: Discord bot with the /moons command (allianceauth-discordbot) ---
+INSTALLED_APPS += [
+    "aadiscordbot",   # bot framework; runs in its own container (allianceauth_discordbot)
+    "orlovbot",       # our own commands, bind-mounted from aa-docker/orlovbot
+]
+
+# Only the bundled commands we use (/about, /time). The default list loads 17 modules
+# (sov, price check, easter eggs, ...). Our own /moons is added by orlovbot/auth_hooks.py.
+DISCORD_BOT_COGS = [
+    "aadiscordbot.cogs.about",
+    "aadiscordbot.cogs.time",
+]

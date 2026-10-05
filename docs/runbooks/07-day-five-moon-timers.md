@@ -205,7 +205,7 @@ docker compose ps | grep -E "gunicorn|beat|worker"
 | Trigger | Scheduled time reached | Scheduled time reached |
 | Scheduled time | 60 minutes before | 0 minutes (at the time) |
 | Webhook | `Moon Timers` | `Moon Timers` |
-| Ping type | none | `@here` |
+| Ping type | `@here` (was none until 2026-10-05; owner wants a ping 1 hour before) | `@here` |
 | Require timer types | `Moon Mining` | `Moon Mining` |
 | Is enabled | ✅ | ✅ |
 
@@ -227,7 +227,7 @@ The Structures "access this app" permission is required for the other Structures
 
 ## E. Register the Athanor (browser, 5 min — after the task queue is empty)
 
-*E1 and E2 done 2026-10-05 with Vieze Jonge Pass: Structures lists both GWON structures, Moon Mining shows the running extraction (chunk arrives Sat 10 Oct 17:01 EVE time). The timer for this cycle has to be added by hand, see E3.*
+*E1 and E2 done 2026-10-05 with Vieze Jonge Pass: Structures lists both GWON structures, Moon Mining shows the running extraction (chunk arrives Sat 10 Oct 17:01 EVE time). The timer for this first cycle was created by the local session (timer 1, Sat 10 Oct 17:01), so the `@here` reminders are scheduled for 16:01 and 17:01 EVE time.*
 
 **E1. Structures → Add Owner** (left menu). The SSO window opens: log in with the **holding-corp character** (Vieze Jonge Pass, corp GWON), accept the scopes. ✅ Within a minute the Structures page lists the Athanor with fuel days; `#directors` may get a "structures owner added" note.
 
@@ -261,7 +261,7 @@ Say "run the backup script", then "commit the Day 5 config changes" — the depl
 - [x] Two structuretimers rules: 60 min reminder, `@here` at pop (C2)
 - [x] Permissions set for the three groups (D)
 - [x] Athanor visible in Structures and Moon Mining (E1–E2)
-- [ ] Timer on the board (E3; by hand for this first cycle, no "Extraction started" post because the extraction began under KHAAS)
+- [x] Timer on the board (E3; created by hand for this first cycle, no "Extraction started" post because the extraction began under KHAAS)
 - [x] Backup taken (G) — `aa-db-2026-10-05-1028.sql.gz`
 
 ## Troubleshooting
@@ -273,4 +273,4 @@ Say "run the backup script", then "commit the Day 5 config changes" — the depl
 - **Test notification fails** → the channel's webhook was deleted, or the URL was pasted with a trailing space.
 - **Tasks pile up in the queue** → normal during the map load; if still >0 an hour later, `docker compose logs --tail 50 allianceauth_worker` in the local session. (The queue is split by priority in redis, so `llen celery` alone reads 0; trust the dashboard's *Task Queue* panel, or have the local session sum all `celery*` list keys.)
 
-**Next:** when the first chunk pops (Sat 10 Oct 17:01 EVE time), check that `#moon-timers` got the reminder and the `@here`, and that Moon Mining → *Ledger* fills in once people mine. Then decide whether `aa-opcalendar` (pinned "upcoming events" embed) is worth adding.
+**Next:** when the first chunk pops (Sat 10 Oct 17:01 EVE time), check that `#moon-timers` got the reminder and the `@here`, and that Moon Mining → *Ledger* fills in once people mine. A `/moons` slash command that lists the upcoming extractions on request is runbook 08. A 24-hour reminder was considered and dropped (owner's decision; the admin only offers up to 120 minutes).

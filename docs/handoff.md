@@ -6,30 +6,39 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ## 2026-10-05 (later) — local session (PC) → either session
 
-**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — C confirmed, E1–E2 done, G done. **Only open item: the timer for this first cycle (E3, by hand).**
+**Runbooks:** `07-day-five-moon-timers.md` is **complete**. `08-day-six-moons-command.md` is written and **not started on the server**; it waits for the owner's section A.
 
 ### Changed since the previous entry
-- **The Athanor moved corp.** The owner transferred it from KHAAS to **"Gewoon voor structures" [GWON]**, corp_id 98635713, 1 member, no alliance. The token character is **Vieze Jonge Pass** (sole member, so CEO; on the `tony` account), not Flapoor Hendrik. Runbook 07 corrected. Wherever older entries say Flapoor Hendrik or KHAAS for E or step 6, read Vieze Jonge Pass and GWON.
+- **The Athanor moved corp.** The owner transferred it from KHAAS to **"Gewoon voor structures" [GWON]**, corp_id 98635713, 1 member, no alliance. The token character is **Vieze Jonge Pass** (sole member, so CEO; on the `tony` account), not Flapoor Hendrik. Wherever older entries say Flapoor Hendrik or KHAAS for E or step 6, read Vieze Jonge Pass and GWON.
 - The Athanor is now named **"Orlov Mining Facility I"** (was De Kaasfabriek), at Piekura V - Moon 1.
 
-### Done
+### Owner's decisions (2026-10-05)
+- **No public timers.** Only the own moon in Piekura is tracked; runbook 07 section F is marked not used.
+- **Pings:** `@here` one hour before the chunk arrives (rule 1 changed from no ping) and `@here` at arrival (rule 2, unchanged). A 24-hour reminder was asked for and then withdrawn; it was not created.
+- **Wants a slash command** that lists the upcoming moon extractions on request → runbook 08.
+
+### Done on the server
 - Owner confirmed the three test messages arrived in Discord.
-- **E1–E2 (owner, browser)** with Vieze Jonge Pass. Verified read-only afterwards:
-  - structures Owner 1 (GWON), active, both default webhooks attached ("Moon Timers", "Structure Alerts").
-  - structures Structure 2: Athanor "Orlov Mining Facility I" in Piekura, fuel until 2026-11-19 12:00 UTC; Raitaru "Orlov Family Facilities" in Isikano, fuel until 2026-11-06 14:00 UTC.
-  - moonmining Owner 1 (last update ok), Refinery 1, Extraction 1: started 2026-10-04 07:08 UTC, **chunk arrives 2026-10-10 17:01 UTC**, auto fracture 20:01 UTC, status started. The extraction survived the transfer.
-  - structures Notification 120, all history from the character; only the 2 `StructuresReinforcementChanged` from 2026-10-04 were sent to Discord, nothing older was posted. 0 `Moonmining…` notifications, as expected (the extraction started under KHAAS).
-- **G:** backup `~/backups/aa-db-2026-10-05-1028.sql.gz` ("backup ok", 4.3M). Config check: server `conf/requirements.txt` has the same four package lines as `deploy/`; in `conf/local.py` the Day 5 block is byte-identical to `deploy/conf/local.py.append` and the Member Audit schedule is 3600; earlier blocks differ in comment lines only.
+- **E1–E2 (owner, browser)** with Vieze Jonge Pass. Verified: structures Owner 1 (GWON), active, both default webhooks attached; Structure 2 (Athanor "Orlov Mining Facility I" in Piekura, fuel until 2026-11-19 12:00 UTC; Raitaru "Orlov Family Facilities" in Isikano, fuel until 2026-11-06 14:00 UTC); moonmining Owner 1, Refinery 1, Extraction 1 (started 2026-10-04 07:08 UTC, **chunk arrives 2026-10-10 17:01 UTC**, auto fracture 20:01 UTC, status started — it survived the transfer).
+- structures Notification 120, all history; only the 2 `StructuresReinforcementChanged` from 2026-10-04 were sent to Discord. 0 `Moonmining…` notifications (the extraction started under KHAAS).
+- **structuretimers writes (announced, via Django):** rule 1 `ping_type` PN → PH; Timer pk 1 created for the current extraction (Athanor, Moon Mining, Piekura, 2026-10-10 17:01 UTC, objective friendly, user `tony`). Scheduled notifications now exist for 16:01 (rule 1) and 17:01 (rule 2) UTC on 2026-10-10.
+- **G:** backup `~/backups/aa-db-2026-10-05-1028.sql.gz` ("backup ok", 4.3M), taken before the two structuretimers writes above. Config check at that time: server `conf/requirements.txt` had the same four package lines as `deploy/`; in `conf/local.py` the Day 5 block was byte-identical to `deploy/conf/local.py.append`, Member Audit schedule 3600, earlier blocks differ in comment lines only.
+
+### Prepared in the repo for Day 6 (nothing of this is on the server yet)
+- `docs/runbooks/08-day-six-moons-command.md`.
+- `deploy/orlovbot/` — a small Django app with one command module, `cogs/moons.py` (`/moons`, restricted to the Discord role `Family Member`, reads `moonmining.Extraction`). Syntax-checked only; it has never run.
+- `deploy/conf/requirements.txt` now also lists `allianceauth-discordbot==5.0.1`, and `deploy/conf/local.py.append` ends with a Day 6 block. **Until runbook 08 section B is done the server intentionally lags `deploy/` by these two additions.**
+- Facts checked for the design: Alliance Auth 5.4.0, Django 5.2.17, Python 3.12 on the server; allianceauth-discordbot 5.0.1 requires `allianceauth<6,>=3` and py-cord 2; none of the installed apps registers a `discord_cogs_hook`; the bot loads modules from that hook in addition to `DISCORD_BOT_COGS`; server `conf/celery.py` already has an `app.conf.task_routes` dictionary with the `discord.*` route, so the add-on's route must be added inside it.
+- aa-structuretimers reminder offsets: the admin offers 0 to 120 minutes only, but the code subtracts any number of minutes, so a longer offset would work if set through Django. Not used.
+
+### Owner does by hand
+- Runbook 08 section A: switch on Server Members and Message Content intents for the bot in the Discord Developer Portal.
+
+### Next — local session, after the owner reports section A done
+- Runbook 08 section B (announce each change; backup first; `manage.py check` in a throwaway container before `up -d`), then C, then the owner does D.
 
 ### Open
-- **structuretimers Timer count is 0.** The owner thought section F was done, but no timer is saved. For this cycle it must be added by hand (Structure Timers → Add Timer): structure type Athanor, timer type Moon Mining, system Piekura, date 2026-10-10 17:01 EVE time. The two reminder rules then post in `#moon-timers` at 16:01 and 17:01.
 - Tavaga's Discord ticker (showed STI on 2026-10-03) was never checked on the server.
-
-### Owner's decision
-- **No public timers.** Only the own moon in Piekura is tracked; runbook 07 section F is marked not used. The one hand-added timer discussed above is for the own Athanor, for this cycle only.
-
-### Next
-- After the owner adds the timer (or asks the local session to create it): confirm Timer count 1 with timer type Moon Mining. On 2026-10-10 check that the reminder and the `@here` arrived. The next extraction started under GWON should create its timer and Discord post automatically.
 
 ### Notes for the local session
 - Piping a script to `ssh` from PowerShell 5.1 prepends a byte-order mark and Python rejects it. Pipe from Git Bash through Windows OpenSSH instead: `cat script.py | /c/Windows/System32/OpenSSH/ssh.exe orlov "..."`.
