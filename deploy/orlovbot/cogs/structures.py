@@ -1,10 +1,11 @@
 """The structure board: one message for directors with every structure we own.
 
+On top a banner: green "NOT AT WAR", or red "AT WAR" while a war is declared or running.
 Per structure: state, power mode, fuel left, offline services and the structure profile.
-Per owning corp: war eligibility and the wars known from EVE notifications.
-Data comes from aa-structures (which reads EVE every 30 minutes) plus two small reads of
-EVE's API of our own: war eligibility (public) and the profile number per structure
-(with the structures token aa-structures already holds). docs/runbooks/10-structure-board.md
+Per owning corp: the wars known from EVE notifications.
+Data comes from aa-structures (which reads EVE every 30 minutes) plus one small read of
+EVE's API of our own: the profile number per structure (with the structures token
+aa-structures already holds). docs/runbooks/10-structure-board.md
 
 Alerts: besides the board the bot posts a ping in the same channel when a new war appears,
 and once a day per structure while its fuel is low or a service is offline. What was
@@ -33,7 +34,10 @@ logger = logging.getLogger(__name__)
 BOARD_TITLE = "Structure status"
 ESI = "https://esi.evetech.net/latest"
 ESI_HEADERS = {"User-Agent": "orlov-auth structure board (allianceauth-discordbot cog)"}
-ESI_CACHE_SECONDS = 3600  # war eligibility and profiles change rarely
+ESI_CACHE_SECONDS = 3600  # profiles change rarely
+# Discord cannot colour text, so the colour is a circle in front of a heading-sized line
+BANNER_PEACE = "# \N{LARGE GREEN CIRCLE} NOT AT WAR"
+BANNER_WAR = "# \N{LARGE RED CIRCLE} AT WAR"
 FUEL_WARNING_DAYS = 7
 STATE_NORMAL = 11  # aa-structures: shield vulnerable, the resting state of an Upwell structure
 STRUCTURES_SCOPE = "esi-corporations.read_structures.v1"
@@ -78,17 +82,6 @@ def _filetime(value) -> dt.datetime:
     return dt.datetime(1601, 1, 1, tzinfo=dt.timezone.utc) + dt.timedelta(
         microseconds=int(value) // 10
     )
-
-
-def _war_eligible(corporation_id: int):
-    def fetch():
-        response = requests.get(
-            f"{ESI}/corporations/{corporation_id}/", headers=ESI_HEADERS, timeout=20
-        )
-        response.raise_for_status()
-        return response.json().get("war_eligible")
-
-    return _cached(("war eligibility", corporation_id), fetch)
 
 
 def _profiles(owner) -> dict:
@@ -260,7 +253,6 @@ def collect() -> list:
                 "corp_id": corporation.corporation_id,
                 "name": corporation.corporation_name,
                 "ticker": corporation.corporation_ticker,
-                "war_eligible": _war_eligible(corporation.corporation_id),
                 "wars": _wars(owner, now),
                 "last_update": owner.structures_last_update_at,
                 "structures": structures,
@@ -293,33 +285,25 @@ def _fuel_text(fuel, now) -> str:
 def build_embed(owners: list) -> Embed:
     now = timezone.now()
     level = 0  # 0 fine, 1 needs attention, 2 urgent
-    lines = []
+    at_war = any(owner["wars"] for owner in owners)
+    lines = [BANNER_WAR if at_war else BANNER_PEACE, ""]
     fields = []
     for owner in owners:
         lines.append(f"**{owner['name']} [{owner['ticker']}]**")
-        if owner["war_eligible"] is None:
-            lines.append("War eligible: unknown (EVE did not answer)")
-        elif owner["war_eligible"]:
-            lines.append("War eligible: **yes** (wars can be declared on this corp)")
-        else:
-            lines.append("War eligible: no")
-        if owner["wars"]:
-            for war in owner["wars"]:
-                level = 2
-                if war["we_declared"]:
-                    text = f"War: we declared war on **{war['other']}**"
-                else:
-                    text = f"War: **{war['other']}** declared war on us"
-                text += f" on {war['declared']:%d %b %Y}."
-                if war["fight_from"] > now:
-                    text += f" Fighting starts {_stamp(war['fight_from'])}."
-                else:
-                    text += f" Fighting allowed since {_stamp(war['fight_from'], 'f')}."
-                if war["ends"]:
-                    text += f" War ends {_stamp(war['ends'])}."
-                lines.append(f"\N{WARNING SIGN} {text}")
-        else:
-            lines.append("Wars: none declared or running")
+        for war in owner["wars"]:
+            level = 2
+            if war["we_declared"]:
+                text = f"War: we declared war on **{war['other']}**"
+            else:
+                text = f"War: **{war['other']}** declared war on us"
+            text += f" on {war['declared']:%d %b %Y}."
+            if war["fight_from"] > now:
+                text += f" Fighting starts {_stamp(war['fight_from'])}."
+            else:
+                text += f" Fighting allowed since {_stamp(war['fight_from'], 'f')}."
+            if war["ends"]:
+                text += f" War ends {_stamp(war['ends'])}."
+            lines.append(f"\N{WARNING SIGN} {text}")
         if owner["last_update"]:
             lines.append(f"Structure data read from EVE {_stamp(owner['last_update'])}")
         lines.append("")

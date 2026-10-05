@@ -7,9 +7,10 @@
 
 What the board shows:
 
+On top, in heading size: **🟢 NOT AT WAR**, which turns into **🔴 AT WAR** as soon as a war is declared on or by a registered corp (also during the 24 hours before fighting starts) and back when the war is over. Discord cannot colour text, so the colour is the circle in front of the line; the message's colour bar turns red as well. War eligibility is no longer shown (owner's decision 2026-10-05: the corp is always war eligible).
+
 | Per owning corp | Source | How fresh |
 |---|---|---|
-| War eligible: yes / no | EVE's public corporation info | re-read every hour |
 | Wars declared or running, who declared, when fighting starts, when the war ends | the war notifications EVE sends to the registered character, as collected by the Structures app | notifications are fetched every 5 minutes |
 | "Structure data read from EVE" with a live "x minutes ago" | the Structures app | it reads structures every 30 minutes |
 
@@ -83,7 +84,7 @@ Things to know:
 
 ## C. Check (Discord)
 
-`#structure-board` shows one message "Structure status" with the corp, its war line, and one entry per structure. Compare fuel dates and states with the Structure Browser in game.
+`#structure-board` shows one message "Structure status" with the war banner on top, the corp, and one entry per structure. Compare fuel dates and states with the Structure Browser in game.
 
 ## D. Give the profiles their names
 
@@ -120,4 +121,4 @@ When you make a new profile or move a structure to another one, the board shows 
 - **Profile shows `#number`** → section D.
 - **An alert did not ping** → the message must start with a highlighted `@everyone`. If it shows as plain text, the `Orlov auth` role lost "Mention @everyone" on the channel (it has Administrator today, which includes it).
 - **The same alert every 10 minutes** → should be impossible (the bot records an alert before sending it); if it happens set `ORLOVBOT_STRUCTURE_ALERTS = False`, restart the bot, and have the local session read the bot's output.
-- **War eligible: unknown** → EVE's API did not answer; it is retried at the next check.
+- **The banner shows as a plain line starting with `#`** → that Discord app does not draw headings inside this kind of message; tell the local session, the banner can be made a normal bold line instead.

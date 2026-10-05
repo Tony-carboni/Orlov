@@ -4,6 +4,31 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-05 (15:15 UTC) — local session (laptop) → either session
+
+**Topics:** structure board war banner (see below), and new member corp **Go Browns [GB44]** prepared in the role system before any of its members authed. Design doc `docs/design/membership.md` updated.
+
+### Done on the server (via Django, Alliance Auth's own functions)
+- Corp looked up on public ESI: Go Browns, ticker GB44, corporation_id 98845722, 11 members, founded 2026-10-03, **no alliance**, CEO Masterxxx (character_id 2122385466).
+- `EveCorporationInfo` created (pk 9). Added to the `Family Member` state's member corporations, which are now OARMI, GWON, GB44 (alliance ORLOV unchanged). Needed because the corp is not in the alliance; without it its members would be Family Friend.
+- Auto-group `corp_GB44` created in advance with `AutogroupsConfig.create_corp_group()` (group pk 10, managed link to config pk 3, 0 members).
+- Discord role `corp_GB44` created in advance with the Discord service's `match_or_create_role_from_name()` (role id 1556685567536930900, no colour, no permissions, at the bottom of the role list).
+
+### What happens when a Go Browns member auths
+- Main in GB44 → state Family Member → Discord roles `Family Member` + `corp_GB44`, nickname `[GB44] Name`. Nothing else to do per member.
+
+### Structure board: war banner (owner's request, deployed 15:14 UTC)
+- War eligibility removed from the board (and the public ESI read for it). New first line in heading size: green circle + "NOT AT WAR", or red circle + "AT WAR" while any registered corp has a declared or running war. The war detail lines and the red colour bar are unchanged; the "Wars: none declared or running" line is gone.
+- `deploy/orlovbot/cogs/structures.py` → server `~/aa-docker/orlovbot/cogs/structures.py` (old copy: `~/backups/structures.py.pre-war-banner`). Dry run in a fresh process first (live data green, synthetic war red, no alerts planned), then only the bot restarted. Bot output: "Structure status: board updated in #structure-board".
+- Not yet confirmed by the owner: that Discord draws the banner as a big heading. If it shows as a plain line starting with `#`, change `BANNER_PEACE` / `BANNER_WAR` to a bold line.
+
+### Open (owner)
+- Look at `#structure-board` and confirm the banner looks right.
+- When the CEO (Masterxxx) has authed: add them to the `Corp Director` group, and have them add the Corp Stats token (`docs/guides/corp-ceo-onboarding.md`).
+- If Go Browns later joins alliance ORLOV in game, nothing changes. If it leaves, remove it from the Family Member state's corporations by hand; the state does not drop on its own for a listed corp.
+
+---
+
 ## 2026-10-05 (later) — local session (PC) → either session
 
 **Runbooks:** `07-day-five-moon-timers.md` is **complete**. `08-day-six-moons-command.md`: A, B and C done; **D (owner tries `/moons` in Discord) is open.** `09-moon-board.md`: A and B done, the bot reported "Moon board posted in #moon-board" at 11:30 UTC; **C (owner confirms the message looks right) is open.** `10-structure-board.md`: A and B done, board posted 11:40 UTC; **C (owner confirms) and D (profile names) are open.**

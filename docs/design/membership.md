@@ -8,15 +8,17 @@
 |---|---|---|---|---|
 | The Orlov Family | alliance | `ORLOV` | *(zkillboard URL `/alliance/<id>/`)* | created in-game (before 2026-10-02) |
 | Orlov Arms International | corporation | `OARMI` | *(zkillboard URL `/corporation/<id>/`)* | executor corp |
+| Gewoon voor structures | corporation | `GWON` | 98635713 | holding corp for the structures, not in the alliance; listed on the state |
+| Go Browns | corporation | `GB44` | 98845722 | member corp **outside the alliance** (11 members, CEO Masterxxx); listed on the state 2026-10-05, before anyone authed |
 | — | allied (Family Friend) | — | — | not needed: Family Friend is a public state |
 
-The `Family Member` state is keyed on **alliance ORLOV** (member alliances) with corp OARMI also listed (harmless, kept as belt-and-braces). New corps joining the alliance are covered automatically.
+The `Family Member` state is keyed on **alliance ORLOV** (member alliances) plus a list of corporations: OARMI (harmless, kept as belt-and-braces), GWON and GB44. New corps joining the alliance are covered automatically; a corp that stays outside the alliance must be added to the state's corporation list (admin → Authentication → States → Family Member → Member corporations) and removed there when it leaves.
 
 ## 2. States (mutually exclusive; highest priority wins; AA syncs the state name as a Discord role)
 
 | State | Priority | Qualifies if main character is in… | Discord role | Discord access |
 |---|---|---|---|---|
-| `Family Member` | 100 | alliance ORLOV (+ corp OARMI) | `Family Member` | yes |
+| `Family Member` | 100 | alliance ORLOV, or corp OARMI, GWON or GB44 | `Family Member` | yes |
 | `Family Friend` | 50 | **any other character** (state is *Public*) — anyone who authenticates but isn't an alliance main | `Family Friend` | yes — role tag + `[TICKER] Name` nickname only; no extra channels |
 | `Guest` | — | only deactivated/unverified accounts now (built in) | none | no — removed from server |
 
@@ -47,4 +49,5 @@ Discord role hierarchy (top → bottom): bot role · Alliance Director · Corp D
 - 2026-10-02 — alliance exists in-game; `Family Member` state keyed on alliance ORLOV.
 - 2026-10-02 — first real member's nickname stayed `[SWA]` after moving corp: AA only sets nicknames on activation/main change. Added `discord.update_all_nicknames` every 6 h.
 - 2026-10-02 — `Family Friend` made a **public state**: any authenticated non-member gets it (nickname + role tag, public channels only). Discord: `#public-chat` open to unauthenticated visitors too; `#how-to-auth`/`#rules` read-only.
+- 2026-10-05 — Go Browns [GB44] (corp 98845722, not in the alliance) prepared ahead of its members authing: corporation registered in auth, added to the `Family Member` state's corporations, auto-group `corp_GB44` and Discord role `corp_GB44` created in advance.
 - 2026-10-02 — `DISCORD_SYNC_NAMES` temporarily `False` so the owner could activate (403 on owner nickname); re-enabled on Day 3 with the `[{corp_ticker}] {character_name}` formatter. discordbot deferred until there are members.
