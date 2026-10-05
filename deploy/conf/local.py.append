@@ -120,3 +120,8 @@ ORLOVBOT_STRUCTURE_PROFILES = {
 # once a day per structure while its fuel is under 7 days or a service is offline.
 ORLOVBOT_STRUCTURE_ALERTS = True
 ORLOVBOT_STRUCTURE_ALERT_MENTION = "@everyone"
+
+# --- Kill feed: a post in #zkillboard for every kill and loss (runbook 11) ----
+ORLOVBOT_KILLFEED_CHANNEL = "zkillboard"      # channel name; "" switches the feed off
+ORLOVBOT_KILLFEED_ALLIANCE_IDS = [99015337]   # The Orlov Family
+ORLOVBOT_KILLFEED_CORPORATION_IDS = []        # extra corps outside the alliance, by corporation ID

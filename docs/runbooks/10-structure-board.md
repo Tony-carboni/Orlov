@@ -22,6 +22,8 @@ On top, in heading size: **🟢 NOT AT WAR**, which turns into **🔴 AT WAR** a
 | Services: all online, or the list of offline ones | Structures app |
 | Profile: the structure profile | EVE's API (number only) + the name list in `conf/local.py`, re-read every hour |
 
+The last entry is **Last checked**: a live "x minutes ago" plus the time in your own time zone, refreshed by the bot at every 10-minute check (added 2026-10-05). If it is much older than 10 minutes the bot is not running. It says when the bot last looked; "Structure data read from EVE" above says how old the data from the game is.
+
 The message's colour bar is green when everything is fine, orange when something needs attention (fuel under 7 days, low power, a service offline) and red when it is urgent (a war, a structure that is not in its normal state, abandoned).
 
 ## Alerts (pings in `#structure-board`)

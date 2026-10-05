@@ -4,6 +4,7 @@ Used by the moon board (cogs/moons.py) and the structure board (cogs/structures.
 """
 
 import logging
+import time
 
 import discord
 
@@ -13,14 +14,21 @@ logger = logging.getLogger(__name__)
 
 CHECK_MINUTES = 10
 FOOTER = f"Kept up to date automatically, checked every {CHECK_MINUTES} minutes"
+# The last entry of every board: when the bot last looked. If it is much older than
+# CHECK_MINUTES the bot is not running.
+LAST_CHECKED = "Last checked"
 
 
 def signature(embed) -> tuple:
-    """What a board shows, for telling whether an edit is needed."""
+    """What a board shows, apart from the "last checked" time, for telling whether it changed."""
     colour = embed.colour.value if embed.colour else None
     return (
         embed.description or "",
-        tuple((field.name, field.value) for field in embed.fields),
+        tuple(
+            (field.name, field.value)
+            for field in embed.fields
+            if field.name != LAST_CHECKED
+        ),
         colour,
     )
 
@@ -75,6 +83,11 @@ class Board:
             return
         channel_name = channel.name
 
+        # Discord draws <t:...:R> as a live "5 minutes ago" and <t:...:t> as the reader's local time
+        stamp = int(time.time())
+        embed.add_field(
+            name=LAST_CHECKED, value=f"<t:{stamp}:R>, at <t:{stamp}:t>", inline=False
+        )
         embed.set_footer(text=FOOTER)
 
         if self._message is None:
@@ -87,12 +100,15 @@ class Board:
             self._message = await channel.send(embed=embed)
             self._signature = signature(embed)
             logger.info("%s: board posted in #%s", self.title, channel_name)
-        elif signature(embed) != self._signature:
-            try:
-                await self._message.edit(embed=embed)
-            except discord.NotFound:
-                # somebody deleted the board; post a new one next round
-                self._message = None
-                return
+            return
+
+        # edited at every check, so the "last checked" time moves even when nothing else changed
+        try:
+            await self._message.edit(embed=embed)
+        except discord.NotFound:
+            # somebody deleted the board; post a new one next round
+            self._message = None
+            return
+        if signature(embed) != self._signature:
             self._signature = signature(embed)
             logger.info("%s: board updated in #%s", self.title, channel_name)

@@ -5,7 +5,7 @@ Documentation and deployment config for **The Orlov Family** (EVE Online allianc
 
 - `docs/research/` — why Alliance Auth was chosen over SeAT/Neucore, and the phased plan
 - `docs/design/membership.md` — states, groups → Discord roles, policies (source of truth for AA config)
-- `docs/runbooks/` — step-by-step, beginner-level runbooks (`00` Day 0 prep, `01` deploy, `02` membership + Discord, `03` nicknames + Member Audit, `04` operations, `05` cloud SSH attempt — superseded, `06` Claude Code on the PC with server access, `07` Day 5 moon timers, `08` Day 6 `/moons` slash command, `09` moon board in Discord, `10` structure board in Discord)
+- `docs/runbooks/` — step-by-step, beginner-level runbooks (`00` Day 0 prep, `01` deploy, `02` membership + Discord, `03` nicknames + Member Audit, `04` operations, `05` cloud SSH attempt — superseded, `06` Claude Code on the PC with server access, `07` Day 5 moon timers, `08` Day 6 `/moons` slash command, `09` moon board in Discord, `10` structure board in Discord, `11` kill feed in `#zkillboard`)
 - `docs/guides/` — documents for other people: the member guide (for `#how-to-auth`) and the corp CEO onboarding checklist
 - `docs/handoff.md` — shared notebook between the cloud and local session (see "Session handoff")
 - `deploy/` — what differs from the upstream `aa-docker` stack on the server (sanitized; no secrets)
