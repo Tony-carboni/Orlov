@@ -261,6 +261,23 @@ def _stamp(moment, style="R") -> str:
     return f"<t:{int(moment.timestamp())}:{style}>"
 
 
+def _fuel_text(fuel, now) -> str:
+    """'32 days left', with the run-out date as hover text.
+
+    Discord shows hover text only on links, so the amount links to the Structures page.
+    """
+    left = fuel - now
+    if left >= dt.timedelta(days=2):
+        amount = f"{left.days} days"
+    else:
+        amount = f"{max(int(left.total_seconds() // 3600), 0)} hours"
+    when = f"Runs out {fuel:%a %d %b %Y %H:%M} EVE time"
+    site = getattr(settings, "SITE_URL", "").rstrip("/")
+    if not site:
+        return f"Fuel: **{amount}** left ({when})"
+    return f'Fuel: [**{amount}** left]({site}/structures/ "{when}")'
+
+
 def build_embed(owners: list) -> Embed:
     now = timezone.now()
     level = 0  # 0 fine, 1 needs attention, 2 urgent
@@ -322,7 +339,7 @@ def build_embed(owners: list) -> Embed:
                 level = max(level, 1)
                 rows.append("\N{WARNING SIGN} Fuel: **none**")
             else:
-                text = f"Fuel: runs out {_stamp(fuel)} (EVE time {fuel:%a %d %b %H:%M})"
+                text = _fuel_text(fuel, now)
                 if fuel - now < dt.timedelta(days=FUEL_WARNING_DAYS):
                     level = max(level, 1)
                     text = f"\N{WARNING SIGN} {text}"
