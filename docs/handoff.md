@@ -56,6 +56,12 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - Notes in brackets are no longer grey (unreadable on the dark theme); they use the normal text colour. Discord's ansi palette has no lighter grey.
 - Old copies: `~/backups/structures.py.pre-reinforce-hour`, `~/backups/local.py.pre-reinforce-hour`, `~/backups/structures.py.pre-pending-green`.
 
+### Jump freighter watch (runbook 12, owner's request, live 16:03 UTC)
+- New module `orlovbot/cogs/jfwatch.py`: every 5 minutes one request to `zkillboard.com/api/losses/groupID/902/` (newest 200 JF losses, about two months). Highsec and lowsec only (zKillboard's `loc:` label; setting `ORLOVBOT_JFWATCH_SPACE`). A post per new loss (not older than 3 days) in `#jf-gank-board`, and a summary board "Jump freighter losses" kept as the last message: 24 h, 7 days vs the 7 before, 30 days, per-day bars, by hull, systems, final blows. `board.py` gained `drop()` (delete the board so it is re-posted at the bottom). Seen ids: cache key `orlovbot:jfwatch:seen`; test post: `orlovbot:jfwatch:test`.
+- Server: files installed (old folder: `~/backups/orlovbot.pre-jfwatch`), `conf/local.py` + "Jump freighter watch" block (218 lines; copy from before: `~/backups/local.py.pre-jfwatch`). Dry run clean; bot output: module loaded, "first run, 10 recent losses count as already posted", "posted test (Rhea lost in Oinasiken (lowsec))", "board posted in #jf-gank-board", 0 errors.
+- Same deployment: the structure board's fuel line no longer shows the run-out date in brackets (owner: just the days in colour).
+- The owner moved `#jf-gank-board` and `#structure-board` to a category "leadership bots"; the bot finds channels by name, so nothing changes for it.
+
 ### Open (owner)
 - Look at `#zkillboard` (test post), `#moon-board` and `#structure-board` ("Last checked" entry) and confirm they look right.
 - Optional, in Discord: give the `Early Founders` role a colour or icon, and drag it where it should sit in the role list (it is at the bottom).

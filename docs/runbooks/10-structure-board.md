@@ -20,7 +20,7 @@ Each structure has its name as a small heading and its status lines in a panel w
 |---|---|
 | State: "shield vulnerable (normal)" in green; anything else (reinforced, anchoring, unanchoring) in red capitals with the timer's end in EVE time and "in 1d 4h" | Structures app |
 | Power: full power (green) / LOW POWER (orange) / ABANDONED (red) | Structures app |
-| Fuel: days left (hours when under two days), e.g. "31 days left", with the run-out date in EVE time in brackets behind it. **Blue** from 14 days up, **orange** under 14 days, **red** under 7 days or when there is none. The number is refreshed by the bot's 10-minute check | Structures app |
+| Fuel: days left (hours when under two days), e.g. "31 days left", **Blue** from 14 days up, **orange** under 14 days, **red** under 7 days or when there is none. The number is refreshed by the bot's 10-minute check | Structures app |
 | Services: all online (green), or the offline ones (orange) | Structures app |
 | Reinforce: the reinforcement hour in EVE time, e.g. "21:00 EVE" (the structure leaves reinforcement within two hours either side of it). **Green** when it is the agreed hour (`ORLOVBOT_STRUCTURE_REINFORCE_HOUR`, 21, from the contract with the mercenaries on retainer). Also green when the agreed hour is **set but not yet effective** (the game applies a change with a delay): it then reads "21:00 EVE (from 03 Nov, now 04:00)". **Red** for any other hour, and when a change away from the agreed hour is scheduled, e.g. "21:00 EVE (to 03:00 on 03 Nov)" | Structures app |
 | Profile: the structure profile | EVE's API (number only) + the name list in `conf/local.py`, re-read every hour |

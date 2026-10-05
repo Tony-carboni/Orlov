@@ -129,3 +129,7 @@ ORLOVBOT_KILLFEED_CORPORATION_IDS = []        # extra corps outside the alliance
 # Structure board: the reinforcement hour (EVE time) every structure must have, per the
 # contract with the mercenaries on retainer. Shown green when it matches, red when not.
 ORLOVBOT_STRUCTURE_REINFORCE_HOUR = 21
+
+# --- Jump freighter watch: JF losses EVE-wide in #jf-gank-board (runbook 12) ---
+ORLOVBOT_JFWATCH_CHANNEL = "jf-gank-board"       # channel name; "" switches the watch off
+ORLOVBOT_JFWATCH_SPACE = ["highsec", "lowsec"]   # also possible: "nullsec", "wormhole"

@@ -47,6 +47,17 @@ class Board:
         """Forget the cached message, so the next update looks it up again."""
         self._message = None
 
+    async def drop(self, channel) -> None:
+        """Delete the board message, so the next update posts a fresh one below everything else."""
+        if self._message is None:
+            self._message = await self._find_message(channel)
+        if self._message is not None:
+            try:
+                await self._message.delete()
+            except discord.HTTPException:
+                pass  # already gone
+            self._message = None
+
     async def _find_message(self, channel):
         async for message in channel.history(limit=50):
             if (

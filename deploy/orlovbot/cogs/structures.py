@@ -327,9 +327,7 @@ def structure_rows(structure: dict, now) -> list:
             colour = "orange"
         else:
             colour = "blue"
-        rows.append(
-            ("Fuel:", f"{_amount_left(fuel, now)} left", colour, f"until {fuel:%d %b %H:%M} EVE")
-        )
+        rows.append(("Fuel:", f"{_amount_left(fuel, now)} left", colour, ""))
 
     if structure["services_offline"]:
         offline = ", ".join(structure["services_offline"])
