@@ -102,3 +102,10 @@ DISCORD_BOT_COGS = [
     "aadiscordbot.cogs.about",
     "aadiscordbot.cogs.time",
 ]
+
+# --- Moon board: one always-current message in #moon-board (runbook 09) -----
+ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"   # channel name; "" switches the board off
+
+# Bot log lines go to the container output: docker compose logs allianceauth_discordbot
+LOGGING["loggers"]["aadiscordbot"] = {"handlers": ["console"], "level": "INFO"}
+LOGGING["loggers"]["orlovbot"] = {"handlers": ["console"], "level": "INFO"}
