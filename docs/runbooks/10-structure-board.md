@@ -22,11 +22,12 @@ Each structure has its name as a small heading and its status lines in a panel w
 | Power: full power (green) / LOW POWER (orange) / ABANDONED (red) | Structures app |
 | Fuel: days left (hours when under two days), e.g. "31 days left", with the run-out date in EVE time in grey behind it. **Blue** from 14 days up, **orange** under 14 days, **red** under 7 days or when there is none. The number is refreshed by the bot's 10-minute check | Structures app |
 | Services: all online (green), or the offline ones (orange) | Structures app |
+| Reinforce: the reinforcement hour in EVE time, e.g. "21:00 EVE" (the structure leaves reinforcement within two hours either side of it). **Green** when it is the agreed hour (`ORLOVBOT_STRUCTURE_REINFORCE_HOUR`, 21, from the contract with the mercenaries on retainer), **red** for any other hour and also when a change away from the agreed hour is scheduled. A scheduled change is shown in grey behind it, e.g. "(to 21:00 on 03 Nov)" | Structures app |
 | Profile: the structure profile | EVE's API (number only) + the name list in `conf/local.py`, re-read every hour |
 
 The last entry is **Last checked**: a live "x minutes ago" plus the time, refreshed by the bot at every 10-minute check (added 2026-10-05). If it is much older than 10 minutes the bot is not running. It is the only time on the board: the separate "Structure data read from EVE" line and the footer "Kept up to date automatically…" were removed the same day on the owner's request (the footer on the moon board too).
 
-The message's colour bar follows the worst line: green when everything is fine, orange when a line is orange, red when a line is red or there is a war.
+The message's colour bar follows the worst line: green when everything is fine, orange when a line is orange, red when a line is red or there is a war. One exception: a wrong reinforcement hour stays red on its own line but does not turn the bar red while the change to the agreed hour is already scheduled in game.
 
 ## Alerts (pings in `#structure-board`)
 
@@ -105,6 +106,7 @@ When you make a new profile or move a structure to another one, the board shows 
 |---|---|
 | A second corp's structures | Structures → Add Owner on auth with a director of that corp; they appear on the board by themselves |
 | Other fuel colours | `FUEL_NOTICE_DAYS` (orange, 14) and `FUEL_WARNING_DAYS` (red and the daily ping, 7) in `structures.py` |
+| Another agreed reinforcement hour, or no check | `ORLOVBOT_STRUCTURE_REINFORCE_HOUR` in `conf/local.py` and `deploy/` (remove the line to show the hour without colour), restart the bot |
 | Switch the board off | `ORLOVBOT_STRUCTURE_BOARD_CHANNEL = ""`, restart the bot, delete the message |
 | Other fuel threshold or repeat interval for the alerts | `FUEL_WARNING_DAYS` and `ALERT_REPEAT` in `structures.py` |
 | No alerts, board only | `ORLOVBOT_STRUCTURE_ALERTS = False`, restart the bot |

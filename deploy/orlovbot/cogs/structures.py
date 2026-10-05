@@ -44,7 +44,8 @@ BANNER_WAR = "# \N{LARGE RED CIRCLE} AT WAR"
 # links, no live timestamps). Green = as it should be, orange = needs attention, red = urgent.
 ANSI = {"green": "0;32", "orange": "0;33", "red": "1;31", "blue": "0;34", "grey": "0;30"}
 LEVELS = {"orange": 1, "red": 2}  # how a text colour counts for the message's colour bar
-LABEL_WIDTH = 10
+LABEL_WIDTH = 11
+REINFORCE_LABEL = "Reinforce:"
 WAR_OVER_KEEP = dt.timedelta(hours=24)  # how long the "war over" message stays in the channel
 FUEL_WARNING_DAYS = 7  # fuel shown in red, and the daily alert starts
 FUEL_NOTICE_DAYS = 14  # fuel shown in orange
@@ -245,6 +246,9 @@ def collect() -> list:
                     "is_abandoned": structure.is_abandoned
                     or structure.is_maybe_abandoned,
                     "fuel_expires_at": structure.fuel_expires_at,
+                    "reinforce_hour": structure.reinforce_hour,
+                    "next_reinforce_hour": structure.next_reinforce_hour,
+                    "next_reinforce_apply": structure.next_reinforce_apply,
                     "services_offline": [
                         service.name
                         for service in structure.services.all()
@@ -333,9 +337,39 @@ def structure_rows(structure: dict, now) -> list:
     else:
         rows.append(("Services:", "all online", "green", ""))
 
+    # The reinforcement hour (EVE time): the middle of the window in which the structure
+    # leaves reinforcement. Green when it is the agreed hour, red when it is anything else.
+    hour = structure.get("reinforce_hour")
+    if hour is not None:
+        required = _required_reinforce_hour()
+        note = ""
+        upcoming = structure.get("next_reinforce_hour")
+        changing = upcoming is not None and upcoming != hour
+        if changing:
+            note = f"to {upcoming:02d}:00"
+            if structure.get("next_reinforce_apply"):
+                note += f" on {structure['next_reinforce_apply']:%d %b}"
+        # a scheduled change away from the agreed hour is as wrong as a wrong hour
+        fine = hour == required and not (changing and upcoming != required)
+        colour = None if required is None else ("green" if fine else "red")
+        rows.append((REINFORCE_LABEL, f"{hour:02d}:00 EVE", colour, note))
+
     if structure["profile"]:
         rows.append(("Profile:", structure["profile"], None, ""))
     return rows
+
+
+def _required_reinforce_hour():
+    return getattr(settings, "ORLOVBOT_STRUCTURE_REINFORCE_HOUR", None)
+
+
+def _counts_for_bar(structure: dict, label: str) -> bool:
+    """A wrong reinforcement hour stays red on its line, but does not turn the whole
+    message red while the change to the agreed hour is already scheduled in game."""
+    return not (
+        label == REINFORCE_LABEL
+        and structure.get("next_reinforce_hour") == _required_reinforce_hour()
+    )
 
 
 def _block(rows: list) -> str:
@@ -378,8 +412,9 @@ def build_embed(owners: list) -> Embed:
 
         for structure in owner["structures"]:
             rows = structure_rows(structure, now)
-            for _, _, colour, _ in rows:
-                level = max(level, LEVELS.get(colour, 0))
+            for label, _, colour, _ in rows:
+                if _counts_for_bar(structure, label):
+                    level = max(level, LEVELS.get(colour, 0))
             # a small heading: one step larger than bold text
             lines.append(
                 f"### {structure['name']} ({structure['type']}, {structure['system']})"
