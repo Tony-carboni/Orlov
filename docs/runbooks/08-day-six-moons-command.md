@@ -34,6 +34,8 @@ Decisions baked in:
 
 ## B. Install the bot (server — local session)
 
+*Done 2026-10-05 by the local session: backup `aa-db-2026-10-05-1053.sql.gz`, image rebuilt, 17 `aadiscordbot` migrations applied, 11 containers up, site answers 200. Order used: build first, then `check`, the import test and `migrate` from a throwaway container, then `up -d`. Lesson: do steps 3 to 6 and the build without pausing, because once `local.py` names the new apps a container that restarts on the old image would fail.*
+
 The local session does this, announcing each change first. For reference, the steps are:
 
 1. Backup with `~/bin/aa-backup.sh`; keep copies of `conf/requirements.txt`, `conf/local.py`, `conf/celery.py` and `docker-compose.yml` in `~/backups` (suffix `.pre-day6`).
@@ -49,7 +51,9 @@ The local session does this, announcing each change first. For reference, the st
 
 ## C. Check the command is registered (server — local session)
 
-The bot log lists the loaded modules; `orlovbot.cogs.moons` must be among them. If the log shows an error for that module, the rest of the bot still runs: the local session fixes the file in `~/aa-docker/orlovbot/` (and in `deploy/orlovbot/`) and restarts only the bot container.
+*Checked 2026-10-05 before start-up: in a throwaway container the module `orlovbot.cogs.moons` imports cleanly and the hook returns it. The running bot prints only "Authbot Started" and no errors; its informational log lines are not written anywhere yet (no log handler for `aadiscordbot`), so the real proof is section D.*
+
+If the bot's output (`docker compose logs allianceauth_discordbot`) shows an error for that module, the rest of the bot still runs: the local session fixes the file in `~/aa-docker/orlovbot/` (and in `deploy/orlovbot/`) and restarts only the bot container.
 
 ## D. Try it (Discord, 2 min)
 
@@ -59,10 +63,10 @@ The bot log lists the loaded modules; `orlovbot.cogs.moons` must be among them. 
 
 ## Day 6 completion checklist
 
-- [ ] Server Members and Message Content intents switched on (A)
-- [ ] Bot container running, command module loaded (B, C)
+- [x] Server Members and Message Content intents switched on (A)
+- [x] Bot container running, command module loaded (B, C)
 - [ ] `/moons` answers in Discord (D)
-- [ ] Backup taken, server matches `deploy/` (B1, end of B)
+- [x] Backup taken, server matches `deploy/` (B1, end of B)
 
 ## Troubleshooting
 

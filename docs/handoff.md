@@ -6,7 +6,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ## 2026-10-05 (later) — local session (PC) → either session
 
-**Runbooks:** `07-day-five-moon-timers.md` is **complete**. `08-day-six-moons-command.md` is written and **not started on the server**; it waits for the owner's section A.
+**Runbooks:** `07-day-five-moon-timers.md` is **complete**. `08-day-six-moons-command.md`: A, B and C done; **D (owner tries `/moons` in Discord) is open.**
 
 ### Changed since the previous entry
 - **The Athanor moved corp.** The owner transferred it from KHAAS to **"Gewoon voor structures" [GWON]**, corp_id 98635713, 1 member, no alliance. The token character is **Vieze Jonge Pass** (sole member, so CEO; on the `tony` account), not Flapoor Hendrik. Wherever older entries say Flapoor Hendrik or KHAAS for E or step 6, read Vieze Jonge Pass and GWON.
@@ -24,18 +24,27 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - **structuretimers writes (announced, via Django):** rule 1 `ping_type` PN → PH; Timer pk 1 created for the current extraction (Athanor, Moon Mining, Piekura, 2026-10-10 17:01 UTC, objective friendly, user `tony`). Scheduled notifications now exist for 16:01 (rule 1) and 17:01 (rule 2) UTC on 2026-10-10.
 - **G:** backup `~/backups/aa-db-2026-10-05-1028.sql.gz` ("backup ok", 4.3M), taken before the two structuretimers writes above. Config check at that time: server `conf/requirements.txt` had the same four package lines as `deploy/`; in `conf/local.py` the Day 5 block was byte-identical to `deploy/conf/local.py.append`, Member Audit schedule 3600, earlier blocks differ in comment lines only.
 
-### Prepared in the repo for Day 6 (nothing of this is on the server yet)
+### Day 6 on the server (done 2026-10-05, about 10:53–11:05 UTC)
+- Owner did section A (intents).
+- Backup `~/backups/aa-db-2026-10-05-1053.sql.gz`; copies `requirements.txt`, `local.py`, `celery.py`, `docker-compose.yml` with suffix `.pre-day6` in `~/backups`.
+- `~/aa-docker/orlovbot/` created from `deploy/orlovbot/` (Unix line endings; `git archive` on the PC exports CRLF, so the files were converted on the server).
+- `conf/requirements.txt` + `allianceauth-discordbot==5.0.1`; `conf/local.py` + Day 6 block (byte-identical to the repo block, file now 187 lines); `conf/celery.py` + route `aadiscordbot.tasks.*` → queue `aadiscordbot` inside the existing dictionary, `discord.*` route kept; `docker-compose.yml` + volume `./orlovbot:/home/allianceauth/myauth/orlovbot` in the base block and service `allianceauth_discordbot`.
+- Build exit 0. In a throwaway container: `check` no issues, `orlovbot.cogs.moons` imports (aadiscordbot 5.0.1, py-cord 2.8.1), hook returns it. `migrate` applied 17 `aadiscordbot` migrations. `up -d` recreated gunicorn, beat and the three workers and started the bot; nginx restarted; `collectstatic` copied 119 files.
+- After: site 200, 11 containers up, workers healthy, no errors in the Alliance Auth containers. Bot output: "Authbot Started with command prefix !" and nothing else. Its INFO lines go nowhere (no logging handler for `aadiscordbot` configured), so login and command registration are not yet proven; section D proves them.
+
+### Prepared in the repo for Day 6
 - `docs/runbooks/08-day-six-moons-command.md`.
 - `deploy/orlovbot/` — a small Django app with one command module, `cogs/moons.py` (`/moons`, restricted to the Discord role `Family Member`, reads `moonmining.Extraction`). Syntax-checked only; it has never run.
-- `deploy/conf/requirements.txt` now also lists `allianceauth-discordbot==5.0.1`, and `deploy/conf/local.py.append` ends with a Day 6 block. **Until runbook 08 section B is done the server intentionally lags `deploy/` by these two additions.**
+- `deploy/conf/requirements.txt` now also lists `allianceauth-discordbot==5.0.1`, and `deploy/conf/local.py.append` ends with a Day 6 block. The server now has both.
 - Facts checked for the design: Alliance Auth 5.4.0, Django 5.2.17, Python 3.12 on the server; allianceauth-discordbot 5.0.1 requires `allianceauth<6,>=3` and py-cord 2; none of the installed apps registers a `discord_cogs_hook`; the bot loads modules from that hook in addition to `DISCORD_BOT_COGS`; server `conf/celery.py` already has an `app.conf.task_routes` dictionary with the `discord.*` route, so the add-on's route must be added inside it.
 - aa-structuretimers reminder offsets: the admin offers 0 to 120 minutes only, but the code subtracts any number of minutes, so a longer offset would work if set through Django. Not used.
 
 ### Owner does by hand
-- Runbook 08 section A: switch on Server Members and Message Content intents for the bot in the Discord Developer Portal.
+- Runbook 08 section D: type `/moons` in `#general`.
 
-### Next — local session, after the owner reports section A done
-- Runbook 08 section B (announce each change; backup first; `manage.py check` in a throwaway container before `up -d`), then C, then the owner does D.
+### Next — local session, after the owner reports on D
+- If `/moons` answers: tick D in runbook 08, done. If it does not show or errors: runbook 08 Troubleshooting; read `docker compose logs --tail 50 allianceauth_discordbot`.
+- Optional: add the add-on's logging handler (`log/discord_bot.log`) to `conf/local.py` and `deploy/` so the bot's INFO lines are kept.
 
 ### Open
 - Tavaga's Discord ticker (showed STI on 2026-10-03) was never checked on the server.
