@@ -1,14 +1,16 @@
 """The structure board: one message for directors with every structure we own.
 
 On top a banner: green "NOT AT WAR", or red "AT WAR" while a war is declared or running.
-Per structure: state, power mode, fuel left, offline services and the structure profile.
+Per structure: state, power mode, fuel left, offline services and the structure profile,
+in colour: green as it should be, orange needs attention, red urgent, fuel blue while fine.
 Per owning corp: the wars known from EVE notifications.
 Data comes from aa-structures (which reads EVE every 30 minutes) plus one small read of
 EVE's API of our own: the profile number per structure (with the structures token
 aa-structures already holds). docs/runbooks/10-structure-board.md
 
-Alerts: besides the board the bot posts a ping in the same channel when a new war appears,
-and once a day per structure while its fuel is low or a service is offline. What was
+Alerts: besides the board the bot posts a ping in the same channel when a new war appears
+and when a war is over, and once a day per structure while its fuel is low or a service is
+offline. What was
 already sent is remembered in the Django cache (redis), so a bot restart does not ping again.
 """
 
@@ -38,7 +40,14 @@ ESI_CACHE_SECONDS = 3600  # profiles change rarely
 # Discord cannot colour text, so the colour is a circle in front of a heading-sized line
 BANNER_PEACE = "# \N{LARGE GREEN CIRCLE} NOT AT WAR"
 BANNER_WAR = "# \N{LARGE RED CIRCLE} AT WAR"
-FUEL_WARNING_DAYS = 7
+# Coloured text exists in Discord only inside an "ansi" code block (fixed-width font, no
+# links, no live timestamps). Green = as it should be, orange = needs attention, red = urgent.
+ANSI = {"green": "0;32", "orange": "0;33", "red": "1;31", "blue": "0;34", "grey": "0;30"}
+LEVELS = {"orange": 1, "red": 2}  # how a text colour counts for the message's colour bar
+LABEL_WIDTH = 10
+WAR_OVER_KEEP = dt.timedelta(hours=24)  # how long the "war over" message stays in the channel
+FUEL_WARNING_DAYS = 7  # fuel shown in red, and the daily alert starts
+FUEL_NOTICE_DAYS = 14  # fuel shown in orange
 DATA_STALE_AFTER = dt.timedelta(minutes=90)  # aa-structures reads EVE every 30 minutes
 STATE_NORMAL = 11  # aa-structures: shield vulnerable, the resting state of an Upwell structure
 STRUCTURES_SCOPE = "esi-corporations.read_structures.v1"
@@ -266,21 +275,77 @@ def _stamp(moment, style="R") -> str:
     return f"<t:{int(moment.timestamp())}:{style}>"
 
 
-def _fuel_text(fuel, now) -> str:
-    """'32 days left', with the run-out date as hover text.
+def _paint(text: str, colour: str) -> str:
+    return f"\u001b[{ANSI[colour]}m{text}\u001b[0m"
 
-    Discord shows hover text only on links, so the amount links to the Structures page.
-    """
-    left = fuel - now
-    if left >= dt.timedelta(days=2):
-        amount = f"{left.days} days"
+
+def _until(moment, now) -> str:
+    """'in 2d 3h', worked out at each check because code blocks have no live countdown."""
+    seconds = int((moment - now).total_seconds())
+    if seconds <= 0:
+        return "passed"
+    days, rest = divmod(seconds, 86400)
+    hours, rest = divmod(rest, 3600)
+    if days:
+        return f"in {days}d {hours}h"
+    return f"in {hours}h {rest // 60}m"
+
+
+def structure_rows(structure: dict, now) -> list:
+    """The lines of one structure as (label, text, colour, note); colour None = plain."""
+    rows = []
+    if structure["state"] == STATE_NORMAL:
+        rows.append(("State:", "shield vulnerable (normal)", "green", ""))
     else:
-        amount = f"{max(int(left.total_seconds() // 3600), 0)} hours"
-    when = f"Runs out {fuel:%a %d %b %Y %H:%M} EVE time"
-    site = getattr(settings, "SITE_URL", "").rstrip("/")
-    if not site:
-        return f"Fuel: **{amount}** left ({when})"
-    return f'Fuel: [**{amount}** left]({site}/structures/ "{when}")'
+        note = ""
+        if structure["state_timer_end"]:
+            end = structure["state_timer_end"]
+            note = f"timer ends {end:%d %b %H:%M} EVE, {_until(end, now)}"
+        rows.append(("State:", structure["state_text"].upper(), "red", note))
+
+    if structure["is_abandoned"]:
+        rows.append(("Power:", "ABANDONED", "red", ""))
+    elif structure["is_low_power"]:
+        rows.append(("Power:", "LOW POWER", "orange", ""))
+    elif structure["is_full_power"]:
+        rows.append(("Power:", "full power", "green", ""))
+    else:
+        rows.append(("Power:", "unknown", "orange", ""))
+
+    fuel = structure["fuel_expires_at"]
+    if fuel is None:
+        rows.append(("Fuel:", "none", "red", ""))
+    else:
+        left = fuel - now
+        if left < dt.timedelta(days=FUEL_WARNING_DAYS):
+            colour = "red"
+        elif left < dt.timedelta(days=FUEL_NOTICE_DAYS):
+            colour = "orange"
+        else:
+            colour = "blue"
+        rows.append(
+            ("Fuel:", f"{_amount_left(fuel, now)} left", colour, f"until {fuel:%d %b %H:%M} EVE")
+        )
+
+    if structure["services_offline"]:
+        offline = ", ".join(structure["services_offline"])
+        rows.append(("Services:", f"offline: {offline}", "orange", ""))
+    else:
+        rows.append(("Services:", "all online", "green", ""))
+
+    if structure["profile"]:
+        rows.append(("Profile:", structure["profile"], None, ""))
+    return rows
+
+
+def _block(rows: list) -> str:
+    lines = []
+    for label, text, colour, note in rows:
+        line = f"{label:<{LABEL_WIDTH}}{_paint(text, colour) if colour else text}"
+        if note:
+            line += " " + _paint(f"({note})", "grey")
+        lines.append(line)
+    return "```ansi\n" + "\n".join(lines) + "\n```"
 
 
 def build_embed(owners: list) -> Embed:
@@ -288,7 +353,6 @@ def build_embed(owners: list) -> Embed:
     level = 0  # 0 fine, 1 needs attention, 2 urgent
     at_war = any(owner["wars"] for owner in owners)
     lines = [BANNER_WAR if at_war else BANNER_PEACE, ""]
-    fields = []
     for owner in owners:
         lines.append(f"**{owner['name']} [{owner['ticker']}]**")
         for war in owner["wars"]:
@@ -311,66 +375,23 @@ def build_embed(owners: list) -> Embed:
             level = max(level, 1)
             age = f"last read {_stamp(last_update)}" if last_update else "never read"
             lines.append(f"\N{WARNING SIGN} Structure data from EVE is old: {age}")
-        lines.append("")
 
         for structure in owner["structures"]:
-            rows = []
-            if structure["state"] == STATE_NORMAL:
-                rows.append("State: shield vulnerable (normal)")
-            else:
-                level = 2
-                state = f"\N{WARNING SIGN} State: **{structure['state_text'].upper()}**"
-                if structure["state_timer_end"]:
-                    state += f", timer ends {_stamp(structure['state_timer_end'])}"
-                rows.append(state)
-
-            if structure["is_abandoned"]:
-                level = 2
-                rows.append("\N{WARNING SIGN} Power: **ABANDONED**")
-            elif structure["is_low_power"]:
-                level = max(level, 1)
-                rows.append("\N{WARNING SIGN} Power: **LOW POWER**")
-            elif structure["is_full_power"]:
-                rows.append("Power: full power")
-            else:
-                rows.append("Power: unknown")
-
-            fuel = structure["fuel_expires_at"]
-            if fuel is None:
-                level = max(level, 1)
-                rows.append("\N{WARNING SIGN} Fuel: **none**")
-            else:
-                text = _fuel_text(fuel, now)
-                if fuel - now < dt.timedelta(days=FUEL_WARNING_DAYS):
-                    level = max(level, 1)
-                    text = f"\N{WARNING SIGN} {text}"
-                rows.append(text)
-
-            if structure["services_offline"]:
-                level = max(level, 1)
-                offline = ", ".join(structure["services_offline"])
-                rows.append(f"\N{WARNING SIGN} Services offline: {offline}")
-            else:
-                rows.append("Services: all online")
-
-            if structure["profile"]:
-                rows.append(f"Profile: {structure['profile']}")
-
-            fields.append(
-                (
-                    f"{structure['name']} ({structure['type']}, {structure['system']})",
-                    "\n".join(rows)[:1024],
-                )
+            rows = structure_rows(structure, now)
+            for _, _, colour, _ in rows:
+                level = max(level, LEVELS.get(colour, 0))
+            # a small heading: one step larger than bold text
+            lines.append(
+                f"### {structure['name']} ({structure['type']}, {structure['system']})"
             )
+            lines.append(_block(rows))
 
     colour = (Color.green(), Color.orange(), Color.red())[level]
     embed = Embed(title=BOARD_TITLE, colour=colour)
     if not owners:
         embed.description = "No structure owner is registered on auth."
         return embed
-    embed.description = "\n".join(lines).strip()[:4000]
-    for name, value in fields[:25]:  # Discord allows 25 entries per message
-        embed.add_field(name=name[:256], value=value, inline=False)
+    embed.description = "\n".join(lines).strip()[:4096]
     return embed
 
 
@@ -428,7 +449,12 @@ def plan_alerts(owners: list, state: dict, now) -> tuple:
             else:
                 text += f" Fighting is allowed since {_stamp(war['fight_from'], 'F')}."
             actions.append(("send", key, f"{mention} **War declared.** {text}", None))
-            new_state[key] = {"message_id": None}
+            # the names are kept for the "war over" message, when the war itself is gone
+            new_state[key] = {
+                "message_id": None,
+                "us": us,
+                "other": war["other"],
+            }
 
         for structure in owner["structures"]:
             key = f"structure:{structure['id']}"
@@ -460,9 +486,35 @@ def plan_alerts(owners: list, state: dict, now) -> tuple:
                 "message_id": None,
             }
 
-    # whatever is no longer a problem (war over, fuel topped up, test done): remove its alert
+    # A war that is gone: ping once that it is over. The message replaces the declaration
+    # and is removed after WAR_OVER_KEEP.
+    registered = {owner["corp_id"] for owner in owners}
     for key, entry in state.items():
-        if key not in new_state:
+        if key in new_state:
+            continue
+        if key.startswith("war:"):
+            if int(key.split(":")[1]) not in registered:
+                # the corp dropped off the board (token trouble), which is not peace
+                new_state[key] = entry
+                continue
+            if entry.get("us") and entry.get("other"):
+                text = f"The war between {entry['us']} and **{entry['other']}** has ended."
+            else:
+                text = "A war has ended."
+            over_key = "warover:" + key[len("war:"):]
+            actions.append(
+                ("send", over_key, f"{mention} **War over.** {text}", entry.get("message_id"))
+            )
+            new_state[over_key] = {
+                "message_id": None,
+                "until": (now + WAR_OVER_KEEP).isoformat(),
+            }
+        elif key.startswith("warover:") and now < dt.datetime.fromisoformat(entry["until"]):
+            new_state[key] = entry
+
+    # whatever is no longer a problem (fuel topped up, test done, old "war over"): remove its alert
+    for key, entry in state.items():
+        if key not in new_state and not key.startswith("war:"):
             actions.append(("delete", key, entry.get("message_id")))
     return actions, new_state
 
@@ -550,6 +602,10 @@ class Structures(commands.Cog):
                         new_state[key] = state[key]
                     else:
                         new_state.pop(key, None)
+                    war_key = "war:" + key[len("warover:"):]
+                    if key.startswith("warover:") and war_key in state:
+                        # put the war back, so its end is noticed and announced again
+                        new_state[war_key] = {**state[war_key], "message_id": None}
                     continue
                 new_state[key]["message_id"] = message.id
                 logger.info("Structure alert sent: %s", key)

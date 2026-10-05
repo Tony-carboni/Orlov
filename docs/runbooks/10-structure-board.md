@@ -14,17 +14,19 @@ On top, in heading size: **🟢 NOT AT WAR**, which turns into **🔴 AT WAR** a
 | Wars declared or running, who declared, when fighting starts, when the war ends | the war notifications EVE sends to the registered character, as collected by the Structures app | notifications are fetched every 5 minutes |
 | A warning "Structure data from EVE is old: last read x ago", **only** when the data is more than 90 minutes old (normally nothing is shown) | the Structures app | it reads structures every 30 minutes |
 
+Each structure has its name as a small heading and its status lines in a panel with coloured text: **green** = as it should be, **orange** = needs attention, **red** = urgent, fuel **blue** while there is plenty. Discord only colours text inside such a panel (fixed-width font, no links, no live countdowns), so times there are written out at each 10-minute check.
+
 | Per structure | Source |
 |---|---|
-| State: "shield vulnerable (normal)", or in capitals with the timer when reinforced, anchoring, unanchoring | Structures app |
-| Power: full power / LOW POWER / ABANDONED | Structures app |
-| Fuel: days left (hours when under two days), e.g. "32 days left"; hovering it shows the exact run-out date in EVE time, clicking it opens Structures on auth; flagged when less than 7 days are left. The number is refreshed by the bot's 10-minute check, so it changes once a day | Structures app |
-| Services: all online, or the list of offline ones | Structures app |
+| State: "shield vulnerable (normal)" in green; anything else (reinforced, anchoring, unanchoring) in red capitals with the timer's end in EVE time and "in 1d 4h" | Structures app |
+| Power: full power (green) / LOW POWER (orange) / ABANDONED (red) | Structures app |
+| Fuel: days left (hours when under two days), e.g. "31 days left", with the run-out date in EVE time in grey behind it. **Blue** from 14 days up, **orange** under 14 days, **red** under 7 days or when there is none. The number is refreshed by the bot's 10-minute check | Structures app |
+| Services: all online (green), or the offline ones (orange) | Structures app |
 | Profile: the structure profile | EVE's API (number only) + the name list in `conf/local.py`, re-read every hour |
 
 The last entry is **Last checked**: a live "x minutes ago" plus the time, refreshed by the bot at every 10-minute check (added 2026-10-05). If it is much older than 10 minutes the bot is not running. It is the only time on the board: the separate "Structure data read from EVE" line and the footer "Kept up to date automatically…" were removed the same day on the owner's request (the footer on the moon board too).
 
-The message's colour bar is green when everything is fine, orange when something needs attention (fuel under 7 days, low power, a service offline) and red when it is urgent (a war, a structure that is not in its normal state, abandoned).
+The message's colour bar follows the worst line: green when everything is fine, orange when a line is orange, red when a line is red or there is a war.
 
 ## Alerts (pings in `#structure-board`)
 
@@ -33,7 +35,8 @@ Added 2026-10-05 on the owner's request. Besides the board, the bot posts a shor
 | Alert | When | Repeats |
 |---|---|---|
 | **War declared** | a war appears that the board did not know yet (ours or against us), with who and when fighting starts | no, once per war |
-| **Structure needs attention: fuel** | fuel under 7 days, or no fuel and the structure in low power | once every 24 hours while it lasts |
+| **War over** | a war the board knew is no longer declared or running (added 2026-10-05). It replaces the "War declared" message and is removed after 24 hours | no, once per war |
+| **Structure needs attention: fuel** | fuel under 7 days (the red threshold; orange at 14 days shows on the board only), or no fuel and the structure in low power | once every 24 hours while it lasts |
 | **Structure needs attention: services offline** | one or more services of the structure are offline | once every 24 hours while it lasts |
 
 - Fuel and services of one structure go into **one** message. If a second problem shows up later the same day (fuel was low, now a service drops too), the bot pings again at once with both, and the 24 hours start over.
@@ -101,7 +104,7 @@ When you make a new profile or move a structure to another one, the board shows 
 | Wish | How |
 |---|---|
 | A second corp's structures | Structures → Add Owner on auth with a director of that corp; they appear on the board by themselves |
-| Another fuel warning threshold | `FUEL_WARNING_DAYS` in `structures.py` |
+| Other fuel colours | `FUEL_NOTICE_DAYS` (orange, 14) and `FUEL_WARNING_DAYS` (red and the daily ping, 7) in `structures.py` |
 | Switch the board off | `ORLOVBOT_STRUCTURE_BOARD_CHANNEL = ""`, restart the bot, delete the message |
 | Other fuel threshold or repeat interval for the alerts | `FUEL_WARNING_DAYS` and `ALERT_REPEAT` in `structures.py` |
 | No alerts, board only | `ORLOVBOT_STRUCTURE_ALERTS = False`, restart the bot |

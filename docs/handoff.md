@@ -44,6 +44,12 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - Moon board and `/moons`: the "Your time" line was removed at 15:43 and **restored at 15:46 UTC as "In your time zone"** (`moons.py`). The owner had read it as the current time; it is the chunk's arrival time in the reader's device time zone (17:01 EVE time = 7:01 PM at UTC+2), and the owner wants it kept.
 - Old copies in `~/backups`: `structures.py.pre-single-timestamp`, `board.py.pre-no-footer`, `moons.py.pre-no-local-time`.
 
+### Structure board: colours, bigger titles, "War over" ping (owner's requests, live 15:51 UTC)
+- Layout: each structure is now a `###` heading plus an `ansi` code block in the embed description (no embed fields any more). Colours: green normal state / full power / all services online; orange low power, services offline, fuel under 14 days; red abnormal state, abandoned, fuel under 7 days or none; fuel blue otherwise. The colour bar follows the worst line. The fuel hover link is gone (no links in code blocks); the run-out date is shown in grey.
+- Alerts: new `@everyone` "War over" ping when a known war is no longer declared or running. It replaces the "War declared" message and is removed after 24 h (`WAR_OVER_KEEP`). No false ping when the corp merely drops off the board. The daily fuel ping still starts at 7 days.
+- Dry run before the restart: live and synthetic layouts built, 12 alert scenarios pass. Bot output after restart: "Structure status: board updated in #structure-board", 0 errors. Old code: `~/backups/structures.py.pre-colours`.
+- Not yet confirmed by the owner: how the coloured panels look, on desktop and on a phone (older phone apps may show the colours differently). Fallback if disliked: restore the backup file and restart the bot.
+
 ### Open (owner)
 - Look at `#zkillboard` (test post), `#moon-board` and `#structure-board` ("Last checked" entry) and confirm they look right.
 - Optional, in Discord: give the `Early Founders` role a colour or icon, and drag it where it should sit in the role list (it is at the bottom).
