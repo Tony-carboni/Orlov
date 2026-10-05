@@ -109,3 +109,9 @@ ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"   # channel name; "" switches the boa
 # Bot log lines go to the container output: docker compose logs allianceauth_discordbot
 LOGGING["loggers"]["aadiscordbot"] = {"handlers": ["console"], "level": "INFO"}
 LOGGING["loggers"]["orlovbot"] = {"handlers": ["console"], "level": "INFO"}
+
+# --- Structure board: one always-current message in #structure-board (runbook 10) ---
+ORLOVBOT_STRUCTURE_BOARD_CHANNEL = "structure-board"   # channel name; "" switches the board off
+# Names of the structure profiles. EVE's API only gives the number; add "number: name" pairs.
+ORLOVBOT_STRUCTURE_PROFILES = {
+}

@@ -8,12 +8,13 @@ Two things live here:
 
 import logging
 
-import discord
 from discord import Color, Embed
 from discord.ext import commands, tasks
 
 from django.conf import settings
 from django.utils import timezone
+
+from orlovbot.board import CHECK_MINUTES, Board
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,6 @@ logger = logging.getLogger(__name__)
 MEMBER_ROLE = "Family Member"
 MAX_ROWS = 10
 BOARD_TITLE = "Upcoming moon extractions"
-BOARD_CHECK_MINUTES = 10
 
 
 async def build_embed() -> Embed:
@@ -64,22 +64,12 @@ async def build_embed() -> Embed:
     return embed
 
 
-def signature(embed) -> tuple:
-    """What the board shows, for telling whether an edit is needed."""
-    return (
-        embed.description or "",
-        tuple((field.name, field.value) for field in embed.fields),
-    )
-
-
 class Moons(commands.Cog):
     """Moon extraction overview."""
 
     def __init__(self, bot):
         self.bot = bot
-        self._board_message = None
-        self._board_signature = None
-        self._warned_no_channel = False
+        self.board = Board(bot, BOARD_TITLE, "ORLOVBOT_MOON_BOARD_CHANNEL")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -103,63 +93,14 @@ class Moons(commands.Cog):
             )
         return await ctx.respond(embed=await build_embed())
 
-    @tasks.loop(minutes=BOARD_CHECK_MINUTES)
+    @tasks.loop(minutes=CHECK_MINUTES)
     async def update_board(self):
         try:
-            await self._update_board()
+            await self.board.update(await build_embed())
         except Exception:
             # never let one failed round stop the loop
             logger.exception("Moon board update failed")
-            self._board_message = None
-
-    async def _find_board_message(self, channel):
-        async for message in channel.history(limit=50):
-            if (
-                message.author.id == self.bot.user.id
-                and message.embeds
-                and message.embeds[0].title == BOARD_TITLE
-            ):
-                return message
-        return None
-
-    async def _update_board(self):
-        channel_name = getattr(settings, "ORLOVBOT_MOON_BOARD_CHANNEL", "")
-        if not channel_name:
-            return
-        guild = self.bot.get_guild(int(settings.DISCORD_GUILD_ID))
-        channel = (
-            discord.utils.get(guild.text_channels, name=channel_name) if guild else None
-        )
-        if channel is None:
-            if not self._warned_no_channel:
-                logger.warning("Moon board: no text channel named #%s yet", channel_name)
-                self._warned_no_channel = True
-            return
-        self._warned_no_channel = False
-
-        embed = await build_embed()
-        embed.set_footer(
-            text=f"Kept up to date automatically, checked every {BOARD_CHECK_MINUTES} minutes"
-        )
-
-        if self._board_message is None:
-            self._board_message = await self._find_board_message(channel)
-            if self._board_message is not None:
-                self._board_signature = signature(self._board_message.embeds[0])
-
-        if self._board_message is None:
-            self._board_message = await channel.send(embed=embed)
-            self._board_signature = signature(embed)
-            logger.info("Moon board posted in #%s", channel_name)
-        elif signature(embed) != self._board_signature:
-            try:
-                await self._board_message.edit(embed=embed)
-            except discord.NotFound:
-                # somebody deleted the board; post a new one next round
-                self._board_message = None
-                return
-            self._board_signature = signature(embed)
-            logger.info("Moon board updated in #%s", channel_name)
+            self.board.reset()
 
 
 def setup(bot):
