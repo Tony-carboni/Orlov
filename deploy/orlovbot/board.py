@@ -13,7 +13,6 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 CHECK_MINUTES = 10
-FOOTER = f"Kept up to date automatically, checked every {CHECK_MINUTES} minutes"
 # The last entry of every board: when the bot last looked. If it is much older than
 # CHECK_MINUTES the bot is not running.
 LAST_CHECKED = "Last checked"
@@ -88,7 +87,6 @@ class Board:
         embed.add_field(
             name=LAST_CHECKED, value=f"<t:{stamp}:R>, at <t:{stamp}:t>", inline=False
         )
-        embed.set_footer(text=FOOTER)
 
         if self._message is None:
             self._message = await self._find_message(channel)

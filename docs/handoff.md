@@ -37,9 +37,15 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 ### Boards: "Last checked" (owner's request, same deployment)
 - `orlovbot/board.py`: every board now ends with an entry "Last checked" (`<t:…:R>` and `<t:…:t>`), and the bot edits the board at every 10-minute check instead of only on change. "board updated" is still logged only when the content changed. Runbooks 09 and 10 updated.
 
+### Board tidy-up after the owner looked (15:41–15:43 UTC, three bot restarts)
+- Owner confirmed the war banner renders as a big heading with the green circle.
+- Structure board: the "Structure data read from EVE" line is gone (the owner saw two times). It now appears only as a warning when the data is more than 90 minutes old (`DATA_STALE_AFTER` in `structures.py`), which also turns the colour bar orange.
+- Both boards: footer "Kept up to date automatically, checked every 10 minutes" removed (`board.py`).
+- Moon board and `/moons`: the "Your time" line removed (`moons.py`); the owner read it as wrong. It was Discord's own conversion to the device's time zone (17:01 EVE time shown as 7:01 PM, i.e. UTC+2). "Last checked … at 5:39 PM" uses the same conversion and was left in.
+- Old copies in `~/backups`: `structures.py.pre-single-timestamp`, `board.py.pre-no-footer`, `moons.py.pre-no-local-time`.
+
 ### Open (owner)
 - Look at `#zkillboard` (test post), `#moon-board` and `#structure-board` ("Last checked" entry) and confirm they look right.
-- Look at `#structure-board` and confirm the banner looks right.
 - Optional, in Discord: give the `Early Founders` role a colour or icon, and drag it where it should sit in the role list (it is at the bottom).
 - When the CEO (Masterxxx) has authed: add them to the `Corp Director` group, and have them add the Corp Stats token (`docs/guides/corp-ceo-onboarding.md`).
 - Tell a session when Go Browns has joined the alliance in game, so it can check the members switched to Family Member and refresh the founders.

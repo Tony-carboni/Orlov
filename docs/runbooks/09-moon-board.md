@@ -3,7 +3,7 @@
 *Prerequisite: runbook 08 sections A–C (the bot container `allianceauth_discordbot` is running).*
 *Time: ~10 min. You do section A (Discord, 3 min). Sections B and C are run by Claude in the **local session** (say "run runbook 09 section B").*
 
-**Goal:** a channel `#moon-board` that always shows one message, "Upcoming moon extractions", with every running extraction of our own moons: structure, moon, a live countdown, the EVE time and each reader's local time. Nobody has to ask or ping; the bot keeps the message current.
+**Goal:** a channel `#moon-board` that always shows one message, "Upcoming moon extractions", with every running extraction of our own moons: structure, moon, a live countdown and the EVE time. Nobody has to ask or ping; the bot keeps the message current.
 
 How it works:
 - The bot posts **one** message in `#moon-board` and from then on **edits that same message**. It never posts a second one, so the channel stays a single tile.
@@ -78,4 +78,4 @@ The channel may be moved to another category at any time: the bot finds it by na
 - **No message after 10 minutes** → the local session reads `docker compose logs --tail 50 allianceauth_discordbot`. "no text channel named" means the name differs (check spelling, lower case). "Missing Permissions" or "Missing Access" means the bot's role lacks one of the four permissions in A2.
 - **Two board messages** → someone renamed the channel and back, or the bot could not read the history. Delete the older one by hand; the bot keeps using the one it finds first (the newest).
 - **Board shows "No extraction is running"** while one is running in game → Moon Mining has not picked it up: check Moon Mining → *Extractions* on auth. The board only repeats what that page knows (it updates every 10 minutes).
-- **Times look wrong** → "EVE time" is UTC; "Your time" is converted by Discord to the reader's own time zone.
+- **Times look wrong** → the board shows EVE time (UTC) only. The "Your time" line was removed on 2026-10-05 on the owner's request. For reference: Discord converts such times with the time zone of the reader's own device, so 17:01 EVE time reads 7:01 PM on a device set to UTC+2.

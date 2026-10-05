@@ -39,6 +39,7 @@ ESI_CACHE_SECONDS = 3600  # profiles change rarely
 BANNER_PEACE = "# \N{LARGE GREEN CIRCLE} NOT AT WAR"
 BANNER_WAR = "# \N{LARGE RED CIRCLE} AT WAR"
 FUEL_WARNING_DAYS = 7
+DATA_STALE_AFTER = dt.timedelta(minutes=90)  # aa-structures reads EVE every 30 minutes
 STATE_NORMAL = 11  # aa-structures: shield vulnerable, the resting state of an Upwell structure
 STRUCTURES_SCOPE = "esi-corporations.read_structures.v1"
 
@@ -304,8 +305,12 @@ def build_embed(owners: list) -> Embed:
             if war["ends"]:
                 text += f" War ends {_stamp(war['ends'])}."
             lines.append(f"\N{WARNING SIGN} {text}")
-        if owner["last_update"]:
-            lines.append(f"Structure data read from EVE {_stamp(owner['last_update'])}")
+        # normally silent: the board's "Last checked" entry is the one time shown
+        last_update = owner["last_update"]
+        if last_update is None or now - last_update > DATA_STALE_AFTER:
+            level = max(level, 1)
+            age = f"last read {_stamp(last_update)}" if last_update else "never read"
+            lines.append(f"\N{WARNING SIGN} Structure data from EVE is old: {age}")
         lines.append("")
 
         for structure in owner["structures"]:

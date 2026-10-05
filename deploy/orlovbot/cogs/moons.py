@@ -54,11 +54,7 @@ async def build_embed() -> Embed:
             state = f"Chunk arrives <t:{stamp}:R>"
         embed.add_field(
             name=f"{refinery.name} ({moon})",
-            value=(
-                f"{state}\n"
-                f"EVE time: {arrival:%a %d %b %H:%M}\n"
-                f"Your time: <t:{stamp}:F>"
-            ),
+            value=f"{state}\nEVE time: {arrival:%a %d %b %H:%M}",
             inline=False,
         )
     return embed

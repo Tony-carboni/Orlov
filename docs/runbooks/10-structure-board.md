@@ -12,7 +12,7 @@ On top, in heading size: **🟢 NOT AT WAR**, which turns into **🔴 AT WAR** a
 | Per owning corp | Source | How fresh |
 |---|---|---|
 | Wars declared or running, who declared, when fighting starts, when the war ends | the war notifications EVE sends to the registered character, as collected by the Structures app | notifications are fetched every 5 minutes |
-| "Structure data read from EVE" with a live "x minutes ago" | the Structures app | it reads structures every 30 minutes |
+| A warning "Structure data from EVE is old: last read x ago", **only** when the data is more than 90 minutes old (normally nothing is shown) | the Structures app | it reads structures every 30 minutes |
 
 | Per structure | Source |
 |---|---|
@@ -22,7 +22,7 @@ On top, in heading size: **🟢 NOT AT WAR**, which turns into **🔴 AT WAR** a
 | Services: all online, or the list of offline ones | Structures app |
 | Profile: the structure profile | EVE's API (number only) + the name list in `conf/local.py`, re-read every hour |
 
-The last entry is **Last checked**: a live "x minutes ago" plus the time in your own time zone, refreshed by the bot at every 10-minute check (added 2026-10-05). If it is much older than 10 minutes the bot is not running. It says when the bot last looked; "Structure data read from EVE" above says how old the data from the game is.
+The last entry is **Last checked**: a live "x minutes ago" plus the time, refreshed by the bot at every 10-minute check (added 2026-10-05). If it is much older than 10 minutes the bot is not running. It is the only time on the board: the separate "Structure data read from EVE" line and the footer "Kept up to date automatically…" were removed the same day on the owner's request (the footer on the moon board too).
 
 The message's colour bar is green when everything is fine, orange when something needs attention (fuel under 7 days, low power, a service offline) and red when it is urgent (a war, a structure that is not in its normal state, abandoned).
 
@@ -47,7 +47,7 @@ Added 2026-10-05 on the owner's request. Besides the board, the bot posts a shor
 Things to know:
 - **War status comes from notifications, not from a war register.** EVE's API has no "wars of this corp" lookup. The board starts a war at the declaration notice and ends it at the invalidated / retracted / surrender / HQ-removed notice, or when the corp stops being war eligible. If EVE never sends an end notice, the board keeps showing the war. So it errs towards showing a war that is already over; confirm in game before acting on it.
 - **Profiles:** EVE's API gives each structure a profile *number* and never the name. Until the names are filled in (section D) the board shows the number, e.g. `Profile: #243511`.
-- The board repeats what auth knows. If "Structure data read from EVE" is hours old, the token of the registered character has a problem: see Troubleshooting.
+- The board repeats what auth knows. If the warning "Structure data from EVE is old" appears, the token of the registered character has a problem: see Troubleshooting.
 - Only structures of corps registered under Structures → Add Owner appear. Today that is GWON with two structures.
 
 ## Known values
@@ -118,7 +118,7 @@ When you make a new profile or move a structure to another one, the board shows 
 ## Troubleshooting
 
 - **No board message** → local session reads `docker compose logs --tail 50 allianceauth_discordbot`. "no text channel named" = name differs; "Missing Permissions" / "Missing Access" = the `Orlov auth` role lacks one of the four permissions in A2.
-- **"Structure data read from EVE" is hours old** → the Structures app cannot read EVE: on auth open Structures, or admin → Structures → Owners, and check the owner's status; usually the character's token was revoked (changed password, left the corp, lost the Director role). Fix with Structures → Add Owner again.
+- **"Structure data from EVE is old"** → the Structures app cannot read EVE: on auth open Structures, or admin → Structures → Owners, and check the owner's status; usually the character's token was revoked (changed password, left the corp, lost the Director role). Fix with Structures → Add Owner again.
 - **A war shows that is over** → see "Things to know". The local session can check which notification is missing.
 - **Profile shows `#number`** → section D.
 - **An alert did not ping** → the message must start with a highlighted `@everyone`. If it shows as plain text, the `Orlov auth` role lost "Mention @everyone" on the channel (it has Administrator today, which includes it).
