@@ -22,8 +22,15 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - `deploy/orlovbot/cogs/structures.py` → server `~/aa-docker/orlovbot/cogs/structures.py` (old copy: `~/backups/structures.py.pre-war-banner`). Dry run in a fresh process first (live data green, synthetic war red, no alerts planned), then only the bot restarted. Bot output: "Structure status: board updated in #structure-board".
 - Not yet confirmed by the owner: that Discord draws the banner as a big heading. If it shows as a plain line starting with `#`, change `BANNER_PEACE` / `BANNER_WAR` to a bold line.
 
+### Founder badge (owner's request, 15:25 UTC)
+- Auth group `Founder` (pk 11, internal, no permissions) and Discord role `Founder` (id 1556687406663598113, no colour, no permissions) created.
+- Rule decided by the owner (the literal request "joined before 2026" matched nobody: alliance founded 2026-10-01): **every Family Member account before 2027-01-01**, Go Browns included. Written into `docs/design/membership.md`.
+- Added: tony, Flapoor_Hendrik (main Gewoon Rudi), Nashomon_Yoma_Itinen, Tavaga. All four verified to have the role in Discord.
+- Not automatic. When the owner says "refresh the founders": add every account with state Family Member to the group (add-only), as long as the date is before 2027-01-01. Go Browns members need this once they have authed.
+
 ### Open (owner)
 - Look at `#structure-board` and confirm the banner looks right.
+- Optional, in Discord: give the `Founder` role a colour or icon, and drag it where it should sit in the role list (it is at the bottom).
 - When the CEO (Masterxxx) has authed: add them to the `Corp Director` group, and have them add the Corp Stats token (`docs/guides/corp-ceo-onboarding.md`).
 - If Go Browns later joins alliance ORLOV in game, nothing changes. If it leaves, remove it from the Family Member state's corporations by hand; the state does not drop on its own for a listed corp.
 

@@ -30,6 +30,9 @@ The `Family Member` state is keyed on **alliance ORLOV** (member alliances) plus
 | `Alliance Director` | manual, hidden | `Alliance Director` | alliance executor, in AA admin |
 | `Corp Director` | manual, hidden (later: automatic from in-game Director role via plugin) | `Corp Director` | alliance executor / corp CEOs |
 | `FC` | request + approval | `FC` | FC lead |
+| `Founder` | manual, badge only: no permissions in auth or Discord | `Founder` | the local session, on the owner's request ("refresh the founders") |
+
+**Founder rule (owner's decision 2026-10-05):** every account with the `Family Member` state before **2027-01-01** is a founder, whether its corp is in the alliance or only listed on the state (Go Browns counts). It is add-only: a founder keeps the group as long as the account exists, and nobody is added from 2027 on. New members during 2026 do not get it automatically; the owner asks a session to refresh, which adds every current Family Member account to the group. The role must stay an auth group: auth removes Discord roles it does not manage at its next sync.
 
 Discord role hierarchy (top → bottom): bot role · Alliance Director · Corp Director · FC · Family Member · Family Friend · corp_* · @everyone.
 
@@ -50,4 +53,5 @@ Discord role hierarchy (top → bottom): bot role · Alliance Director · Corp D
 - 2026-10-02 — first real member's nickname stayed `[SWA]` after moving corp: AA only sets nicknames on activation/main change. Added `discord.update_all_nicknames` every 6 h.
 - 2026-10-02 — `Family Friend` made a **public state**: any authenticated non-member gets it (nickname + role tag, public channels only). Discord: `#public-chat` open to unauthenticated visitors too; `#how-to-auth`/`#rules` read-only.
 - 2026-10-05 — Go Browns [GB44] (corp 98845722, not in the alliance) prepared ahead of its members authing: corporation registered in auth, added to the `Family Member` state's corporations, auto-group `corp_GB44` and Discord role `corp_GB44` created in advance.
+- 2026-10-05 — `Founder` badge group and Discord role created; first four founders: tony (Catherine Frey), Flapoor_Hendrik (main Gewoon Rudi), Nashomon Yoma Itinen, Tavaga.
 - 2026-10-02 — `DISCORD_SYNC_NAMES` temporarily `False` so the owner could activate (403 on owner nickname); re-enabled on Day 3 with the `[{corp_ticker}] {character_name}` formatter. discordbot deferred until there are members.
