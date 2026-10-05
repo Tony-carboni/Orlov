@@ -42,7 +42,7 @@ BANNER_PEACE = "# \N{LARGE GREEN CIRCLE} NOT AT WAR"
 BANNER_WAR = "# \N{LARGE RED CIRCLE} AT WAR"
 # Coloured text exists in Discord only inside an "ansi" code block (fixed-width font, no
 # links, no live timestamps). Green = as it should be, orange = needs attention, red = urgent.
-ANSI = {"green": "0;32", "orange": "0;33", "red": "1;31", "blue": "0;34", "grey": "0;30"}
+ANSI = {"green": "0;32", "orange": "0;33", "red": "1;31", "blue": "0;34"}
 LEVELS = {"orange": 1, "red": 2}  # how a text colour counts for the message's colour bar
 LABEL_WIDTH = 11
 REINFORCE_LABEL = "Reinforce:"
@@ -341,35 +341,27 @@ def structure_rows(structure: dict, now) -> list:
     # leaves reinforcement. Green when it is the agreed hour, red when it is anything else.
     hour = structure.get("reinforce_hour")
     if hour is not None:
-        required = _required_reinforce_hour()
-        note = ""
+        required = getattr(settings, "ORLOVBOT_STRUCTURE_REINFORCE_HOUR", None)
         upcoming = structure.get("next_reinforce_hour")
         changing = upcoming is not None and upcoming != hour
-        if changing:
-            note = f"to {upcoming:02d}:00"
-            if structure.get("next_reinforce_apply"):
-                note += f" on {structure['next_reinforce_apply']:%d %b}"
-        # a scheduled change away from the agreed hour is as wrong as a wrong hour
-        fine = hour == required and not (changing and upcoming != required)
-        colour = None if required is None else ("green" if fine else "red")
-        rows.append((REINFORCE_LABEL, f"{hour:02d}:00 EVE", colour, note))
+        applies = structure.get("next_reinforce_apply")
+        if changing and required is not None and upcoming == required:
+            # The agreed hour is set and waits for the game's own delay: that is as good
+            # as it gets, so it is shown as the agreed hour, in green, with the wait.
+            note = f"from {applies:%d %b}, now {hour:02d}:00" if applies else f"pending, now {hour:02d}:00"
+            rows.append((REINFORCE_LABEL, f"{upcoming:02d}:00 EVE", "green", note))
+        else:
+            note = ""
+            if changing:
+                note = f"to {upcoming:02d}:00" + (f" on {applies:%d %b}" if applies else "")
+            # a scheduled change away from the agreed hour is as wrong as a wrong hour
+            fine = hour == required and not changing
+            colour = None if required is None else ("green" if fine else "red")
+            rows.append((REINFORCE_LABEL, f"{hour:02d}:00 EVE", colour, note))
 
     if structure["profile"]:
         rows.append(("Profile:", structure["profile"], None, ""))
     return rows
-
-
-def _required_reinforce_hour():
-    return getattr(settings, "ORLOVBOT_STRUCTURE_REINFORCE_HOUR", None)
-
-
-def _counts_for_bar(structure: dict, label: str) -> bool:
-    """A wrong reinforcement hour stays red on its line, but does not turn the whole
-    message red while the change to the agreed hour is already scheduled in game."""
-    return not (
-        label == REINFORCE_LABEL
-        and structure.get("next_reinforce_hour") == _required_reinforce_hour()
-    )
 
 
 def _block(rows: list) -> str:
@@ -377,7 +369,8 @@ def _block(rows: list) -> str:
     for label, text, colour, note in rows:
         line = f"{label:<{LABEL_WIDTH}}{_paint(text, colour) if colour else text}"
         if note:
-            line += " " + _paint(f"({note})", "grey")
+            # plain text: the palette's only grey is too dark to read on Discord's dark theme
+            line += f" ({note})"
         lines.append(line)
     return "```ansi\n" + "\n".join(lines) + "\n```"
 
@@ -412,9 +405,8 @@ def build_embed(owners: list) -> Embed:
 
         for structure in owner["structures"]:
             rows = structure_rows(structure, now)
-            for label, _, colour, _ in rows:
-                if _counts_for_bar(structure, label):
-                    level = max(level, LEVELS.get(colour, 0))
+            for _, _, colour, _ in rows:
+                level = max(level, LEVELS.get(colour, 0))
             # a small heading: one step larger than bold text
             lines.append(
                 f"### {structure['name']} ({structure['type']}, {structure['system']})"

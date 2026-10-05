@@ -51,9 +51,10 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - Not yet confirmed by the owner: how the coloured panels look, on desktop and on a phone (older phone apps may show the colours differently). Fallback if disliked: restore the backup file and restart the bot.
 
 ### Structure board: reinforcement hour (owner's request, live 15:57 UTC)
-- New line "Reinforce: HH:00 EVE" per structure, from aa-structures (`reinforce_hour`, `next_reinforce_hour`, `next_reinforce_apply`). Green when it equals `ORLOVBOT_STRUCTURE_REINFORCE_HOUR = 21` (new setting, appended to `conf/local.py`, now 214 lines; the contract with the mercenaries on retainer requires 21:00), red otherwise, and red when a change away from 21 is scheduled. No ping for it.
-- **Both structures are red today:** Orlov Family Facilities is at 04:00, Orlov Mining Facility I at 18:00, each with a change to 21:00 that EVE's data dates at 2026-11-03 18:35 UTC. The colour bar stays green for this case (change to the agreed hour already scheduled).
-- Old copies: `~/backups/structures.py.pre-reinforce-hour`, `~/backups/local.py.pre-reinforce-hour`.
+- New line "Reinforce: HH:00 EVE" per structure, from aa-structures (`reinforce_hour`, `next_reinforce_hour`, `next_reinforce_apply`). Green when it equals `ORLOVBOT_STRUCTURE_REINFORCE_HOUR = 21` (new setting, appended to `conf/local.py`, now 214 lines; the contract with the mercenaries on retainer requires 21:00), and also green when 21 is set but not yet effective (owner, 16:00 UTC: the in-game delay cannot be beaten), shown as "21:00 EVE (from 03 Nov, now 04:00)". Red for any other hour and when a change away from 21 is scheduled. No ping for it.
+- Today both structures are green-pending: Orlov Family Facilities is at 04:00, Orlov Mining Facility I at 18:00, each with a change to 21:00 that EVE's data dates at 2026-11-03 18:35 UTC.
+- Notes in brackets are no longer grey (unreadable on the dark theme); they use the normal text colour. Discord's ansi palette has no lighter grey.
+- Old copies: `~/backups/structures.py.pre-reinforce-hour`, `~/backups/local.py.pre-reinforce-hour`, `~/backups/structures.py.pre-pending-green`.
 
 ### Open (owner)
 - Look at `#zkillboard` (test post), `#moon-board` and `#structure-board` ("Last checked" entry) and confirm they look right.

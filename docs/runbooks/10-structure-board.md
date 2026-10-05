@@ -14,20 +14,20 @@ On top, in heading size: **🟢 NOT AT WAR**, which turns into **🔴 AT WAR** a
 | Wars declared or running, who declared, when fighting starts, when the war ends | the war notifications EVE sends to the registered character, as collected by the Structures app | notifications are fetched every 5 minutes |
 | A warning "Structure data from EVE is old: last read x ago", **only** when the data is more than 90 minutes old (normally nothing is shown) | the Structures app | it reads structures every 30 minutes |
 
-Each structure has its name as a small heading and its status lines in a panel with coloured text: **green** = as it should be, **orange** = needs attention, **red** = urgent, fuel **blue** while there is plenty. Discord only colours text inside such a panel (fixed-width font, no links, no live countdowns), so times there are written out at each 10-minute check.
+Each structure has its name as a small heading and its status lines in a panel with coloured text: **green** = as it should be, **orange** = needs attention, **red** = urgent, fuel **blue** while there is plenty. Discord only colours text inside such a panel (fixed-width font, no links, no live countdowns), so times there are written out at each 10-minute check. The notes in brackets behind a value are in the normal text colour: the panel's palette has eight fixed colours and its only grey is too dark to read.
 
 | Per structure | Source |
 |---|---|
 | State: "shield vulnerable (normal)" in green; anything else (reinforced, anchoring, unanchoring) in red capitals with the timer's end in EVE time and "in 1d 4h" | Structures app |
 | Power: full power (green) / LOW POWER (orange) / ABANDONED (red) | Structures app |
-| Fuel: days left (hours when under two days), e.g. "31 days left", with the run-out date in EVE time in grey behind it. **Blue** from 14 days up, **orange** under 14 days, **red** under 7 days or when there is none. The number is refreshed by the bot's 10-minute check | Structures app |
+| Fuel: days left (hours when under two days), e.g. "31 days left", with the run-out date in EVE time in brackets behind it. **Blue** from 14 days up, **orange** under 14 days, **red** under 7 days or when there is none. The number is refreshed by the bot's 10-minute check | Structures app |
 | Services: all online (green), or the offline ones (orange) | Structures app |
-| Reinforce: the reinforcement hour in EVE time, e.g. "21:00 EVE" (the structure leaves reinforcement within two hours either side of it). **Green** when it is the agreed hour (`ORLOVBOT_STRUCTURE_REINFORCE_HOUR`, 21, from the contract with the mercenaries on retainer), **red** for any other hour and also when a change away from the agreed hour is scheduled. A scheduled change is shown in grey behind it, e.g. "(to 21:00 on 03 Nov)" | Structures app |
+| Reinforce: the reinforcement hour in EVE time, e.g. "21:00 EVE" (the structure leaves reinforcement within two hours either side of it). **Green** when it is the agreed hour (`ORLOVBOT_STRUCTURE_REINFORCE_HOUR`, 21, from the contract with the mercenaries on retainer). Also green when the agreed hour is **set but not yet effective** (the game applies a change with a delay): it then reads "21:00 EVE (from 03 Nov, now 04:00)". **Red** for any other hour, and when a change away from the agreed hour is scheduled, e.g. "21:00 EVE (to 03:00 on 03 Nov)" | Structures app |
 | Profile: the structure profile | EVE's API (number only) + the name list in `conf/local.py`, re-read every hour |
 
 The last entry is **Last checked**: a live "x minutes ago" plus the time, refreshed by the bot at every 10-minute check (added 2026-10-05). If it is much older than 10 minutes the bot is not running. It is the only time on the board: the separate "Structure data read from EVE" line and the footer "Kept up to date automatically…" were removed the same day on the owner's request (the footer on the moon board too).
 
-The message's colour bar follows the worst line: green when everything is fine, orange when a line is orange, red when a line is red or there is a war. One exception: a wrong reinforcement hour stays red on its own line but does not turn the bar red while the change to the agreed hour is already scheduled in game.
+The message's colour bar follows the worst line: green when everything is fine, orange when a line is orange, red when a line is red or there is a war.
 
 ## Alerts (pings in `#structure-board`)
 
