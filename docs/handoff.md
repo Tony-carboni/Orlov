@@ -6,7 +6,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ## 2026-10-05 (later) — local session (PC) → either session
 
-**Runbooks:** `07-day-five-moon-timers.md` is **complete**. `08-day-six-moons-command.md`: A, B and C done; **D (owner tries `/moons` in Discord) is open.**
+**Runbooks:** `07-day-five-moon-timers.md` is **complete**. `08-day-six-moons-command.md`: A, B and C done; **D (owner tries `/moons` in Discord) is open.** `09-moon-board.md`: B done; **A (owner creates `#moon-board`) and C are open.**
 
 ### Changed since the previous entry
 - **The Athanor moved corp.** The owner transferred it from KHAAS to **"Gewoon voor structures" [GWON]**, corp_id 98635713, 1 member, no alliance. The token character is **Vieze Jonge Pass** (sole member, so CEO; on the `tony` account), not Flapoor Hendrik. Wherever older entries say Flapoor Hendrik or KHAAS for E or step 6, read Vieze Jonge Pass and GWON.
@@ -32,6 +32,12 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - Build exit 0. In a throwaway container: `check` no issues, `orlovbot.cogs.moons` imports (aadiscordbot 5.0.1, py-cord 2.8.1), hook returns it. `migrate` applied 17 `aadiscordbot` migrations. `up -d` recreated gunicorn, beat and the three workers and started the bot; nginx restarted; `collectstatic` copied 119 files.
 - After: site 200, 11 containers up, workers healthy, no errors in the Alliance Auth containers. Bot output: "Authbot Started with command prefix !" and nothing else. Its INFO lines go nowhere (no logging handler for `aadiscordbot` configured), so login and command registration are not yet proven; section D proves them.
 
+### Moon board (runbook 09, done 2026-10-05 11:27 UTC)
+- Owner's wish: an always-visible, self-updating list in Discord instead of asking with `/moons`. Chosen design: the bot posts one message in `#moon-board` and edits it in place (checks every 10 minutes, edits only on change; countdowns are Discord live timestamps). Discord Events, a channel-name ticker and aa-opcalendar were considered and not used.
+- Server: `orlovbot/cogs/moons.py` replaced (copy of the old one: `~/backups/moons.py.pre-board`); `conf/local.py` + "Moon board" block (`ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"` and console logging for the `aadiscordbot` and `orlovbot` loggers; file now 194 lines; copy from before: `~/backups/local.py.pre-board`). Only the bot container was restarted.
+- **The bot is now proven connected:** its output shows `on_ready Complete!`, the three loaded modules including `orlovbot.cogs.moons`, then the warning "no text channel named #moon-board yet". The board appears within 10 minutes of the owner creating the channel.
+- Bot output is now readable with `docker compose logs allianceauth_discordbot`.
+
 ### Prepared in the repo for Day 6
 - `docs/runbooks/08-day-six-moons-command.md`.
 - `deploy/orlovbot/` — a small Django app with one command module, `cogs/moons.py` (`/moons`, restricted to the Discord role `Family Member`, reads `moonmining.Extraction`). Syntax-checked only; it has never run.
@@ -40,11 +46,12 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - aa-structuretimers reminder offsets: the admin offers 0 to 120 minutes only, but the code subtracts any number of minutes, so a longer offset would work if set through Django. Not used.
 
 ### Owner does by hand
+- Runbook 09 section A: create `#moon-board` under ALLIANCE (Family Member read-only; bot's role may view, send, embed links, read history).
 - Runbook 08 section D: type `/moons` in `#general`.
 
 ### Next — local session, after the owner reports on D
 - If `/moons` answers: tick D in runbook 08, done. If it does not show or errors: runbook 08 Troubleshooting; read `docker compose logs --tail 50 allianceauth_discordbot`.
-- Optional: add the add-on's logging handler (`log/discord_bot.log`) to `conf/local.py` and `deploy/` so the bot's INFO lines are kept.
+- After the owner creates `#moon-board`: check the bot output for "Moon board posted in #moon-board" (or a permissions error), then tick runbook 09 A and C.
 
 ### Open
 - Tavaga's Discord ticker (showed STI on 2026-10-03) was never checked on the server.

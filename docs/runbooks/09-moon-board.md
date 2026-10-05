@@ -39,6 +39,8 @@ How it works:
 
 ## B. Switch the board on (server — local session)
 
+*Done 2026-10-05 11:27 UTC by the local session. The bot's output shows it logged in, loaded `aadiscordbot.cogs.about`, `aadiscordbot.cogs.time` and `orlovbot.cogs.moons`, and then "no text channel named #moon-board yet": it is waiting for section A.*
+
 The local session does this, announcing each change first:
 
 1. Copy `deploy/orlovbot/cogs/moons.py` from the repo to `~/aa-docker/orlovbot/cogs/moons.py` (Unix line endings).
@@ -65,7 +67,7 @@ The local session does this, announcing each change first:
 ## Completion checklist
 
 - [ ] `#moon-board` created with the permissions above (A)
-- [ ] Board switched on, bot restarted, no errors in its output (B)
+- [x] Board switched on, bot restarted, no errors in its output (B)
 - [ ] Board message visible and correct (C)
 
 ## Troubleshooting
