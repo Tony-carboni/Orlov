@@ -3,6 +3,7 @@
 *Prerequisite: Days 0–4 and runbook 06 complete. First Athanor online with an extraction running (done 2026-10-04).*
 *Time: ~1.5 h, of which ~45 min is waiting for EVE data loads. Server sections are run by Claude in the **local session** (say "run Day 5 section B"); browser and Discord sections are yours.*
 *Convention: one code block = one Enter. Blocks that must be pasted whole are labelled.*
+*Update 2026-10-05 (end of day): the owner dropped all moon pings and removes `#moon-timers`; the always-current board in `#moon-board` (runbook 09) replaces them. On the server the two reminder rules, the Structure Timers webhook and the aa-structures "Moon Timers" webhook are switched off (rows kept, so they can be switched back on in the admin with a new webhook URL). Sections A2–A3, C, E3–E4 and the `#moon-timers` parts of the goal describe the earlier setup. Fuel and attack alerts to `#directors` are unchanged.*
 
 **Goal:** every moon extraction shows up as a timer, both in Discord (`#moon-timers`: "chunk arrives Fri 16 Oct 18:00", a reminder 1 h before, and "field is up") and on auth (a timer board plus the Moon Mining page with ore values and the mining ledger). Public Athanors in Piekura can be added to the same board by hand.
 

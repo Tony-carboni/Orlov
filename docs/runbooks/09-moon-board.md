@@ -9,7 +9,7 @@ How it works:
 - The bot posts **one** message in `#moon-board` and from then on **edits that same message**. It never posts a second one, so the channel stays a single tile.
 - The countdown ("in 5 days", "in 3 hours") is drawn live by Discord on each member's screen. The bot does not need to edit the message for it to tick.
 - Every 10 minutes the bot compares the board with Moon Mining and edits it only when something changed: a new extraction, a cancelled one, a chunk that arrived, a field that was fractured.
-- Editing a message does not notify anyone. The only pings are the two from Day 5 in `#moon-timers` (`@here` one hour before the chunk arrives and at arrival).
+- Editing a message does not notify anyone, and there are no moon pings any more: on 2026-10-05 the owner dropped the Day 5 reminders and removed `#moon-timers`. The board is the only place moon times are announced.
 - It reads our own extractions only (the corps registered under Moon Mining → Add Owner). No public timers.
 - `/moons` from runbook 08 keeps working and shows the same list on request.
 

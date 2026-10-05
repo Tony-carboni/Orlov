@@ -10,7 +10,7 @@ Decisions baked in:
 - The bot runs as one extra container, `allianceauth_discordbot`, and logs in with the **same bot** that already manages roles and nicknames. No new Discord application, no new token.
 - Only three commands are switched on: `/moons` (ours), `/time` and `/about`. The add-on's other modules (sov, price check, easter eggs, tickets, ...) stay off.
 - `/moons` answers only people who hold the `Family Member` role; everyone else gets a private "members only" reply. It reads our own extractions from Moon Mining, so no public timers.
-- Pings stay as set on Day 5: `@here` one hour before the chunk arrives and `@here` when it arrives. No 24-hour reminder.
+- No moon pings at all (owner's decision 2026-10-05, after the moon board of runbook 09 was live): the Day 5 reminder rules and the `#moon-timers` webhooks are switched off and the channel is removed.
 
 ## Known values
 
@@ -57,7 +57,7 @@ If the bot's output (`docker compose logs allianceauth_discordbot`) shows an err
 
 ## D. Try it (Discord, 2 min)
 
-1. In `#general` (not `#moon-timers`, which is read-only for members), type `/moons` and pick the command from the popup.
+1. In `#general` (any channel where members can write), type `/moons` and pick the command from the popup.
 2. ✅ The bot answers with "Upcoming moon extractions" and one entry: Orlov Mining Facility I, Piekura V - Moon 1, the time until the chunk arrives, the EVE time and your local time.
 3. Ask someone with only `Family Friend` to try: they get a private "This command is for Family Members." reply.
 

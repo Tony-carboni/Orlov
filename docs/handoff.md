@@ -14,7 +14,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ### Owner's decisions (2026-10-05)
 - **No public timers.** Only the own moon in Piekura is tracked; runbook 07 section F is marked not used.
-- **Pings:** `@here` one hour before the chunk arrives (rule 1 changed from no ping) and `@here` at arrival (rule 2, unchanged). A 24-hour reminder was asked for and then withdrawn; it was not created.
+- **Pings:** `@here` one hour before the chunk arrives (rule 1 changed from no ping) and `@here` at arrival (rule 2, unchanged). A 24-hour reminder was asked for and then withdrawn; it was not created. **Superseded later the same day: no moon pings at all, see "Pings switched off" below.**
 - **Wants a slash command** that lists the upcoming moon extractions on request → runbook 08.
 
 ### Done on the server
@@ -31,6 +31,12 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - `conf/requirements.txt` + `allianceauth-discordbot==5.0.1`; `conf/local.py` + Day 6 block (byte-identical to the repo block, file now 187 lines); `conf/celery.py` + route `aadiscordbot.tasks.*` → queue `aadiscordbot` inside the existing dictionary, `discord.*` route kept; `docker-compose.yml` + volume `./orlovbot:/home/allianceauth/myauth/orlovbot` in the base block and service `allianceauth_discordbot`.
 - Build exit 0. In a throwaway container: `check` no issues, `orlovbot.cogs.moons` imports (aadiscordbot 5.0.1, py-cord 2.8.1), hook returns it. `migrate` applied 17 `aadiscordbot` migrations. `up -d` recreated gunicorn, beat and the three workers and started the bot; nginx restarted; `collectstatic` copied 119 files.
 - After: site 200, 11 containers up, workers healthy, no errors in the Alliance Auth containers. Bot output: "Authbot Started with command prefix !" and nothing else. Its INFO lines go nowhere (no logging handler for `aadiscordbot` configured), so login and command registration are not yet proven; section D proves them.
+
+### Pings switched off (owner's decision, 2026-10-05 about 11:35 UTC)
+- With the board live the owner wants **no moon pings** and removes the `#moon-timers` channel (which also deletes its Discord webhook).
+- Server, via Django, rows kept: structuretimers `NotificationRule` pk 1 and 2 `is_enabled` False, `DiscordWebhook` pk 1 `is_enabled` False, the 2 scheduled notifications for 2026-10-10 removed; structures `Webhook` pk 1 "Moon Timers" `is_active` False and `is_default` False and detached from owner GWON. structures `Webhook` pk 2 "Structure Alerts" (`#directors`) is untouched and still attached.
+- Timer pk 1 stays on the Structure Timers page on auth; it no longer triggers anything.
+- To bring pings back: new channel webhook URL into the two "Moon Timers" webhook rows, re-enable them and the rules, re-attach the structures webhook to the owner.
 
 ### Moon board (runbook 09, done 2026-10-05 11:27 UTC)
 - Owner's wish: an always-visible, self-updating list in Discord instead of asking with `/moons`. Chosen design: the bot posts one message in `#moon-board` and edits it in place (checks every 10 minutes, edits only on change; countdowns are Discord live timestamps). Discord Events, a channel-name ticker and aa-opcalendar were considered and not used.
@@ -51,7 +57,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ### Next — local session, after the owner reports on D
 - If `/moons` answers: tick D in runbook 08, done. If it does not show or errors: runbook 08 Troubleshooting; read `docker compose logs --tail 50 allianceauth_discordbot`.
-- After the owner confirms the board: tick runbook 09 C. On 2026-10-10 after 17:01 UTC check the board switched to "Chunk has arrived" and that the two `@here` reminders arrived in `#moon-timers`.
+- After the owner confirms the board: tick runbook 09 C. On 2026-10-10 after 17:01 UTC check the board switched to "Chunk has arrived". No pings are expected.
 
 ### Open
 - Tavaga's Discord ticker (showed STI on 2026-10-03) was never checked on the server.
