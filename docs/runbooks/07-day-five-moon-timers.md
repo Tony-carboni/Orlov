@@ -183,6 +183,8 @@ docker compose ps | grep -E "gunicorn|beat|worker"
 
 ## C. Webhooks and notification routing (browser, 10 min)
 
+*Done 2026-10-05 by the local session via Django (see `docs/handoff.md`); test messages sent to both channels.*
+
 **C1. aa-structures webhooks** — https://auth.orlovfamily.space/admin/structures/webhook/add/, twice:
 
 | Field | Webhook 1 | Webhook 2 |
