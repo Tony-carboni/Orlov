@@ -115,3 +115,8 @@ ORLOVBOT_STRUCTURE_BOARD_CHANNEL = "structure-board"   # channel name; "" switch
 # Names of the structure profiles. EVE's API only gives the number; add "number: name" pairs.
 ORLOVBOT_STRUCTURE_PROFILES = {
 }
+
+# Structure board alerts (runbook 10): a ping in the same channel when a new war appears, and
+# once a day per structure while its fuel is under 7 days or a service is offline.
+ORLOVBOT_STRUCTURE_ALERTS = True
+ORLOVBOT_STRUCTURE_ALERT_MENTION = "@everyone"

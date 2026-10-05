@@ -5,12 +5,17 @@ Per owning corp: war eligibility and the wars known from EVE notifications.
 Data comes from aa-structures (which reads EVE every 30 minutes) plus two small reads of
 EVE's API of our own: war eligibility (public) and the profile number per structure
 (with the structures token aa-structures already holds). docs/runbooks/10-structure-board.md
+
+Alerts: besides the board the bot posts a ping in the same channel when a new war appears,
+and once a day per structure while its fuel is low or a service is offline. What was
+already sent is remembered in the Django cache (redis), so a bot restart does not ping again.
 """
 
 import datetime as dt
 import logging
 import time
 
+import discord
 import requests
 import yaml
 from asgiref.sync import sync_to_async
@@ -18,6 +23,7 @@ from discord import Color, Embed
 from discord.ext import commands, tasks
 
 from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 
 from orlovbot.board import CHECK_MINUTES, Board
@@ -31,6 +37,10 @@ ESI_CACHE_SECONDS = 3600  # war eligibility and profiles change rarely
 FUEL_WARNING_DAYS = 7
 STATE_NORMAL = 11  # aa-structures: shield vulnerable, the resting state of an Upwell structure
 STRUCTURES_SCOPE = "esi-corporations.read_structures.v1"
+
+ALERT_REPEAT = dt.timedelta(hours=24)  # low fuel / offline services: once a day while it lasts
+ALERT_STATE_KEY = "orlovbot:structure-board:alerts"  # what was sent, kept in the cache
+ALERT_TEST_KEY = "orlovbot:structure-board:test"  # set to make the bot post one test alert
 
 # EVE notification types, as aa-structures stores them
 WAR_START = {"WarDeclared", "DeclareWar", "WarAdopted", "WarInherited"}
@@ -219,6 +229,7 @@ def collect() -> list:
             profile_id = profiles.get(structure.id)
             structures.append(
                 {
+                    "id": structure.id,
                     "name": structure.name,
                     "type": structure.eve_type.name,
                     "system": structure.eve_solar_system.name,
@@ -246,6 +257,7 @@ def collect() -> list:
         corporation = owner.corporation
         owners.append(
             {
+                "corp_id": corporation.corporation_id,
                 "name": corporation.corporation_name,
                 "ticker": corporation.corporation_ticker,
                 "war_eligible": _war_eligible(corporation.corporation_id),
@@ -373,6 +385,114 @@ def build_embed(owners: list) -> Embed:
     return embed
 
 
+def _amount_left(fuel, now) -> str:
+    left = fuel - now
+    if left >= dt.timedelta(days=2):
+        return f"{left.days} days"
+    return f"{max(int(left.total_seconds() // 3600), 0)} hours"
+
+
+def structure_problems(structure: dict, now) -> dict:
+    """The things worth a daily ping, by kind: 'fuel' and 'services'."""
+    problems = {}
+    fuel = structure["fuel_expires_at"]
+    if fuel is not None and fuel - now < dt.timedelta(days=FUEL_WARNING_DAYS):
+        problems["fuel"] = (
+            f"Fuel: **{_amount_left(fuel, now)} left**, runs out {_stamp(fuel, 'F')}"
+        )
+    elif fuel is None and structure["is_low_power"]:
+        problems["fuel"] = "Fuel: **none**, the structure is in low power"
+    if structure["services_offline"]:
+        offline = ", ".join(structure["services_offline"])
+        problems["services"] = f"Services offline: **{offline}**"
+    return problems
+
+
+def plan_alerts(owners: list, state: dict, now) -> tuple:
+    """Decide which alerts to send or remove. Pure: no Discord, no cache.
+
+    state maps an alert key to what was sent for it. Returns (actions, new_state);
+    an action is ("send", key, text, old_message_id) or ("delete", key, message_id).
+    """
+    mention = getattr(settings, "ORLOVBOT_STRUCTURE_ALERT_MENTION", "@everyone")
+    actions = []
+    new_state = {}
+    for owner in owners:
+        for war in owner["wars"]:
+            key = (
+                f"war:{owner['corp_id']}:{war['by']}:{war['against']}:"
+                f"{int(war['declared'].timestamp())}"
+            )
+            if key in state:
+                new_state[key] = state[key]
+                continue
+            us = f"**{owner['name']} [{owner['ticker']}]**"
+            if war["we_declared"]:
+                text = f"{us} declared war on **{war['other']}**."
+            else:
+                text = f"**{war['other']}** declared war on {us}."
+            if war["fight_from"] > now:
+                text += (
+                    f" Fighting starts {_stamp(war['fight_from'])}"
+                    f" ({_stamp(war['fight_from'], 'F')})."
+                )
+            else:
+                text += f" Fighting is allowed since {_stamp(war['fight_from'], 'F')}."
+            actions.append(("send", key, f"{mention} **War declared.** {text}", None))
+            new_state[key] = {"message_id": None}
+
+        for structure in owner["structures"]:
+            key = f"structure:{structure['id']}"
+            entry = state.get(key)
+            problems = structure_problems(structure, now)
+            if not problems:
+                continue  # an old alert, if any, is removed below
+            sent = dict(entry["kinds"]) if entry else {}
+            # a kind that cleared is forgotten, so it pings at once if it comes back
+            sent = {kind: when for kind, when in sent.items() if kind in problems}
+            due = [
+                kind
+                for kind in problems
+                if kind not in sent
+                or now - dt.datetime.fromisoformat(sent[kind]) >= ALERT_REPEAT
+            ]
+            if not due:
+                new_state[key] = {"kinds": sent, "message_id": entry["message_id"]}
+                continue
+            lines = "\n".join(f"- {text}" for text in problems.values())
+            text = (
+                f"{mention} **{structure['name']}** ({structure['type']}, "
+                f"{structure['system']}) needs attention:\n{lines}"
+            )
+            old_message_id = entry["message_id"] if entry else None
+            actions.append(("send", key, text, old_message_id))
+            new_state[key] = {
+                "kinds": {kind: now.isoformat() for kind in problems},
+                "message_id": None,
+            }
+
+    # whatever is no longer a problem (war over, fuel topped up, test done): remove its alert
+    for key, entry in state.items():
+        if key not in new_state:
+            actions.append(("delete", key, entry.get("message_id")))
+    return actions, new_state
+
+
+def load_alert_state() -> dict:
+    return cache.get(ALERT_STATE_KEY) or {}
+
+
+def save_alert_state(state: dict) -> None:
+    cache.set(ALERT_STATE_KEY, state, timeout=None)
+
+
+def pop_test_request() -> bool:
+    requested = bool(cache.get(ALERT_TEST_KEY))
+    if requested:
+        cache.delete(ALERT_TEST_KEY)
+    return requested
+
+
 class Structures(commands.Cog):
     """Structure and war overview for directors."""
 
@@ -400,6 +520,64 @@ class Structures(commands.Cog):
             # never let one failed round stop the loop
             logger.exception("Structure board update failed")
             self.board.reset()
+            return
+        if getattr(settings, "ORLOVBOT_STRUCTURE_ALERTS", True):
+            try:
+                await self._send_alerts(owners)
+            except Exception:
+                logger.exception("Structure alerts failed")
+
+    async def _send_alerts(self, owners: list):
+        channel = self.board.get_channel()
+        if channel is None:
+            return
+        state = await sync_to_async(load_alert_state)()
+        actions, new_state = plan_alerts(owners, state, timezone.now())
+        if await sync_to_async(pop_test_request)():
+            mention = getattr(settings, "ORLOVBOT_STRUCTURE_ALERT_MENTION", "@everyone")
+            text = (
+                f"{mention} Test alert from the structure board. Nothing is wrong; "
+                "the bot removes this message at its next check."
+            )
+            actions.append(("send", "test", text, None))
+            new_state["test"] = {"message_id": None}
+        if not actions:
+            return
+        # Remember first, send second: if anything goes wrong after this point the worst
+        # case is one missed ping, never the same ping every 10 minutes.
+        await sync_to_async(save_alert_state)(new_state)
+        for action in actions:
+            if action[0] == "send":
+                _, key, text, old_message_id = action
+                await self._delete_message(channel, old_message_id)
+                try:
+                    message = await channel.send(
+                        text, allowed_mentions=discord.AllowedMentions(everyone=True)
+                    )
+                except discord.HTTPException:
+                    logger.exception("Structure alert %s could not be sent", key)
+                    # forget it again so the next check retries
+                    if key in state:
+                        new_state[key] = state[key]
+                    else:
+                        new_state.pop(key, None)
+                    continue
+                new_state[key]["message_id"] = message.id
+                logger.info("Structure alert sent: %s", key)
+            else:
+                _, key, message_id = action
+                await self._delete_message(channel, message_id)
+                logger.info("Structure alert cleared: %s", key)
+        await sync_to_async(save_alert_state)(new_state)
+
+    @staticmethod
+    async def _delete_message(channel, message_id):
+        if not message_id:
+            return
+        try:
+            await channel.get_partial_message(message_id).delete()
+        except discord.HTTPException:
+            pass  # already gone, or not ours to delete
 
 
 def setup(bot):

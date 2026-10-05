@@ -50,10 +50,11 @@ class Board:
                 return message
         return None
 
-    async def update(self, embed) -> None:
+    def get_channel(self):
+        """The board's channel, or None while it is switched off or does not exist."""
         channel_name = getattr(settings, self.channel_setting, "")
         if not channel_name:
-            return
+            return None
         guild = self.bot.get_guild(int(settings.DISCORD_GUILD_ID))
         channel = (
             discord.utils.get(guild.text_channels, name=channel_name) if guild else None
@@ -64,8 +65,15 @@ class Board:
                     "%s: no text channel named #%s yet", self.title, channel_name
                 )
                 self._warned_no_channel = True
-            return
+            return None
         self._warned_no_channel = False
+        return channel
+
+    async def update(self, embed) -> None:
+        channel = self.get_channel()
+        if channel is None:
+            return
+        channel_name = channel.name
 
         embed.set_footer(text=FOOTER)
 
