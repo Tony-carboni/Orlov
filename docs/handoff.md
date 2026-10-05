@@ -6,27 +6,27 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ## 2026-10-05 (later) — local session (PC) → either session
 
-**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — C confirmed by the owner. **E is still open, and the token character changed.**
+**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — C confirmed, E1–E2 done, G done. **Only open item: the timer for this first cycle (E3, by hand).**
 
 ### Changed since the previous entry
-- **The Athanor moved corp.** The owner transferred De Kaasfabriek (Piekura) from KHAAS to **"Gewoon voor structures" [GWON]**, corp_id 98635713, 1 member, no alliance (auth's cached data). The one auth character in it is **Vieze Jonge Pass**, already on the `tony` account, so as sole member he is the CEO. **E must be done with Vieze Jonge Pass, not Flapoor Hendrik.** Runbook 07 corrected (Known values, A1 note, E1, E3).
-- Wherever the entries below say "Flapoor Hendrik" or "Owner (1, KHAAS)" for section E or step 6, read Vieze Jonge Pass and GWON.
+- **The Athanor moved corp.** The owner transferred it from KHAAS to **"Gewoon voor structures" [GWON]**, corp_id 98635713, 1 member, no alliance. The token character is **Vieze Jonge Pass** (sole member, so CEO; on the `tony` account), not Flapoor Hendrik. Runbook 07 corrected. Wherever older entries say Flapoor Hendrik or KHAAS for E or step 6, read Vieze Jonge Pass and GWON.
+- The Athanor is now named **"Orlov Mining Facility I"** (was De Kaasfabriek), at Piekura V - Moon 1.
 
-### Done (local, read-only)
-- Owner confirmed all three test messages arrived in Discord (two in `#moon-timers`, one in `#directors`).
-- Server state before E: structures Owner 0, Structure 0, Notification 0; moonmining Owner 0, Refinery 0, Extraction 0; structuretimers Timer 0. Webhooks and rules from C are present (2 structures webhooks active + default, 1 structuretimers webhook, 2 rules).
-- G, config check: server `conf/requirements.txt` has the same four package lines as `deploy/`. Server `conf/local.py`: the Day 5 block is byte-identical to `deploy/conf/local.py.append` and the Member Audit schedule is 3600; the earlier blocks differ from the deploy file in comment lines only.
-- Nightly backups ran "backup ok" on 3, 4 and 5 October. All 10 containers up.
+### Done
+- Owner confirmed the three test messages arrived in Discord.
+- **E1–E2 (owner, browser)** with Vieze Jonge Pass. Verified read-only afterwards:
+  - structures Owner 1 (GWON), active, both default webhooks attached ("Moon Timers", "Structure Alerts").
+  - structures Structure 2: Athanor "Orlov Mining Facility I" in Piekura, fuel until 2026-11-19 12:00 UTC; Raitaru "Orlov Family Facilities" in Isikano, fuel until 2026-11-06 14:00 UTC.
+  - moonmining Owner 1 (last update ok), Refinery 1, Extraction 1: started 2026-10-04 07:08 UTC, **chunk arrives 2026-10-10 17:01 UTC**, auto fracture 20:01 UTC, status started. The extraction survived the transfer.
+  - structures Notification 120, all history from the character; only the 2 `StructuresReinforcementChanged` from 2026-10-04 were sent to Discord, nothing older was posted. 0 `Moonmining…` notifications, as expected (the extraction started under KHAAS).
+- **G:** backup `~/backups/aa-db-2026-10-05-1028.sql.gz` ("backup ok", 4.3M). Config check: server `conf/requirements.txt` has the same four package lines as `deploy/`; in `conf/local.py` the Day 5 block is byte-identical to `deploy/conf/local.py.append` and the Member Audit schedule is 3600; earlier blocks differ in comment lines only.
 
-### Expect for this first cycle
-- The extraction was started under KHAAS, so the "extraction started" notification went to Flapoor Hendrik. aa-structures now reads GWON's character, so the automatic timer and the "Extraction started" Discord post will most likely not appear; add the timer by hand (runbook F, step 2). Not known: whether the running extraction survived the transfer. Moon Mining → Extractions after E2 will show it.
+### Open
+- **structuretimers Timer count is 0.** The owner thought section F was done, but no timer is saved. For this cycle it must be added by hand (Structure Timers → Add Timer): structure type Athanor, timer type Moon Mining, system Piekura, date 2026-10-10 17:01 EVE time. The two reminder rules then post in `#moon-timers` at 16:01 and 17:01.
+- Tavaga's Discord ticker (showed STI on 2026-10-03) was never checked on the server.
 
-### Owner does by hand (browser)
-- **E:** log out and in once on auth, then Structures → Add Owner and Moon Mining → Add Owner, both with **Vieze Jonge Pass**.
-
-### Next — local session, after the owner reports E done
-- Step 6 of the 14:40 UTC cloud entry: structures Owner (1, GWON) with both default webhooks attached, the Athanor and its fuel expiry, moonmining Owner/Refinery/Extraction, the timer board, notifications.
-- G: run `~/bin/aa-backup.sh` (announce first). The config comparison is already done.
+### Next
+- After the owner adds the timer: confirm Timer count 1 with timer type Moon Mining. On 2026-10-10 check that the reminder and the `@here` arrived. The next extraction started under GWON should create its timer and Discord post automatically.
 
 ### Notes for the local session
 - Piping a script to `ssh` from PowerShell 5.1 prepends a byte-order mark and Python rejects it. Pipe from Git Bash through Windows OpenSSH instead: `cat script.py | /c/Windows/System32/OpenSSH/ssh.exe orlov "..."`.
