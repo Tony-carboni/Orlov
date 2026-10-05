@@ -6,16 +6,17 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ## 2026-10-05 (15:15 UTC) — local session (laptop) → either session
 
-**Topics:** structure board war banner (see below), and new member corp **Go Browns [GB44]** prepared in the role system before any of its members authed. Design doc `docs/design/membership.md` updated.
+**Topics:** structure board war banner (see below), and joining corp **Go Browns [GB44]** prepared in the role system before any of its members authed. **Corrected by the owner at 15:45 UTC: GB44 is not yet in the alliance, so its members are Family Friend until it is.** Design doc `docs/design/membership.md` updated.
 
 ### Done on the server (via Django, Alliance Auth's own functions)
 - Corp looked up on public ESI: Go Browns, ticker GB44, corporation_id 98845722, 11 members, founded 2026-10-03, **no alliance**, CEO Masterxxx (character_id 2122385466).
-- `EveCorporationInfo` created (pk 9). Added to the `Family Member` state's member corporations, which are now OARMI, GWON, GB44 (alliance ORLOV unchanged). Needed because the corp is not in the alliance; without it its members would be Family Friend.
+- `EveCorporationInfo` created (pk 9). It was first added to the `Family Member` state's member corporations and **removed again at 15:45 UTC on the owner's instruction**: nobody gets Family Member before their corp is actually in The Orlov Family in game. The state is back to alliance ORLOV plus corps OARMI and GWON. No GB44 account existed on auth in between. Rule recorded in `docs/design/membership.md`: a joining corp is not listed on the state.
 - Auto-group `corp_GB44` created in advance with `AutogroupsConfig.create_corp_group()` (group pk 10, managed link to config pk 3, 0 members).
 - Discord role `corp_GB44` created in advance with the Discord service's `match_or_create_role_from_name()` (role id 1556685567536930900, no colour, no permissions, at the bottom of the role list).
 
 ### What happens when a Go Browns member auths
-- Main in GB44 → state Family Member → Discord roles `Family Member` + `corp_GB44`, nickname `[GB44] Name`. Nothing else to do per member.
+- While GB44 is outside the alliance: state Family Friend → Discord roles `Family Friend` + `corp_GB44` (the corp auto-groups cover both states), nickname `[GB44] Name`.
+- Once GB44 is in alliance ORLOV in game: Family Member follows by itself at auth's next character update, because the state is keyed on the alliance. Nothing to configure.
 
 ### Structure board: war banner (owner's request, deployed 15:14 UTC)
 - War eligibility removed from the board (and the public ESI read for it). New first line in heading size: green circle + "NOT AT WAR", or red circle + "AT WAR" while any registered corp has a declared or running war. The war detail lines and the red colour bar are unchanged; the "Wars: none declared or running" line is gone.
@@ -24,15 +25,15 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ### Early Founders badge (owner's request, 15:25 UTC; first named Founder, renamed 15:35 UTC)
 - Auth group `Early Founders` (pk 11, internal, no permissions) and Discord role `Early Founders` (id 1556687406663598113, no colour, no permissions). Created as `Founder`, then renamed on the owner's request: the Discord role in place through the Discord service's API client (same id), then the group. Auth's own rate limiter stops a burst of Discord calls; pause between them.
-- Rule decided by the owner (the literal request "joined before 2026" matched nobody: alliance founded 2026-10-01): **every Family Member account before 2027-01-01**, Go Browns included. Written into `docs/design/membership.md`.
+- Rule decided by the owner (the literal request "joined before 2026" matched nobody: alliance founded 2026-10-01): **every Family Member account before 2027-01-01**; Go Browns members count once they are Family Member. Written into `docs/design/membership.md`.
 - Added: tony, Flapoor_Hendrik (main Gewoon Rudi), Nashomon_Yoma_Itinen, Tavaga. All four verified to have the role in Discord.
-- Not automatic. When the owner says "refresh the founders": add every account with state Family Member to the group (add-only), as long as the date is before 2027-01-01. Go Browns members need this once they have authed.
+- Not automatic. When the owner says "refresh the founders": add every account with state Family Member to the group (add-only), as long as the date is before 2027-01-01. Go Browns members need this once their corp is in the alliance and they show as Family Member.
 
 ### Open (owner)
 - Look at `#structure-board` and confirm the banner looks right.
 - Optional, in Discord: give the `Early Founders` role a colour or icon, and drag it where it should sit in the role list (it is at the bottom).
 - When the CEO (Masterxxx) has authed: add them to the `Corp Director` group, and have them add the Corp Stats token (`docs/guides/corp-ceo-onboarding.md`).
-- If Go Browns later joins alliance ORLOV in game, nothing changes. If it leaves, remove it from the Family Member state's corporations by hand; the state does not drop on its own for a listed corp.
+- Tell a session when Go Browns has joined the alliance in game, so it can check the members switched to Family Member and refresh the founders.
 
 ---
 
