@@ -239,6 +239,8 @@ The Structures "access this app" permission is required for the other Structures
 
 ## F. Public Athanors in Piekura (optional, by hand)
 
+*Not used — owner's decision 2026-10-05: only our own moon in Piekura is tracked, no public timers. Step 2 below is only relevant as the way to add our own timer by hand when the automatic one is missing (as in the first cycle).*
+
 ESI only exposes extractions to the owning corp, so other people's cycles can't be read automatically. What you can do:
 
 1. Find the pop time: look at the structure's **name or description** in the Structure Browser (public-access Athanors often publish their frack schedule there), ask the owner in local/mail, or note when the belt appeared (d-scan asteroids at that moon; a field lasts ~48 h and most owners run a fixed 7- or 14-day rhythm, so the next one is predictable).

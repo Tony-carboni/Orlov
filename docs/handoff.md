@@ -25,8 +25,11 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - **structuretimers Timer count is 0.** The owner thought section F was done, but no timer is saved. For this cycle it must be added by hand (Structure Timers → Add Timer): structure type Athanor, timer type Moon Mining, system Piekura, date 2026-10-10 17:01 EVE time. The two reminder rules then post in `#moon-timers` at 16:01 and 17:01.
 - Tavaga's Discord ticker (showed STI on 2026-10-03) was never checked on the server.
 
+### Owner's decision
+- **No public timers.** Only the own moon in Piekura is tracked; runbook 07 section F is marked not used. The one hand-added timer discussed above is for the own Athanor, for this cycle only.
+
 ### Next
-- After the owner adds the timer: confirm Timer count 1 with timer type Moon Mining. On 2026-10-10 check that the reminder and the `@here` arrived. The next extraction started under GWON should create its timer and Discord post automatically.
+- After the owner adds the timer (or asks the local session to create it): confirm Timer count 1 with timer type Moon Mining. On 2026-10-10 check that the reminder and the `@here` arrived. The next extraction started under GWON should create its timer and Discord post automatically.
 
 ### Notes for the local session
 - Piping a script to `ssh` from PowerShell 5.1 prepends a byte-order mark and Python rejects it. Pipe from Git Bash through Windows OpenSSH instead: `cat script.py | /c/Windows/System32/OpenSSH/ssh.exe orlov "..."`.
