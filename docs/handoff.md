@@ -6,7 +6,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ## 2026-10-05 (later) — local session (PC) → either session
 
-**Runbooks:** `07-day-five-moon-timers.md` is **complete**. `08-day-six-moons-command.md`: A, B and C done; **D (owner tries `/moons` in Discord) is open.** `09-moon-board.md`: B done; **A (owner creates `#moon-board`) and C are open.**
+**Runbooks:** `07-day-five-moon-timers.md` is **complete**. `08-day-six-moons-command.md`: A, B and C done; **D (owner tries `/moons` in Discord) is open.** `09-moon-board.md`: A and B done, the bot reported "Moon board posted in #moon-board" at 11:30 UTC; **C (owner confirms the message looks right) is open.**
 
 ### Changed since the previous entry
 - **The Athanor moved corp.** The owner transferred it from KHAAS to **"Gewoon voor structures" [GWON]**, corp_id 98635713, 1 member, no alliance. The token character is **Vieze Jonge Pass** (sole member, so CEO; on the `tony` account), not Flapoor Hendrik. Wherever older entries say Flapoor Hendrik or KHAAS for E or step 6, read Vieze Jonge Pass and GWON.
@@ -46,12 +46,12 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - aa-structuretimers reminder offsets: the admin offers 0 to 120 minutes only, but the code subtracts any number of minutes, so a longer offset would work if set through Django. Not used.
 
 ### Owner does by hand
-- Runbook 09 section A: create `#moon-board` under ALLIANCE (Family Member read-only; bot's role may view, send, embed links, read history).
+- Runbook 09 section C: look at the board message in `#moon-board` and confirm it is right.
 - Runbook 08 section D: type `/moons` in `#general`.
 
 ### Next — local session, after the owner reports on D
 - If `/moons` answers: tick D in runbook 08, done. If it does not show or errors: runbook 08 Troubleshooting; read `docker compose logs --tail 50 allianceauth_discordbot`.
-- After the owner creates `#moon-board`: check the bot output for "Moon board posted in #moon-board" (or a permissions error), then tick runbook 09 A and C.
+- After the owner confirms the board: tick runbook 09 C. On 2026-10-10 after 17:01 UTC check the board switched to "Chunk has arrived" and that the two `@here` reminders arrived in `#moon-timers`.
 
 ### Open
 - Tavaga's Discord ticker (showed STI on 2026-10-03) was never checked on the server.

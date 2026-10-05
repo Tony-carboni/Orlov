@@ -66,7 +66,7 @@ The local session does this, announcing each change first:
 
 ## Completion checklist
 
-- [ ] `#moon-board` created with the permissions above (A)
+- [x] `#moon-board` created with the permissions above (A) — bot output 2026-10-05 11:30 UTC: "Moon board posted in #moon-board"
 - [x] Board switched on, bot restarted, no errors in its output (B)
 - [ ] Board message visible and correct (C)
 
