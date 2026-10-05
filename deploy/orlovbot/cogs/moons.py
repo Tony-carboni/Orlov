@@ -54,7 +54,12 @@ async def build_embed() -> Embed:
             state = f"Chunk arrives <t:{stamp}:R>"
         embed.add_field(
             name=f"{refinery.name} ({moon})",
-            value=f"{state}\nEVE time: {arrival:%a %d %b %H:%M}",
+            value=(
+                f"{state}\n"
+                f"EVE time: {arrival:%a %d %b %H:%M}\n"
+                # Discord converts this to the time zone of each reader's own device
+                f"In your time zone: <t:{stamp}:F>"
+            ),
             inline=False,
         )
     return embed

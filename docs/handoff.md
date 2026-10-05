@@ -41,7 +41,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - Owner confirmed the war banner renders as a big heading with the green circle.
 - Structure board: the "Structure data read from EVE" line is gone (the owner saw two times). It now appears only as a warning when the data is more than 90 minutes old (`DATA_STALE_AFTER` in `structures.py`), which also turns the colour bar orange.
 - Both boards: footer "Kept up to date automatically, checked every 10 minutes" removed (`board.py`).
-- Moon board and `/moons`: the "Your time" line removed (`moons.py`); the owner read it as wrong. It was Discord's own conversion to the device's time zone (17:01 EVE time shown as 7:01 PM, i.e. UTC+2). "Last checked … at 5:39 PM" uses the same conversion and was left in.
+- Moon board and `/moons`: the "Your time" line was removed at 15:43 and **restored at 15:46 UTC as "In your time zone"** (`moons.py`). The owner had read it as the current time; it is the chunk's arrival time in the reader's device time zone (17:01 EVE time = 7:01 PM at UTC+2), and the owner wants it kept.
 - Old copies in `~/backups`: `structures.py.pre-single-timestamp`, `board.py.pre-no-footer`, `moons.py.pre-no-local-time`.
 
 ### Open (owner)
