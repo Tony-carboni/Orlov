@@ -19,14 +19,14 @@ Decisions baked in (research in `docs/research/03-moon-extraction-timers.md`):
 | Server | `ssh orlov` → `~/aa-docker` (local session runs this) |
 | Admin | https://auth.orlovfamily.space/admin/ |
 | Packages added | `aa-structures==4.0.4`, `aa-moonmining==3.1.0`, `aa-structuretimers==3.2.0` |
-| Token character | Flapoor Hendrik, CEO of "Kazen die stinken zijn lekkerder" [KHAAS] (started the extraction) |
+| Token character | **Vieze Jonge Pass**, sole member (so CEO) of "Gewoon voor structures" [GWON], already on the `tony` auth account. The Athanor was transferred there from "Kazen die stinken zijn lekkerder" [KHAAS]; Flapoor Hendrik (KHAAS CEO) started the extraction but is no longer the token character. |
 | Channels | `#moon-timers` (new, ALLIANCE category), `#directors` (exists) |
 
 ---
 
 ## A. Preparation (browser + Discord, 10 min)
 
-**A1. Register the holding-corp character on auth.** Done on the server side 2026-10-04 (Flapoor Hendrik was detached from the test user; see `docs/handoff.md`). What remains is yours: log in to https://auth.orlovfamily.space with your **own `tony` account** (SSO with Catherine Frey or any character already on it) → dashboard → **Add Character** → log in with **Flapoor Hendrik** in the EVE SSO window → accept all scopes. He appears as an alt with corp "Kazen die stinken zijn lekkerder", no alliance; your state stays `Family Member` (states follow the main). ⚠️ Don't log in with Flapoor Hendrik while logged out of auth — that creates a separate user. Then **Member Audit → Add character** → Flapoor Hendrik again (his old token only had public scopes).
+**A1. Register the holding-corp character on auth.** *Update 2026-10-05: the Athanor now belongs to "Gewoon voor structures" [GWON], whose character Vieze Jonge Pass is already on the `tony` account, so nothing more is needed here for section E. The Flapoor Hendrik steps below are kept as the record of what was done.* Done on the server side 2026-10-04 (Flapoor Hendrik was detached from the test user; see `docs/handoff.md`). What remains is yours: log in to https://auth.orlovfamily.space with your **own `tony` account** (SSO with Catherine Frey or any character already on it) → dashboard → **Add Character** → log in with **Flapoor Hendrik** in the EVE SSO window → accept all scopes. He appears as an alt with corp "Kazen die stinken zijn lekkerder", no alliance; your state stays `Family Member` (states follow the main). ⚠️ Don't log in with Flapoor Hendrik while logged out of auth — that creates a separate user. Then **Member Audit → Add character** → Flapoor Hendrik again (his old token only had public scopes).
 
 **A2. Create `#moon-timers`** in Discord: right-click the `ALLIANCE` category → **Create Channel** → text, name `moon-timers`. Channel → **Edit Channel → Permissions**: `Family Member` View ✅ Send ❌; `Family Friend` ❌; `@everyone` ❌ (friends don't mine our moons). Leave the category default otherwise.
 
@@ -226,11 +226,11 @@ The Structures "access this app" permission is required for the other Structures
 
 ## E. Register the Athanor (browser, 5 min — after the task queue is empty)
 
-**E1. Structures → Add Owner** (left menu). The SSO window opens: log in with the **holding-corp character**, accept the scopes. ✅ Within a minute the Structures page lists the Athanor with fuel days; `#directors` may get a "structures owner added" note.
+**E1. Structures → Add Owner** (left menu). The SSO window opens: log in with the **holding-corp character** (Vieze Jonge Pass, corp GWON), accept the scopes. ✅ Within a minute the Structures page lists the Athanor with fuel days; `#directors` may get a "structures owner added" note.
 
 **E2. Moon Mining → Add Owner** → same character, accept. ✅ Moon Mining → *Extractions* shows your moon with the chunk arrival time; *Owned Moons* lists it. Values fill in at the next hourly report run.
 
-**E3. Structure Timers** (left menu) → the extraction appears as a `Moon Mining` timer with the arrival time (added by aa-structures from the `MoonminingExtractionStarted` notification; up to 5 min after E1). If it doesn't within 15 min, see Troubleshooting.
+**E3. Structure Timers** (left menu) → the extraction appears as a `Moon Mining` timer with the arrival time (added by aa-structures from the `MoonminingExtractionStarted` notification; up to 5 min after E1). If it doesn't within 15 min, see Troubleshooting. *For this first cycle expect it not to: the extraction was started under KHAAS, so the "extraction started" notification went to Flapoor Hendrik, not to the GWON character the apps now read. Add the timer by hand (section F, step 2). The same goes for the "Extraction started" post in E4.*
 
 **E4. Discord** → `#moon-timers` has the "Extraction started" post with the ore list and arrival time. The reminder and `@here` posts come from the rules in C2 when the time arrives.
 

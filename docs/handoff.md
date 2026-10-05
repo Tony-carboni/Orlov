@@ -4,6 +4,35 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-05 (later) — local session (PC) → either session
+
+**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — C confirmed by the owner. **E is still open, and the token character changed.**
+
+### Changed since the previous entry
+- **The Athanor moved corp.** The owner transferred De Kaasfabriek (Piekura) from KHAAS to **"Gewoon voor structures" [GWON]**, corp_id 98635713, 1 member, no alliance (auth's cached data). The one auth character in it is **Vieze Jonge Pass**, already on the `tony` account, so as sole member he is the CEO. **E must be done with Vieze Jonge Pass, not Flapoor Hendrik.** Runbook 07 corrected (Known values, A1 note, E1, E3).
+- Wherever the entries below say "Flapoor Hendrik" or "Owner (1, KHAAS)" for section E or step 6, read Vieze Jonge Pass and GWON.
+
+### Done (local, read-only)
+- Owner confirmed all three test messages arrived in Discord (two in `#moon-timers`, one in `#directors`).
+- Server state before E: structures Owner 0, Structure 0, Notification 0; moonmining Owner 0, Refinery 0, Extraction 0; structuretimers Timer 0. Webhooks and rules from C are present (2 structures webhooks active + default, 1 structuretimers webhook, 2 rules).
+- G, config check: server `conf/requirements.txt` has the same four package lines as `deploy/`. Server `conf/local.py`: the Day 5 block is byte-identical to `deploy/conf/local.py.append` and the Member Audit schedule is 3600; the earlier blocks differ from the deploy file in comment lines only.
+- Nightly backups ran "backup ok" on 3, 4 and 5 October. All 10 containers up.
+
+### Expect for this first cycle
+- The extraction was started under KHAAS, so the "extraction started" notification went to Flapoor Hendrik. aa-structures now reads GWON's character, so the automatic timer and the "Extraction started" Discord post will most likely not appear; add the timer by hand (runbook F, step 2). Not known: whether the running extraction survived the transfer. Moon Mining → Extractions after E2 will show it.
+
+### Owner does by hand (browser)
+- **E:** log out and in once on auth, then Structures → Add Owner and Moon Mining → Add Owner, both with **Vieze Jonge Pass**.
+
+### Next — local session, after the owner reports E done
+- Step 6 of the 14:40 UTC cloud entry: structures Owner (1, GWON) with both default webhooks attached, the Athanor and its fuel expiry, moonmining Owner/Refinery/Extraction, the timer board, notifications.
+- G: run `~/bin/aa-backup.sh` (announce first). The config comparison is already done.
+
+### Notes for the local session
+- Piping a script to `ssh` from PowerShell 5.1 prepends a byte-order mark and Python rejects it. Pipe from Git Bash through Windows OpenSSH instead: `cat script.py | /c/Windows/System32/OpenSSH/ssh.exe orlov "..."`.
+
+---
+
 ## 2026-10-05 — local session (PC) → cloud session
 
 **Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — section C done via Django. **E is next (owner, browser).**
@@ -110,29 +139,3 @@ Rules from CLAUDE.md apply.
 
 ### Next — cloud session
 The task queue is empty, so E is no longer blocked by the data load. Walk the owner through C (webhooks and rules), D (permissions) and E (register the Athanor) in the browser. Ask first whether A1–A3 are done. When E is finished, hand back to the local session for G (backup + verify server matches `deploy/`).
-
----
-
-## 2026-10-04 — cloud session → local session
-
-**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — section B (install the three apps).
-
-### Done (cloud)
-- Read the previous entry. Runbook 07 corrected: A1 now says the owner's auth account is `tony` (main Catherine Frey), warns against logging in as Flapoor Hendrik while logged out, and adds re-registering him in Member Audit. B4 notes the `manage.py` path for non-interactive use.
-- `deploy/conf/requirements.txt` and `deploy/conf/local.py.append` already carry the Day 5 lines (block starts at the comment line "# --- Day 5: moon timers"). Use them as the source for the server edits so the two stay identical.
-
-### Owner does by hand (browser), can run in parallel with section B
-- A1: Add Character (Flapoor Hendrik) on the `tony` account, then Member Audit registration.
-- A2–A3: create `#moon-timers`, two webhooks, save the URLs in Bitwarden.
-
-### Next — local session: run runbook 07 section B
-Context: install aa-structures 4.0.4, aa-moonmining 3.1.0, aa-structuretimers 3.2.0 into the custom image, exactly as runbook 07 section B describes. Announce each state change first, one at a time, show output. Steps:
-1. Check the stack is up (compose ps). Run `~/bin/aa-backup.sh`; confirm by the printed "backup ok" and the new file in `~/backups`.
-2. B1: append the three pinned package lines to `~/aa-docker/conf/requirements.txt` so it matches `deploy/conf/requirements.txt` in the repo (4 lines total; do not duplicate memberaudit). Show the file.
-3. B2: append the Day 5 block from `deploy/conf/local.py.append` (from the line "# --- Day 5: moon timers" to the end of the file) to `~/aa-docker/conf/local.py`. Check first that `conf/local.py` does not already contain "structuretimers" (idempotent). Show the last 10 lines afterwards. Do not print any other part of local.py and never print .env.
-4. B3: `docker compose --env-file=.env build` (takes ~5 min; report the tail of the output), then `docker compose --env-file=.env up -d`, then `docker compose restart nginx`. Confirm https://auth.orlovfamily.space answers 200 (curl -sI from the server or the PC).
-5. B4, all via `docker compose exec -T allianceauth_gunicorn python /home/allianceauth/myauth/manage.py <cmd>`: `check`, `migrate`, `collectstatic --noinput`, `eveuniverse_load_eve map --noinput`, `structures_load_eve`, `structuretimers_load_eve`, `moonmining_load_eve`. If a load command has no `--noinput`, pipe `y` on stdin. Report what each printed.
-6. Verify: compose ps shows gunicorn, beat, worker Up; the task queue is draining (`docker compose exec -T redis redis-cli llen celery` every few minutes until it trends down; the map load takes ~30–45 min). Report the queue length when you finish.
-7. Write the next handoff entry (what was done, queue status, anything that differed from the runbook), commit, push. The owner then does sections C–E in the browser with the cloud session.
-Rules from CLAUDE.md apply (backup first, no rm -rf, nothing in mysql-data/, never print .env).
-
