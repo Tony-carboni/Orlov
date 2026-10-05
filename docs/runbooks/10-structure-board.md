@@ -17,7 +17,7 @@ What the board shows:
 |---|---|
 | State: "shield vulnerable (normal)", or in capitals with the timer when reinforced, anchoring, unanchoring | Structures app |
 | Power: full power / LOW POWER / ABANDONED | Structures app |
-| Fuel: live countdown plus the EVE date; flagged when less than 7 days are left | Structures app |
+| Fuel: days left (hours when under two days), e.g. "32 days left"; hovering it shows the exact run-out date in EVE time, clicking it opens Structures on auth; flagged when less than 7 days are left. The number is refreshed by the bot's 10-minute check, so it changes once a day | Structures app |
 | Services: all online, or the list of offline ones | Structures app |
 | Profile: the structure profile | EVE's API (number only) + the name list in `conf/local.py`, re-read every hour |
 

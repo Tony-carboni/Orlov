@@ -45,6 +45,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - Data sources: aa-structures models for state, power mode, fuel, services; public ESI `corporations/{id}` for `war_eligible` (GWON: true); wars reconstructed from the owner's stored war notifications (self-test on history: the 2025-10-09 declaration by Bully Brigade shows as running on 2025-10-10 and gone on 2025-10-12; none now); authenticated ESI `corporations/{id}/structures` with the existing structures token for `profile_id` (243511 Raitaru, 244593 Athanor). ESI gives no profile names, so `ORLOVBOT_STRUCTURE_PROFILES` maps number to name; it is empty until the owner supplies the names.
 - Why not the ESI war list: `/wars/` has no per-corp filter and the sampled IDs were not in date order, so scanning it is neither cheap nor reliable.
 - The bot's Discord role is `Orlov auth` (the only managed role).
+- Owner's follow-up: fuel shows as "32 days left" instead of Discord's "in a month", with the run-out date as hover text. Discord only has hover text on links, so the amount is a masked link to `SITE_URL/structures/` with the date as link title (deployed 11:42 UTC).
 
 ### Moon board (runbook 09, done 2026-10-05 11:27 UTC)
 - Owner's wish: an always-visible, self-updating list in Discord instead of asking with `/moons`. Chosen design: the bot posts one message in `#moon-board` and edits it in place (checks every 10 minutes, edits only on change; countdowns are Discord live timestamps). Discord Events, a channel-name ticker and aa-opcalendar were considered and not used.
