@@ -3,7 +3,7 @@
 *Prerequisite: runbook 08 (bot running) and runbook 07 section E (the structure-owning corp is registered under Structures → Add Owner).*
 *Time: ~10 min. You do section A (Discord) and section D (tell the local session the profile names). Sections B and C are run by Claude in the **local session**.*
 
-**Goal:** a channel `#structure-board` in the directors category that always shows one message, "Structure status", kept current by the bot, the same way as the moon board (runbook 09). No pings.
+**Goal:** a channel `#structure-board` in the directors category that always shows one message, "Structure status", kept current by the bot, the same way as the moon board (runbook 09). The board itself never pings; three alerts in the same channel do (see "Alerts" below).
 
 What the board shows:
 
@@ -22,6 +22,24 @@ What the board shows:
 | Profile: the structure profile | EVE's API (number only) + the name list in `conf/local.py`, re-read every hour |
 
 The message's colour bar is green when everything is fine, orange when something needs attention (fuel under 7 days, low power, a service offline) and red when it is urgent (a war, a structure that is not in its normal state, abandoned).
+
+## Alerts (pings in `#structure-board`)
+
+Added 2026-10-05 on the owner's request. Besides the board, the bot posts a short message starting with `@everyone` in the same channel:
+
+| Alert | When | Repeats |
+|---|---|---|
+| **War declared** | a war appears that the board did not know yet (ours or against us), with who and when fighting starts | no, once per war |
+| **Structure needs attention: fuel** | fuel under 7 days, or no fuel and the structure in low power | once every 24 hours while it lasts |
+| **Structure needs attention: services offline** | one or more services of the structure are offline | once every 24 hours while it lasts |
+
+- Fuel and services of one structure go into **one** message. If a second problem shows up later the same day (fuel was low, now a service drops too), the bot pings again at once with both, and the 24 hours start over.
+- The channel stays tidy: a new daily reminder replaces the previous one for that structure, and when the problem is fixed (refuelled, service online, war over) the bot **removes** its alert. So besides the board the channel only ever holds alerts that are still true.
+- `@everyone` in this channel reaches only the people who can see the channel, i.e. the directors.
+- The bot checks every 10 minutes, and the Structures app reads EVE every 30 minutes, so an alert can lag the game by up to about 40 minutes.
+- What was already sent is remembered outside the bot (in the cache), so restarting the bot or the server does not ping again. If that memory is ever wiped, every alert that is still true is sent once more.
+- Switch all alerts off with `ORLOVBOT_STRUCTURE_ALERTS = False` in `conf/local.py`; change who is pinged with `ORLOVBOT_STRUCTURE_ALERT_MENTION` (for example a role mention instead of `@everyone`). Restart the bot afterwards.
+- **Test:** the local session can queue one harmless test alert ("Test alert from the structure board. Nothing is wrong"); the bot posts it at its next check and removes it at the check after. Done once on 2026-10-05 11:53 UTC.
 
 Things to know:
 - **War status comes from notifications, not from a war register.** EVE's API has no "wars of this corp" lookup. The board starts a war at the declaration notice and ends it at the invalidated / retracted / surrender / HQ-removed notice, or when the corp stops being war eligible. If EVE never sends an end notice, the board keeps showing the war. So it errs towards showing a war that is already over; confirm in game before acting on it.
@@ -82,7 +100,8 @@ When you make a new profile or move a structure to another one, the board shows 
 | A second corp's structures | Structures → Add Owner on auth with a director of that corp; they appear on the board by themselves |
 | Another fuel warning threshold | `FUEL_WARNING_DAYS` in `structures.py` |
 | Switch the board off | `ORLOVBOT_STRUCTURE_BOARD_CHANNEL = ""`, restart the bot, delete the message |
-| A ping when war is declared | Not set up (owner wants boards, not pings). Possible: add the war notification types to the "Structure Alerts" webhook in the auth admin |
+| Other fuel threshold or repeat interval for the alerts | `FUEL_WARNING_DAYS` and `ALERT_REPEAT` in `structures.py` |
+| No alerts, board only | `ORLOVBOT_STRUCTURE_ALERTS = False`, restart the bot |
 
 ## Completion checklist
 
@@ -90,6 +109,8 @@ When you make a new profile or move a structure to another one, the board shows 
 - [x] Board switched on, bot output clean (B)
 - [ ] Owner confirms the board is right and only directors see the channel (C)
 - [ ] Profile names filled in (D)
+- [x] Alerts switched on; logic self-tested (13 scenarios) and one live test ping sent
+- [ ] Owner confirms the test ping arrived in `#structure-board`
 
 ## Troubleshooting
 
@@ -97,4 +118,6 @@ When you make a new profile or move a structure to another one, the board shows 
 - **"Structure data read from EVE" is hours old** → the Structures app cannot read EVE: on auth open Structures, or admin → Structures → Owners, and check the owner's status; usually the character's token was revoked (changed password, left the corp, lost the Director role). Fix with Structures → Add Owner again.
 - **A war shows that is over** → see "Things to know". The local session can check which notification is missing.
 - **Profile shows `#number`** → section D.
+- **An alert did not ping** → the message must start with a highlighted `@everyone`. If it shows as plain text, the `Orlov auth` role lost "Mention @everyone" on the channel (it has Administrator today, which includes it).
+- **The same alert every 10 minutes** → should be impossible (the bot records an alert before sending it); if it happens set `ORLOVBOT_STRUCTURE_ALERTS = False`, restart the bot, and have the local session read the bot's output.
 - **War eligible: unknown** → EVE's API did not answer; it is retried at the next check.

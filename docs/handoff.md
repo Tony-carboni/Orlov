@@ -45,6 +45,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - Data sources: aa-structures models for state, power mode, fuel, services; public ESI `corporations/{id}` for `war_eligible` (GWON: true); wars reconstructed from the owner's stored war notifications (self-test on history: the 2025-10-09 declaration by Bully Brigade shows as running on 2025-10-10 and gone on 2025-10-12; none now); authenticated ESI `corporations/{id}/structures` with the existing structures token for `profile_id` (243511 Raitaru, 244593 Athanor). ESI gives no profile names, so `ORLOVBOT_STRUCTURE_PROFILES` maps number to name; it is empty until the owner supplies the names.
 - Why not the ESI war list: `/wars/` has no per-corp filter and the sampled IDs were not in date order, so scanning it is neither cheap nor reliable.
 - The bot's Discord role is `Orlov auth` (the only managed role).
+- **Alerts (owner's request, deployed 11:53 UTC):** `@everyone` messages in `#structure-board` for a new war (once), and per structure once every 24 h while fuel is under 7 days (or gone with low power) or a service is offline. A new reminder replaces the old one; fixed problems remove their alert. Sent-state lives in the Django cache under `orlovbot:structure-board:alerts` (written before sending, so a restart cannot re-ping). Settings `ORLOVBOT_STRUCTURE_ALERTS` and `ORLOVBOT_STRUCTURE_ALERT_MENTION` appended to `conf/local.py` (205 lines; copy from before: `~/backups/local.py.pre-structure-alerts`). `plan_alerts()` self-tested with 13 synthetic scenarios, all pass. One live test alert was queued via the cache key `orlovbot:structure-board:test`; bot output: "Structure alert sent: test". The bot removes it at its next check; the owner has not yet confirmed seeing the ping.
 - Owner's follow-up: fuel shows as "32 days left" instead of Discord's "in a month", with the run-out date as hover text. Discord only has hover text on links, so the amount is a masked link to `SITE_URL/structures/` with the date as link title (deployed 11:42 UTC).
 
 ### Moon board (runbook 09, done 2026-10-05 11:27 UTC)
@@ -62,7 +63,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ### Owner does by hand
 - Runbook 09 section C: look at the board message in `#moon-board` and confirm it is right.
-- Runbook 10 sections C and D: confirm `#structure-board` (and that only directors see it), and say which profile name belongs to which structure.
+- Runbook 10 sections C and D: confirm `#structure-board` (and that only directors see it), and say which profile name belongs to which structure. Confirm the test ping arrived.
+- Optional Discord clean-up found while listing what Family Friend can do: the `@everyone` role has "Mention @everyone" on (any visitor can ping the server from `#public-chat`); `#how-to-get-roles` and `#moon-board` still allow creating threads.
 - Runbook 08 section D: type `/moons` in `#general`.
 
 ### Next — local session, after the owner reports on D
