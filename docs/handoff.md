@@ -6,7 +6,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ## 2026-10-05 (later) — local session (PC) → either session
 
-**Runbooks:** `07-day-five-moon-timers.md` is **complete**. `08-day-six-moons-command.md`: A, B and C done; **D (owner tries `/moons` in Discord) is open.** `09-moon-board.md`: A and B done, the bot reported "Moon board posted in #moon-board" at 11:30 UTC; **C (owner confirms the message looks right) is open.**
+**Runbooks:** `07-day-five-moon-timers.md` is **complete**. `08-day-six-moons-command.md`: A, B and C done; **D (owner tries `/moons` in Discord) is open.** `09-moon-board.md`: A and B done, the bot reported "Moon board posted in #moon-board" at 11:30 UTC; **C (owner confirms the message looks right) is open.** `10-structure-board.md`: A and B done, board posted 11:40 UTC; **C (owner confirms) and D (profile names) are open.**
 
 ### Changed since the previous entry
 - **The Athanor moved corp.** The owner transferred it from KHAAS to **"Gewoon voor structures" [GWON]**, corp_id 98635713, 1 member, no alliance. The token character is **Vieze Jonge Pass** (sole member, so CEO; on the `tony` account), not Flapoor Hendrik. Wherever older entries say Flapoor Hendrik or KHAAS for E or step 6, read Vieze Jonge Pass and GWON.
@@ -38,6 +38,14 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - Timer pk 1 stays on the Structure Timers page on auth; it no longer triggers anything.
 - To bring pings back: new channel webhook URL into the two "Moon Timers" webhook rows, re-enable them and the rules, re-attach the structures webhook to the owner.
 
+### Structure board (runbook 10, done 2026-10-05 11:40 UTC)
+- Owner's wish: the same dashboard style for directors, `#structure-board`, with war status, fuel, structure state and if possible the profile.
+- New code: `orlovbot/board.py` (shared find/post/edit of a board message; the moon module now uses it too) and `orlovbot/cogs/structures.py`. `auth_hooks.py` registers both modules. Server folder replaced from the repo (old copy: `~/backups/orlovbot.pre-structure-board`); `conf/local.py` + "Structure board" block (now 200 lines; copy from before: `~/backups/local.py.pre-structure-board`). Only the bot was restarted.
+- Bot output after restart: four modules loaded, "Upcoming moon extractions: found the board message in #moon-board", "Structure status: board posted in #structure-board" (the owner had already created the channel).
+- Data sources: aa-structures models for state, power mode, fuel, services; public ESI `corporations/{id}` for `war_eligible` (GWON: true); wars reconstructed from the owner's stored war notifications (self-test on history: the 2025-10-09 declaration by Bully Brigade shows as running on 2025-10-10 and gone on 2025-10-12; none now); authenticated ESI `corporations/{id}/structures` with the existing structures token for `profile_id` (243511 Raitaru, 244593 Athanor). ESI gives no profile names, so `ORLOVBOT_STRUCTURE_PROFILES` maps number to name; it is empty until the owner supplies the names.
+- Why not the ESI war list: `/wars/` has no per-corp filter and the sampled IDs were not in date order, so scanning it is neither cheap nor reliable.
+- The bot's Discord role is `Orlov auth` (the only managed role).
+
 ### Moon board (runbook 09, done 2026-10-05 11:27 UTC)
 - Owner's wish: an always-visible, self-updating list in Discord instead of asking with `/moons`. Chosen design: the bot posts one message in `#moon-board` and edits it in place (checks every 10 minutes, edits only on change; countdowns are Discord live timestamps). Discord Events, a channel-name ticker and aa-opcalendar were considered and not used.
 - Server: `orlovbot/cogs/moons.py` replaced (copy of the old one: `~/backups/moons.py.pre-board`); `conf/local.py` + "Moon board" block (`ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"` and console logging for the `aadiscordbot` and `orlovbot` loggers; file now 194 lines; copy from before: `~/backups/local.py.pre-board`). Only the bot container was restarted.
@@ -53,6 +61,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ### Owner does by hand
 - Runbook 09 section C: look at the board message in `#moon-board` and confirm it is right.
+- Runbook 10 sections C and D: confirm `#structure-board` (and that only directors see it), and say which profile name belongs to which structure.
 - Runbook 08 section D: type `/moons` in `#general`.
 
 ### Next — local session, after the owner reports on D

@@ -20,7 +20,7 @@ How it works:
 | Channel | `#moon-board` (the bot finds it by **name**) |
 | Setting | `ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"` in `conf/local.py` (block "Moon board" at the end of `deploy/conf/local.py.append`) |
 | Code | `deploy/orlovbot/cogs/moons.py` → `~/aa-docker/orlovbot/cogs/moons.py` |
-| Check interval | 10 minutes (`BOARD_CHECK_MINUTES` in the code) |
+| Check interval | 10 minutes (`CHECK_MINUTES` in `deploy/orlovbot/board.py`, shared with the structure board of runbook 10) |
 | Bot output | `docker compose logs allianceauth_discordbot` (the same block switches on the bot's log lines) |
 
 ---
@@ -32,7 +32,7 @@ How it works:
    - `@everyone`: View Channel ❌
    - `Family Friend`: View Channel ❌
    - `Family Member`: View Channel ✅, Send Messages ❌
-   - the **bot's role** (the one at the top of the role list): View Channel ✅, Send Messages ✅, Embed Links ✅, Read Message History ✅
+   - the **bot's role**, `Orlov auth`: View Channel ✅, Send Messages ✅, Embed Links ✅, Read Message History ✅
 3. **Save Changes**.
 
 ✅ Done when `#moon-board` exists, members can read but not write, and the bot's role is allowed to post. Within 10 minutes of the bot running with the board switched on, the board message appears by itself.
@@ -48,7 +48,9 @@ The local session does this, announcing each change first:
 3. `manage.py check` and an import of `orlovbot.cogs.moons` in a fresh process, to catch a typo before the bot restarts.
 4. Restart **only** the bot: `docker compose restart allianceauth_discordbot`. No rebuild, and auth itself is not interrupted. The other containers pick the new setting up at their next restart; they do not use it.
 
-✅ Done when the bot's output shows it logged in, loaded `orlovbot.cogs.moons`, and either "Moon board posted in #moon-board" or, if section A is not done yet, "no text channel named #moon-board yet".
+✅ Done when the bot's output shows it logged in, loaded `orlovbot.cogs.moons`, and either "Upcoming moon extractions: board posted in #moon-board" ("found the board message" on later restarts) or, if section A is not done yet, "no text channel named #moon-board yet".
+
+The channel may be moved to another category at any time: the bot finds it by name. Keep the name and the four permissions of the `Orlov auth` role.
 
 ## C. Check (Discord)
 
