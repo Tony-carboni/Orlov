@@ -4,6 +4,20 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-06 (12:45 UTC) — local session (PC) → either session
+
+**Not a runbook step.** Membership changes on the owner's instruction, plus a research document.
+
+### Done (auth, via Django)
+- **Go Browns [GB44]** (corp_id 98845722) was accepted into the alliance; ESI shows the alliance only after the 24 h join delay. One-off: GB44 added to the `Family Member` state's `member_corporations` (now OARMI, GWON, GB44). Auth moved **Masterxxx** and **MrFreshy_Valterus** (3 characters) from Family Friend to Family Member at once; Discord roles and `[GB44]` nicknames followed within a minute.
+- Both users added to the **Corp Director** group (owner's instruction); the Discord role followed. Corp Director members are now tony, Masterxxx, MrFreshy_Valterus.
+- **Open: remove GB44 from the state's corporations once ESI shows Go Browns in ORLOV** (admin → Authentication → States → Family Member, or via Django), so membership follows the alliance again. Noted in `docs/design/membership.md`.
+
+### Also
+- `docs/research/04-corp-industry-and-projects.md`: how corp blueprints, hangars, Corporation Projects and payouts work, with scenarios and theft risks; for the owner to consult.
+
+---
+
 ## 2026-10-06 — local session (laptop) → either session
 
 **Topic:** Discord's join messages moved from `#how-to-get-roles` to `#public-chat`.
@@ -177,31 +191,3 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 ### Next — local session, after the owner reports E done
 - Step 6 of the 14:40 UTC cloud entry below: verify structures Owner (1, KHAAS) with both default webhooks attached, the Athanor and its fuel expiry, moonmining Owner/Refinery/Extraction (chunk arrival), the Moon Mining timer on the board (if 0 after 15 min, see runbook Troubleshooting), and the Moonmining notifications and whether they were sent.
 - Rest of G: backup, confirm server `conf/requirements.txt` and `conf/local.py` match `deploy/`.
-
----
-
-## 2026-10-04 (14:26 UTC, PC clock) — local session (PC) → cloud session
-
-**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — section D done, Member Audit schedule fixed. **Section C not started** (waiting for the two webhook URLs), E and the rest of G still open.
-
-### Done (local, on the server)
-- **D, permissions (add-only):** Family Member 2 → 5, Alliance Director 10 → 22, Corp Director 4 → 7.
-  - Family Member (**state**): moonmining `basic_access`, `extractions_access`; structuretimers `basic_access`.
-  - Alliance Director (group): those three, plus moonmining `add_refinery_owner`, `view_moon_ledgers`, `reports_access`; structures `basic_access`, `add_structure_owner`, `view_all_structures`, `view_structure_fit`; structuretimers `create_timer`, `manage_timer`.
-  - Corp Director (group): structures `basic_access`, `view_corporation_structures`; structuretimers `create_timer`.
-- **Member Audit schedule (memberaudit.W001):** `memberaudit_run_regular_updates` is now `3600` seconds in server `conf/local.py` (line 122) and in `deploy/conf/local.py.append`. Copy of the file from before: `~/backups/local.py.pre-memberaudit-schedule`. `manage.py check` reports no issues.
-- Restarted beat, then gunicorn and the three workers (see the bind-mount note below). Site answers 200, all containers up, workers healthy.
-- Repo: runbook 07 section D corrected, deploy file updated — commit `856017a`.
-
-### Differences from the handoff / things learned
-- **`Family Member` is a state, not a group.** Groups are Alliance Director, Corp Director, FC, corp_FNA, corp_OARMI, corp_STI. State permissions live at `/admin/authentication/state/` and use Alliance Auth's proxy model `authentication.Permission` (look permissions up via `state.permissions.model`, not `auth.Permission`, or `.add()` raises a TypeError).
-- **Structures `basic_access` was missing from the plan.** Without it the Structures page does not open, so it was added to both director groups. Family Member does not have it (members don't see Structures) — as designed in the runbook.
-- **Model names for C:** aa-structuretimers' webhook model is `structuretimers.models.DiscordWebhook` (fields name, url, notes, is_enabled; method `send_test_message`; task `send_test_message_to_webhook(webhook_pk, user_pk)`). `NotificationRule`: trigger `TR` = scheduled time reached, `scheduled_time` 60 and 0, `ping_type` `PN` none / `PH` @here, `require_timer_types` `["MM"]`. aa-structures `Webhook`: fields name, url, notes, webhook_type (1 = Discord), is_active, notification_types, language_code, is_default, has_default_pings_enabled, ping_groups; task `send_test_notifications_to_webhook(webhook_pk, user_pk)`.
-- **Notification types for "Structure Alerts"** (16 values start with `Structure`): Anchoring, Destroyed, FuelAlert, JumpFuelAlert, LostArmor, LostShields, LowReagentsAlert, NoReagentsAlert, Online, RefueledExtra, ServicesOffline, Unanchoring, UnderAttack, WentHighPower, WentLowPower, plus `StructuresReinforcementChanged`. The five `Moonmining…` values are as the runbook lists them.
-- **Single-file bind mount:** `conf/local.py` is mounted as one file. Editing it with `sed -i` replaces the file, and running containers keep the old copy until they restart. Appending with `>>` keeps the same file. After any `sed -i` edit, restart every container that mounts it (gunicorn, beat, workers), not just the one that needs the change.
-- **Local-session permissions:** the app's Auto mode refused the permission grant; it went through after the owner explicitly told the session to proceed. Server writes need the owner's explicit go-ahead in chat or Manual mode.
-
-### Open
-- **C (webhooks + rules):** the local session asked the owner to paste the two webhook URLs (`#moon-timers` "Moon Timers", `#directors` "Structure Alerts"); the owner accepted pasting them in chat (low stakes) but has not done so yet. Either the owner pastes them in the local session and it does C via Django as specified in the previous entry, or the owner does C in the browser per the runbook with the cloud session. Currently 0 structures webhooks, 0 structuretimers webhooks, 0 rules.
-- **E (owner, browser):** log out and in once on auth, then Structures → Add Owner and Moon Mining → Add Owner with Flapoor Hendrik. **Do C1 first:** aa-structures attaches the default webhooks to an owner when the owner is created, so an owner added before the webhooks exist gets none and would have to be linked by hand in the admin (Structures → Owners → webhooks).
-- **After E (local session):** step 6 of the previous entry (verify owners, Athanor, extraction, timer, notifications) and the rest of G (backup, verify server matches `deploy/`).
