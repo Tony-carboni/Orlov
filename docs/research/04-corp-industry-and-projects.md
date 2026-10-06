@@ -19,6 +19,7 @@
 - A corp has hangars wherever it has an **office**: in NPC stations and in Upwell structures (for OARMI: an office in GWON's Raitaru "Orlov Family Facilities" in Isikano). Offices are rented from the structure owner; the owner sets the rent and can refuse renewals. Unpaid rent **impounds** the corp's assets there (not asset safety), and getting them back costs 50 % of the rent or a new office.
 - Each office has **7 divisions** (rename them in the Corporation window). Access is granted per division and per office group: *Hangar Access (Headquarters)*, *(Based at)* and *(Other)*. For a member based elsewhere, the Raitaru office falls under *Other*.
 - Per division there are two rights: **Query** (see the contents) and **Take** (remove items). There is no third right "use for industry only"; that is the root of the materials problem.
+- **Take without Query** is the trick other corps use (verified 2026-10-06, see §2.4): a member who has Take but *not* Query on a division cannot open or see that division in the inventory, yet corporation jobs can still consume materials from it. The materials are hidden rather than locked, so it is protection against casual theft, not against someone who knows what is there and finds a way to address it. Test it with a cheap stack before relying on it.
 - The **Deliveries** hangar receives corp market purchases. The **Projects** hangar (new with Projects) receives Deliver Item contributions: every member can drop into it, only the CEO and directors can take from it, and its access cannot be changed.
 - Containers in a hangar can be set to **log** who locked and unlocked which items; that is the only audit trail short of the corp's asset journal.
 
@@ -42,7 +43,17 @@ A builder who should use corp blueprints *and* corp materials therefore needs **
 - Lockdown protects the **original** only. Anyone with Factory Manager can run a **copy job** and get blueprint copies delivered; whoever has Take on the delivery division can walk off with the copies. For T1 ship and module BPOs that is a nuisance; for expensive, well-researched originals it is a real leak.
 - *Verify in game:* for corporation jobs, which division the finished product and the blueprint are delivered to, and whether the installer can choose that division. If the installer can route output to a division they have Take on, the protection of the product depends on where the output goes, not on where the materials came from. Test with a cheap blueprint before stocking anything valuable.
 
-### 2.4 Corporation Projects
+### 2.4 Is Take access really required? (checked 2026-10-06)
+
+The owner heard that other corporations run corp jobs without even giving view rights on the material hangar. Both things are true at once:
+
+- **Take is required.** CCP's Roles Listing, quoted word for word in two forum threads (2018 and 2023): Factory Manager "allows the listing and use of all corporation owned blueprints within the 'Blueprints' tab of the Industry window, independent of corporation hangar access. Proper 'Take' Access to the respective Hangars or containers is still required for any job requiring input materials." A player who tested it after Projects came out (December 2024) found the same: "In order to set a job a player must have access to take from a hangar."
+- **Query is not required.** In a 2017 thread a CEO who wanted exactly our setup reported: "well i needed to only set take on division 2. Now nobody can see the materials (and take at will) in division 2 but still able to use the materials inside the hangar." That is what "no view rights" means in practice: Take without Query. Members cannot browse the division, so they cannot drag items out, while the industry window still pulls from it.
+- **Blueprints** are the other half of the story: thanks to Factory Manager they can be used with no hangar access at all (Query on their division is enough to make them visible, and lockdown keeps them in place).
+
+So the recommended division layout becomes: blueprints in a division with Query only (locked originals), materials in a division with **Take only**, products delivered to a division the builder has neither right on (*verify in game* that the output can be routed there, §2.3).
+
+### 2.5 Corporation Projects
 
 - Created by the CEO, directors or a member with the **Project Manager** role. Up to **100 active projects** per corp. Projects can be **cloned** for recurring builds.
 - **Funding:** the creator picks a corp wallet division as active; the project's whole budget is moved from that wallet into **escrow** at creation. Each contribution earns the member an entitlement that reduces the escrow. Members **claim** their ISK from the project window; unclaimed entitlements are paid out automatically after 30 days. Cancelling a project returns what is left in escrow to the master wallet. Managers see the escrow total and every contributor's earnings.
@@ -62,7 +73,7 @@ A builder who should use corp blueprints *and* corp materials therefore needs **
 1. OARMI rents an office in the Raitaru. Divisions, for example: 1 *Blueprints*, 2 *Build materials*, 3 *Finished goods*, 4 *Main stock* (nobody but directors).
 2. Blueprint originals go into division 1 and are **locked** by vote.
 3. A director moves exactly the materials for the planned run from 4 into 2.
-4. A builder with Factory Manager + Rent Factory Facility, Query on 1 and Take on 2 opens the Industry window, picks the corp blueprint (Blueprints tab, filter "corporation"), sets the owner to the corporation and installs the job. Materials are consumed from 2; the job fee is paid by the corp (the structure's industry tax goes to GWON as the structure owner).
+4. A builder with Factory Manager + Rent Factory Facility, Query on 1 and Take (no Query) on 2 opens the Industry window, picks the corp blueprint (Blueprints tab, filter "corporation"), sets the owner to the corporation and installs the job. Materials are consumed from 2; the job fee is paid by the corp (the structure's industry tax goes to GWON as the structure owner).
 5. A **Manufacture** project ("on behalf of: corporation", item, Raitaru, N units, X ISK per unit) credits the builder at installation.
 6. When the job finishes, the builder (or any Factory Manager) delivers it; the product lands in a corp division (*verify which*, §2.3). The corp sells it, uses it, or hands it out.
 7. The builder claims the ISK from the project; the CEO sees the contribution list.
@@ -73,7 +84,7 @@ A builder who should use corp blueprints *and* corp materials therefore needs **
 
 *Corp blueprints, corp materials, members build, corp pays per unit.*
 
-- **Setup:** §3. Roles only for a handful of proven builders. Materials division stocked per run, main stock elsewhere. Originals locked.
+- **Setup:** §3. Roles only for a handful of proven builders. Materials division with **Take but no Query** (§2.4), stocked per run, main stock elsewhere. Originals locked.
 - **Payout:** Manufacture project per unit installed. Because installation pays, pair it with a small per-unit amount at installation and put the bulk of the reward in a **Deliver Item** project for the finished product, so a cancelled job earns nothing worth having.
 - **Exposure:** everything in the materials division at any moment, every blueprint copy that a builder can have delivered to a division they can take from, and every running corp job (a Factory Manager can cancel it).
 - **Good for:** a small circle of trusted industrialists who have no capital of their own; production that must be corp-owned (doctrine ships for a corp hangar, structure fuel, moon-goo reaction chains).
@@ -134,7 +145,7 @@ Example: 20 Ventures for a newbie fleet.
 1. Office in the Raitaru (Structure Browser → Orlov Family Facilities → Offices; GWON sets the rent).
 2. Rename the divisions; decide which one members can Take from.
 3. Move originals in, start the lockdown votes.
-4. Titles: a "Builder" title bundling Factory Manager, Rent Factory Facility, Query on the blueprint division and Take on the materials division (Other-office group). Give it to named people only.
+4. Titles: a "Builder" title bundling Factory Manager, Rent Factory Facility, Query on the blueprint division and Take (without Query) on the materials division (Other-office group). Give it to named people only.
 5. Wallet division for industry; Junior Accountant for whoever runs the projects, or let a director do it.
 6. First test run with one cheap blueprint and one builder: install, deliver, note **where the product and the blueprint ended up**, then cancel a second job to see what the cancel does. Update §2.3 of this document with the answers.
 7. Create the Manufacture and Deliver Item projects, clone them per batch.
@@ -154,5 +165,6 @@ Example: 20 Ventures for a newbie fleet.
 - Skoli, [Corporation Projects in EVE Online](https://skoli.ru/en/post/2884) (project settings, claiming, 30-day auto payout)
 - CCP support, [Corporation Projects](https://support.eveonline.com/hc/en-us/articles/9583433729308-Corporation-Projects) (Projects hangar, 100 active projects) and [Roles Listing](https://support.eveonline.com/hc/en-us/articles/203217712-Roles-Listing) (Factory Manager, Rent Factory Facility, Lock Blueprint)
 - EVE University wiki, [Corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics) (divisions, lockdown, Deliveries hangar, container logs) and [Managing corporation members](https://wiki.eveuniversity.org/Managing_corporation_members) (Query vs Take, office groups)
+- EVE forums, [[SOLVED] Shared industry](https://forums.eveonline.com/t/solved-shared-industry/23035) (2017: Take without Query works for materials), [Sharing corp blueprints](https://forums.eveonline.com/t/sharing-corp-blueprints/123563) (2018: Factory Manager text, blueprints without hangar access), [Industry Projects are useless for generating corp engagement](https://forums.eveonline.com/t/industry-projects-are-useless-for-generating-corp-engagement/470209) (2024: Take still required after Projects)
 - EVE forums, [Manufacturing roles in corporations suck](https://forums.eveonline.com/t/manufacturing-roles-in-corporations-suck/429556) (role pairing, cancel and install-then-cancel abuse), [Corp industry without hangar access](https://forums.eveonline.com/t/corp-industry-without-hangar-access/447213) (no use-only access to materials, container logging), [Corp Projects: reverse delivery](https://forums.eveonline.com/t/corp-projects-reverse-delivery/496816) (no hand-out project type)
 - EVE forums, [What happens to corp offices when a structure is transferred](https://forums.eveonline.com/t/what-happens-to-corp-offices-in-structures-when-structure-is-transferred-to-new-owners/399164) (office rent, impound)
