@@ -42,6 +42,8 @@ Why off first: with the host set, every Shipyard page on auth redirects to the n
 
 ## C. Switch the front door on (local session, after A)
 
+*A done by the owner and C done by the local session on 2026-10-08: `SHIPYARD_STANDALONE_HOST` set (copy of the file before: `~/backups/local.py.pre-frontdoor-on`), gunicorn, beat and the workers restarted. Checks from the server: visitor on the new host → 302 `/shipyard/` → 302 `https://auth.orlovfamily.space/sso/login?next=/shipyard/go/` → EVE login; `https://auth.orlovfamily.space/shipyard/` → 302 to the new host; auth itself 200.*
+
 Set `SHIPYARD_STANDALONE_HOST = "shipyards.orlovfamily.space"` in `conf/local.py`, restart gunicorn and the workers, and check from the server that the new host answers 302 → auth's SSO login for a visitor and that auth's `/shipyard/` answers 302 → the new host.
 
 ## D. Check (you, browser)
