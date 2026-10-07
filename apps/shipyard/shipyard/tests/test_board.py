@@ -39,7 +39,11 @@ class BoardTests(TestCase):
         rows = board.dashboard_rows(s)
         self.assertEqual(len(rows), 1)
         e = rows[0].econ
-        self.assertAlmostEqual(e.net_profit, 92_683_787.9, delta=10)
+        # a pirate hull: the corp cannot supply the copy, so the typed 23 M blueprint is
+        # left out of the cost and the profit is marked as "without blueprint"
+        self.assertAlmostEqual(e.net_profit, 92_683_787.9 + 23_000_000, delta=10)
+        self.assertTrue(e.bpc_excluded)
+        self.assertEqual(e.bpc_source, "public")
         self.assertTrue(e.complete)
         self.assertAlmostEqual(e.market_depth_days, 7.0, places=1)
 
@@ -59,7 +63,14 @@ class BoardTests(TestCase):
 
     def test_detail_bpc_override(self):
         s = board.get_user_settings(self.user)
+        # pirate hull: no blueprint source by policy
+        d = board.ship_detail(self.ship, s)
+        self.assertEqual(d["econ"].bpc_cost, 0.0)
+        self.assertTrue(d["econ"].bpc_excluded)
+        # a typed price is a real quote and overrides the policy in the simulation
+        d = board.ship_detail(self.ship, s, bpc=23_000_000)
+        self.assertEqual(d["econ"].bpc_cost, 23_000_000.0)
+        self.assertFalse(d["econ"].bpc_excluded)
         d = board.ship_detail(self.ship, s, bpc=0)
         self.assertEqual(d["econ"].bpc_cost, 0.0)
-        d = board.ship_detail(self.ship, s)
-        self.assertEqual(d["econ"].bpc_cost, 23_000_000.0)
+        self.assertFalse(d["econ"].bpc_excluded)
