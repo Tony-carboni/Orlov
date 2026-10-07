@@ -69,8 +69,7 @@
                 if (d.bpc_excluded) {
                     setK("bpc_cost", '<span class="small text-muted">public contracts only</span>');
                 } else {
-                    var lpMark = d.bpc_source === "lp" ? ' <sup class="text-warning">LP' + (d.bpc_markup ? "+" + Math.round(d.bpc_markup * 100) + "%" : "") + "</sup>" : "";
-                    setK("bpc_cost", fmtIsk(d.bpc_cost) + lpMark);
+                    setK("bpc_cost", fmtIsk(d.bpc_cost));
                 }
                 setK("tag_cost", fmtIsk(d.tag_cost));
                 setK("fees", fmtIsk(d.sales_tax + d.broker_fee));
