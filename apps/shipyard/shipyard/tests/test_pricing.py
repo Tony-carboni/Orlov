@@ -158,6 +158,12 @@ class CatalogTests(SimpleTestCase):
         self.assertEqual(catalog.classify(self._t(group_id=463, faction_id=500014))["category"], constants.CAT_BASE)
         self.assertEqual(catalog.classify(self._t(group_id=25, meta_group_id=4, faction_id=500014))["category"], constants.CAT_ORE)
 
+    def test_industrial_group(self):
+        self.assertEqual(constants.HULL_GROUPS[28], "Industrial")
+        self.assertEqual(constants.HULL_GROUPS[941], "Industrial")
+        self.assertEqual(constants.HULL_GROUPS[463], "Barge")
+        self.assertIn("Orca", constants.INACTIVE_BY_DEFAULT)
+
     def test_hull_size_and_exclusions(self):
         self.assertEqual(catalog.classify(self._t(group_id=1201))["hull_size"], "Battlecruiser")
         self.assertIsNone(catalog.classify(self._t(group_id=30)))  # titan group

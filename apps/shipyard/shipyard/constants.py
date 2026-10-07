@@ -8,10 +8,11 @@ HULL_GROUPS = {
     419: "Battlecruiser",   # Combat Battlecruiser
     1201: "Battlecruiser",  # Attack Battlecruiser
     27: "Battleship",
-    463: "Barge",           # Mining Barge
-    28: "Hauler",
+    463: "Barge",           # Mining Barge (kept apart from the industrials, owner's wish)
+    28: "Industrial",       # Haulers incl. Noctis
+    941: "Industrial",      # Industrial Command Ships: Porpoise (Orca inactive by default)
 }
-HULL_ORDER = ["Frigate", "Destroyer", "Cruiser", "Battlecruiser", "Battleship", "Barge", "Hauler"]
+HULL_ORDER = ["Frigate", "Destroyer", "Cruiser", "Battlecruiser", "Battleship", "Barge", "Industrial"]
 
 # --- Factions -----------------------------------------------------------------
 EMPIRE_FACTIONS = {
@@ -105,6 +106,7 @@ def bpc_policy(category, hull_size=None):
 # Ships that exist with a blueprint entry but are not realistically buildable /
 # not on the market as BPCs. Kept in the catalog, inactive by default.
 INACTIVE_BY_DEFAULT = {
+    "Orca",  # in the catalog because Porpoise shares its group; switch on in the admin if wanted
     "Apocalypse Imperial Issue", "Armageddon Imperial Issue",
     "Megathron Federate Issue", "Tempest Tribal Issue", "Raven State Issue",
     "Guardian-Vexor", "Stratios Emergency Responder",
