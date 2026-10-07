@@ -28,21 +28,24 @@ class BoardTests(TestCase):
 
     def test_set_facility_from_the_dashboard(self):
         from django.contrib.auth.models import Permission
-        from django.test import Client
+        from django.test import Client, override_settings
         from django.urls import reverse
         other = Facility.objects.create(name="Piekura public", structure_type_id=35825, structure_name="Raitaru",
                                         system_id=30001391, system_name="Piekura", rig_type_ids=[])
         self.user.user_permissions.add(Permission.objects.get(codename="basic_access", content_type__app_label="shipyard"))
         client = Client()
         client.force_login(self.user)
-        response = client.post(reverse("shipyard:set_facility", args=[other.pk]))
+        # the front door may be switched on where the tests run; keep this test on auth's own host
+        with override_settings(SHIPYARD_STANDALONE_HOST=""):
+            response = client.post(reverse("shipyard:set_facility", args=[other.pk]))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(board.get_user_settings(self.user).facility, other)
         # GET is not allowed, an inactive facility is a 404
-        self.assertEqual(client.get(reverse("shipyard:set_facility", args=[other.pk])).status_code, 405)
-        other.is_active = False
-        other.save()
-        self.assertEqual(client.post(reverse("shipyard:set_facility", args=[other.pk])).status_code, 404)
+        with override_settings(SHIPYARD_STANDALONE_HOST=""):
+            self.assertEqual(client.get(reverse("shipyard:set_facility", args=[other.pk])).status_code, 405)
+            other.is_active = False
+            other.save()
+            self.assertEqual(client.post(reverse("shipyard:set_facility", args=[other.pk])).status_code, 404)
 
     def test_settings_defaults(self):
         s = board.get_user_settings(self.user)
