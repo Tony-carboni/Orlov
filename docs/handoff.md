@@ -34,6 +34,10 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 ### Also today (local)
 - Three members whose corp change had not reached auth were refreshed by hand (Lexxus, phoenix4, Josh Havenguard → OARMI/ORLOV, Family Member, Discord nickname and roles followed). Cause: EVE's public character record is cached 24 h while the affiliation endpoint refreshes hourly; auth's character update picks the new corp up as soon as it runs. Owner's command for this: "update user <name>" in a local session.
 
+### Also 2026-10-07 (laptop session)
+- "refresh user Francis01": FNA → OARMI/ORLOV, Family Friend → Family Member, `corp_OARMI`, Discord roles and nickname synced. Procedure written up as runbook 04 section E. Francis01 is not yet in Early Founders; the owner triggers that with "refresh the founders".
+- 2026-10-06: Discord's join messages (System Messages Channel) moved from `#how-to-get-roles` to `#public-chat`; see the entry below.
+
 ### Owner does by hand (browser)
 - Runbook 13 section B with the cloud session: My settings (facility rigs, market, load skills), Blueprints & LP prices, compare five ships with the sheet, try the simulation page.
 

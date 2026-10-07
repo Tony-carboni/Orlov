@@ -201,6 +201,19 @@ df -h /
 
 ---
 
+## E. Refresh a member whose corp change has not reached auth (local session)
+
+Owner's command: **"refresh user <name>"** (also "update user <name>"). Typical case: a pilot moved to OARMI in game but auth still shows the old corp, so the account sits in Family Friend with the old `corp_` group and nickname. Auth's own character update catches up within hours; this makes it immediate.
+
+What the local session does, through the Django shell with Alliance Auth's own functions, after showing the read-only comparison first (each character's corp and alliance in auth against EVE's live affiliation list):
+
+1. `EveCharacter.update_character()` for each of the user's characters. If EVE's character record is still cached (it can lag a day) and differs from the affiliation list, apply the affiliation data instead, with the corp and alliance names from auth's EVE provider.
+2. `UserProfile.assign_state()` so the state follows the new corp or alliance.
+3. `AutogroupsConfig.update_group_membership_for_user(user)` for each auto-group config, so the `corp_<TICKER>` group moves.
+4. `DiscordUser.update_groups()` and `DiscordUser.update_nickname()` so the Discord roles and the `[TICKER] Name` nickname follow at once.
+
+✅ Done when the shell shows the new state and groups and both Discord calls return True. Done 2026-10-07 for Francis01 (FNA → OARMI, Family Friend → Family Member) and, by the PC session, for Lexxus, phoenix4 and Josh Havenguard.
+
 ## Day 4 completion checklist
 
 - [ ] `~/bin/aa-backup.sh` exists, ran once by hand, `crontab -l` shows the 03:30 line
