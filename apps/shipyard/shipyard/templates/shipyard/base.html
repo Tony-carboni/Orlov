@@ -1,8 +1,7 @@
-{% extends "allianceauth/base-bs5.html" %}
+{% extends frame|default:"shipyard/frame_auth.html" %}
 {% load static %}
 
 {% block page_title %}{% block shipyard_title %}Shipyard{% endblock %}{% endblock page_title %}
-{% block header_nav_brand %}Shipyard{% endblock %}
 
 {% block extra_css %}
     {% include "bundles/datatables-css-bs5.html" %}
@@ -23,6 +22,9 @@
         </a>
         {% endif %}
     </nav>
+    {% if data_notice %}
+    <div class="alert alert-warning py-2"><i class="fas fa-triangle-exclamation fa-fw"></i> {{ data_notice }}</div>
+    {% endif %}
     {% block shipyard_content %}{% endblock %}
 {% endblock content %}
 

@@ -25,6 +25,24 @@ SHIPYARD_USER_AGENT = getattr(
 # (fraction of the LP-store cost incl. tag; 0.05 = 5 %)
 SHIPYARD_CORP_BPC_MARKUP = getattr(settings, "SHIPYARD_CORP_BPC_MARKUP", 0.05)
 
+# The Shipyard's own hostname (second front door, docs/research/06-shipyards-frontend.md).
+# Empty = off. Read at request time so tests can override it.
+def standalone_host() -> str:
+    return (getattr(settings, "SHIPYARD_STANDALONE_HOST", "") or "").strip().lower()
+
+
+# Skills and standings of the member's character are re-read from ESI when older than this
+SHIPYARD_ESI_REFRESH_HOURS = getattr(settings, "SHIPYARD_ESI_REFRESH_HOURS", 24)
+
+# The Shipyard's own hostname (second front door, docs/research/06-shipyards-frontend.md).
+# Empty = off. Read at request time so tests can override it.
+def standalone_host() -> str:
+    return (getattr(settings, "SHIPYARD_STANDALONE_HOST", "") or "").strip().lower()
+
+
+# Skills and standings of the member's character are re-read from ESI when older than this
+SHIPYARD_ESI_REFRESH_HOURS = getattr(settings, "SHIPYARD_ESI_REFRESH_HOURS", 24)
+
 # Cache lifetime for ad-hoc simulations on the detail page (seconds)
 SHIPYARD_SIM_CACHE_SECONDS = getattr(settings, "SHIPYARD_SIM_CACHE_SECONDS", 1800)
 

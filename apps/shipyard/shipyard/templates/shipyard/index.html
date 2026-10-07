@@ -19,10 +19,10 @@
                 <div class="fw-semibold">{{ settings.market|default:"–" }}</div>
                 <div class="small">
                     sales tax <strong>{{ rates.sales_tax|pct:2 }}</strong> · broker fee <strong>{{ rates.broker_fee|pct:2 }}</strong>
-                    {% if settings.skills_source == "esi" %}
-                        <span class="badge bg-info-subtle text-info-emphasis ms-1" title="Loaded {{ settings.skills_fetched_at|date:'Y-m-d H:i' }}">skills: {{ settings.skills_character_name }}</span>
+                    {% if settings.skills_character_id %}
+                        <span class="badge bg-info-subtle text-info-emphasis ms-1" title="Skills and standings read from EVE {{ settings.skills_fetched_at|date:'Y-m-d H:i' }}, refreshed daily">character: {{ settings.skills_character_name }}</span>
                     {% else %}
-                        <span class="badge bg-secondary-subtle text-secondary-emphasis ms-1">skills: manual</span>
+                        <a class="badge bg-warning-subtle text-warning-emphasis ms-1 text-decoration-none" href="{% url 'shipyard:settings' %}">no character chosen yet: skills count as 0</a>
                     {% endif %}
                     {% if settings.use_lp_pricing %}<span class="badge bg-warning-subtle text-warning-emphasis ms-1">blueprints from LP</span>{% endif %}
                 </div>

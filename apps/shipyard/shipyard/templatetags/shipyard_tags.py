@@ -3,6 +3,32 @@ from django import template
 register = template.Library()
 
 
+@register.simple_tag
+def shipyard_logout_url():
+    """Auth's logout address, whatever it is named in this version."""
+    from django.urls import NoReverseMatch, reverse
+
+    for name in ("logout", "auth_logout", "authentication:logout"):
+        try:
+            return reverse(name)
+        except NoReverseMatch:
+            continue
+    return "/account/logout/"
+
+
+@register.simple_tag
+def shipyard_logout_url():
+    """Auth's logout address, whatever it is named in this version."""
+    from django.urls import NoReverseMatch, reverse
+
+    for name in ("logout", "auth_logout", "authentication:logout"):
+        try:
+            return reverse(name)
+        except NoReverseMatch:
+            continue
+    return "/account/logout/"
+
+
 @register.filter
 def isk(value, digits=1):
     """92683787 → '92.7 M'; None → '–'."""

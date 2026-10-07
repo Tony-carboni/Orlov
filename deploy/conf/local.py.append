@@ -144,3 +144,12 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_prices_and_stats"] = {
     "task": "shipyard.tasks.refresh_prices_and_stats",  # Fuzzwork + ESI history only
     "schedule": crontab(minute="40"),
 }
+
+# --- Shipyards front door: shipyards.orlovfamily.space (runbook 14) --------------
+# The same Django app under a second hostname; the plugin's middleware routes it.
+SHIPYARD_STANDALONE_HOST = "shipyards.orlovfamily.space"   # "" switches the front door off
+MIDDLEWARE += ["shipyard.middleware.StandaloneHostMiddleware"]
+# one login for both hostnames
+SESSION_COOKIE_DOMAIN = ".orlovfamily.space"
+CSRF_COOKIE_DOMAIN = ".orlovfamily.space"
+CSRF_TRUSTED_ORIGINS += ["https://shipyards.orlovfamily.space"]

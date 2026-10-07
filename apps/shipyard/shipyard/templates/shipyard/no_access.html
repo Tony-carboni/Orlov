@@ -1,0 +1,20 @@
+{% extends frame|default:"shipyard/frame_auth.html" %}
+
+{% block page_title %}Shipyard · No access{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 640px;">
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title"><i class="fas fa-lock fa-fw text-muted"></i> The Shipyard is for members and friends of The Orlov Family</h4>
+            <p class="mb-2">
+                You are logged in as <strong>{{ user.profile.main_character.character_name|default:user.username }}</strong>, but this account
+                does not have access yet. Access follows your state on auth: it opens by itself once your main character is in the alliance
+                or you have been given the <em>Family Friend</em> state.
+            </p>
+            <p class="small text-muted mb-3">If you think this is wrong, ask a director on Discord.</p>
+            <a class="btn btn-outline-primary btn-sm" href="{{ SITE_URL }}"><i class="fas fa-shield-halved fa-fw"></i> Back to auth</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

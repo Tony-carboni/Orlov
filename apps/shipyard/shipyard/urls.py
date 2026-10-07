@@ -9,6 +9,7 @@ urlpatterns = [
     path("ship/<int:type_id>/", views.ship_detail, name="ship_detail"),
     path("api/sim/<int:type_id>/", views.api_simulate, name="api_simulate"),
     path("settings/", views.settings_view, name="settings"),
-    path("settings/load-skills/", views.load_skills, name="load_skills"),
+    path("character/<int:character_id>/use/", views.use_character, name="use_character"),
+    path("go/", views.go, name="go"),
     path("blueprints/", views.blueprints, name="blueprints"),
 ]

@@ -1,0 +1,58 @@
+{% load static %}
+{% load theme_tags %}
+{% load shipyard_tags %}
+<!DOCTYPE html>
+<html lang="en" {% theme_html_tags %}>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% include 'allianceauth/icons.html' %}
+    <title>{% block page_title %}Shipyard{% endblock %} · Orlov Shipyard</title>
+    {% include 'bundles/auth-framework-css.html' %}
+    {% theme_css %}
+    {% include 'bundles/fontawesome.html' %}
+    {% include 'bundles/jquery-js.html' %}
+    {% include 'bundles/auth-framework-js.html' %}
+    {% block extra_css %}{% endblock %}
+    {% include 'custom_css/bundles/custom-css.html' %}
+    <style>
+        .shipyard-topbar .navbar-brand { font-weight: 600; letter-spacing: .02em; }
+        .shipyard-portrait { width: 28px; height: 28px; border-radius: 50%; vertical-align: middle; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark text-bg-primary shipyard-topbar">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'shipyard:index' %}"><i class="fas fa-industry fa-fw me-1"></i>Orlov Shipyard</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#shipyard-topnav" aria-controls="shipyard-topnav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="shipyard-topnav">
+            <ul class="navbar-nav me-auto"></ul>
+            <ul class="navbar-nav align-items-lg-center">
+                {% if user.is_authenticated %}
+                    <li class="nav-item me-lg-3">
+                        <a class="nav-link" href="{% url 'shipyard:settings' %}" title="The character whose skills and standings the numbers use. Change it under My settings.">
+                            {% if settings.skills_character_id %}
+                                <img class="shipyard-portrait me-1" src="https://images.evetech.net/characters/{{ settings.skills_character_id }}/portrait?size=64" alt="">{{ settings.skills_character_name }}
+                            {% else %}
+                                <i class="fas fa-user-astronaut fa-fw me-1"></i>No character chosen yet
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{{ SITE_URL }}" title="Alliance Auth"><i class="fas fa-shield-halved fa-fw"></i> Auth</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% shipyard_logout_url %}"><i class="fas fa-right-from-bracket fa-fw"></i> Log out</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+<main class="container-fluid py-3">
+    {% include 'allianceauth/messages-bs5.html' %}
+    {% block content %}{% endblock %}
+</main>
+{% theme_js %}
+{% block extra_javascript %}{% endblock %}
+<script>{% block extra_script %}{% endblock %}</script>
+</body>
+</html>
