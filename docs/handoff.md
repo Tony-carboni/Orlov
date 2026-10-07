@@ -4,6 +4,55 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-07 (18:00 UTC) — laptop session → desktop session (owner continues tomorrow)
+
+**State of play in one paragraph.** The Shipyard is at **0.3.0** on the server (commit `07f5edb` pinned), with three releases today from this session: 0.1.7 (standings in the broker fee), 0.2.0 (the own front door, switched off), 0.3.0 (My industry page, own blueprints in the numbers, corp/alliance scopes). The front door `shipyards.orlovfamily.space` is **built but closed**: it waits for the owner's DNS record and proxy host (runbook 14 A), then one settings flip (14 C). Everything below is in the repo; the server matches `deploy/`.
+
+### What the owner decided today (laptop session)
+- **Front door:** Family Member **and** Family Friend may use it; characters grant **everything** (the 33 Member Audit scopes); it runs on the existing server (headroom checked).
+- **My industry:** a full dashboard of jobs and assets; a Family Member sees **only their own characters**, a **Corp Director** everyone in their corp, an **Alliance Director** everyone in the alliance.
+- **Pirate / Trig / EDENCOM blueprints:** keep showing the profit **without** the blueprint ("public contracts only", marker `no BPC`); do **not** subtract a typed price. Reason: contract prices move too fast to maintain; the owner checked that sheet profit + sheet BPC = app profit without BPC (Vindicator: 52.4 M + 23 M ≈ 71.4 M after the small timing and tax differences) and is satisfied. Members judge a copy's price themselves with the blueprint-cost field on the ship page. Wording wish for the next release: the label should read **"only on public contracts"** (today: "public contracts only"); no rebuild for that alone.
+- **Standings:** yes, factor them in (done in 0.1.7). Sales tax is not affected by standings, only the broker fee.
+
+### Server state after this session
+- Containers: all 11 up, Shipyard 0.3.0 installed, site 200, bot found its three boards after each `up -d`, 0 errors in the logs.
+- `conf/local.py` is 244 lines. Appended today, in this order: the "Shipyards front door" block with `SHIPYARD_STANDALONE_HOST = ""` (door closed), `MIDDLEWARE += ["shipyard.middleware.StandaloneHostMiddleware"]`, `SESSION_COOKIE_DOMAIN`/`CSRF_COOKIE_DOMAIN = ".orlovfamily.space"`, `CSRF_TRUSTED_ORIGINS += ["https://shipyards.orlovfamily.space"]`; then the beat entry `shipyard_refresh_industry` (crontab minute 5,35). `deploy/conf/local.py.append` has the same blocks (with the real host name in the template).
+- Migrations applied: shipyard 0003 (market owners, standings) and 0004 (industry tables, two permissions). No pending migration.
+- Permissions: `shipyard.basic_access` on the **states** Family Member (11 accounts) and Family Friend (1); `view_corp_industry` on group Corp Director (3 members); `view_alliance_industry` on group Alliance Director (tony). The runbook-13-D group grants from earlier are superseded by the state grants.
+- Owner's settings: skills and 83 standings of Catherine Frey stored; broker fee at Jita 1.461 %.
+- Industry data already read for tony's 10 characters (first read happened in the dry run); the half-hourly task keeps it fresh for everyone who opens the page once.
+- Backups in `~/backups`: `aa-db-2026-10-07-1638/1701/1744.sql.gz`, `requirements.txt.pre-0.1.7/0.2.0/0.3.0`, `local.py.pre-0.2.0/0.3.0`, `local.py.pre-reinforce-hour` etc. from the bot work.
+- Discord: System Messages Channel moved to `#public-chat` on 2026-10-06; otherwise untouched today.
+
+### Code map of what changed today (apps/shipyard/shipyard)
+- `middleware.py` — host routing for the front door (`StandaloneHostMiddleware`): pass-through prefixes, SSO bounce `/shipyard/go/`, 403 page `no_access.html`, redirect of auth's `/shipyard/…` to the standalone host. Reads `app_settings.standalone_host()` per request.
+- `services/characters.py` — `full_scopes()` (Member Audit's `Character.esi_scopes()` or `constants.FULL_SCOPES`), `token_for()`, `register_in_memberaudit()`, `load_character()` (skills + standings, clears manual overrides), `ensure_fresh()` (daily), `choices()` for the picker.
+- `services/industry.py` — `sync_user()` / `sync_all()` / `sync_character()` (jobs + slot skills every 30 min, blueprints and assets every 6 h; assets kept for `relevant_type_ids()` only and rolled up with `root_location()`), name caches `ensure_type_names()` (into `MaterialType`) and `ensure_location_names()` (`LocationName`; structures via the character's token, unknown ones retried after a day), `owned_blueprints()`, `allowed_scopes()` / `visible_syncs()`, `overview(user, scope)` (a finished job EVE still calls "active" counts as ready).
+- `services/board.py` — `dashboard_rows()` uses the member's best own blueprint (ME/TE) through `simulate_build()` for at most 25 ships per render; `BoardRow.owned_bp`.
+- `services/esi.py` — `_authed()`, `_authed_pages()` (X-Pages, cap 20), `character_skill_levels()`, `character_industry_jobs()`, `character_blueprints()`, `character_assets()`, `structure_info()`, `character_standings()`.
+- `services/pricing.py` — broker fee with standings (`SHIPYARD_BROKER_FACTION_STANDING_PER_POINT` 0.0003, `…CORP…` 0.0002).
+- `views.py` — `_context()` picks the frame; `use_character()` (POST from the picker; SSO once with all scopes, session key `shipyard_sso_pending`; falls back to the character the member actually logged in with), `go()`, `industry_view()` (GET `?scope=own|corp|alliance`, POST = refresh own characters), `ship_detail()` starts the simulation at the own blueprint's ME/TE. `load_skills` and the manual skill/tax inputs are gone.
+- `models.py` — `MarketLocation.owner_corporation_id/owner_faction_id`, `UserSettings.standings/standings_fetched_at/standing_with()`, `CharacterSync`, `IndustryJob`, `CharacterBlueprint`, `CharacterAsset`, `LocationName`; `General` permissions ×4.
+- `tasks.py` — `refresh_industry` (beat :05/:35). `constants.py` — `FULL_SCOPES`, `ACTIVITIES`, `SLOT_SKILLS`. `templatetags` — `shipyard_logout_url`, `remaining`.
+- Templates — `frame_standalone.html` / `frame_auth.html` (base.html extends the `frame` variable), `settings.html` (character picker), `industry.html` (scope buttons, strip, jobs, blueprints, stock), `no_access.html`; dashboard badge "your BPO ME10"; detail header shows the own blueprint.
+- Tests: 47 (`test_pricing.py`, `test_board.py`, `test_frontdoor.py`, `test_industry.py`).
+
+### Useful patterns learned today (for the desktop session)
+- **Test and dry-run the working copy before building:** `tar` `apps/shipyard` to `~/shipyard-dev` on the server (strip CR), then `docker compose run --rm --no-deps -T -v ~/shipyard-dev/apps/shipyard:/dev/shipyard:ro --entrypoint sh allianceauth_gunicorn -c '... PYTHONPATH=/dev/shipyard ...'`: `manage.py check`, the unit tests with the SQLite settings file in `/tmp`, `makemigrations --check`, and a Django test `Client` with `force_login` and `HTTP_HOST` for live page renders. Migrations can be applied from there too (additive ones are safe before the build).
+- Release = runbook 13 C: backup → copy `requirements.txt` → `sed` the SHA → build → throwaway checks → migrate → `up -d` → `restart nginx` → `collectstatic` → verify → docs.
+- Python patch scripts for docs must normalise CRLF before matching and be re-runnable; run them with `python -X utf8` from a file (heredocs mangled the en dashes and `\U` in Windows paths).
+- The sheet: `OneDrive/EVE/ships dashboard v3.2.xlsx` on the laptop; copy it out of OneDrive before reading with openpyxl.
+
+### Open items, in order
+1. **Owner (runbook 14 A):** Porkbun `A` record `shipyards` → 167.99.207.145; Nginx Proxy Manager proxy host for `shipyards.orlovfamily.space` with a Let's Encrypt certificate, forward settings copied from the auth host.
+2. **Local session (14 C) right after:** set `SHIPYARD_STANDALONE_HOST = "shipyards.orlovfamily.space"` in `conf/local.py` (sed on the existing line), `docker compose restart allianceauth_gunicorn allianceauth_worker allianceauth_worker_services allianceauth_beat`, then from the server: `curl -sI https://shipyards.orlovfamily.space/` → 302 to `https://auth.orlovfamily.space/sso/login?next=/shipyard/go/`, and `curl -sI https://auth.orlovfamily.space/shipyard/` → 302 to the new host. Then the owner does 14 D.
+3. **Owner checks:** `#structure-board`/`#moon-board`/`#zkillboard`/`#jf-gank-board` looks; the 3 Nov reinforcement date in game; Go Browns' alliance join (then remove GB44 from the Family Member state's corporations); profile names for the structure board; "refresh the founders" once new Family Members are in.
+4. **Next Shipyard release, when there is a reason:** label "only on public contracts"; navy frigate LP offers (still missing); front-door phase 3 ideas the owner may raise after using phase 2 (for example corp hangar stock, which needs corp roles and the structures token).
+5. **Housekeeping:** `~/shipyard-dev` on the server is a scratch copy and can be removed; `tasks.py refresh_industry` logs a `RefreshRun` row "industry" every half hour (admin → Shipyard → Refresh runs).
+
+
+---
+
 ## 2026-10-07 (13:30 UTC) — local session (PC) → cloud session
 
 **Runbook:** `docs/runbooks/13-shipyard-plugin.md` — **section A done; plugin updated to 0.1.1 and the navy cruiser baseline entered (see below).** B (owner, browser) is next.
@@ -111,70 +160,3 @@ Rules from CLAUDE.md apply (backup first, no rm -rf, nothing in mysql-data/, nev
 - The "welcome" lines when somebody joins were **Discord's own system messages**, not the bot: the server's System Messages Channel was `#how-to-get-roles` (flags 0 = all system message types on). The bot has no welcome feature active (`DISCORD_BOT_COGS` = about, time; aadiscordbot WelcomeMessage/GoodbyeMessage tables empty).
 - Changed the server setting to `#public-chat` through the Discord service's API client (`PATCH guilds/{id}` with `system_channel_id`), read back: system messages channel = public-chat. Reversible in Discord: Server Settings → Overview → System Messages Channel.
 - No repo files other than this one changed. Previous session's open items (owner checks of `#jf-gank-board`, `#zkillboard`, the 3 Nov reinforcement date, Go Browns joining, profile names, Alliance Director read-only on the boards) are unchanged; see the 2026-10-05 15:15 entry.
-
-
----
-
-## 2026-10-05 (15:15 UTC) — local session (laptop) → either session
-
-**Topics:** structure board war banner (see below), and joining corp **Go Browns [GB44]** prepared in the role system before any of its members authed. **Corrected by the owner at 15:45 UTC: GB44 is not yet in the alliance, so its members are Family Friend until it is.** Design doc `docs/design/membership.md` updated.
-
-### Done on the server (via Django, Alliance Auth's own functions)
-- Corp looked up on public ESI: Go Browns, ticker GB44, corporation_id 98845722, 11 members, founded 2026-10-03, **no alliance**, CEO Masterxxx (character_id 2122385466).
-- `EveCorporationInfo` created (pk 9). It was first added to the `Family Member` state's member corporations and **removed again at 15:45 UTC on the owner's instruction**: nobody gets Family Member before their corp is actually in The Orlov Family in game. The state is back to alliance ORLOV plus corps OARMI and GWON. No GB44 account existed on auth in between. Rule recorded in `docs/design/membership.md`: a joining corp is not listed on the state.
-- Auto-group `corp_GB44` created in advance with `AutogroupsConfig.create_corp_group()` (group pk 10, managed link to config pk 3, 0 members).
-- Discord role `corp_GB44` created in advance with the Discord service's `match_or_create_role_from_name()` (role id 1556685567536930900, no colour, no permissions, at the bottom of the role list).
-
-### What happens when a Go Browns member auths
-- While GB44 is outside the alliance: state Family Friend → Discord roles `Family Friend` + `corp_GB44` (the corp auto-groups cover both states), nickname `[GB44] Name`.
-- Once GB44 is in alliance ORLOV in game: Family Member follows by itself at auth's next character update, because the state is keyed on the alliance. Nothing to configure.
-
-### Structure board: war banner (owner's request, deployed 15:14 UTC)
-- War eligibility removed from the board (and the public ESI read for it). New first line in heading size: green circle + "NOT AT WAR", or red circle + "AT WAR" while any registered corp has a declared or running war. The war detail lines and the red colour bar are unchanged; the "Wars: none declared or running" line is gone.
-- `deploy/orlovbot/cogs/structures.py` → server `~/aa-docker/orlovbot/cogs/structures.py` (old copy: `~/backups/structures.py.pre-war-banner`). Dry run in a fresh process first (live data green, synthetic war red, no alerts planned), then only the bot restarted. Bot output: "Structure status: board updated in #structure-board".
-- Not yet confirmed by the owner: that Discord draws the banner as a big heading. If it shows as a plain line starting with `#`, change `BANNER_PEACE` / `BANNER_WAR` to a bold line.
-
-### Early Founders badge (owner's request, 15:25 UTC; first named Founder, renamed 15:35 UTC)
-- Auth group `Early Founders` (pk 11, internal, no permissions) and Discord role `Early Founders` (id 1556687406663598113, no colour, no permissions). Created as `Founder`, then renamed on the owner's request: the Discord role in place through the Discord service's API client (same id), then the group. Auth's own rate limiter stops a burst of Discord calls; pause between them.
-- Rule decided by the owner (the literal request "joined before 2026" matched nobody: alliance founded 2026-10-01): **every Family Member account before 2027-01-01**; Go Browns members count once they are Family Member. Written into `docs/design/membership.md`.
-- Added: tony, Flapoor_Hendrik (main Gewoon Rudi), Nashomon_Yoma_Itinen, Tavaga. All four verified to have the role in Discord.
-- Not automatic. When the owner says "refresh the founders": add every account with state Family Member to the group (add-only), as long as the date is before 2027-01-01. Go Browns members need this once their corp is in the alliance and they show as Family Member.
-
-### Kill feed (runbook 11, owner's request, live 15:39 UTC)
-- New bot module `orlovbot/cogs/killfeed.py`: every 5 minutes it reads `zkillboard.com/api/allianceID/99015337/` and posts unseen killmails (not older than 3 days) in `#zkillboard` (category `bots`, created by the owner): green kill, red loss, max 10 per check, no pings. Seen ids live in the Django cache under `orlovbot:killfeed:seen`; a test post is queued with the cache key `orlovbot:killfeed:test`.
-- Server: `orlovbot/` updated (old folder: `~/backups/orlovbot.pre-killfeed`), `conf/local.py` + "Kill feed" block (210 lines; copy from before: `~/backups/local.py.pre-killfeed`). Dry run clean (11 logic checks pass), only the bot restarted. Bot output: module loaded, "first run, 2 existing killmails count as already posted", "posted test (Loss: Capsule (Nashomon Yoma Itinen))".
-- Slip to know about: the backup command contained an `rm -rf` on a path in `~/backups` that did not exist. Nothing was deleted, but it breaks the CLAUDE.md rule; do not repeat.
-
-### Boards: "Last checked" (owner's request, same deployment)
-- `orlovbot/board.py`: every board now ends with an entry "Last checked" (`<t:…:R>` and `<t:…:t>`), and the bot edits the board at every 10-minute check instead of only on change. "board updated" is still logged only when the content changed. Runbooks 09 and 10 updated.
-
-### Board tidy-up after the owner looked (15:41–15:43 UTC, three bot restarts)
-- Owner confirmed the war banner renders as a big heading with the green circle.
-- Structure board: the "Structure data read from EVE" line is gone (the owner saw two times). It now appears only as a warning when the data is more than 90 minutes old (`DATA_STALE_AFTER` in `structures.py`), which also turns the colour bar orange.
-- Both boards: footer "Kept up to date automatically, checked every 10 minutes" removed (`board.py`).
-- Moon board and `/moons`: the "Your time" line was removed at 15:43 and **restored at 15:46 UTC as "In your time zone"** (`moons.py`). The owner had read it as the current time; it is the chunk's arrival time in the reader's device time zone (17:01 EVE time = 7:01 PM at UTC+2), and the owner wants it kept.
-- Old copies in `~/backups`: `structures.py.pre-single-timestamp`, `board.py.pre-no-footer`, `moons.py.pre-no-local-time`.
-
-### Structure board: colours, bigger titles, "War over" ping (owner's requests, live 15:51 UTC)
-- Layout: each structure is now a `###` heading plus an `ansi` code block in the embed description (no embed fields any more). Colours: green normal state / full power / all services online; orange low power, services offline, fuel under 14 days; red abnormal state, abandoned, fuel under 7 days or none; fuel blue otherwise. The colour bar follows the worst line. The fuel hover link is gone (no links in code blocks); the run-out date is shown in grey.
-- Alerts: new `@everyone` "War over" ping when a known war is no longer declared or running. It replaces the "War declared" message and is removed after 24 h (`WAR_OVER_KEEP`). No false ping when the corp merely drops off the board. The daily fuel ping still starts at 7 days.
-- Dry run before the restart: live and synthetic layouts built, 12 alert scenarios pass. Bot output after restart: "Structure status: board updated in #structure-board", 0 errors. Old code: `~/backups/structures.py.pre-colours`.
-- Not yet confirmed by the owner: how the coloured panels look, on desktop and on a phone (older phone apps may show the colours differently). Fallback if disliked: restore the backup file and restart the bot.
-
-### Structure board: reinforcement hour (owner's request, live 15:57 UTC)
-- New line "Reinforce: HH:00 EVE" per structure, from aa-structures (`reinforce_hour`, `next_reinforce_hour`, `next_reinforce_apply`). Green when it equals `ORLOVBOT_STRUCTURE_REINFORCE_HOUR = 21` (new setting, appended to `conf/local.py`, now 214 lines; the contract with the mercenaries on retainer requires 21:00), and also green when 21 is set but not yet effective (owner, 16:00 UTC: the in-game delay cannot be beaten), shown as "21:00 EVE (from 03 Nov, now 04:00)". Red for any other hour and when a change away from 21 is scheduled. No ping for it.
-- Today both structures are green-pending: Orlov Family Facilities is at 04:00, Orlov Mining Facility I at 18:00, each with a change to 21:00 that EVE's data dates at 2026-11-03 18:35 UTC.
-- Notes in brackets are no longer grey (unreadable on the dark theme); they use the normal text colour. Discord's ansi palette has no lighter grey.
-- Old copies: `~/backups/structures.py.pre-reinforce-hour`, `~/backups/local.py.pre-reinforce-hour`, `~/backups/structures.py.pre-pending-green`.
-
-### Jump freighter watch (runbook 12, owner's request, live 16:03 UTC)
-- New module `orlovbot/cogs/jfwatch.py`: every 5 minutes one request to `zkillboard.com/api/losses/groupID/902/` (newest 200 JF losses, about two months). Highsec and lowsec only (zKillboard's `loc:` label; setting `ORLOVBOT_JFWATCH_SPACE`). A post per new loss (not older than 3 days) in `#jf-gank-board`, and a summary board "Jump freighter losses" kept as the last message: 24 h, 7 days vs the 7 before, 30 days, per-day bars, by hull, systems, final blows. `board.py` gained `drop()` (delete the board so it is re-posted at the bottom). Seen ids: cache key `orlovbot:jfwatch:seen`; test post: `orlovbot:jfwatch:test`.
-- Server: files installed (old folder: `~/backups/orlovbot.pre-jfwatch`), `conf/local.py` + "Jump freighter watch" block (218 lines; copy from before: `~/backups/local.py.pre-jfwatch`). Dry run clean; bot output: module loaded, "first run, 10 recent losses count as already posted", "posted test (Rhea lost in Oinasiken (lowsec))", "board posted in #jf-gank-board", 0 errors.
-- Same deployment: the structure board's fuel line no longer shows the run-out date in brackets (owner: just the days in colour).
-- The owner moved `#jf-gank-board` and `#structure-board` to a category "leadership bots"; the bot finds channels by name, so nothing changes for it.
-
-### Open (owner)
-- Look at `#zkillboard` (test post), `#moon-board` and `#structure-board` ("Last checked" entry) and confirm they look right.
-- Optional, in Discord: give the `Early Founders` role a colour or icon, and drag it where it should sit in the role list (it is at the bottom).
-- When the CEO (Masterxxx) has authed: add them to the `Corp Director` group, and have them add the Corp Stats token (`docs/guides/corp-ceo-onboarding.md`).
-- Tell a session when Go Browns has joined the alliance in game, so it can check the members switched to Family Member and refresh the founders.
