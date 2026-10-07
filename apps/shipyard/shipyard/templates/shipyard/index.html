@@ -105,14 +105,20 @@
                 {% if not r.econ.complete %}<i class="fas fa-triangle-exclamation text-warning ms-1" title="Missing prices or build data"></i>{% endif %}
             </td>
             <td>{{ r.ship.faction_short }}</td>
-            <td class="text-end {{ r.econ.net_profit|profit_class }}" data-order="{{ r.econ.net_profit|default_if_none:'-999999999999' }}">{{ r.econ.net_profit|isk }}</td>
+            <td class="text-end {{ r.econ.net_profit|profit_class }}" data-order="{{ r.econ.net_profit|default_if_none:'-999999999999' }}">{{ r.econ.net_profit|isk }}{% if r.econ.bpc_excluded %}<sup class="text-info" title="Net profit WITHOUT the blueprint: the corp cannot supply this copy, members buy it on public contracts">no BPC</sup>{% endif %}</td>
             <td class="text-end" data-order="{{ r.econ.margin|default_if_none:'-9' }}">{{ r.econ.margin|pct }}</td>
             <td class="text-end" data-order="{{ r.econ.sell_price|default_if_none:'0' }}">{{ r.econ.sell_price|isk }}</td>
             <td class="text-end" data-order="{{ r.econ.sales_tax }}">{{ r.econ.sales_tax|isk }}</td>
             <td class="text-end" data-order="{{ r.econ.material_cost }}">{{ r.econ.material_cost|isk }}</td>
             <td class="text-end" data-order="{{ r.econ.avg_daily_volume }}">{{ r.econ.avg_daily_volume|num:1 }}</td>
             <td class="text-end" data-order="{{ r.econ.market_depth_days|default_if_none:'99999' }}">{{ r.econ.market_depth_days|depth }}</td>
-            <td class="text-end" data-order="{{ r.econ.bpc_cost }}" title="{% if r.econ.bpc_source == 'lp' %}from LP store offer{% else %}entered price{% endif %}">{{ r.econ.bpc_cost|isk }}{% if r.econ.bpc_source == 'lp' %}<sup class="text-warning">LP</sup>{% endif %}</td>
+            {% if r.econ.bpc_source == 'public' %}
+            <td class="text-end small text-muted" data-order="0" title="The corp has no source for this blueprint; members buy copies on public contracts">public contracts only</td>
+            {% elif r.econ.bpc_source == 'free' %}
+            <td class="text-end" data-order="0" title="Handed out by the corp for free">{{ r.econ.bpc_cost|isk }}</td>
+            {% else %}
+            <td class="text-end" data-order="{{ r.econ.bpc_cost }}" title="{% if r.econ.bpc_source == 'lp' %}LP store offer{% if r.econ.bpc_markup %} plus the corp's {{ r.econ.bpc_markup|pct:0 }} markup{% endif %}{% else %}entered price{% endif %}">{{ r.econ.bpc_cost|isk }}{% if r.econ.bpc_source == 'lp' %}<sup class="text-warning">LP{% if r.econ.bpc_markup %}+{{ r.econ.bpc_markup|pct:0 }}{% endif %}</sup>{% endif %}</td>
+            {% endif %}
             <td class="text-end" data-order="{{ r.econ.time_seconds }}">{{ r.econ.time_seconds|duration }}</td>
         </tr>
     {% endfor %}
@@ -121,7 +127,9 @@
 </div>
 <p class="small text-muted mt-2">
     Net profit = Jita lowest sell − materials (Jita lowest sell, ME 0 at your facility) − job cost − blueprint − tags − sales tax − broker fee.
-    Build time assumes all industry skills at V. Click a ship for the full breakdown and simulations.
+    Build time assumes all industry skills at V. Click a ship for the full breakdown and simulations.<br>
+    <strong>Blueprints:</strong> Base hulls are handed out by the corp for free (0 ISK). Navy hulls come from the corp at the LP-store cost plus its markup (<sup class="text-warning">LP+…</sup>).
+    Pirate, Triglavian and EDENCOM hulls cannot be supplied by the corp: <em>public contracts only</em>, and their net profit (<sup class="text-info">no BPC</sup>) is <strong>without</strong> the blueprint.
 </p>
 {% endblock %}
 

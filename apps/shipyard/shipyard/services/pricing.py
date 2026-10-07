@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from .. import app_settings
+from .. import app_settings, constants
 
 
 @dataclass
@@ -57,7 +57,9 @@ class ShipEconomics:
     materials: list[MaterialLine] = field(default_factory=list)
     job_cost: float = 0.0
     bpc_cost: float = 0.0
-    bpc_source: str = "manual"
+    bpc_source: str = "manual"  # free | lp | manual | public
+    bpc_excluded: bool = False  # True: no blueprint source, net profit is without the blueprint
+    bpc_markup: float = 0.0  # fraction added on top of the LP-store cost (corp policy)
     tag_cost: float = 0.0
     sales_tax_rate: float = 0.0
     broker_fee_rate: float = 0.0
@@ -114,13 +116,23 @@ class ShipEconomics:
         return self.sell_price is not None and self.missing_prices == 0 and bool(self.materials)
 
 
-def blueprint_cost(config, use_lp: bool) -> tuple[float, str]:
-    """Blueprint price per run and where it came from."""
+def blueprint_cost(config, use_lp: bool, category: str | None = None) -> tuple[float, str]:
+    """Blueprint price per run and where it came from, following the blueprint policy.
+
+    Without a category (older callers, tests) only the LP/manual choice applies.
+    """
+    policy = constants.BPC_POLICY.get(category, constants.BPC_MANUAL) if category else constants.BPC_MANUAL
+    if policy == constants.BPC_FREE:
+        return 0.0, "free"
+    if policy == constants.BPC_PUBLIC:
+        return 0.0, "public"
     if config is None:
         return 0.0, "none"
     if use_lp and config.has_lp_offer:
         price = config.lp_bpc_price_per_run()
         if price is not None:
+            if policy == constants.BPC_CORP:
+                price *= 1.0 + app_settings.SHIPYARD_CORP_BPC_MARKUP
             return float(price), "lp"
     return float(config.bpc_price_isk or 0), "manual"
 
@@ -140,6 +152,7 @@ def economics(
     sell_volume_on_market=0.0,
     time_seconds=0,
     tag_unit_price=None,
+    category=None,
 ) -> ShipEconomics:
     """Assemble the economics of one ship from snapshot data.
 
@@ -161,8 +174,16 @@ def economics(
             unit_price=price,
             volume=float(volumes.get(tid, 0.0)),
         ))
-    bpc, src = blueprint_cost(config, use_lp)
-    tag_cost, tag_missing = config.tag_cost(tag_unit_price) if config else (0.0, False)
+    bpc, src = blueprint_cost(config, use_lp, category)
+    markup = 0.0
+    if src == "public":
+        # no blueprint source: the tags that come with the LP offer are left out as well
+        tag_cost, tag_missing = 0.0, False
+    else:
+        tag_cost, tag_missing = config.tag_cost(tag_unit_price) if config else (0.0, False)
+        if src == "lp" and constants.BPC_POLICY.get(category) == constants.BPC_CORP:
+            markup = app_settings.SHIPYARD_CORP_BPC_MARKUP
+            tag_cost *= 1.0 + markup
     if tag_missing:
         missing += 1
     return ShipEconomics(
@@ -171,6 +192,8 @@ def economics(
         job_cost=float(job_cost or 0),
         bpc_cost=bpc,
         bpc_source=src,
+        bpc_excluded=(src == "public"),
+        bpc_markup=markup,
         tag_cost=tag_cost,
         sales_tax_rate=rates.sales_tax,
         broker_fee_rate=rates.broker_fee,

@@ -73,6 +73,23 @@ CAT_ORE = "ORE"
 CAT_OTHER = "Other"
 CATEGORY_ORDER = [CAT_BASE, CAT_NAVY, CAT_PIRATE, CAT_TRIG, CAT_EDENCOM, CAT_ORE, CAT_OTHER]
 
+# --- Blueprint policy (owner's decision 2026-10-07): who provides the blueprint ----
+# free:   the corp hands the copy out for nothing (T1 hulls, BPOs are cheap and owned).
+# corp:   the corp buys the copy in the LP store and sells it on at cost + markup.
+# public: the corp has no source; members find copies on public contracts, so the
+#         blueprint is left OUT of the cost and the net profit is marked as such.
+# manual: whatever price is typed on the Blueprints page.
+BPC_FREE, BPC_CORP, BPC_PUBLIC, BPC_MANUAL = "free", "corp", "public", "manual"
+BPC_POLICY = {
+    CAT_BASE: BPC_FREE,
+    CAT_NAVY: BPC_CORP,
+    CAT_PIRATE: BPC_PUBLIC,
+    CAT_TRIG: BPC_PUBLIC,
+    CAT_EDENCOM: BPC_PUBLIC,
+    CAT_ORE: BPC_MANUAL,
+    CAT_OTHER: BPC_MANUAL,
+}
+
 # Ships that exist with a blueprint entry but are not realistically buildable /
 # not on the market as BPCs. Kept in the catalog, inactive by default.
 INACTIVE_BY_DEFAULT = {

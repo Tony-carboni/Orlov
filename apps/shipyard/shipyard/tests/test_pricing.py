@@ -108,6 +108,31 @@ class BlueprintCostTests(TestCase):
         self.assertEqual(e.tag_cost, 3.0)
         self.assertTrue(e.complete)
 
+    def test_blueprint_policy_by_category(self):
+        ship = Ship.objects.create(type_id=1, name="X", group_id=26, hull_size="Cruiser", category="Navy", blueprint_type_id=2)
+        lp = LpFaction.objects.create(name="Caldari Navy", isk_per_lp=900)
+        cfg = ShipConfig.objects.create(ship=ship, bpc_price_isk=5_000_000, lp_faction=lp, lp_cost=18_000)
+        rates = pricing.TaxRates(sales_tax=0.0, broker_fee=0.0)
+        # navy: LP price plus the corp's markup, on the tag too
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Navy"), (18_000 * 900 * 1.05, "lp"))
+        cfg.tag_type_id = 17244
+        e = pricing.economics(sell_price=100.0, material_rows=[], prices={}, names={}, volumes={}, job_cost=0,
+                              config=cfg, use_lp=True, rates=rates, tag_unit_price=1_000.0, category="Navy")
+        self.assertAlmostEqual(e.tag_cost, 1_050.0)
+        self.assertAlmostEqual(e.bpc_markup, 0.05)
+        self.assertFalse(e.bpc_excluded)
+        # base: free, whatever is typed
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Base"), (0.0, "free"))
+        # pirate / trig / edencom: no source, blueprint and its tags left out, profit marked
+        for cat in ("Pirate", "Trig", "Edencom"):
+            self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category=cat), (0.0, "public"))
+        e = pricing.economics(sell_price=100.0, material_rows=[], prices={}, names={}, volumes={}, job_cost=0,
+                              config=cfg, use_lp=True, rates=rates, tag_unit_price=None, category="Pirate")
+        self.assertTrue(e.bpc_excluded)
+        self.assertEqual((e.bpc_cost, e.tag_cost, e.missing_prices), (0.0, 0.0, 0))
+        # no category (simulation with a typed price): plain LP/manual choice, no markup
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=False), (5_000_000.0, "manual"))
+
     def test_lp_pricing_falls_back_without_offer(self):
         ship = Ship.objects.create(type_id=1, name="X", group_id=25, hull_size="Frigate", category="Base", blueprint_type_id=2)
         cfg = ShipConfig.objects.create(ship=ship, bpc_price_isk=1_000)

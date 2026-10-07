@@ -113,6 +113,8 @@ def api_simulate(request, type_id):
         "job_cost": e.job_cost,
         "bpc_cost": e.bpc_cost,
         "bpc_source": e.bpc_source,
+        "bpc_excluded": e.bpc_excluded,
+        "bpc_markup": e.bpc_markup,
         "tag_cost": e.tag_cost,
         "sales_tax": e.sales_tax,
         "broker_fee": e.broker_fee,

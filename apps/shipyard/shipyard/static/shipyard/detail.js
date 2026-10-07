@@ -66,12 +66,18 @@
                 status.textContent = d.source === "snapshot" ? "from stored data" : "live from EVE Ref";
                 setK("material_cost", fmtIsk(d.material_cost));
                 setK("job_cost", fmtIsk(d.job_cost));
-                setK("bpc_cost", fmtIsk(d.bpc_cost) + (d.bpc_source === "lp" ? ' <sup class="text-warning">LP</sup>' : ""));
+                if (d.bpc_excluded) {
+                    setK("bpc_cost", '<span class="small text-muted">public contracts only</span>');
+                } else {
+                    var lpMark = d.bpc_source === "lp" ? ' <sup class="text-warning">LP' + (d.bpc_markup ? "+" + Math.round(d.bpc_markup * 100) + "%" : "") + "</sup>" : "";
+                    setK("bpc_cost", fmtIsk(d.bpc_cost) + lpMark);
+                }
                 setK("tag_cost", fmtIsk(d.tag_cost));
                 setK("fees", fmtIsk(d.sales_tax + d.broker_fee));
                 setK("total_cost", fmtIsk(d.total_cost));
                 var cls = d.net_profit === null ? "text-muted" : (d.net_profit > 0 ? "text-success" : "text-danger");
-                setK("net_profit", '<strong class="' + cls + '">' + fmtIsk(d.net_profit) + '</strong> <span class="small text-muted" data-k="margin">(' + fmtPct(d.margin) + ')</span>');
+                var noBpc = d.bpc_excluded ? ' <sup class="text-info" title="Without the blueprint">no BPC</sup>' : "";
+                setK("net_profit", '<strong class="' + cls + '">' + fmtIsk(d.net_profit) + '</strong>' + noBpc + ' <span class="small text-muted" data-k="margin">(' + fmtPct(d.margin) + ')</span>');
                 setK("time", fmtDuration(d.time_seconds));
                 bomCaption.textContent = "ME " + d.me + " · TE " + d.te + " · " + (d.facility || "–");
                 bomBody.innerHTML = "";

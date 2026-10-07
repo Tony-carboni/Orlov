@@ -21,6 +21,10 @@ SHIPYARD_USER_AGENT = getattr(
     "orlov-shipyard/0.1 (auth.orlovfamily.space; The Orlov Family)",
 )
 
+# Markup the corp adds when it sells an LP-store blueprint copy on to a member
+# (fraction of the LP-store cost incl. tag; 0.05 = 5 %)
+SHIPYARD_CORP_BPC_MARKUP = getattr(settings, "SHIPYARD_CORP_BPC_MARKUP", 0.05)
+
 # Cache lifetime for ad-hoc simulations on the detail page (seconds)
 SHIPYARD_SIM_CACHE_SECONDS = getattr(settings, "SHIPYARD_SIM_CACHE_SECONDS", 1800)
 
