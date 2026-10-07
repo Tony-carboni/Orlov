@@ -8,7 +8,7 @@
             paging: false,
             info: true,
             stateSave: true,
-            language: { search: "Find ship:" },
+            dom: "rtip",  // our own search box above the filters replaces the built-in one
             columnDefs: [{ targets: [4, 5, 6, 7, 8, 9, 10, 11, 12], type: "num" }]
         });
 
@@ -42,6 +42,10 @@
         }
         remember("#filter-category", "shipyard.categories");
         remember("#filter-hull", "shipyard.hulls");
+
+        // free-text search over every column; DataTables remembers it with the table state
+        $("#filter-text").val(table.search());
+        $("#filter-text").on("input search", function () { table.search(this.value).draw(); });
 
         $("#filter-category input, #filter-hull input, #filter-complete, #filter-profitable").on("change", function () { table.draw(); });
         table.draw();

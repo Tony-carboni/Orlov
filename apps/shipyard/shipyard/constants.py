@@ -107,6 +107,7 @@ def bpc_policy(category, hull_size=None):
 # not on the market as BPCs. Kept in the catalog, inactive by default.
 INACTIVE_BY_DEFAULT = {
     "Orca",  # in the catalog because Porpoise shares its group; switch on in the admin if wanted
+    "Pioneer Consortium Issue", "Venture Consortium Issue",  # special editions, not for this dashboard (owner, 2026-10-08)
     "Apocalypse Imperial Issue", "Armageddon Imperial Issue",
     "Megathron Federate Issue", "Tempest Tribal Issue", "Raven State Issue",
     "Guardian-Vexor", "Stratios Emergency Responder",
