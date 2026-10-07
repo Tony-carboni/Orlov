@@ -19,6 +19,8 @@
 
 ## A. Install (server — local session via handoff)
 
+*Done 2026-10-07 13:21–13:29 UTC by the local session: commit `2333032` pinned, backup `aa-db-2026-10-07-1321.sql.gz`, build ok, migration `shipyard.0001_initial` applied, 188 ships (174 active), four refresh steps ok. Order used: requirements → build → settings block → check and migrate from a throwaway container → `up -d`.*
+
 1. Backup (`~/bin/aa-backup.sh`).
 2. `conf/requirements.txt`: add the line from `deploy/conf/requirements.txt`, replacing `<commit-sha>` with the full SHA of the current branch head (`git rev-parse HEAD` in the repo clone after pulling).
 3. `conf/local.py`: append the "Shipyard" block from `deploy/conf/local.py.append` (from the line `# --- Shipyard` to the end of that block).
