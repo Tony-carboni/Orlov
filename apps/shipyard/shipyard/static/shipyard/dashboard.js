@@ -18,12 +18,8 @@
             var row = table.row(dataIndex).node();
             var cats = selected("#filter-category");
             var hulls = selected("#filter-hull");
-            var onlyComplete = $("#filter-complete").is(":checked");
-            var onlyProfit = $("#filter-profitable").is(":checked");
             if (cats.length && cats.indexOf(row.dataset.category) < 0) { return false; }
             if (hulls.length && hulls.indexOf(row.dataset.hull) < 0) { return false; }
-            if (onlyComplete && row.dataset.complete !== "1") { return false; }
-            if (onlyProfit && !(parseFloat(row.dataset.profit) > 0)) { return false; }
             return true;
         });
 
@@ -47,7 +43,7 @@
         $("#filter-text").val(table.search());
         $("#filter-text").on("input search", function () { table.search(this.value).draw(); });
 
-        $("#filter-category input, #filter-hull input, #filter-complete, #filter-profitable").on("change", function () { table.draw(); });
+        $("#filter-category input, #filter-hull input").on("change", function () { table.draw(); });
         table.draw();
 
         $("#shipyard-table tbody").on("click", "tr", function (e) {

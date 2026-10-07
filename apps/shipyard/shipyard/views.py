@@ -170,7 +170,8 @@ def settings_view(request):
             settings.facility = fac
         if market:
             settings.market = market
-        settings.use_lp_pricing = request.POST.get("use_lp_pricing") == "on"
+        if "use_lp_pricing" in request.POST:
+            settings.use_lp_pricing = request.POST.get("use_lp_pricing") == "on"
         # skills, standings and taxes come from ESI only; nothing is typed by hand any more
         settings.manual_sales_tax = None
         settings.manual_broker_fee = None
@@ -202,6 +203,19 @@ def _market_standings(settings):
         "faction": settings.standing_with(market.owner_faction_id),
         "corp": settings.standing_with(market.owner_corporation_id),
     }
+
+
+@login_required
+@permission_required("shipyard.basic_access")
+@require_POST
+def set_facility(request, pk):
+    """The Swap button on the dashboard: build at this facility from now on."""
+    facility = get_object_or_404(Facility, pk=pk, is_active=True)
+    settings = board.get_user_settings(request.user)
+    settings.facility = facility
+    settings.save(update_fields=["facility"])
+    messages.success(request, f"Building at {facility.name}.")
+    return redirect("shipyard:index")
 
 
 @login_required

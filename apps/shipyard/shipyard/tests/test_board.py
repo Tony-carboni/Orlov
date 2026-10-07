@@ -26,6 +26,24 @@ class BoardTests(TestCase):
         PriceSnapshot.objects.create(type_id=17740, location=self.market, sell_min=999_900_000, sell_volume=53)
         ShipMarketStats.objects.create(ship=self.ship, avg_daily_volume=7.57)
 
+    def test_set_facility_from_the_dashboard(self):
+        from django.contrib.auth.models import Permission
+        from django.test import Client
+        from django.urls import reverse
+        other = Facility.objects.create(name="Piekura public", structure_type_id=35825, structure_name="Raitaru",
+                                        system_id=30001391, system_name="Piekura", rig_type_ids=[])
+        self.user.user_permissions.add(Permission.objects.get(codename="basic_access", content_type__app_label="shipyard"))
+        client = Client()
+        client.force_login(self.user)
+        response = client.post(reverse("shipyard:set_facility", args=[other.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(board.get_user_settings(self.user).facility, other)
+        # GET is not allowed, an inactive facility is a 404
+        self.assertEqual(client.get(reverse("shipyard:set_facility", args=[other.pk])).status_code, 405)
+        other.is_active = False
+        other.save()
+        self.assertEqual(client.post(reverse("shipyard:set_facility", args=[other.pk])).status_code, 404)
+
     def test_settings_defaults(self):
         s = board.get_user_settings(self.user)
         self.assertEqual(s.facility, self.fac)

@@ -12,7 +12,7 @@
 <div class="row g-2 mb-4">
     {% for row in characters %}
     <div class="col-md-4 col-lg-3">
-        <div class="card h-100 {% if row.in_use %}border-primary{% endif %}">
+        <div class="card h-100 {% if row.in_use %}is-selected{% endif %}">
             <div class="card-body py-2 d-flex align-items-center">
                 <img src="https://images.evetech.net/characters/{{ row.character.character_id }}/portrait?size=64" width="40" height="40" class="rounded me-2" alt="">
                 <div class="flex-grow-1">
@@ -46,61 +46,10 @@
 </p>
 {% endif %}
 
-<form method="post">
-    {% csrf_token %}
-    <input type="hidden" name="next" value="{{ next }}">
-
-    <h5>Manufacturing facility</h5>
-    <p class="small text-muted">Where you build. Rigs and the system index change material quantities and job cost.</p>
-    <div class="row g-2 mb-4">
-        {% for f in facilities %}
-        <div class="col-md-4">
-            <label class="w-100 shipyard-radio-card">
-                <input type="radio" name="facility" value="{{ f.pk }}" {% if settings.facility_id == f.pk %}checked{% endif %}>
-                {% include "shipyard/_facility_card.html" with facility=f selected=False %}
-            </label>
-        </div>
-        {% empty %}
-        <div class="col"><div class="alert alert-warning">No facilities defined. A manager adds them in admin → Shipyard → Facilities.</div></div>
-        {% endfor %}
-    </div>
-
-    <h5>Market for prices and taxes</h5>
-    <div class="row g-2 mb-4">
-        <div class="col-md-6">
-            <select name="market" class="form-select">
-                {% for m in markets %}
-                    <option value="{{ m.pk }}" {% if settings.market_id == m.pk %}selected{% endif %}>{{ m.name }} — base sales tax {{ m.sales_tax_base }} %, broker {{ m.broker_fee_base }} %</option>
-                {% endfor %}
-            </select>
-            <div class="form-text">
-                Your rates here: sales tax {{ rates.sales_tax|pct:2 }} (Accounting), broker fee {{ rates.broker_fee|pct:2 }} (Broker Relations and your standings with the station's owners).
-                {% if standings.applies and not standings.known %}Standings are not loaded yet: choose a character above.{% endif %}
-            </div>
-        </div>
-    </div>
-
-    <h5>Blueprints</h5>
-    <div class="form-check form-switch mb-4">
-        <input class="form-check-input" type="checkbox" name="use_lp_pricing" id="use-lp" {% if settings.use_lp_pricing %}checked{% endif %}>
-        <label class="form-check-label" for="use-lp">Price blueprints from the LP store where an offer is entered (LP × ISK/LP + ISK part, per run)</label>
-        <div class="form-text">Ships without an LP offer keep their entered blueprint price. LP prices per faction are maintained under <em>Blueprints &amp; LP</em>.</div>
-    </div>
-
-    <button class="btn btn-primary"><i class="fas fa-save fa-fw"></i> Save settings</button>
-    <a class="btn btn-outline-secondary" href="{% url 'shipyard:index' %}">Cancel</a>
-</form>
-{% endblock %}
-
-{% block shipyard_js %}
-<script>
-document.querySelectorAll('.shipyard-radio-card input[type=radio]').forEach(function (r) {
-    function paint() {
-        document.querySelectorAll('.shipyard-radio-card .card').forEach(function (c) { c.classList.remove('border-primary'); });
-        var checked = document.querySelector('.shipyard-radio-card input[type=radio]:checked');
-        if (checked) { checked.closest('label').querySelector('.card').classList.add('border-primary'); }
-    }
-    r.addEventListener('change', paint); paint();
-});
-</script>
+<p class="small text-muted">
+    Prices and taxes use {{ settings.market|default:"the corp's market" }}; your sales tax there is {{ rates.sales_tax|pct:2 }} and your broker fee {{ rates.broker_fee|pct:2 }}
+    (Accounting, Broker Relations and your standings with the station's owners, all from the character above).
+    The facility you build at is chosen on the dashboard with the <em>Swap</em> button on the facility card.
+</p>
+<a class="btn btn-outline-secondary" href="{% url 'shipyard:index' %}"><i class="fas fa-arrow-left fa-fw"></i> Dashboard</a>
 {% endblock %}

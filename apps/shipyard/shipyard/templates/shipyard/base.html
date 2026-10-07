@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="shipyard-root" data-bs-theme="dark">
     <nav class="nav nav-pills mb-3 shipyard-nav">
         <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'shipyard:index' %}">
             <i class="fas fa-table-list fa-fw"></i> Dashboard
@@ -29,6 +30,7 @@
     <div class="alert alert-warning py-2"><i class="fas fa-triangle-exclamation fa-fw"></i> {{ data_notice }}</div>
     {% endif %}
     {% block shipyard_content %}{% endblock %}
+</div>
 {% endblock content %}
 
 {% block extra_javascript %}

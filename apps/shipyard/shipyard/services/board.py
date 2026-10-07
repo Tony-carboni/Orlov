@@ -109,7 +109,7 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
             volumes=volumes,
             job_cost=job_cost,
             config=configs.get(ship.type_id),
-            use_lp=settings.use_lp_pricing,
+            use_lp=True,  # LP offers are the corp's price list; the policy per type decides the rest
             rates=rates,
             avg_daily_volume=st.avg_daily_volume if st else 0,
             sell_volume_on_market=hull_price.sell_volume if hull_price else 0,
@@ -171,7 +171,7 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
     if bpc is not None:
         use_lp = False  # a typed blueprint price always wins in the simulation
     if use_lp is None:
-        use_lp = settings.use_lp_pricing
+        use_lp = True
 
     econ = pricing.economics(
         sell_price=hull_price.sell_min if hull_price else None,

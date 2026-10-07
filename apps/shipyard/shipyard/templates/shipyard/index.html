@@ -4,37 +4,53 @@
 {% block shipyard_title %}Shipyard · Dashboard{% endblock %}
 
 {% block shipyard_content %}
-<div class="card mb-3">
-    <div class="card-body py-2">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-4">
-                {% if settings.facility %}
-                    {% include "shipyard/_facility_card.html" with facility=settings.facility selected=True %}
+<div class="row g-3 mb-3 align-items-stretch">
+    <div class="col-lg-5 col-xl-4">
+        {% if settings.facility %}
+            {% include "shipyard/_facility_card.html" with facility=settings.facility selected=True swap=True %}
+        {% else %}
+            <div class="alert alert-warning mb-0 py-2">No facility configured yet.</div>
+        {% endif %}
+    </div>
+    <div class="col-lg-7 col-xl-8">
+        <div class="shipyard-infobar h-100">
+            <div><span class="shipyard-k">Selling at</span> <strong>{{ settings.market|default:"–" }}</strong></div>
+            <div><span class="shipyard-k">Sales tax</span> <strong>{{ rates.sales_tax|pct:2 }}</strong> <span class="shipyard-k ms-2">Broker fee</span> <strong>{{ rates.broker_fee|pct:2 }}</strong></div>
+            <div>
+                <span class="shipyard-k">Character</span>
+                {% if settings.skills_character_id %}
+                    <a class="text-decoration-none" href="{% url 'shipyard:settings' %}" title="Skills and standings read from EVE {{ settings.skills_fetched_at|date:'Y-m-d H:i' }}, refreshed daily. Click to pick another.">
+                        <img class="shipyard-portrait me-1" src="https://images.evetech.net/characters/{{ settings.skills_character_id }}/portrait?size=64" alt=""><strong>{{ settings.skills_character_name }}</strong>
+                    </a>
                 {% else %}
-                    <div class="alert alert-warning mb-0 py-2">No facility configured yet.</div>
+                    <a class="badge text-bg-warning text-decoration-none" href="{% url 'shipyard:settings' %}">none chosen yet: skills count as 0</a>
                 {% endif %}
             </div>
-            <div class="col-md-5">
-                <div class="small text-muted">Selling at</div>
-                <div class="fw-semibold">{{ settings.market|default:"–" }}</div>
-                <div class="small">
-                    sales tax <strong>{{ rates.sales_tax|pct:2 }}</strong> · broker fee <strong>{{ rates.broker_fee|pct:2 }}</strong>
-                    {% if settings.skills_character_id %}
-                        <span class="badge bg-info-subtle text-info-emphasis ms-1" title="Skills and standings read from EVE {{ settings.skills_fetched_at|date:'Y-m-d H:i' }}, refreshed daily">character: {{ settings.skills_character_name }}</span>
-                    {% else %}
-                        <a class="badge bg-warning-subtle text-warning-emphasis ms-1 text-decoration-none" href="{% url 'shipyard:settings' %}">no character chosen yet: skills count as 0</a>
-                    {% endif %}
-                    {% if settings.use_lp_pricing %}<span class="badge bg-warning-subtle text-warning-emphasis ms-1">blueprints from LP</span>{% endif %}
-                </div>
-                <div class="small text-muted mt-1">
-                    Prices: Jita lowest sell, refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE ·
-                    builds {{ freshness.builds|date:"Y-m-d H:i" }} · volume {{ freshness.stats|date:"Y-m-d H:i" }}
-                </div>
+            <div class="shipyard-k">Jita lowest sell, refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · builds {{ freshness.builds|date:"Y-m-d H:i" }} · volume {{ freshness.stats|date:"Y-m-d H:i" }}</div>
+        </div>
+    </div>
+</div>
+
+{# facility picker: every active facility as a card, click = use it #}
+<div class="modal fade" id="facility-picker" tabindex="-1" aria-labelledby="facility-picker-title" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title" id="facility-picker-title"><i class="fas fa-industry fa-fw"></i> Where do you build?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="col-md-3 text-md-end">
-                <a class="btn btn-outline-primary btn-sm" href="{% url 'shipyard:settings' %}?next={% url 'shipyard:index' %}">
-                    <i class="fas fa-sliders fa-fw"></i> Change facility / market / skills
-                </a>
+            <div class="modal-body">
+                <div class="row g-3">
+                    {% for f in facilities %}
+                    <div class="col-md-6 col-xl-4">
+                        {% if f.pk == settings.facility_id %}
+                            {% include "shipyard/_facility_card.html" with facility=f selected=True pick=True %}
+                        {% else %}
+                            {% include "shipyard/_facility_card.html" with facility=f selected=False pick=True %}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
@@ -66,14 +82,6 @@
             <label class="btn btn-outline-secondary" for="filter-hull-{{ h|lower }}">{{ h }}</label>
             {% endfor %}
         </div>
-    </div>
-    <div class="col-auto form-check form-switch ms-2 mt-1">
-        <input class="form-check-input" type="checkbox" id="filter-complete" checked>
-        <label class="form-check-label small" for="filter-complete">Hide ships with missing data</label>
-    </div>
-    <div class="col-auto form-check form-switch ms-2 mt-1">
-        <input class="form-check-input" type="checkbox" id="filter-profitable">
-        <label class="form-check-label small" for="filter-profitable">Only profitable</label>
     </div>
 </div>
 

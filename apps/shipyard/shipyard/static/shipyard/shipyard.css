@@ -1,8 +1,72 @@
-.shipyard-nav .nav-link { padding: .25rem .75rem; }
+/* Shipyard: a dark blue "bridge" look. Bootstrap 5.3 dark mode does the heavy lifting
+   (data-bs-theme="dark" on .shipyard-root and on the standalone body); these variables tint it navy. */
+.shipyard-body, .shipyard-root {
+    --sy-bg: #0b1628;        /* page */
+    --sy-panel: #11213a;     /* cards, table head */
+    --sy-panel-2: #172b4a;   /* hover, inputs */
+    --sy-line: #233a5e;
+    --sy-text: #d7dfea;      /* light grey, not pure white */
+    --sy-muted: #8da2c0;
+    --sy-accent: #4cc3ff;
+    --bs-body-bg: var(--sy-bg);
+    --bs-body-color: var(--sy-text);
+    --bs-secondary-color: var(--sy-muted);
+    --bs-tertiary-bg: var(--sy-panel-2);
+    --bs-secondary-bg: var(--sy-panel);
+    --bs-border-color: var(--sy-line);
+    --bs-link-color: var(--sy-accent);
+    --bs-link-hover-color: #8adaff;
+    --bs-emphasis-color: #ffffff;
+    color: var(--sy-text);
+}
+.shipyard-body { background: radial-gradient(1200px 600px at 20% -10%, #15305a 0%, var(--sy-bg) 55%) fixed; min-height: 100vh; }
+.shipyard-root { background: var(--sy-bg); border-radius: .5rem; padding: 1rem; }
+.shipyard-topbar { background: #0f1f3d; border-bottom: 1px solid var(--sy-line); }
+.shipyard-topbar .navbar-brand { font-weight: 600; letter-spacing: .02em; color: #fff; }
+.shipyard-portrait { width: 28px; height: 28px; border-radius: 50%; vertical-align: middle; }
+.shipyard-k { color: var(--sy-muted); }
+.shipyard-nav .nav-link { padding: .25rem .75rem; color: var(--sy-text); }
+.shipyard-nav .nav-link.active { background: var(--sy-panel-2); color: #fff; }
+
+/* cards and tables */
+.shipyard-root .card, .shipyard-body .card, .shipyard-root .modal-content {
+    --bs-card-bg: var(--sy-panel); --bs-card-border-color: var(--sy-line); --bs-card-cap-bg: var(--sy-panel-2);
+    --bs-modal-bg: var(--sy-panel);
+}
+.shipyard-root .table, .shipyard-body .table {
+    --bs-table-bg: transparent; --bs-table-color: var(--sy-text);
+    --bs-table-striped-bg: rgba(255,255,255,.025); --bs-table-striped-color: var(--sy-text);
+    --bs-table-hover-bg: rgba(76,195,255,.10); --bs-table-hover-color: #fff;
+    --bs-table-active-bg: rgba(76,195,255,.14); --bs-table-border-color: var(--sy-line);
+}
+.shipyard-root thead th, .shipyard-body thead th { background: var(--sy-panel); color: var(--sy-muted); font-weight: 600; }
+.shipyard-root .form-control, .shipyard-root .form-select, .shipyard-body .form-control, .shipyard-body .form-select {
+    background-color: var(--sy-panel-2); border-color: var(--sy-line); color: var(--sy-text);
+}
+.shipyard-root .form-control::placeholder { color: var(--sy-muted); }
+.shipyard-root .text-muted, .shipyard-body .text-muted { color: var(--sy-muted) !important; }
+.shipyard-root .btn-outline-secondary { --bs-btn-color: var(--sy-text); --bs-btn-border-color: var(--sy-line); --bs-btn-hover-bg: var(--sy-panel-2); --bs-btn-hover-border-color: var(--sy-accent); }
+.shipyard-root .btn-check:checked + .btn-outline-secondary { background: var(--sy-accent); border-color: var(--sy-accent); color: #04121f; }
+.shipyard-root .alert-info { --bs-alert-bg: #0f2a40; --bs-alert-border-color: #1d4d70; --bs-alert-color: var(--sy-text); }
+.shipyard-root .alert-warning { --bs-alert-bg: #3a2a08; --bs-alert-border-color: #7a5a10; --bs-alert-color: #ffe6a8; }
+
+/* the info bar next to the facility card */
+.shipyard-infobar { display: flex; flex-direction: column; justify-content: center; gap: .3rem; padding: .75rem 1rem;
+    border: 1px solid var(--sy-line); border-radius: .5rem; background: var(--sy-panel); font-size: .92rem; }
+
+/* facility card: structure render on top, details below */
+.shipyard-facility-card { border: 1px solid var(--sy-line); overflow: hidden; transition: transform .12s ease, box-shadow .12s ease; }
+.shipyard-facility-card:hover { transform: translateY(-2px); box-shadow: 0 .5rem 1.25rem rgba(0,0,0,.45); }
+.shipyard-facility-card.is-selected { border-color: var(--sy-accent); box-shadow: 0 0 0 1px var(--sy-accent), 0 .5rem 1.25rem rgba(0,0,0,.45); }
+.shipyard-facility-art { position: relative; min-height: 110px; background-size: cover; background-position: center 35%;
+    background-color: #0a1324; }
+.shipyard-facility-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,19,36,.15) 0%, rgba(10,19,36,.92) 100%); }
+.shipyard-facility-title { position: absolute; left: .75rem; right: .75rem; bottom: .5rem; z-index: 1; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+.shipyard-facility-flag { position: absolute; top: .5rem; right: .5rem; z-index: 1; }
+.card.is-selected { border-color: var(--sy-accent); box-shadow: 0 0 0 1px var(--sy-accent); }
+
+/* table details */
 .shipyard-kv td { padding: .15rem .4rem; }
-.shipyard-facility-card { border-width: 2px; }
-.shipyard-radio-card { cursor: pointer; }
-.shipyard-radio-card input[type=radio] { position: absolute; opacity: 0; }
 #shipyard-table tbody tr { cursor: pointer; }
 #shipyard-table td, #shipyard-table th { white-space: nowrap; }
 .shipyard-cat { font-weight: 500; }

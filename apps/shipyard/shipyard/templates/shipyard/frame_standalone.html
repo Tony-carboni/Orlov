@@ -15,13 +15,9 @@
     {% include 'bundles/auth-framework-js.html' %}
     {% block extra_css %}{% endblock %}
     {% include 'custom_css/bundles/custom-css.html' %}
-    <style>
-        .shipyard-topbar .navbar-brand { font-weight: 600; letter-spacing: .02em; }
-        .shipyard-portrait { width: 28px; height: 28px; border-radius: 50%; vertical-align: middle; }
-    </style>
 </head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark text-bg-primary shipyard-topbar">
+<body class="shipyard-body" data-bs-theme="dark">
+<nav class="navbar navbar-expand-lg navbar-dark shipyard-topbar">
     <div class="container-fluid">
         <a class="navbar-brand" href="{% url 'shipyard:index' %}"><i class="fas fa-industry fa-fw me-1"></i>Orlov Shipyard</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#shipyard-topnav" aria-controls="shipyard-topnav" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +43,7 @@
         </div>
     </div>
 </nav>
-<main class="container-fluid py-3">
+<main class="container-fluid py-3 shipyard-main">
     {% include 'allianceauth/messages-bs5.html' %}
     {% block content %}{% endblock %}
 </main>

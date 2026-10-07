@@ -1,24 +1,39 @@
-{% comment %} Info card for one facility; expects `facility` {% endcomment %}
-<div class="card shipyard-facility-card h-100 {% if selected %}border-primary{% endif %}">
-    <div class="card-body py-2 px-3">
-        <div class="d-flex justify-content-between align-items-start">
-            <div>
-                <div class="fw-semibold">{{ facility.name }}</div>
-                <div class="small text-muted">{{ facility.structure_name }} · {{ facility.system_name }}</div>
-            </div>
-            {% if facility.is_default %}<span class="badge bg-secondary">default</span>{% endif %}
+{% comment %}
+One facility as a card. Expects `facility`; optional `selected` (highlight), `swap` (button that
+opens the picker, dashboard) and `pick` (button that makes this the user's facility, picker).
+{% endcomment %}
+<div class="card shipyard-facility-card h-100 {% if selected %}is-selected{% endif %}">
+    <div class="shipyard-facility-art" style="background-image: url('https://images.evetech.net/types/{{ facility.structure_type_id }}/render?size=256');">
+        <div class="shipyard-facility-title">
+            <div class="fw-semibold">{{ facility.name }}</div>
+            <div class="small">{{ facility.structure_name }} · {{ facility.system_name }}</div>
         </div>
-        <ul class="list-unstyled small mb-1 mt-2">
+        {% if selected %}<span class="badge text-bg-info shipyard-facility-flag"><i class="fas fa-location-dot fa-fw"></i> building here</span>{% elif facility.is_default %}<span class="badge text-bg-secondary shipyard-facility-flag">corp default</span>{% endif %}
+    </div>
+    <div class="card-body py-2 px-3">
+        <ul class="list-unstyled small mb-2">
             {% for rig in facility.rig_names %}
-                <li><i class="fas fa-cog fa-fw text-muted"></i> {{ rig }}</li>
+                <li><i class="fas fa-gear fa-fw shipyard-k"></i> {{ rig }}</li>
             {% empty %}
-                <li class="text-muted"><i class="fas fa-cog fa-fw"></i> no rigs</li>
+                <li class="shipyard-k"><i class="fas fa-gear fa-fw"></i> no rigs</li>
             {% endfor %}
         </ul>
-        <div class="small">
-            <span class="me-3" title="System manufacturing cost index"><i class="fas fa-percent fa-fw text-muted"></i> index {{ facility.manufacturing_index|floatformat:2 }} %</span>
-            <span title="Facility tax set by the owner"><i class="fas fa-receipt fa-fw text-muted"></i> tax {{ facility.facility_tax }} %</span>
+        <div class="small d-flex justify-content-between align-items-center">
+            <span>
+                <span title="System manufacturing cost index"><i class="fas fa-percent fa-fw shipyard-k"></i> index {{ facility.manufacturing_index|floatformat:2 }} %</span>
+                <span class="ms-2" title="Facility tax set by the owner"><i class="fas fa-receipt fa-fw shipyard-k"></i> tax {{ facility.facility_tax }} %</span>
+            </span>
+            {% if swap %}
+                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#facility-picker"><i class="fas fa-right-left fa-fw"></i> Swap</button>
+            {% elif pick %}
+                <form method="post" action="{% url 'shipyard:set_facility' facility.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button class="btn btn-sm {% if selected %}btn-outline-secondary{% else %}btn-info{% endif %}" {% if selected %}disabled{% endif %}>
+                        {% if selected %}<i class="fas fa-check fa-fw"></i> current{% else %}<i class="fas fa-location-dot fa-fw"></i> Build here{% endif %}
+                    </button>
+                </form>
+            {% endif %}
         </div>
-        {% if facility.notes %}<div class="small text-muted mt-1">{{ facility.notes }}</div>{% endif %}
+        {% if facility.notes %}<div class="small shipyard-k mt-1">{{ facility.notes }}</div>{% endif %}
     </div>
 </div>
