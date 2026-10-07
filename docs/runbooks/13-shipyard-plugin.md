@@ -13,6 +13,7 @@
 | Package | `orlov-shipyard` from this repo, `apps/shipyard`, installed from the GitHub archive of a pinned commit |
 | Django app | `shipyard` |
 | Default facility (seeded) | Orlov Raitaru — Isikano, rigs: Basic Small / Medium / Large Ship ME I (correct in admin if the real fit differs) |
+| Preset public stations (2026-10-07, owner) | Four public Raitarus in Piekura by The Zero-Complaints Logistics Division, 2 % tax, rigs from their in-game bios: *FP Big ship Construction* (Basic Large Ship ME II + TE I, Basic Capital Component ME II), *FP - Fuel, Ammo, Equipemeny* (ammo, equipment, structure rigs; no ship bonus), *FP T1-T2 Small Ships & Drones* (Advanced + Basic Small Ship ME I, Drone ME I), *FP T1-T2-T3 Medium Ship & Comp.* (Advanced Component ME II, Advanced Medium Ship ME II, Basic Medium Ship ME I). Members pick them under My settings → Facility. Each active facility adds ~175 EVE Ref calls to the 6-hourly build refresh |
 | Default market (seeded) | Jita IV-4, sales tax base 7.5 %, broker fee base 3 % |
 | Permissions | `shipyard \| general \| Can access the Shipyard dashboard`, `… \| Can edit blueprint prices, LP prices and facilities` |
 | Beat | `shipyard_refresh_all` every 6 h at :10; `shipyard_refresh_prices_and_stats` hourly at :40 |
