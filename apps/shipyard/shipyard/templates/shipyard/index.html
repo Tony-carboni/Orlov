@@ -115,7 +115,9 @@
             {% if r.econ.bpc_source == 'public' %}
             <td class="text-end small text-muted" data-order="0" title="The corp has no source for this blueprint; members buy copies on public contracts">public contracts only</td>
             {% elif r.econ.bpc_source == 'free' %}
-            <td class="text-end" data-order="0" title="Handed out by the corp for free">{{ r.econ.bpc_cost|isk }}</td>
+            <td class="text-end small text-success" data-order="0" title="The corp hands this blueprint copy out for free">Free for corp members</td>
+            {% elif r.econ.bpc_source == 'manual' and not r.econ.bpc_cost %}
+            <td class="text-end small text-muted" data-order="0" title="No blueprint price entered yet (Blueprints &amp; LP page)">not priced yet</td>
             {% else %}
             <td class="text-end" data-order="{{ r.econ.bpc_cost }}" title="{% if r.econ.bpc_source == 'lp' %}LP store offer{% if r.econ.bpc_markup %} plus the corp's {{ r.econ.bpc_markup|pct:0 }} markup{% endif %}{% else %}entered price{% endif %}">{{ r.econ.bpc_cost|isk }}</td>
             {% endif %}
@@ -128,7 +130,7 @@
 <p class="small text-muted mt-2">
     Net profit = Jita lowest sell − materials (Jita lowest sell, ME 0 at your facility) − job cost − blueprint − tags − sales tax − broker fee.
     Build time assumes all industry skills at V. Click a ship for the full breakdown and simulations.<br>
-    <strong>Blueprints:</strong> Base hulls are handed out by the corp for free (0 ISK). Navy hulls come from the corp at the LP-store cost plus its markup.
+    <strong>Blueprints:</strong> Base hulls are handed out by the corp for free. Navy hulls come from the corp at the LP-store cost plus its markup.
     Pirate, Triglavian and EDENCOM hulls cannot be supplied by the corp: <em>public contracts only</em>, and their net profit (<sup class="text-info">no BPC</sup>) is <strong>without</strong> the blueprint.
 </p>
 {% endblock %}

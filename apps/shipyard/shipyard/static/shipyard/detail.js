@@ -68,6 +68,8 @@
                 setK("job_cost", fmtIsk(d.job_cost));
                 if (d.bpc_excluded) {
                     setK("bpc_cost", '<span class="small text-muted">public contracts only</span>');
+                } else if (d.bpc_source === "free") {
+                    setK("bpc_cost", '<span class="small text-success">Free for corp members</span>');
                 } else {
                     setK("bpc_cost", fmtIsk(d.bpc_cost));
                 }
