@@ -122,7 +122,7 @@
                     <tr><td>Tags / extras</td><td class="text-end" data-k="tag_cost">{{ econ.tag_cost|isk:2 }}</td></tr>
                     <tr><td>Sales tax + broker fee</td><td class="text-end" data-k="fees">{{ econ.fees|isk:2 }}</td></tr>
                     <tr><td>Total cost</td><td class="text-end" data-k="total_cost">{{ econ.total_cost|isk:2 }}</td></tr>
-                    <tr class="table-active"><td><strong>Net profit</strong></td><td class="text-end" data-k="net_profit"><strong>{{ econ.net_profit|isk:2 }}</strong> <span class="small text-muted" data-k="margin">({{ econ.margin|pct }})</span></td></tr>
+                    <tr class="table-active"><td><strong>Net profit</strong></td><td class="text-end" data-k="net_profit"><strong>{{ econ.net_profit|isk:2 }}</strong>{% if econ.bpc_excluded %} <sup class="text-info" title="Without the blueprint: the corp cannot supply this copy">no BPC</sup>{% endif %} <span class="small text-muted" data-k="margin">({{ econ.margin|pct }})</span></td></tr>
                     <tr><td>Build time</td><td class="text-end" data-k="time">{{ econ.time_seconds|duration }}</td></tr>
                 </table>
             </div>
