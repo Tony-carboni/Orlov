@@ -51,6 +51,25 @@ Set `SHIPYARD_STANDALONE_HOST = "shipyards.orlovfamily.space"` in `conf/local.py
 3. Auth's menu entry **Shipyard** now opens the new address.
 4. A member without access (not Family Member or Friend) sees "The Shipyard is for members and friends of The Orlov Family".
 
+## E. Phase 2: My industry — jobs, blueprints and stock (Shipyard 0.3.0)
+
+*Built 2026-10-07 on the owner's request ("a full dashboard of the ongoing jobs and assets").*
+
+A new page **My industry** (`/shipyard/industry/`), fed from the characters that have granted full access:
+
+| Section | What it shows | Read from EVE |
+|---|---|---|
+| Characters strip | every character read, with build and science slots in use / available (from Mass Production, Advanced Mass Production, Laboratory Operation, Advanced Laboratory Operation) | with the jobs |
+| Jobs | running jobs and jobs ready to deliver (a finished job EVE still calls "active" counts as ready), with product, runs, where, end time and cost; delivered jobs of the last 7 days folded away | every 30 minutes |
+| Blueprints | every blueprint the characters own: original or copy, ME, TE, runs, where, which character; catalog ships are marked | every 6 hours |
+| Stock | build materials and catalog ships on hand, per station or structure (items in containers and ship holds roll up to the place they are in), valued at the default market's lowest sell | every 6 hours |
+
+**Your own blueprints change the numbers.** Where a member owns a blueprint of a catalog ship, the dashboard and the ship page use its ME and TE instead of ME 0 (badge "your BPO ME10"), recalculated live through EVE Ref (cached 30 minutes, at most 25 ships per page view).
+
+**Who sees whom** (owner's rule 2026-10-07): a member sees their own characters. The permission `shipyard | general | Can see the industry of everyone in their corporation` (on the group `Corp Director`) adds a **My corp** view; `Can see the industry of everyone in the alliance` (on `Alliance Director`) adds **Alliance**. Corp and alliance are taken from the viewer's main character; only members who granted full access appear. "Refresh now" refreshes the viewer's own characters; everyone else is refreshed by the background task `shipyard_refresh_industry` (every 30 minutes at :05 and :35; blueprints and assets are only re-read when older than 6 hours).
+
+Structures a character cannot dock at show as "Location <id>"; EVE does not give their names to outsiders.
+
 ## Troubleshooting
 
 - **The new address shows the proxy's "Congratulations" page or a certificate error** → the proxy host in A2 is missing or its certificate failed; check the DNS record first.

@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, PriceSnapshot, RefreshRun, Ship, ShipConfig,
     ShipMarketStats,
 )
-from .services import esi, everef, fuzzwork
+from .services import esi, everef, fuzzwork, industry
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -140,6 +140,22 @@ def refresh_market_stats():
             logger.warning("history failed for %s: %s", ship, exc)
         polite_pause()
     _done(run, not errors, n, "; ".join(errors[:20]))
+
+
+@shared_task
+def refresh_industry():
+    """Jobs, blueprints and assets of every character known to the industry page.
+
+    Beat entry: shipyard_refresh_industry (every 30 minutes). Each section is only read
+    when it is stale, so the half-hourly run touches jobs; blueprints and assets 4× a day.
+    """
+    run = _run("industry")
+    try:
+        done, failed = industry.sync_all()
+        _done(run, failed == 0, done, f"{failed} characters with errors" if failed else "")
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("industry refresh failed")
+        _done(run, False, 0, str(exc))
 
 
 @shared_task

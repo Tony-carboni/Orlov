@@ -48,6 +48,12 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - **Open — owner (runbook 14 A):** DNS `A` record `shipyards` → 167.99.207.145 at Porkbun; proxy host with certificate in Nginx Proxy Manager. **Then local session (14 C):** set the host in `conf/local.py`, restart gunicorn + workers, verify the redirects. Then the owner checks (14 D).
 - Still open from earlier: honour a typed blueprint price for "public" hulls (Vindicator 71 M vs sheet 52 M); front-door phase 2 (blueprints, jobs, assets in the dashboard).
 
+### Shipyard 0.3.0: My industry (phase 2), laptop session, evening of 2026-10-07
+- Owner: "phase 2, go for it: a full dashboard of the ongoing jobs and assets"; then: Family Members see only their own characters' slots, Corp Directors everything in their corp, Alliance Directors everything in the alliance.
+- New: `services/industry.py` (sync per character: jobs 30 min / blueprints and assets 6 h, assets rolled up to the root location and kept only for known types, name caches `MaterialType`/`LocationName`, `owned_blueprints()`, `overview(user, scope)`, `allowed_scopes()`/`visible_syncs()`), models `CharacterSync`, `IndustryJob`, `CharacterBlueprint`, `CharacterAsset`, `LocationName` (migration 0004, **already applied to the live DB from the working copy during the dry run**), permissions `view_corp_industry` / `view_alliance_industry`, task `refresh_industry` + beat entry in `deploy/conf/local.py.append`, page `industry.html`, nav entry, dashboard badge and live ME/TE from own blueprints (`board.dashboard_rows`, `views.ship_detail`), ESI helpers (paged, authed). 47 tests.
+- Dry run (working copy in a throwaway container, real ESI): tony's 10 characters in 8.8 s, 232 blueprints, stock 3.5 B at 29 places, 14 catalog ships with own ME 10, page 200 in all scopes, Tiptoe (no permission) sees no scope buttons and nobody else. Thorax and Stabber share one material list at every ME: EVE data, not a bug.
+- Release and the permission grants to the groups `Corp Director` / `Alliance Director`: see the next lines or runbook 13 C.
+
 ### Also 2026-10-07 (laptop session)
 - "refresh user Francis01": FNA → OARMI/ORLOV, Family Friend → Family Member, `corp_OARMI`, Discord roles and nickname synced. Procedure written up as runbook 04 section E. Francis01 is not yet in Early Founders; the owner triggers that with "refresh the founders".
 - 2026-10-06: Discord's join messages (System Messages Channel) moved from `#how-to-get-roles` to `#public-chat`; see the entry below.

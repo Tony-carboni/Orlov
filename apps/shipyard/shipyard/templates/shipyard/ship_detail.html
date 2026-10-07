@@ -19,7 +19,7 @@
 <div class="row g-3">
     <div class="col-lg-4">
         <div class="card mb-3">
-            <div class="card-header py-2"><strong>Dashboard numbers</strong> <span class="small text-muted">(ME 0, {{ detail.facility|default:"no facility" }})</span></div>
+            <div class="card-header py-2"><strong>Dashboard numbers</strong> <span class="small text-muted">({% if owned %}your {{ owned.kind }} ME {{ owned.me }} / TE {{ owned.te }}{% else %}ME 0{% endif %}, {{ detail.facility|default:"no facility" }})</span></div>
             <div class="card-body py-2">
                 <table class="table table-sm mb-0 shipyard-kv">
                     <tr><td>Sell price (Jita lowest)</td><td class="text-end">{{ econ.sell_price|isk:2 }}</td></tr>
@@ -52,12 +52,12 @@
                     </select>
                 </div>
                 <div class="mb-2">
-                    <label class="form-label small mb-0">Material efficiency: <strong id="sim-me-value">0</strong></label>
-                    <input type="range" class="form-range" id="sim-me" min="0" max="10" step="1" value="0">
+                    <label class="form-label small mb-0">Material efficiency: <strong id="sim-me-value">{{ detail.me|default:0 }}</strong></label>
+                    <input type="range" class="form-range" id="sim-me" min="0" max="10" step="1" value="{{ detail.me|default:0 }}">
                 </div>
                 <div class="mb-2">
-                    <label class="form-label small mb-0">Time efficiency: <strong id="sim-te-value">0</strong></label>
-                    <input type="range" class="form-range" id="sim-te" min="0" max="20" step="2" value="0">
+                    <label class="form-label small mb-0">Time efficiency: <strong id="sim-te-value">{{ detail.te|default:0 }}</strong></label>
+                    <input type="range" class="form-range" id="sim-te" min="0" max="20" step="2" value="{{ detail.te|default:0 }}">
                 </div>
                 <div class="row g-2">
                     <div class="col-6">

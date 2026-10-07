@@ -14,6 +14,8 @@ class General(models.Model):
         permissions = (
             ("basic_access", "Can access the Shipyard dashboard"),
             ("manage_shipyard", "Can edit blueprint prices, LP prices and facilities"),
+            ("view_corp_industry", "Can see the industry of everyone in their corporation"),
+            ("view_alliance_industry", "Can see the industry of everyone in the alliance"),
         )
 
 
@@ -277,6 +279,96 @@ class UserSettings(models.Model):
         if not entity_id:
             return 0.0
         return float((self.standings or {}).get(str(int(entity_id)), 0.0))
+
+
+class CharacterSync(models.Model):
+    """One of the member's characters that the industry page reads from ESI."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="shipyard_characters")
+    character_id = models.PositiveIntegerField()
+    character_name = models.CharField(max_length=100)
+    jobs_at = models.DateTimeField(null=True, blank=True)
+    blueprints_at = models.DateTimeField(null=True, blank=True)
+    assets_at = models.DateTimeField(null=True, blank=True)
+    manufacturing_slots = models.PositiveSmallIntegerField(default=1)
+    science_slots = models.PositiveSmallIntegerField(default=1)
+    last_error = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        unique_together = [("user", "character_id")]
+
+    def __str__(self):
+        return self.character_name
+
+
+class IndustryJob(models.Model):
+    """An industry job of one of the member's characters, as ESI reports it."""
+
+    job_id = models.BigIntegerField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="shipyard_jobs")
+    character_id = models.PositiveIntegerField()
+    character_name = models.CharField(max_length=100)
+    activity_id = models.PositiveSmallIntegerField(default=0)
+    blueprint_type_id = models.PositiveIntegerField(default=0)
+    product_type_id = models.PositiveIntegerField(null=True, blank=True)
+    runs = models.PositiveIntegerField(default=0)
+    licensed_runs = models.IntegerField(null=True, blank=True)
+    status = models.CharField(max_length=20)
+    start_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+    location_id = models.BigIntegerField(default=0)
+    cost = models.FloatField(default=0)
+    fetched_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"Job {self.job_id}"
+
+
+class CharacterBlueprint(models.Model):
+    """A blueprint one of the member's characters owns."""
+
+    item_id = models.BigIntegerField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="shipyard_blueprints")
+    character_id = models.PositiveIntegerField()
+    type_id = models.PositiveIntegerField()
+    location_id = models.BigIntegerField(default=0)
+    location_flag = models.CharField(max_length=50, blank=True)
+    me = models.PositiveSmallIntegerField(default=0)
+    te = models.PositiveSmallIntegerField(default=0)
+    runs = models.IntegerField(default=-1)
+    quantity = models.IntegerField(default=-1, help_text="-1 original, -2 copy, >0 a stack of originals")
+    fetched_at = models.DateTimeField(default=timezone.now)
+
+    @property
+    def is_copy(self):
+        return self.quantity == -2
+
+
+class CharacterAsset(models.Model):
+    """Stock of one known type at one station or structure, per character."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="shipyard_assets")
+    character_id = models.PositiveIntegerField()
+    type_id = models.PositiveIntegerField()
+    location_id = models.BigIntegerField(default=0)
+    quantity = models.BigIntegerField(default=0)
+    fetched_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = [("user", "character_id", "type_id", "location_id")]
+
+
+class LocationName(models.Model):
+    """Name cache for stations, structures and other places assets and jobs sit in."""
+
+    location_id = models.BigIntegerField(primary_key=True)
+    name = models.CharField(max_length=200)
+    system_name = models.CharField(max_length=100, blank=True)
+    kind = models.CharField(max_length=20, default="unknown")
+    fetched_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return self.name
 
 
 class RefreshRun(models.Model):

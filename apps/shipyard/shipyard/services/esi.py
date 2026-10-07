@@ -49,18 +49,55 @@ def character_standings(character_id: int, access_token: str) -> dict[str, float
     return {str(int(s["from_id"])): float(s.get("standing") or 0) for s in r.json() or []}
 
 
-def character_skills(character_id: int, access_token: str) -> dict[int, int]:
-    """{skill_id: active level} for the skills we care about."""
+def _authed(path: str, access_token: str, params=None):
     r = session().get(
-        f"{ESI}/characters/{int(character_id)}/skills/",
-        params={"datasource": "tranquility"},
+        f"{ESI}{path}",
+        params={"datasource": "tranquility", **(params or {})},
         headers={"Authorization": f"Bearer {access_token}"},
         timeout=30,
     )
     r.raise_for_status()
+    return r
+
+
+def _authed_pages(path: str, access_token: str, max_pages: int = 20) -> list:
+    """All pages of a paged ESI list (X-Pages), capped."""
+    first = _authed(path, access_token, {"page": 1})
+    rows = list(first.json() or [])
+    pages = min(int(first.headers.get("X-Pages") or 1), max_pages)
+    for page in range(2, pages + 1):
+        rows.extend(_authed(path, access_token, {"page": page}).json() or [])
+    return rows
+
+
+def character_skill_levels(character_id: int, access_token: str, skill_ids) -> dict[int, int]:
+    """{skill_id: active level} for the given skills."""
+    wanted = {int(s) for s in skill_ids}
     levels = {}
-    for s in r.json().get("skills") or []:
+    for s in _authed(f"/characters/{int(character_id)}/skills/", access_token).json().get("skills") or []:
         sid = int(s.get("skill_id"))
-        if sid in constants.RELEVANT_SKILLS:
+        if sid in wanted:
             levels[sid] = int(s.get("active_skill_level") or 0)
     return levels
+
+
+def character_skills(character_id: int, access_token: str) -> dict[int, int]:
+    """{skill_id: active level} for the skills the calculation cares about."""
+    return character_skill_levels(character_id, access_token, constants.RELEVANT_SKILLS)
+
+
+def character_industry_jobs(character_id: int, access_token: str) -> list[dict]:
+    return list(_authed(f"/characters/{int(character_id)}/industry/jobs/", access_token, {"include_completed": "true"}).json() or [])
+
+
+def character_blueprints(character_id: int, access_token: str) -> list[dict]:
+    return _authed_pages(f"/characters/{int(character_id)}/blueprints/", access_token)
+
+
+def character_assets(character_id: int, access_token: str, max_pages: int = 20) -> list[dict]:
+    return _authed_pages(f"/characters/{int(character_id)}/assets/", access_token, max_pages=max_pages)
+
+
+def structure_info(structure_id: int, access_token: str) -> dict:
+    """Name and system of an Upwell structure the character may dock at."""
+    return _authed(f"/universe/structures/{int(structure_id)}/", access_token).json() or {}

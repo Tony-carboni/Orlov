@@ -13,6 +13,9 @@
         <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'shipyard:index' %}">
             <i class="fas fa-table-list fa-fw"></i> Dashboard
         </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'industry' %}active{% endif %}" href="{% url 'shipyard:industry' %}">
+            <i class="fas fa-gears fa-fw"></i> My industry
+        </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" href="{% url 'shipyard:settings' %}">
             <i class="fas fa-sliders fa-fw"></i> My settings
         </a>

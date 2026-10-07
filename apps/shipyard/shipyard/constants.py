@@ -194,6 +194,16 @@ FULL_SCOPES = [
     "esi-wallet.read_character_wallet.v1",
 ]
 
+# --- Industry activities and job slots -----------------------------------------
+ACTIVITIES = {
+    1: "Manufacturing", 3: "TE research", 4: "ME research", 5: "Copying",
+    8: "Invention", 9: "Reactions", 11: "Reactions",
+}
+MANUFACTURING_ACTIVITIES = {1, 9, 11}
+# Mass Production, Advanced Mass Production; Laboratory Operation, Advanced Laboratory Operation
+SLOT_SKILLS = {"manufacturing": (3387, 24625), "science": (3406, 24624)}
+SLOT_SKILLS_ALL = tuple(s for group in SLOT_SKILLS.values() for s in group)
+
 # --- Skills -------------------------------------------------------------------
 SKILL_ACCOUNTING = 16622
 SKILL_BROKER_RELATIONS = 3446

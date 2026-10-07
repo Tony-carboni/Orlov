@@ -15,7 +15,7 @@ from . import app_settings, constants
 from .models import (
     Facility, LpFaction, MarketLocation, MaterialType, PriceSnapshot, Ship, ShipConfig,
 )
-from .services import board, characters
+from .services import board, characters, industry
 from .services.pricing import tax_rates
 
 logger = logging.getLogger(__name__)
@@ -84,12 +84,22 @@ def ship_detail(request, type_id):
     ship = get_object_or_404(Ship, type_id=type_id)
     settings = board.get_user_settings(request.user)
     data_notice = characters.ensure_fresh(settings, request.user)
-    detail = board.ship_detail(ship, settings)
+    # the member's own blueprint for this ship sets the starting ME/TE
+    owned = industry.owned_blueprints(request.user).get(ship.blueprint_type_id)
+    if owned and (owned["me"] or owned["te"]):
+        try:
+            detail = board.ship_detail(ship, settings, me=owned["me"], te=owned["te"])
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("detail with the member's blueprint failed for %s: %s", ship, exc)
+            detail = board.ship_detail(ship, settings)
+    else:
+        detail = board.ship_detail(ship, settings)
     context = _context(
         request,
         ship=ship,
         settings=settings,
         data_notice=data_notice,
+        owned=owned,
         detail=detail,
         econ=detail["econ"],
         facilities=Facility.objects.filter(is_active=True),
@@ -243,6 +253,24 @@ def use_character(request, character_id):
     note = " The character was also registered in Member Audit." if added else ""
     messages.success(request, f"Using {eve_character.character_name}: skills and standings loaded from EVE.{note}")
     return redirect("shipyard:index")
+
+
+@login_required
+@permission_required("shipyard.basic_access")
+def industry_view(request):
+    """Jobs, blueprints and stock of the member's characters; POST = refresh now."""
+    settings = board.get_user_settings(request.user)
+    notices = industry.sync_user(request.user, force=request.method == "POST")
+    if request.method == "POST":
+        if not notices:
+            messages.success(request, "Read from EVE again.")
+        return redirect("shipyard:industry")
+    # who may be looked at: own characters, the corp, the alliance (permissions on the director groups)
+    scope = request.GET.get("scope", "own")
+    if scope not in industry.allowed_scopes(request.user):
+        scope = "own"
+    data = industry.overview(request.user, scope=scope)
+    return render(request, "shipyard/industry.html", _context(request, settings=settings, notices=notices, **data))
 
 
 @login_required

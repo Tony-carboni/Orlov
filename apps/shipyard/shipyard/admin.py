@@ -1,9 +1,26 @@
 from django.contrib import admin
 
 from .models import (
-    BuildSnapshot, Facility, LpFaction, MarketLocation, RefreshRun, Ship, ShipConfig,
-    ShipMarketStats, UserSettings,
+    BuildSnapshot, CharacterSync, Facility, IndustryJob, LocationName, LpFaction, MarketLocation, RefreshRun,
+    Ship, ShipConfig, ShipMarketStats, UserSettings,
 )
+
+
+@admin.register(CharacterSync)
+class CharacterSyncAdmin(admin.ModelAdmin):
+    list_display = ("character_name", "user", "jobs_at", "blueprints_at", "assets_at", "manufacturing_slots", "science_slots", "last_error")
+
+
+@admin.register(IndustryJob)
+class IndustryJobAdmin(admin.ModelAdmin):
+    list_display = ("job_id", "character_name", "activity_id", "product_type_id", "runs", "status", "end_date")
+    list_filter = ("status", "activity_id")
+
+
+@admin.register(LocationName)
+class LocationNameAdmin(admin.ModelAdmin):
+    list_display = ("location_id", "name", "system_name", "kind", "fetched_at")
+    search_fields = ("name",)
 
 
 @admin.register(Facility)

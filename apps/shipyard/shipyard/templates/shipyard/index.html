@@ -105,6 +105,7 @@
                     <img src="https://images.evetech.net/types/{{ r.ship.type_id }}/icon?size=32" width="24" height="24" class="me-1 rounded" alt="">{{ r.ship.name }}
                 </a>
                 {% if not r.econ.complete %}<i class="fas fa-triangle-exclamation text-warning ms-1" title="Missing prices or build data"></i>{% endif %}
+                {% if r.owned_bp %}<span class="badge bg-success-subtle text-success-emphasis ms-1" title="Your own {{ r.owned_bp.kind }} ({{ r.owned_bp.character_name }}): the numbers use its ME {{ r.owned_bp.me }} / TE {{ r.owned_bp.te }}">your {{ r.owned_bp.kind }} ME{{ r.owned_bp.me }}</span>{% endif %}
             </td>
             <td>{{ r.ship.faction_short }}</td>
             <td class="text-end {{ r.econ.net_profit|profit_class }}" data-order="{{ r.econ.net_profit|default_if_none:'-999999999999' }}">{{ r.econ.net_profit|isk }}{% if r.econ.bpc_excluded %}<sup class="text-info" title="Net profit WITHOUT the blueprint: the corp cannot supply this copy, members buy it on public contracts">no BPC</sup>{% endif %}</td>
@@ -130,7 +131,7 @@
 </table>
 </div>
 <p class="small text-muted mt-2">
-    Net profit = Jita lowest sell − materials (Jita lowest sell, ME 0 at your facility) − job cost − blueprint − tags − sales tax − broker fee.
+    Net profit = Jita lowest sell − materials (Jita lowest sell, ME 0 at your facility, or your own blueprint's ME where you have one) − job cost − blueprint − tags − sales tax − broker fee.
     Build time assumes all industry skills at V. Click a ship for the full breakdown and simulations.<br>
     <strong>Blueprints:</strong> Base hulls up to battlecruiser are handed out by the corp for free; base battleships are not (members source those on the market). Navy hulls come from the corp at the LP-store cost plus its markup.
     Pirate, Triglavian and EDENCOM hulls cannot be supplied by the corp either: <em>public contracts only</em>, and their net profit (<sup class="text-info">no BPC</sup>) is <strong>without</strong> the blueprint.

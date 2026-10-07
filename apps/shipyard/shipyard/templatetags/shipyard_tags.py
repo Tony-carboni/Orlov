@@ -30,6 +30,24 @@ def shipyard_logout_url():
 
 
 @register.filter
+def remaining(delta):
+    """A timedelta as '2h 13m' / '3d 4h'; 'done' once it has passed."""
+    if delta is None:
+        return "–"
+    seconds = int(delta.total_seconds())
+    if seconds <= 0:
+        return "done"
+    days, rest = divmod(seconds, 86400)
+    hours, rest = divmod(rest, 3600)
+    minutes = rest // 60
+    if days:
+        return f"{days}d {hours}h"
+    if hours:
+        return f"{hours}h {minutes:02d}m"
+    return f"{minutes}m"
+
+
+@register.filter
 def isk(value, digits=1):
     """92683787 → '92.7 M'; None → '–'."""
     if value is None:

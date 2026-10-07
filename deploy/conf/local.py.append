@@ -153,3 +153,9 @@ MIDDLEWARE += ["shipyard.middleware.StandaloneHostMiddleware"]
 SESSION_COOKIE_DOMAIN = ".orlovfamily.space"
 CSRF_COOKIE_DOMAIN = ".orlovfamily.space"
 CSRF_TRUSTED_ORIGINS += ["https://shipyards.orlovfamily.space"]
+
+# Shipyard: jobs, blueprints and assets of the members' characters (runbook 14, phase 2)
+CELERYBEAT_SCHEDULE["shipyard_refresh_industry"] = {
+    "task": "shipyard.tasks.refresh_industry",
+    "schedule": crontab(minute="5,35"),
+}

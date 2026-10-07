@@ -52,6 +52,7 @@ class BoardRow:
     config: ShipConfig | None
     stats: ShipMarketStats | None
     build: BuildSnapshot | None
+    owned_bp: dict | None = None  # the member's best blueprint for this ship, when it has one
 
 
 def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
@@ -69,6 +70,16 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
         material_ids.update(int(m["type_id"]) for m in b.materials)
     tag_ids = {c.tag_type_id for c in configs.values() if c.tag_type_id}
     type_ids = material_ids | {s.type_id for s in ships} | tag_ids
+    # the member's own blueprints: their ME/TE replace the ME 0 snapshot for those ships
+    from . import industry
+
+    owned = industry.owned_blueprints(settings.user) if settings.user_id else {}
+    live_budget = industry.MAX_LIVE_BUILDS
+    # materials of the live builds may not be in the snapshot's name map yet
+    for ship in ships:
+        bp = owned.get(ship.blueprint_type_id)
+        if bp and facility and (bp["me"] or bp["te"]):
+            material_ids.update(int(m["type_id"]) for m in builds[ship.type_id].materials) if ship.type_id in builds else None
     prices = _price_map(market, type_ids)
     names, volumes = _name_volume_maps(material_ids)
     unit_prices = {tid: (p.sell_min if p else None) for tid, p in prices.items()}
@@ -79,24 +90,35 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
         st = stats.get(ship.type_id)
         hull_price = prices.get(ship.type_id)
         cfg = configs.get(ship.type_id)
+        bp = owned.get(ship.blueprint_type_id)
+        material_rows = build.materials if build else []
+        job_cost = build.job_cost if build else 0
+        time_seconds = build.time_seconds if build else 0
+        if bp and facility and (bp["me"] or bp["te"]) and live_budget > 0:
+            try:
+                data = simulate_build(ship, facility, me=bp["me"], te=bp["te"], settings=settings)
+                material_rows, job_cost, time_seconds = data["materials"], data["job_cost"], data["time_seconds"]
+                live_budget -= 1
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("live build with the member's blueprint failed for %s: %s", ship, exc)
         econ = pricing.economics(
             sell_price=hull_price.sell_min if hull_price else None,
-            material_rows=build.materials if build else [],
+            material_rows=material_rows,
             prices=unit_prices,
             names=names,
             volumes=volumes,
-            job_cost=build.job_cost if build else 0,
+            job_cost=job_cost,
             config=configs.get(ship.type_id),
             use_lp=settings.use_lp_pricing,
             rates=rates,
             avg_daily_volume=st.avg_daily_volume if st else 0,
             sell_volume_on_market=hull_price.sell_volume if hull_price else 0,
-            time_seconds=build.time_seconds if build else 0,
+            time_seconds=time_seconds,
             tag_unit_price=unit_prices.get(cfg.tag_type_id) if cfg and cfg.tag_type_id else None,
             category=ship.category,
             hull_size=ship.hull_size,
         )
-        rows.append(BoardRow(ship=ship, econ=econ, config=cfg, stats=st, build=build))
+        rows.append(BoardRow(ship=ship, econ=econ, config=cfg, stats=st, build=build, owned_bp=bp))
     rows.sort(key=lambda r: (r.econ.net_profit is None, -(r.econ.net_profit or 0)))
     return rows
 
