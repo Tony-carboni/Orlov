@@ -51,5 +51,23 @@
     (Accounting, Broker Relations and your standings with the station's owners, all from the character above).
     The facility you build at is chosen on the dashboard with the <em>Swap</em> button on the facility card.
 </p>
+{% if perms.shipyard.manage_shipyard %}
+<h5>Blueprint markup <span class="badge text-bg-secondary">managers</span></h5>
+<p class="small text-muted">
+    Navy blueprints are priced at the LP-store cost plus the corp's markup of {{ default_markup|floatformat:0 }} %.
+    Set another rate for your own account here, for example <strong>0</strong> when you build from your own stash and sell the copies yourself.
+</p>
+<form method="post" class="row g-2 align-items-end mb-4" style="max-width: 32rem">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{% url 'shipyard:settings' %}">
+    <div class="col-8">
+        <label class="form-label small mb-0" for="bpc-markup">Your markup in %</label>
+        <input type="text" class="form-control form-control-sm" id="bpc-markup" name="bpc_markup" value="{{ settings.bpc_markup|default_if_none:'' }}" placeholder="corp default {{ default_markup|floatformat:0 }} %" autocomplete="off">
+    </div>
+    <div class="col-4">
+        <button class="btn btn-primary btn-sm"><i class="fas fa-save fa-fw"></i> Save</button>
+    </div>
+</form>
+{% endif %}
 <a class="btn btn-outline-secondary" href="{% url 'shipyard:index' %}"><i class="fas fa-arrow-left fa-fw"></i> Dashboard</a>
 {% endblock %}

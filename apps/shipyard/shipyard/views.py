@@ -172,6 +172,8 @@ def settings_view(request):
             settings.market = market
         if "use_lp_pricing" in request.POST:
             settings.use_lp_pricing = request.POST.get("use_lp_pricing") == "on"
+        if "bpc_markup" in request.POST and request.user.has_perm("shipyard.manage_shipyard"):
+            settings.bpc_markup = _dec(request.POST.get("bpc_markup"))
         # skills, standings and taxes come from ESI only; nothing is typed by hand any more
         settings.manual_sales_tax = None
         settings.manual_broker_fee = None
@@ -188,6 +190,7 @@ def settings_view(request):
         rates=tax_rates(settings.market, settings),
         standings=_market_standings(settings),
         next=request.GET.get("next", ""),
+        default_markup=app_settings.SHIPYARD_CORP_BPC_MARKUP * 100,
     )
     return render(request, "shipyard/settings.html", context)
 

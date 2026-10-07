@@ -262,6 +262,7 @@ class UserSettings(models.Model):
     adv_large_ship = models.PositiveSmallIntegerField(default=0)
     adv_industrial_ship = models.PositiveSmallIntegerField(default=0)
 
+    bpc_markup = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Blueprint markup for this member in % (blank = the corp's default). Managers only; 0 for people who build from their own stash.")
     manual_sales_tax = models.DecimalField(max_digits=5, decimal_places=3, null=True, blank=True, help_text="Override sales tax % (from the in-game market window)")
     manual_broker_fee = models.DecimalField(max_digits=5, decimal_places=3, null=True, blank=True, help_text="Override broker fee %")
 
@@ -270,6 +271,11 @@ class UserSettings(models.Model):
 
     def __str__(self):
         return f"Settings {self.user}"
+
+    @property
+    def markup_fraction(self):
+        """The blueprint markup this member pays, as a fraction; None = the corp's default."""
+        return float(self.bpc_markup) / 100.0 if self.bpc_markup is not None else None
 
     def skill_levels(self):
         return {field: getattr(self, field) for field, _, _ in constants.RELEVANT_SKILLS.values()}

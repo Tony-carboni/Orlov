@@ -13,6 +13,9 @@ from ..services import board
 class BoardTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user("tony", password="x")
+        # Alliance Auth lets only users with a main character into app pages
+        from allianceauth.tests.auth_utils import AuthUtils
+        AuthUtils.add_main_character_2(self.user, "Tony Main", 9001, corp_id=9002, corp_name="Corp", alliance_id=None, alliance_name="")
         self.fac = Facility.objects.create(name="Raitaru", structure_type_id=35825, structure_name="Raitaru",
                                            system_id=30001387, system_name="Isikano", rig_type_ids=[43732], is_default=True)
         self.market = MarketLocation.objects.create(name="Jita", station_id=60003760, is_default=True)

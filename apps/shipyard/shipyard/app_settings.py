@@ -22,8 +22,9 @@ SHIPYARD_USER_AGENT = getattr(
 )
 
 # Markup the corp adds when it sells an LP-store blueprint copy on to a member
-# (fraction of the LP-store cost incl. tag; 0.05 = 5 %)
-SHIPYARD_CORP_BPC_MARKUP = getattr(settings, "SHIPYARD_CORP_BPC_MARKUP", 0.05)
+# (fraction of the LP-store cost incl. tag; 0.10 = 10 %). A manager can give a member
+# another rate on the settings page (UserSettings.bpc_markup).
+SHIPYARD_CORP_BPC_MARKUP = getattr(settings, "SHIPYARD_CORP_BPC_MARKUP", 0.10)
 
 # The Shipyard's own hostname (second front door, docs/research/06-shipyards-frontend.md).
 # Empty = off. Read at request time so tests can override it.

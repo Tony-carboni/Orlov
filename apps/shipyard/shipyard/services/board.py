@@ -117,6 +117,7 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
             tag_unit_price=unit_prices.get(cfg.tag_type_id) if cfg and cfg.tag_type_id else None,
             category=ship.category,
             hull_size=ship.hull_size,
+            markup=settings.markup_fraction,
         )
         rows.append(BoardRow(ship=ship, econ=econ, config=cfg, stats=st, build=build, owned_bp=bp))
     rows.sort(key=lambda r: (r.econ.net_profit is None, -(r.econ.net_profit or 0)))
@@ -190,6 +191,7 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
         # a typed blueprint price is a real quote, so it overrides the policy for the simulation
         category=None if bpc is not None else ship.category,
         hull_size=ship.hull_size,
+        markup=settings.markup_fraction,
     )
     return {"econ": econ, "config": config, "stats": stats, "facility": facility, "market": market,
             "rates": rates, "source": source, "hull_price": hull_price, "me": me, "te": te}

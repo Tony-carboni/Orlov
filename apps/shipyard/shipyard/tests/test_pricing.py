@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase, TestCase
 
-from .. import constants
+from .. import app_settings, constants
 from ..models import Facility, LpFaction, MarketLocation, Ship, ShipConfig, UserSettings
 from ..services import catalog, everef, pricing
 from ..templatetags import shipyard_tags as tags
@@ -128,12 +128,20 @@ class BlueprintCostTests(TestCase):
         cfg = ShipConfig.objects.create(ship=ship, bpc_price_isk=5_000_000, lp_faction=lp, lp_cost=18_000)
         rates = pricing.TaxRates(sales_tax=0.0, broker_fee=0.0)
         # navy: LP price plus the corp's markup, on the tag too
-        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Navy"), (18_000 * 900 * 1.05, "lp"))
+        m = app_settings.SHIPYARD_CORP_BPC_MARKUP
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Navy"), (18_000 * 900 * (1 + m), "lp"))
+        # a member's own rate replaces the corp's default; 0 = at cost
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Navy", markup=0), (18_000 * 900.0, "lp"))
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Navy", markup=0.5), (18_000 * 900 * 1.5, "lp"))
         cfg.tag_type_id = 17244
         e = pricing.economics(sell_price=100.0, material_rows=[], prices={}, names={}, volumes={}, job_cost=0,
                               config=cfg, use_lp=True, rates=rates, tag_unit_price=1_000.0, category="Navy")
-        self.assertAlmostEqual(e.tag_cost, 1_050.0)
-        self.assertAlmostEqual(e.bpc_markup, 0.05)
+        self.assertAlmostEqual(e.tag_cost, 1_000.0 * (1 + m))
+        self.assertAlmostEqual(e.bpc_markup, m)
+        e0 = pricing.economics(sell_price=100.0, material_rows=[], prices={}, names={}, volumes={}, job_cost=0,
+                               config=cfg, use_lp=True, rates=rates, tag_unit_price=1_000.0, category="Navy", markup=0)
+        self.assertAlmostEqual(e0.tag_cost, 1_000.0)
+        self.assertAlmostEqual(e0.bpc_markup, 0.0)
         self.assertFalse(e.bpc_excluded)
         # base: free, whatever is typed; except battleships, which members source themselves
         self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Base"), (0.0, "free"))

@@ -121,10 +121,16 @@ class ShipEconomics:
         return self.sell_price is not None and self.missing_prices == 0 and bool(self.materials)
 
 
-def blueprint_cost(config, use_lp: bool, category: str | None = None, hull_size: str | None = None) -> tuple[float, str]:
+def corp_markup(markup=None) -> float:
+    """The markup on an LP-store copy: a member's own rate, else the corp's default."""
+    return float(markup) if markup is not None else float(app_settings.SHIPYARD_CORP_BPC_MARKUP)
+
+
+def blueprint_cost(config, use_lp: bool, category: str | None = None, hull_size: str | None = None, markup=None) -> tuple[float, str]:
     """Blueprint price per run and where it came from, following the blueprint policy.
 
     Without a category (older callers, tests) only the LP/manual choice applies.
+    `markup` overrides the corp's default rate (a fraction; 0 = at cost).
     """
     policy = constants.bpc_policy(category, hull_size)
     if policy == constants.BPC_FREE:
@@ -137,7 +143,7 @@ def blueprint_cost(config, use_lp: bool, category: str | None = None, hull_size:
         price = config.lp_bpc_price_per_run()
         if price is not None:
             if policy == constants.BPC_CORP:
-                price *= 1.0 + app_settings.SHIPYARD_CORP_BPC_MARKUP
+                price *= 1.0 + corp_markup(markup)
             return float(price), "lp"
     return float(config.bpc_price_isk or 0), "manual"
 
@@ -159,6 +165,7 @@ def economics(
     tag_unit_price=None,
     category=None,
     hull_size=None,
+    markup=None,
 ) -> ShipEconomics:
     """Assemble the economics of one ship from snapshot data.
 
@@ -180,16 +187,16 @@ def economics(
             unit_price=price,
             volume=float(volumes.get(tid, 0.0)),
         ))
-    bpc, src = blueprint_cost(config, use_lp, category, hull_size)
-    markup = 0.0
+    bpc, src = blueprint_cost(config, use_lp, category, hull_size, markup)
+    applied_markup = 0.0
     if src == "public":
         # no blueprint source: the tags that come with the LP offer are left out as well
         tag_cost, tag_missing = 0.0, False
     else:
         tag_cost, tag_missing = config.tag_cost(tag_unit_price) if config else (0.0, False)
         if src == "lp" and constants.bpc_policy(category, hull_size) == constants.BPC_CORP:
-            markup = app_settings.SHIPYARD_CORP_BPC_MARKUP
-            tag_cost *= 1.0 + markup
+            applied_markup = corp_markup(markup)
+            tag_cost *= 1.0 + applied_markup
     if tag_missing:
         missing += 1
     return ShipEconomics(
@@ -199,7 +206,7 @@ def economics(
         bpc_cost=bpc,
         bpc_source=src,
         bpc_excluded=(src == "public"),
-        bpc_markup=markup,
+        bpc_markup=applied_markup,
         tag_cost=tag_cost,
         sales_tax_rate=rates.sales_tax,
         broker_fee_rate=rates.broker_fee,
