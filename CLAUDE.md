@@ -3,7 +3,7 @@
 ## What this repo is
 Documentation and deployment config for **The Orlov Family** (EVE Online alliance, ticker ORLOV; executor corp Orlov Arms International, OARMI) member-management platform, built on **Alliance Auth** (Docker) with Discord role sync.
 
-- `docs/research/` — why Alliance Auth was chosen over SeAT/Neucore, and the phased plan
+- `docs/research/` — why Alliance Auth was chosen over SeAT/Neucore, the phased plan, moon timers, and the ship-building dashboard plan (`04`)
 - `docs/design/membership.md` — states, groups → Discord roles, policies (source of truth for AA config)
 - `docs/runbooks/` — step-by-step, beginner-level runbooks (`00` Day 0 prep, `01` deploy, `02` membership + Discord, `03` nicknames + Member Audit, `04` operations, `05` cloud SSH attempt — superseded, `06` Claude Code on the PC with server access, `07` Day 5 moon timers)
 - `docs/guides/` — documents for other people: the member guide (for `#how-to-auth`) and the corp CEO onboarding checklist
