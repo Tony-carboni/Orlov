@@ -133,3 +133,14 @@ ORLOVBOT_STRUCTURE_REINFORCE_HOUR = 21
 # --- Jump freighter watch: JF losses EVE-wide in #jf-gank-board (runbook 12) ---
 ORLOVBOT_JFWATCH_CHANNEL = "jf-gank-board"       # channel name; "" switches the watch off
 ORLOVBOT_JFWATCH_SPACE = ["highsec", "lowsec"]   # also possible: "nullsec", "wormhole"
+
+# --- Shipyard (ship-building dashboard, runbook 13) ------------------------
+INSTALLED_APPS += ["shipyard"]
+CELERYBEAT_SCHEDULE["shipyard_refresh_all"] = {
+    "task": "shipyard.tasks.refresh_all",           # EVE Ref builds + prices + volumes
+    "schedule": crontab(minute="10", hour="*/6"),
+}
+CELERYBEAT_SCHEDULE["shipyard_refresh_prices_and_stats"] = {
+    "task": "shipyard.tasks.refresh_prices_and_stats",  # Fuzzwork + ESI history only
+    "schedule": crontab(minute="40"),
+}

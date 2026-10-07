@@ -1,0 +1,53 @@
+# Runbook 13 — Shipyard (ship-building dashboard) — private test release
+
+*Prerequisite: Days 0–5 done. Plan in `docs/research/05-industry-dashboard.md`; code in `apps/shipyard/`.*
+*Time: ~25 min, of which ~5 min build and ~3 min first data load. Server part is the local session's (handoff); browser part is the owner's.*
+*Status: **not released** — only superusers (you) can see the menu entry until the permission is granted to a group.*
+
+**Goal:** `Shipyard` appears in your auth menu with the dashboard of all T1/faction hulls, your facility, Jita prices and the per-ship simulation page. Members can't see it yet.
+
+## Known values
+
+| Item | Value |
+|---|---|
+| Package | `orlov-shipyard` from this repo, `apps/shipyard`, installed from the GitHub archive of a pinned commit |
+| Django app | `shipyard` |
+| Default facility (seeded) | Orlov Raitaru — Isikano, rigs: Basic Small / Medium / Large Ship ME I (correct in admin if the real fit differs) |
+| Default market (seeded) | Jita IV-4, sales tax base 7.5 %, broker fee base 3 % |
+| Permissions | `shipyard \| general \| Can access the Shipyard dashboard`, `… \| Can edit blueprint prices, LP prices and facilities` |
+| Beat | `shipyard_refresh_all` every 6 h at :10; `shipyard_refresh_prices_and_stats` hourly at :40 |
+
+## A. Install (server — local session via handoff)
+
+1. Backup (`~/bin/aa-backup.sh`).
+2. `conf/requirements.txt`: add the line from `deploy/conf/requirements.txt`, replacing `<commit-sha>` with the full SHA of the current branch head (`git rev-parse HEAD` in the repo clone after pulling).
+3. `conf/local.py`: append the "Shipyard" block from `deploy/conf/local.py.append` (from the line `# --- Shipyard` to the end of that block).
+4. `docker compose --env-file=.env build`, `up -d`, `restart nginx`.
+5. In the gunicorn container: `manage.py check`, `migrate`, `collectstatic --noinput`.
+6. `manage.py shipyard_load_ships` (≈190 EVE Ref lookups, ~1 min), then `manage.py shipyard_refresh` (≈190 EVE Ref cost calls + 2 Fuzzwork + 190 ESI history calls, ~3 min).
+7. Verify: admin → Shipyard → Refresh runs shows four rows with `ok`; Ships ≈ 190, of which ≈ 170 active.
+
+✅ Done when the left menu shows **Shipyard** for you and the dashboard table has numbers.
+
+## B. First look (browser, you)
+
+1. **Shipyard → My settings**: check the facility card (rigs!), market, click **Load skills from a character** (SSO, read-skills scope), save.
+2. **Shipyard → Blueprints & LP**: enter the ISK/LP for the LP stores you use and the blueprint prices you had in the sheet (Vindicator 23 M, Apocalypse Navy 110 M, …). Save.
+3. **Dashboard**: compare 5 ships with the sheet. Expected: job cost identical; material cost within a few % (same Jita lowest-sell basis, different minute); profit differs by the broker fee the sheet didn't have (set it to 0 in My settings to compare like for like).
+4. Click a ship → move the ME slider, type a blueprint price, Recalculate. The dashboard numbers stay as they were.
+
+## C. Updating the plugin later (local session)
+
+New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
+
+## D. Releasing to members (later, your call)
+
+Admin → Groups → `Family Member` → add `shipyard | general | Can access the Shipyard dashboard`. Managers (`Alliance Director`) also get `Can edit blueprint prices…`. Until then only superusers see it. To let one tester in before release: admin → Users → the user → User permissions → add the basic access permission.
+
+## Troubleshooting
+
+- **Menu entry missing** → you're not a superuser on that account, or `collectstatic`/`restart` didn't happen. Superuser = user `tony`.
+- **Table empty, "No price data yet"** → `shipyard_refresh` hasn't run or failed; admin → Shipyard → Refresh runs shows the error (usually EVE Ref or Fuzzwork briefly down; rerun).
+- **A ship shows ⚠ "missing data"** → a material has no Jita sell order right now (rare) or the EVE Ref call for it failed; it heals on the next refresh.
+- **Load skills fails** → the SSO window must be the character whose skills you want; the scope is `esi-skills.read_skills.v1` (ticked on the developer app since Day 0).
+- **Numbers look off for a facility** → check its rigs and system in admin → Shipyard → Facilities, then run `shipyard_refresh` (builds are cached per facility).

@@ -4,6 +4,28 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-07 (12:30 UTC) — cloud session → local session
+
+**Runbook:** `docs/runbooks/13-shipyard-plugin.md` — section A (install the Shipyard plugin, private test release).
+
+### Done (cloud)
+- Built the **Shipyard** Alliance Auth plugin in `apps/shipyard/` (dashboard, ship detail with simulation, per-member settings incl. ESI skills, Blueprints & LP manager page, Celery refresh, catalog loader). 19 unit tests pass; wheel builds with templates/static/migrations included. Plan: `docs/research/05-industry-dashboard.md`.
+- `deploy/conf/requirements.txt` has the install line with a `<commit-sha>` placeholder; `deploy/conf/local.py.append` has the Shipyard block (INSTALLED_APPS + two beat entries).
+- Nothing is released: no group has the permission; the superuser `tony` sees the menu automatically.
+
+### Next — local session: runbook 13 section A
+Announce every state change first, one at a time, show output. Steps:
+1. Pull the branch; note the full SHA of HEAD (`git rev-parse HEAD`). Check the stack is up. Run `~/bin/aa-backup.sh`.
+2. Append the Shipyard line to `~/aa-docker/conf/requirements.txt` with `<commit-sha>` replaced by that SHA (idempotent: skip if a line starting with `orlov-shipyard` exists; replace the SHA if it differs). Show the file.
+3. Append the Shipyard block from `deploy/conf/local.py.append` (from `# --- Shipyard` to the end of the file) to `~/aa-docker/conf/local.py` unless `"shipyard"` is already in it. Show the tail. Never print .env.
+4. `docker compose --env-file=.env build` (watch for a pip error on the orlov-shipyard line — if the archive download fails, report it and stop), `up -d`, `restart nginx`; confirm the site answers.
+5. Via `docker compose exec -T allianceauth_gunicorn python /home/allianceauth/myauth/manage.py <cmd>`: `check`, `migrate shipyard`, `collectstatic --noinput`, `shipyard_load_ships`, `shipyard_refresh`. Report the counts each prints (expect ≈190 ships, four refresh steps ok).
+6. Verify in Django: `Ship.objects.count()`, active count, `BuildSnapshot.objects.count()`, `PriceSnapshot.objects.count()`, `RefreshRun` rows with ok/message. Report anything not ok with the message.
+7. Write the next handoff entry (what was done, SHA used, any error text), commit, push. Then the owner does runbook 13 section B in the browser with the cloud session.
+Rules from CLAUDE.md apply (backup first, no rm -rf, nothing in mysql-data/, never print .env).
+
+---
+
 ## 2026-10-06 (12:45 UTC) — local session (PC) → either session
 
 **Not a runbook step.** Membership changes on the owner's instruction, plus a research document.

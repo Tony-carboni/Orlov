@@ -1,0 +1,136 @@
+{% extends "shipyard/base.html" %}
+{% load static shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · {{ ship.name }}{% endblock %}
+
+{% block shipyard_content %}
+<div class="d-flex align-items-center mb-3">
+    <a href="{% url 'shipyard:index' %}" class="btn btn-sm btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i> Dashboard</a>
+    <img src="https://images.evetech.net/types/{{ ship.type_id }}/render?size=64" width="48" height="48" class="rounded me-2" alt="">
+    <div>
+        <h4 class="mb-0">{{ ship.name }}</h4>
+        <div class="small text-muted">
+            <span class="badge shipyard-cat shipyard-cat-{{ ship.category|lower }}">{{ ship.category }}</span>
+            {{ ship.hull_size }} · {{ ship.faction_name|default:"–" }} · type {{ ship.type_id }} · blueprint {{ ship.blueprint_type_id }}
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header py-2"><strong>Dashboard numbers</strong> <span class="small text-muted">(ME 0, {{ detail.facility|default:"no facility" }})</span></div>
+            <div class="card-body py-2">
+                <table class="table table-sm mb-0 shipyard-kv">
+                    <tr><td>Sell price (Jita lowest)</td><td class="text-end">{{ econ.sell_price|isk:2 }}</td></tr>
+                    <tr><td>Materials</td><td class="text-end">{{ econ.material_cost|isk:2 }}</td></tr>
+                    <tr><td>Job cost</td><td class="text-end">{{ econ.job_cost|isk:2 }}</td></tr>
+                    <tr><td>Blueprint {% if econ.bpc_source == 'lp' %}<sup class="text-warning">LP</sup>{% endif %}</td><td class="text-end">{{ econ.bpc_cost|isk:2 }}</td></tr>
+                    <tr><td>Tags / extras</td><td class="text-end">{{ econ.tag_cost|isk:2 }}</td></tr>
+                    <tr><td>Sales tax ({{ econ.sales_tax_rate|pct:2 }})</td><td class="text-end">{{ econ.sales_tax|isk:2 }}</td></tr>
+                    <tr><td>Broker fee ({{ econ.broker_fee_rate|pct:2 }})</td><td class="text-end">{{ econ.broker_fee|isk:2 }}</td></tr>
+                    <tr class="table-active"><td><strong>Net profit</strong></td><td class="text-end {{ econ.net_profit|profit_class }}"><strong>{{ econ.net_profit|isk:2 }}</strong> <span class="small text-muted">({{ econ.margin|pct }})</span></td></tr>
+                    <tr><td>Build time (skills V)</td><td class="text-end">{{ econ.time_seconds|duration }}</td></tr>
+                    <tr><td>Jita volume / day</td><td class="text-end">{{ econ.avg_daily_volume|num:1 }}</td></tr>
+                    <tr><td>Market depth</td><td class="text-end">{{ econ.market_depth_days|depth }} days</td></tr>
+                    <tr><td>Materials volume</td><td class="text-end">{{ econ.material_volume|num:0 }} m³</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header py-2"><strong>Simulate</strong> <span class="small text-muted">does not change the dashboard</span></div>
+            <div class="card-body py-2" id="sim-panel"
+                 data-url="{% url 'shipyard:api_simulate' ship.type_id %}"
+                 data-use-lp="{{ settings.use_lp_pricing|yesno:'1,0' }}">
+                <div class="mb-2">
+                    <label class="form-label small mb-0">Facility</label>
+                    <select id="sim-facility" class="form-select form-select-sm">
+                        {% for f in facilities %}
+                            <option value="{{ f.pk }}" {% if detail.facility and f.pk == detail.facility.pk %}selected{% endif %}>{{ f.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small mb-0">Material efficiency: <strong id="sim-me-value">0</strong></label>
+                    <input type="range" class="form-range" id="sim-me" min="0" max="10" step="1" value="0">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small mb-0">Time efficiency: <strong id="sim-te-value">0</strong></label>
+                    <input type="range" class="form-range" id="sim-te" min="0" max="20" step="2" value="0">
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small mb-0">Blueprint cost / run</label>
+                        <input type="text" class="form-control form-control-sm" id="sim-bpc" placeholder="{{ econ.bpc_cost|floatformat:0 }}">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-0">Tags / extras</label>
+                        <input type="text" class="form-control form-control-sm" id="sim-tag" placeholder="{{ econ.tag_cost|floatformat:0 }}">
+                    </div>
+                </div>
+                <div class="form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" id="sim-use-lp" {% if settings.use_lp_pricing %}checked{% endif %} {% if not detail.config.has_lp_offer %}disabled{% endif %}>
+                    <label class="form-check-label small" for="sim-use-lp">Blueprint from LP store{% if not detail.config.has_lp_offer %} (no LP offer entered){% endif %}</label>
+                </div>
+                <div class="d-flex align-items-center mt-2">
+                    <button class="btn btn-sm btn-primary" id="sim-run"><i class="fas fa-play fa-fw"></i> Recalculate</button>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" id="sim-reset">Reset</button>
+                    <span class="small text-muted ms-auto" id="sim-status"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header py-2 d-flex align-items-center">
+                <strong>Bill of materials</strong>
+                <span class="small text-muted ms-2" id="bom-caption">ME 0 · {{ detail.facility|default:"–" }}</span>
+                <button class="btn btn-sm btn-outline-secondary ms-auto" id="copy-multibuy" title="Copy as EVE multibuy list"><i class="fas fa-copy"></i> Copy multibuy</button>
+            </div>
+            <div class="card-body py-2">
+                <table class="table table-sm table-striped mb-2" id="bom-table">
+                    <thead><tr><th>Material</th><th class="text-end">Qty</th><th class="text-end">Unit (Jita)</th><th class="text-end">Cost</th><th class="text-end">m³</th></tr></thead>
+                    <tbody>
+                    {% for m in econ.materials %}
+                        <tr data-type-id="{{ m.type_id }}">
+                            <td><img src="https://images.evetech.net/types/{{ m.type_id }}/icon?size=32" width="20" height="20" class="me-1" alt="">{{ m.name }}</td>
+                            <td class="text-end">{{ m.quantity|num:0 }}</td>
+                            <td class="text-end">{% if m.unit_price is None %}<span class="text-warning">no price</span>{% else %}{{ m.unit_price|isk_full }}{% endif %}</td>
+                            <td class="text-end">{{ m.cost|isk:2 }}</td>
+                            <td class="text-end">{{ m.total_volume|num:0 }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="text-muted">No build data for this facility yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-semibold"><td>Total</td><td></td><td></td><td class="text-end" id="bom-total">{{ econ.material_cost|isk:2 }}</td><td class="text-end" id="bom-volume">{{ econ.material_volume|num:0 }}</td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header py-2"><strong>Simulation result</strong></div>
+            <div class="card-body py-2">
+                <table class="table table-sm mb-0 shipyard-kv" id="sim-result">
+                    <tr><td>Materials</td><td class="text-end" data-k="material_cost">{{ econ.material_cost|isk:2 }}</td></tr>
+                    <tr><td>Job cost</td><td class="text-end" data-k="job_cost">{{ econ.job_cost|isk:2 }}</td></tr>
+                    <tr><td>Blueprint</td><td class="text-end" data-k="bpc_cost">{{ econ.bpc_cost|isk:2 }}</td></tr>
+                    <tr><td>Tags / extras</td><td class="text-end" data-k="tag_cost">{{ econ.tag_cost|isk:2 }}</td></tr>
+                    <tr><td>Sales tax + broker fee</td><td class="text-end" data-k="fees">{{ econ.fees|isk:2 }}</td></tr>
+                    <tr><td>Total cost</td><td class="text-end" data-k="total_cost">{{ econ.total_cost|isk:2 }}</td></tr>
+                    <tr class="table-active"><td><strong>Net profit</strong></td><td class="text-end" data-k="net_profit"><strong>{{ econ.net_profit|isk:2 }}</strong> <span class="small text-muted" data-k="margin">({{ econ.margin|pct }})</span></td></tr>
+                    <tr><td>Build time</td><td class="text-end" data-k="time">{{ econ.time_seconds|duration }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block shipyard_js %}
+<script src="{% static 'shipyard/detail.js' %}"></script>
+{% endblock %}

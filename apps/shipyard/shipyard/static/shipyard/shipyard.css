@@ -1,0 +1,16 @@
+.shipyard-nav .nav-link { padding: .25rem .75rem; }
+.shipyard-kv td { padding: .15rem .4rem; }
+.shipyard-facility-card { border-width: 2px; }
+.shipyard-radio-card { cursor: pointer; }
+.shipyard-radio-card input[type=radio] { position: absolute; opacity: 0; }
+#shipyard-table tbody tr { cursor: pointer; }
+#shipyard-table td, #shipyard-table th { white-space: nowrap; }
+.shipyard-cat { font-weight: 500; }
+.shipyard-cat-base { background: #6c757d; }
+.shipyard-cat-navy { background: #0d6efd; }
+.shipyard-cat-pirate { background: #dc3545; }
+.shipyard-cat-trig { background: #c0392b; }
+.shipyard-cat-edencom { background: #17a2b8; }
+.shipyard-cat-ore { background: #b8860b; }
+.shipyard-cat-other { background: #495057; }
+#bp-table input { min-width: 7em; }

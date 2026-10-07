@@ -1,0 +1,190 @@
+"""Assemble dashboard rows and ship details from stored snapshots (DB access here)."""
+
+import logging
+from dataclasses import dataclass
+
+from django.core.cache import cache
+from django.utils import timezone
+
+from .. import app_settings, constants
+from ..models import (
+    BuildSnapshot, Facility, MarketLocation, MaterialType, PriceSnapshot, Ship, ShipConfig,
+    ShipMarketStats, UserSettings,
+)
+from . import everef, pricing
+
+logger = logging.getLogger(__name__)
+
+
+def get_user_settings(user) -> UserSettings:
+    settings, _ = UserSettings.objects.get_or_create(user=user)
+    changed = False
+    if settings.facility is None or not settings.facility.is_active:
+        settings.facility = Facility.objects.filter(is_active=True).order_by("-is_default", "name").first()
+        changed = True
+    if settings.market is None or not settings.market.is_active:
+        settings.market = MarketLocation.objects.filter(is_active=True).order_by("-is_default", "name").first()
+        changed = True
+    if changed:
+        settings.save()
+    return settings
+
+
+def _price_map(location, type_ids) -> dict:
+    """{type_id: PriceSnapshot}"""
+    if location is None:
+        return {}
+    return {p.type_id: p for p in PriceSnapshot.objects.filter(location=location, type_id__in=type_ids)}
+
+
+def _name_volume_maps(type_ids):
+    names, volumes = {}, {}
+    for m in MaterialType.objects.filter(type_id__in=type_ids):
+        names[m.type_id] = m.name
+        volumes[m.type_id] = m.volume
+    return names, volumes
+
+
+@dataclass
+class BoardRow:
+    ship: Ship
+    econ: pricing.ShipEconomics
+    config: ShipConfig | None
+    stats: ShipMarketStats | None
+    build: BuildSnapshot | None
+
+
+def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
+    facility, market = settings.facility, settings.market
+    rates = pricing.tax_rates(market, settings)
+    ships = list(Ship.objects.filter(is_active=True).order_by("name"))
+    configs = {c.ship_id: c for c in ShipConfig.objects.select_related("lp_faction").filter(ship__in=ships)}
+    stats = {s.ship_id: s for s in ShipMarketStats.objects.filter(ship__in=ships)}
+    builds = {}
+    if facility:
+        for b in BuildSnapshot.objects.filter(facility=facility, me=0, ship__in=ships):
+            builds[b.ship_id] = b
+    material_ids = set()
+    for b in builds.values():
+        material_ids.update(int(m["type_id"]) for m in b.materials)
+    type_ids = material_ids | {s.type_id for s in ships}
+    prices = _price_map(market, type_ids)
+    names, volumes = _name_volume_maps(material_ids)
+    unit_prices = {tid: (p.sell_min if p else None) for tid, p in prices.items()}
+
+    rows = []
+    for ship in ships:
+        build = builds.get(ship.type_id)
+        st = stats.get(ship.type_id)
+        hull_price = prices.get(ship.type_id)
+        econ = pricing.economics(
+            sell_price=hull_price.sell_min if hull_price else None,
+            material_rows=build.materials if build else [],
+            prices=unit_prices,
+            names=names,
+            volumes=volumes,
+            job_cost=build.job_cost if build else 0,
+            config=configs.get(ship.type_id),
+            use_lp=settings.use_lp_pricing,
+            rates=rates,
+            avg_daily_volume=st.avg_daily_volume if st else 0,
+            sell_volume_on_market=hull_price.sell_volume if hull_price else 0,
+            time_seconds=build.time_seconds if build else 0,
+        )
+        rows.append(BoardRow(ship=ship, econ=econ, config=configs.get(ship.type_id), stats=st, build=build))
+    rows.sort(key=lambda r: (r.econ.net_profit is None, -(r.econ.net_profit or 0)))
+    return rows
+
+
+def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0, bpc=None, tag=None, use_lp=None):
+    """Economics for one ship; `me`, `bpc`, `tag`, `facility`, `use_lp` are ad-hoc overrides.
+
+    ME 0 at a known facility comes from the stored snapshot; anything else is a live
+    EVE Ref call (cached) so the dashboard numbers are never touched by simulations.
+    """
+    facility = facility or settings.facility
+    market = settings.market
+    rates = pricing.tax_rates(market, settings)
+    config = ShipConfig.objects.select_related("lp_faction").filter(ship=ship).first()
+    stats = ShipMarketStats.objects.filter(ship=ship).first()
+
+    build = None
+    if facility and me == 0 and te == 0:
+        build = BuildSnapshot.objects.filter(ship=ship, facility=facility, me=0).first()
+    if build:
+        material_rows, job_cost, time_seconds = build.materials, build.job_cost, build.time_seconds
+        source = "snapshot"
+    elif facility:
+        data = simulate_build(ship, facility, me=me, te=te, settings=settings)
+        material_rows, job_cost, time_seconds = data["materials"], data["job_cost"], data["time_seconds"]
+        source = "live"
+    else:
+        material_rows, job_cost, time_seconds, source = [], 0, 0, "none"
+
+    material_ids = {int(m["type_id"]) for m in material_rows}
+    prices = _price_map(market, material_ids | {ship.type_id})
+    names, volumes = _name_volume_maps(material_ids)
+    unit_prices = {tid: (p.sell_min if p else None) for tid, p in prices.items()}
+    hull_price = prices.get(ship.type_id)
+
+    # ad-hoc overrides for the simulation panel
+    sim_config = config
+    if bpc is not None or tag is not None:
+        sim_config = ShipConfig(ship=ship,
+                                bpc_price_isk=bpc if bpc is not None else (config.bpc_price_isk if config else 0),
+                                tag_cost_isk=tag if tag is not None else (config.tag_cost_isk if config else 0),
+                                lp_faction=config.lp_faction if config else None,
+                                lp_cost=config.lp_cost if config else 0,
+                                lp_isk_cost=config.lp_isk_cost if config else 0,
+                                lp_runs=config.lp_runs if config else 1)
+    if bpc is not None:
+        use_lp = False  # a typed blueprint price always wins in the simulation
+    if use_lp is None:
+        use_lp = settings.use_lp_pricing
+
+    econ = pricing.economics(
+        sell_price=hull_price.sell_min if hull_price else None,
+        material_rows=material_rows,
+        prices=unit_prices,
+        names=names,
+        volumes=volumes,
+        job_cost=job_cost,
+        config=sim_config,
+        use_lp=use_lp,
+        rates=rates,
+        avg_daily_volume=stats.avg_daily_volume if stats else 0,
+        sell_volume_on_market=hull_price.sell_volume if hull_price else 0,
+        time_seconds=time_seconds,
+    )
+    return {"econ": econ, "config": config, "stats": stats, "facility": facility, "market": market,
+            "rates": rates, "source": source, "hull_price": hull_price, "me": me, "te": te}
+
+
+def simulate_build(ship: Ship, facility: Facility, *, me=0, te=0, settings=None) -> dict:
+    """Live EVE Ref call for an ad-hoc ME/TE/facility combination, cached."""
+    skills = {}
+    if settings is not None:
+        for field, param in constants.EVEREF_SKILL_PARAMS.items():
+            skills[param] = getattr(settings, field, 5)
+    key = f"shipyard:sim:{ship.type_id}:{facility.pk}:{me}:{te}:" + ":".join(f"{k}={v}" for k, v in sorted(skills.items()))
+    data = cache.get(key)
+    if data is None:
+        block = everef.manufacturing_cost(
+            ship.type_id,
+            system_id=facility.system_id,
+            structure_type_id=facility.structure_type_id or None,
+            rig_type_ids=facility.rig_type_ids,
+            facility_tax_pct=float(facility.facility_tax),
+            me=me, te=te, skills=skills,
+        )
+        data = everef.normalise_cost_block(block)
+        cache.set(key, data, app_settings.SHIPYARD_SIM_CACHE_SECONDS)
+    return data
+
+
+def data_freshness() -> dict:
+    """Timestamps for the footer."""
+    price = PriceSnapshot.objects.order_by("-fetched_at").values_list("fetched_at", flat=True).first()
+    build = BuildSnapshot.objects.order_by("-fetched_at").values_list("fetched_at", flat=True).first()
+    stats = ShipMarketStats.objects.order_by("-fetched_at").values_list("fetched_at", flat=True).first()
+    return {"prices": price, "builds": build, "stats": stats, "now": timezone.now()}

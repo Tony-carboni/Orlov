@@ -1,0 +1,33 @@
+{% extends "allianceauth/base-bs5.html" %}
+{% load static %}
+
+{% block page_title %}{% block shipyard_title %}Shipyard{% endblock %}{% endblock page_title %}
+{% block header_nav_brand %}Shipyard{% endblock %}
+
+{% block extra_css %}
+    {% include "bundles/datatables-css-bs5.html" %}
+    <link rel="stylesheet" href="{% static 'shipyard/shipyard.css' %}">
+{% endblock %}
+
+{% block content %}
+    <nav class="nav nav-pills mb-3 shipyard-nav">
+        <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'shipyard:index' %}">
+            <i class="fas fa-table-list fa-fw"></i> Dashboard
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" href="{% url 'shipyard:settings' %}">
+            <i class="fas fa-sliders fa-fw"></i> My settings
+        </a>
+        {% if perms.shipyard.manage_shipyard %}
+        <a class="nav-link {% if request.resolver_match.url_name == 'blueprints' %}active{% endif %}" href="{% url 'shipyard:blueprints' %}">
+            <i class="fas fa-scroll fa-fw"></i> Blueprints &amp; LP
+        </a>
+        {% endif %}
+    </nav>
+    {% block shipyard_content %}{% endblock %}
+{% endblock content %}
+
+{% block extra_javascript %}
+    {% include "bundles/jquery-js.html" %}
+    {% include "bundles/datatables-js-bs5.html" %}
+    {% block shipyard_js %}{% endblock %}
+{% endblock %}

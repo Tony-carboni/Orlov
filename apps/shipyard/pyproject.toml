@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orlov-shipyard"
+dynamic = ["version"]
+description = "Shipyard: T1 ship-building profit dashboard plugin for Alliance Auth (The Orlov Family)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "allianceauth>=4.0",
+    "requests>=2.31",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "shipyard.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["shipyard*"]
+
+[tool.setuptools.package-data]
+shipyard = ["templates/**/*", "static/**/*"]

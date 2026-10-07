@@ -1,0 +1,70 @@
+{% extends "shipyard/base.html" %}
+{% load shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · Blueprints &amp; LP{% endblock %}
+
+{% block shipyard_content %}
+<form method="post">
+    {% csrf_token %}
+    <div class="d-flex align-items-center mb-2">
+        <h5 class="mb-0">LP prices</h5>
+        <span class="small text-muted ms-3">ISK a member pays per loyalty point. Used when "blueprints from LP" is on.</span>
+        <button class="btn btn-primary btn-sm ms-auto"><i class="fas fa-save fa-fw"></i> Save all</button>
+    </div>
+    <div class="row g-2 mb-4">
+        {% for lp in lp_factions %}
+        <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label small mb-0">{{ lp.name }}</label>
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control" name="lp_{{ lp.pk }}" value="{{ lp.isk_per_lp }}">
+                <span class="input-group-text">ISK/LP</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <h5>Blueprint and tag prices per ship</h5>
+    <p class="small text-muted">
+        <strong>Blueprint / run</strong>: what one run of the BPC costs on the market. <strong>Tags / extras</strong>: other per-run inputs not in the bill of materials.
+        <strong>LP offer</strong>: the LP store offer for the copy (LP, ISK part, runs on the copy) — the app divides by runs. Faction ships: select the faction's LP store.
+    </p>
+    <div class="table-responsive">
+    <table class="table table-sm table-striped align-middle" id="bp-table">
+        <thead>
+            <tr>
+                <th>Type</th><th>Hull</th><th>Ship</th>
+                <th class="text-end">Blueprint / run (ISK)</th>
+                <th class="text-end">Tags / extras (ISK)</th>
+                <th>LP store</th>
+                <th class="text-end">LP / copy</th>
+                <th class="text-end">ISK / copy</th>
+                <th class="text-end">Runs</th>
+                <th class="text-end">= LP price / run</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in configs %}
+            <tr>
+                <td><span class="badge shipyard-cat shipyard-cat-{{ c.ship.category|lower }}">{{ c.ship.category }}</span></td>
+                <td>{{ c.ship.hull_size }}</td>
+                <td class="fw-semibold">{{ c.ship.name }}</td>
+                <td><input type="text" class="form-control form-control-sm text-end" name="bpc_price_isk_{{ c.ship_id }}" value="{{ c.bpc_price_isk|floatformat:0 }}"></td>
+                <td><input type="text" class="form-control form-control-sm text-end" name="tag_cost_isk_{{ c.ship_id }}" value="{{ c.tag_cost_isk|floatformat:0 }}"></td>
+                <td>
+                    <select name="lp_faction_{{ c.ship_id }}" class="form-select form-select-sm">
+                        <option value="">–</option>
+                        {% for lp in lp_factions %}<option value="{{ lp.pk }}" {% if c.lp_faction_id == lp.pk %}selected{% endif %}>{{ lp.name }}</option>{% endfor %}
+                    </select>
+                </td>
+                <td><input type="text" class="form-control form-control-sm text-end" name="lp_cost_{{ c.ship_id }}" value="{{ c.lp_cost }}"></td>
+                <td><input type="text" class="form-control form-control-sm text-end" name="lp_isk_cost_{{ c.ship_id }}" value="{{ c.lp_isk_cost|floatformat:0 }}"></td>
+                <td><input type="text" class="form-control form-control-sm text-end" name="lp_runs_{{ c.ship_id }}" value="{{ c.lp_runs }}" style="width:4.5em"></td>
+                <td class="text-end small text-muted">{% if c.has_lp_offer %}{{ c.lp_bpc_price_per_run|isk }}{% else %}–{% endif %}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <button class="btn btn-primary"><i class="fas fa-save fa-fw"></i> Save all</button>
+</form>
+{% endblock %}

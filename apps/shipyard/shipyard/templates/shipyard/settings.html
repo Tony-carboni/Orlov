@@ -1,0 +1,114 @@
+{% extends "shipyard/base.html" %}
+{% load shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · Settings{% endblock %}
+
+{% block shipyard_content %}
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+
+    <h5>Manufacturing facility</h5>
+    <p class="small text-muted">Where you build. Rigs and the system index change material quantities and job cost.</p>
+    <div class="row g-2 mb-4">
+        {% for f in facilities %}
+        <div class="col-md-4">
+            <label class="w-100 shipyard-radio-card">
+                <input type="radio" name="facility" value="{{ f.pk }}" {% if settings.facility_id == f.pk %}checked{% endif %}>
+                {% include "shipyard/_facility_card.html" with facility=f selected=False %}
+            </label>
+        </div>
+        {% empty %}
+        <div class="col"><div class="alert alert-warning">No facilities defined. A manager adds them in admin → Shipyard → Facilities.</div></div>
+        {% endfor %}
+    </div>
+
+    <h5>Market for prices and taxes</h5>
+    <div class="row g-2 mb-4">
+        <div class="col-md-5">
+            <select name="market" class="form-select">
+                {% for m in markets %}
+                    <option value="{{ m.pk }}" {% if settings.market_id == m.pk %}selected{% endif %}>{{ m.name }} — base sales tax {{ m.sales_tax_base }} %, broker {{ m.broker_fee_base }} %</option>
+                {% endfor %}
+            </select>
+            <div class="form-text">Current rates with your skills: sales tax {{ rates.sales_tax|pct:2 }}, broker fee {{ rates.broker_fee|pct:2 }}.</div>
+        </div>
+        <div class="col-md-7">
+            <div class="row g-2">
+                <div class="col-6">
+                    <label class="form-label small mb-0">Override sales tax %</label>
+                    <input type="text" class="form-control form-control-sm" name="manual_sales_tax" value="{{ settings.manual_sales_tax|default_if_none:'' }}" placeholder="from the market window, e.g. 3.37">
+                </div>
+                <div class="col-6">
+                    <label class="form-label small mb-0">Override broker fee %</label>
+                    <input type="text" class="form-control form-control-sm" name="manual_broker_fee" value="{{ settings.manual_broker_fee|default_if_none:'' }}" placeholder="e.g. 1.5 with standings">
+                </div>
+            </div>
+            <div class="form-text">Leave empty to compute from the market base and your skills. Standings aren't modelled, so an override is the accurate option for broker fees.</div>
+        </div>
+    </div>
+
+    <h5>Skills <i class="fas fa-circle-info text-muted small" data-bs-toggle="tooltip" title="Which skills improve profit: Accounting (sales tax) and Broker Relations (broker fee). Industry, Advanced Industry and the Advanced Ship Construction skills only shorten build time."></i></h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-body py-2">
+                    <div class="d-flex align-items-center">
+                        <strong>From EVE (ESI)</strong>
+                        {% if settings.skills_source == "esi" %}<span class="badge bg-info-subtle text-info-emphasis ms-2">active</span>{% endif %}
+                    </div>
+                    <p class="small text-muted mb-2">
+                        {% if settings.skills_character_name %}Loaded from <strong>{{ settings.skills_character_name }}</strong> on {{ settings.skills_fetched_at|date:"Y-m-d H:i" }}.{% else %}Not loaded yet.{% endif %}
+                        Reads the skills of one character (scope: read skills).
+                    </p>
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'shipyard:load_skills' %}"><i class="fas fa-download fa-fw"></i> Load skills from a character</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-body py-2">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" name="skills_mode" value="manual" id="skills-manual" {% if settings.skills_source == "manual" %}checked{% endif %}>
+                        <label class="form-check-label" for="skills-manual"><strong>Set by hand</strong> <span class="small text-muted">(overrides the ESI values when saved)</span></label>
+                    </div>
+                    <div class="row g-2">
+                        {% for field, label, effect, level in skills %}
+                        <div class="col-sm-6">
+                            <label class="form-label small mb-0" title="{{ effect }}">{{ label }} <span class="text-muted">({{ effect }})</span></label>
+                            <select name="{{ field }}" class="form-select form-select-sm">
+                                {% for l in "012345" %}<option value="{{ l }}" {% if level == l|add:0 %}selected{% endif %}>{{ l }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5>Blueprints</h5>
+    <div class="form-check form-switch mb-4">
+        <input class="form-check-input" type="checkbox" name="use_lp_pricing" id="use-lp" {% if settings.use_lp_pricing %}checked{% endif %}>
+        <label class="form-check-label" for="use-lp">Price blueprints from the LP store where an offer is entered (LP × ISK/LP + ISK part, per run)</label>
+        <div class="form-text">Ships without an LP offer keep their entered blueprint price. LP prices per faction are maintained under <em>Blueprints &amp; LP</em>.</div>
+    </div>
+
+    <button class="btn btn-primary"><i class="fas fa-save fa-fw"></i> Save settings</button>
+    <a class="btn btn-outline-secondary" href="{% url 'shipyard:index' %}">Cancel</a>
+</form>
+{% endblock %}
+
+{% block shipyard_js %}
+<script>
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) { new bootstrap.Tooltip(el); });
+document.querySelectorAll('.shipyard-radio-card input[type=radio]').forEach(function (r) {
+    function paint() {
+        document.querySelectorAll('.shipyard-radio-card .card').forEach(function (c) { c.classList.remove('border-primary'); });
+        var checked = document.querySelector('.shipyard-radio-card input[type=radio]:checked');
+        if (checked) { checked.closest('label').querySelector('.card').classList.add('border-primary'); }
+    }
+    r.addEventListener('change', paint); paint();
+});
+</script>
+{% endblock %}
