@@ -6,7 +6,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ## 2026-10-07 (13:30 UTC) — local session (PC) → cloud session
 
-**Runbook:** `docs/runbooks/13-shipyard-plugin.md` — **section A done.** B (owner, browser) is next.
+**Runbook:** `docs/runbooks/13-shipyard-plugin.md` — **section A done; plugin updated to 0.1.1 and the navy cruiser baseline entered (see below).** B (owner, browser) is next.
 
 ### Done (local, on the server)
 - Pinned commit `233303255d07a90d3314280cc202dc653cc5ff58` (branch head at the time). GitHub serves the archive (146 KB).
@@ -16,6 +16,14 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - `shipyard_load_ships`: facility "Orlov Raitaru — Isikano" and market "Jita IV-4" created, LP factions seeded, catalog 188 new / 188 total.
 - `shipyard_refresh`: RefreshRun rows indices (1 item), builds (174), prices (196), stats (174), all `ok`, no messages. Ship 188 total / 174 active, BuildSnapshot 174, PriceSnapshot 196, ShipMarketStats 174.
 - Order differed from the handoff on purpose: requirements and build first, settings block after, so no container could restart on the old image with the new app named (lesson from Day 6).
+
+### Shipyard 0.1.1 and the navy cruiser baseline (local, 2026-10-07 13:40–14:10 UTC)
+- Owner's instructions: navy cruiser blueprint cost = 18,000 LP × the faction's ISK/LP + the faction crystal tag at Jita's **lowest sell** (never a median); ISK/LP baseline Amarr 900, Gallente 850, Minmatar 700, Caldari 900; the type filter must allow several types at once.
+- Verified in ESI: the four militia LP stores sell every navy cruiser BPC for 18,000 LP + 1 crystal tag, 0 ISK, 1 run (the navy corps' own stores want 100,000 LP). Tag type IDs: True Sansha 17255 (Amarr), Dread Guristas 17244 (Caldari), Shadow Serpentis 17266 (Gallente), Domination 17223 (Minmatar).
+- Plugin change (commit `48f73d4`, version 0.1.1): `ShipConfig.tag_type_id` + `tag_quantity` (migration 0002); `refresh_prices` includes tag types; `pricing.economics(tag_unit_price=…)` prices the tag at lowest sell ÷ runs and marks the ship incomplete while the tag price is missing; Blueprints & LP page shows the tag's current price; dashboard type filter = Bootstrap tick buttons, remembered in localStorage. Tests 21, all pass (run with an in-memory SQLite settings override: the `aauth` DB user cannot create `test_alliance_auth`).
+- Deployed per section C: requirements SHA → build → check + tests + plan in a throwaway container → `migrate shipyard` → `up -d` (6 recreated) → nginx → collectstatic. Copy of the old requirements: `~/backups/requirements.txt.pre-0.1.1`.
+- Data: LpFaction ISK/LP set (rows are named Imperial Navy / Caldari Navy / Federation Navy / Republic Fleet); the eight cruisers: lp_cost 18000, lp_isk_cost 0, lp_runs 1, tag_type_id per faction, tag_quantity 1, tag_cost_isk 0; `use_lp_pricing` on for `tony`. Dashboard check: all eight complete, blueprint from LP (16.2 M / 15.3 M / 12.6 M) plus tag (570,800 / 571,700 / 2,483,000 / 184,900 at the time).
+- Section B for the owner now also covers: on Blueprints & LP, set a tag type ID for other LP-store ships if wanted; the filter buttons on the dashboard.
 
 ### Also today (local)
 - Three members whose corp change had not reached auth were refreshed by hand (Lexxus, phoenix4, Josh Havenguard → OARMI/ORLOV, Family Member, Discord nickname and roles followed). Cause: EVE's public character record is cached 24 h while the affiliation endpoint refreshes hourly; auth's character update picks the new corp up as soon as it runs. Owner's command for this: "update user <name>" in a local session.

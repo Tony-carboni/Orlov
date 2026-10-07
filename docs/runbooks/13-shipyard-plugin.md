@@ -39,6 +39,10 @@
 4. Click a ship → move the ME slider, type a blueprint price, Recalculate. The dashboard numbers stay as they were.
 
 ## C. Updating the plugin later (local session)
+*Update log:*
+- *0.1.1, 2026-10-07 14:10 UTC (commit `48f73d4`): tags are now priced from the market. Each ship can have a **tag type ID** and quantity on the Blueprints & LP page; the price refresh fetches that tag's lowest sell at the default market every hour and the dashboard uses it, divided by the runs of the copy, next to the hand-typed "Extras". The dashboard's type filter became tick buttons: tick any number of types (for example Base and Trig); none ticked shows all; the choice is remembered per browser. Deployed with runbook 13 C: new SHA, build, `check`, 21 unit tests (run against an in-memory SQLite database, because the auth DB user may not create a test database), `migrate shipyard` (0002), `up -d`, `collectstatic`.*
+- *Navy cruiser baseline set the same day: ISK/LP Imperial Navy 900, Caldari Navy 900, Federation Navy 850, Republic Fleet 700; the eight navy cruisers (Augoror, Omen, Caracal, Osprey, Exequror, Vexor NI; Scythe, Stabber FI) carry the militia LP-store offer verified in ESI: 18,000 LP, 0 ISK, 1 run, 1 faction crystal tag (True Sansha 17255, Dread Guristas 17244, Shadow Serpentis 17266, Domination 17223). "Blueprints from LP" switched on in the owner's settings.*
+
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
