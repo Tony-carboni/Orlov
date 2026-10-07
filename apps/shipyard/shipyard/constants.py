@@ -95,12 +95,18 @@ BPC_POLICY = {
 BPC_POLICY_BY_HULL = {
     (CAT_BASE, "Battleship"): BPC_PUBLIC,
 }
+# Exceptions by ship name (win over the type and hull rules).
+BPC_POLICY_BY_NAME = {
+    "Perseverance": BPC_PUBLIC,  # ORE destroyer, blueprint only on public contracts (owner, 2026-10-07)
+}
 
 
-def bpc_policy(category, hull_size=None):
-    """Who provides the blueprint for a ship of this type and hull size."""
+def bpc_policy(category, hull_size=None, name=None):
+    """Who provides the blueprint for a ship of this type, hull size and name."""
     if category is None:
         return BPC_MANUAL
+    if name in BPC_POLICY_BY_NAME:
+        return BPC_POLICY_BY_NAME[name]
     return BPC_POLICY_BY_HULL.get((category, hull_size), BPC_POLICY.get(category, BPC_MANUAL))
 
 # Ships that exist with a blueprint entry but are not realistically buildable /

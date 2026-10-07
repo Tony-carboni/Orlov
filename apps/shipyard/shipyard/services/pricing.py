@@ -126,13 +126,14 @@ def corp_markup(markup=None) -> float:
     return float(markup) if markup is not None else float(app_settings.SHIPYARD_CORP_BPC_MARKUP)
 
 
-def blueprint_cost(config, use_lp: bool, category: str | None = None, hull_size: str | None = None, markup=None) -> tuple[float, str]:
+def blueprint_cost(config, use_lp: bool, category: str | None = None, hull_size: str | None = None, markup=None, name=None) -> tuple[float, str]:
     """Blueprint price per run and where it came from, following the blueprint policy.
 
     Without a category (older callers, tests) only the LP/manual choice applies.
     `markup` overrides the corp's default rate (a fraction; 0 = at cost).
+    `name` lets the per-ship exceptions apply (constants.BPC_POLICY_BY_NAME).
     """
-    policy = constants.bpc_policy(category, hull_size)
+    policy = constants.bpc_policy(category, hull_size, name)
     if policy == constants.BPC_FREE:
         return 0.0, "free"
     if policy == constants.BPC_PUBLIC:
@@ -166,6 +167,7 @@ def economics(
     category=None,
     hull_size=None,
     markup=None,
+    name=None,
 ) -> ShipEconomics:
     """Assemble the economics of one ship from snapshot data.
 
@@ -187,14 +189,14 @@ def economics(
             unit_price=price,
             volume=float(volumes.get(tid, 0.0)),
         ))
-    bpc, src = blueprint_cost(config, use_lp, category, hull_size, markup)
+    bpc, src = blueprint_cost(config, use_lp, category, hull_size, markup, name)
     applied_markup = 0.0
     if src == "public":
         # no blueprint source: the tags that come with the LP offer are left out as well
         tag_cost, tag_missing = 0.0, False
     else:
         tag_cost, tag_missing = config.tag_cost(tag_unit_price) if config else (0.0, False)
-        if src == "lp" and constants.bpc_policy(category, hull_size) == constants.BPC_CORP:
+        if src == "lp" and constants.bpc_policy(category, hull_size, name) == constants.BPC_CORP:
             applied_markup = corp_markup(markup)
             tag_cost *= 1.0 + applied_markup
     if tag_missing:
