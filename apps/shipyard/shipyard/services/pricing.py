@@ -116,12 +116,12 @@ class ShipEconomics:
         return self.sell_price is not None and self.missing_prices == 0 and bool(self.materials)
 
 
-def blueprint_cost(config, use_lp: bool, category: str | None = None) -> tuple[float, str]:
+def blueprint_cost(config, use_lp: bool, category: str | None = None, hull_size: str | None = None) -> tuple[float, str]:
     """Blueprint price per run and where it came from, following the blueprint policy.
 
     Without a category (older callers, tests) only the LP/manual choice applies.
     """
-    policy = constants.BPC_POLICY.get(category, constants.BPC_MANUAL) if category else constants.BPC_MANUAL
+    policy = constants.bpc_policy(category, hull_size)
     if policy == constants.BPC_FREE:
         return 0.0, "free"
     if policy == constants.BPC_PUBLIC:
@@ -153,6 +153,7 @@ def economics(
     time_seconds=0,
     tag_unit_price=None,
     category=None,
+    hull_size=None,
 ) -> ShipEconomics:
     """Assemble the economics of one ship from snapshot data.
 
@@ -174,14 +175,14 @@ def economics(
             unit_price=price,
             volume=float(volumes.get(tid, 0.0)),
         ))
-    bpc, src = blueprint_cost(config, use_lp, category)
+    bpc, src = blueprint_cost(config, use_lp, category, hull_size)
     markup = 0.0
     if src == "public":
         # no blueprint source: the tags that come with the LP offer are left out as well
         tag_cost, tag_missing = 0.0, False
     else:
         tag_cost, tag_missing = config.tag_cost(tag_unit_price) if config else (0.0, False)
-        if src == "lp" and constants.BPC_POLICY.get(category) == constants.BPC_CORP:
+        if src == "lp" and constants.bpc_policy(category, hull_size) == constants.BPC_CORP:
             markup = app_settings.SHIPYARD_CORP_BPC_MARKUP
             tag_cost *= 1.0 + markup
     if tag_missing:

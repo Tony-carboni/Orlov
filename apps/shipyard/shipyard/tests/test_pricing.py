@@ -121,8 +121,10 @@ class BlueprintCostTests(TestCase):
         self.assertAlmostEqual(e.tag_cost, 1_050.0)
         self.assertAlmostEqual(e.bpc_markup, 0.05)
         self.assertFalse(e.bpc_excluded)
-        # base: free, whatever is typed
+        # base: free, whatever is typed; except battleships, which members source themselves
         self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Base"), (0.0, "free"))
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Base", hull_size="Cruiser"), (0.0, "free"))
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Base", hull_size="Battleship"), (0.0, "public"))
         # pirate / trig / edencom: no source, blueprint and its tags left out, profit marked
         for cat in ("Pirate", "Trig", "Edencom"):
             self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category=cat), (0.0, "public"))

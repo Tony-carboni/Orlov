@@ -89,6 +89,18 @@ BPC_POLICY = {
     CAT_ORE: BPC_MANUAL,
     CAT_OTHER: BPC_MANUAL,
 }
+# Exceptions by hull: base battleships are not newbro ships; by then members source
+# their own blueprints on the Jita market (owner's decision 2026-10-07).
+BPC_POLICY_BY_HULL = {
+    (CAT_BASE, "Battleship"): BPC_PUBLIC,
+}
+
+
+def bpc_policy(category, hull_size=None):
+    """Who provides the blueprint for a ship of this type and hull size."""
+    if category is None:
+        return BPC_MANUAL
+    return BPC_POLICY_BY_HULL.get((category, hull_size), BPC_POLICY.get(category, BPC_MANUAL))
 
 # Ships that exist with a blueprint entry but are not realistically buildable /
 # not on the market as BPCs. Kept in the catalog, inactive by default.
