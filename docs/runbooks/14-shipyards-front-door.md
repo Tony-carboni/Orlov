@@ -32,6 +32,8 @@ How it works (short): it is the same Django application as auth, answering under
 
 ## B. Release 0.2.0 with the front door switched off (local session)
 
+*Done 2026-10-07 17:05 UTC: commit `7fe6752` pinned, backup `aa-db-2026-10-07-1701.sql.gz`, settings block appended with the host empty, build, 37 tests, `up -d`, nginx, collectstatic, permission granted to both states.*
+
 Per runbook 13 C: pin the commit, build, checks in a throwaway container, `migrate` (none for 0.2.0), `up -d`, nginx, `collectstatic`. Then append the "Shipyards front door" settings block with **`SHIPYARD_STANDALONE_HOST = ""`** for now, and grant the access permission to the two states.
 
 Why off first: with the host set, every Shipyard page on auth redirects to the new hostname. Until A is done that address does not exist.
