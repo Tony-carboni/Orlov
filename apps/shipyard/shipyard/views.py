@@ -19,7 +19,7 @@ from .services.pricing import tax_rates
 
 logger = logging.getLogger(__name__)
 
-SKILL_SCOPES = ["esi-skills.read_skills.v1"]
+SKILL_SCOPES = ["esi-skills.read_skills.v1", "esi-characters.read_standings.v1"]
 
 
 def _dec(value, default=None):
@@ -161,9 +161,23 @@ def settings_view(request):
             for _, (field, label, effect) in constants.RELEVANT_SKILLS.items()
         ],
         "rates": tax_rates(settings.market, settings),
+        "standings": _market_standings(settings),
         "next": request.GET.get("next", ""),
     }
     return render(request, "shipyard/settings.html", context)
+
+
+def _market_standings(settings):
+    """What the broker fee uses at the chosen market, for the settings page."""
+    market = settings.market
+    if market is None or not market.is_npc_station or not (market.owner_faction_id or market.owner_corporation_id):
+        return {"applies": False}
+    return {
+        "applies": True,
+        "known": bool(settings.standings),
+        "faction": settings.standing_with(market.owner_faction_id),
+        "corp": settings.standing_with(market.owner_corporation_id),
+    }
 
 
 @login_required
@@ -184,8 +198,16 @@ def load_skills(request, token):
     settings.skills_character_id = token.character_id
     settings.skills_character_name = token.character_name
     settings.skills_fetched_at = timezone.now()
+    # standings lower the broker fee at NPC stations; a failure here keeps the skills
+    try:
+        settings.standings = esi.character_standings(token.character_id, token.valid_access_token())
+        settings.standings_fetched_at = timezone.now()
+        note = " and standings"
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("standings load failed for %s: %s", token.character_name, exc)
+        note = " (standings could not be read, the broker fee ignores them)"
     settings.save()
-    messages.success(request, f"Skills loaded from {token.character_name}.")
+    messages.success(request, f"Skills{note} loaded from {token.character_name}.")
     return redirect("shipyard:settings")
 
 

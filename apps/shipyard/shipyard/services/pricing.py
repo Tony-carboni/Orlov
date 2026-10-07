@@ -28,7 +28,12 @@ def tax_rates(market, settings) -> TaxRates:
         base = float(market.broker_fee_base) / 100.0 if market else 0.03
         if market is None or market.is_npc_station:
             br = settings.broker_relations if settings else 0
-            broker = max(0.0, base - app_settings.SHIPYARD_BROKER_RELATIONS_REDUCTION_PER_LEVEL * br)
+            broker = base - app_settings.SHIPYARD_BROKER_RELATIONS_REDUCTION_PER_LEVEL * br
+            if settings is not None and market is not None:
+                # standings with the station's owners (unmodified, as the game uses them)
+                broker -= app_settings.SHIPYARD_BROKER_FACTION_STANDING_PER_POINT * settings.standing_with(market.owner_faction_id)
+                broker -= app_settings.SHIPYARD_BROKER_CORP_STANDING_PER_POINT * settings.standing_with(market.owner_corporation_id)
+            broker = max(0.0, broker)
         else:
             broker = base
     return TaxRates(sales_tax=sales, broker_fee=broker, source=src)

@@ -37,6 +37,18 @@ def industry_indices() -> dict[int, float]:
     return out
 
 
+def character_standings(character_id: int, access_token: str) -> dict[str, float]:
+    """{entity id (as text): unmodified standing} for every NPC the character has standing with."""
+    r = session().get(
+        f"{ESI}/characters/{int(character_id)}/standings/",
+        params={"datasource": "tranquility"},
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=30,
+    )
+    r.raise_for_status()
+    return {str(int(s["from_id"])): float(s.get("standing") or 0) for s in r.json() or []}
+
+
 def character_skills(character_id: int, access_token: str) -> dict[int, int]:
     """{skill_id: active level} for the skills we care about."""
     r = session().get(

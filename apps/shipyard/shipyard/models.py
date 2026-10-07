@@ -60,6 +60,14 @@ class MarketLocation(models.Model):
     station_id = models.PositiveBigIntegerField(help_text="Station or structure ID (Jita 4-4: 60003760)")
     region_id = models.PositiveIntegerField(default=constants.THE_FORGE_REGION_ID)
     is_npc_station = models.BooleanField(default=True)
+    owner_corporation_id = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="NPC corporation that owns the station (Jita 4-4: Caldari Navy 1000035); the member's standing with it lowers the broker fee",
+    )
+    owner_faction_id = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Faction of that corporation (Caldari State 500001); the member's standing with it lowers the broker fee",
+    )
     sales_tax_base = models.DecimalField(
         max_digits=5, decimal_places=3, default=7.5,
         help_text="Base sales tax in % before Accounting skill (NPC stations: 7.5)",
@@ -238,6 +246,11 @@ class UserSettings(models.Model):
     skills_character_id = models.PositiveIntegerField(null=True, blank=True)
     skills_character_name = models.CharField(max_length=100, blank=True)
     skills_fetched_at = models.DateTimeField(null=True, blank=True)
+    standings = models.JSONField(
+        default=dict, blank=True,
+        help_text="Unmodified standings of the skills character, {entity id: standing}, read from ESI with the skills",
+    )
+    standings_fetched_at = models.DateTimeField(null=True, blank=True)
     accounting = models.PositiveSmallIntegerField(default=0)
     broker_relations = models.PositiveSmallIntegerField(default=0)
     industry = models.PositiveSmallIntegerField(default=5)
@@ -258,6 +271,12 @@ class UserSettings(models.Model):
 
     def skill_levels(self):
         return {field: getattr(self, field) for field, _, _ in constants.RELEVANT_SKILLS.values()}
+
+    def standing_with(self, entity_id) -> float:
+        """Unmodified standing with a faction or corporation; 0 when unknown."""
+        if not entity_id:
+            return 0.0
+        return float((self.standings or {}).get(str(int(entity_id)), 0.0))
 
 
 class RefreshRun(models.Model):

@@ -36,3 +36,11 @@ SHIPYARD_ACCOUNTING_REDUCTION_PER_LEVEL = getattr(
 SHIPYARD_BROKER_RELATIONS_REDUCTION_PER_LEVEL = getattr(
     settings, "SHIPYARD_BROKER_RELATIONS_REDUCTION_PER_LEVEL", 0.003
 )
+# NPC broker fee: -0.03 percentage points per point of faction standing and -0.02 per
+# point of corporation standing with the station owner (unmodified standings).
+SHIPYARD_BROKER_FACTION_STANDING_PER_POINT = getattr(
+    settings, "SHIPYARD_BROKER_FACTION_STANDING_PER_POINT", 0.0003
+)
+SHIPYARD_BROKER_CORP_STANDING_PER_POINT = getattr(
+    settings, "SHIPYARD_BROKER_CORP_STANDING_PER_POINT", 0.0002
+)

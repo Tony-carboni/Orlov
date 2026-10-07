@@ -44,7 +44,10 @@
                     <input type="text" class="form-control form-control-sm" name="manual_broker_fee" value="{{ settings.manual_broker_fee|default_if_none:'' }}" placeholder="e.g. 1.5 with standings">
                 </div>
             </div>
-            <div class="form-text">Leave empty to compute from the market base and your skills. Standings aren't modelled, so an override is the accurate option for broker fees.</div>
+            <div class="form-text">
+                Leave empty to compute from the market base, your skills and your standings.
+                {% if standings.applies %}{% if standings.known %}The broker fee uses your standings with the station's faction ({{ standings.faction|floatformat:2 }}) and corporation ({{ standings.corp|floatformat:2 }}), unmodified, as loaded with the skills.{% else %}Your standings are not loaded yet: use <em>Load skills from a character</em> below and the broker fee will include them.{% endif %}{% endif %}
+            </div>
         </div>
     </div>
 
@@ -59,7 +62,7 @@
                     </div>
                     <p class="small text-muted mb-2">
                         {% if settings.skills_character_name %}Loaded from <strong>{{ settings.skills_character_name }}</strong> on {{ settings.skills_fetched_at|date:"Y-m-d H:i" }}.{% else %}Not loaded yet.{% endif %}
-                        Reads the skills of one character (scope: read skills).
+                        Reads the skills and the NPC standings of one character (scopes: read skills, read standings).
                     </p>
                     <a class="btn btn-sm btn-outline-primary" href="{% url 'shipyard:load_skills' %}"><i class="fas fa-download fa-fw"></i> Load skills from a character</a>
                 </div>

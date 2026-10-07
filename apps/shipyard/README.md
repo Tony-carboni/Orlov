@@ -16,7 +16,7 @@ T1 / faction ship-building profit dashboard for The Orlov Family. Lives in the a
 
 ## Calculation
 Net profit = sell price (Jita lowest sell) − materials (Jita lowest sell × ME-adjusted quantity) − job cost (EIV × (system index + SCC 4 %) + facility tax) − blueprint per run − tags − sales tax − broker fee.
-Sales tax = base 7.5 % × (1 − 0.11 × Accounting). Broker fee (NPC station) = 3 % − 0.3 pp × Broker Relations. Both can be overridden per member. Build times assume industry skills V on the dashboard; the simulation uses the member's skills.
+Sales tax = base 7.5 % × (1 − 0.11 × Accounting). Broker fee (NPC station) = 3 % − 0.3 pp × Broker Relations − 0.03 pp × faction standing − 0.02 pp × corporation standing with the station's owners (unmodified standings of the skills character, loaded together with the skills). Both can be overridden per member. Build times assume industry skills V on the dashboard; the simulation uses the member's skills.
 
 ## Install (Alliance Auth, Docker)
 1. Add to `conf/requirements.txt` (pin the commit):

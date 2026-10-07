@@ -21,6 +21,20 @@ class TaxRateTests(SimpleTestCase):
         self.assertAlmostEqual(r.sales_tax, 0.0481)
         self.assertAlmostEqual(r.broker_fee, 0.01)
 
+    def test_npc_station_standings_lower_the_broker_fee(self):
+        # Jita 4-4 is owned by Caldari Navy (1000035) of the Caldari State (500001)
+        market = MarketLocation(sales_tax_base=7.5, broker_fee_base=3.0, is_npc_station=True,
+                                owner_corporation_id=1000035, owner_faction_id=500001)
+        s = UserSettings(accounting=5, broker_relations=5, standings={"500001": -0.27, "1000035": 2.34})
+        r = pricing.tax_rates(market, s)
+        self.assertAlmostEqual(r.broker_fee, 0.015 - 0.0003 * -0.27 - 0.0002 * 2.34, places=9)
+        self.assertAlmostEqual(r.sales_tax, 0.075 * 0.45, places=9)  # standings never touch the sales tax
+
+    def test_standings_need_a_known_station_owner(self):
+        market = MarketLocation(sales_tax_base=7.5, broker_fee_base=3.0, is_npc_station=True)
+        s = UserSettings(broker_relations=5, standings={"500001": 10, "1000035": 10})
+        self.assertAlmostEqual(pricing.tax_rates(market, s).broker_fee, 0.015, places=9)
+
     def test_player_structure_ignores_broker_relations(self):
         market = MarketLocation(sales_tax_base=7.5, broker_fee_base=1.0, is_npc_station=False)
         s = UserSettings(broker_relations=5)
