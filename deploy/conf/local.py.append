@@ -35,7 +35,7 @@ INSTALLED_APPS += [
 ]
 CELERYBEAT_SCHEDULE["memberaudit_run_regular_updates"] = {
     "task": "memberaudit.tasks.run_regular_updates",
-    "schedule": crontab(minute="0", hour="*/1"),
+    "schedule": 3600,  # seconds; memberaudit 5.x wants a number, not a crontab
 }
 
 # --- Discord: refresh nicknames periodically (corp changes don't trigger a nick update otherwise)
@@ -89,3 +89,47 @@ CELERYBEAT_SCHEDULE["structuretimers_dispatch_scheduled_notifications"] = {
     "task": "structuretimers.tasks.dispatch_scheduled_notifications",
     "schedule": 60,
 }
+
+# --- Day 6: Discord bot with the /moons command (allianceauth-discordbot) ---
+INSTALLED_APPS += [
+    "aadiscordbot",   # bot framework; runs in its own container (allianceauth_discordbot)
+    "orlovbot",       # our own commands, bind-mounted from aa-docker/orlovbot
+]
+
+# Only the bundled commands we use (/about, /time). The default list loads 17 modules
+# (sov, price check, easter eggs, ...). Our own /moons is added by orlovbot/auth_hooks.py.
+DISCORD_BOT_COGS = [
+    "aadiscordbot.cogs.about",
+    "aadiscordbot.cogs.time",
+]
+
+# --- Moon board: one always-current message in #moon-board (runbook 09) -----
+ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"   # channel name; "" switches the board off
+
+# Bot log lines go to the container output: docker compose logs allianceauth_discordbot
+LOGGING["loggers"]["aadiscordbot"] = {"handlers": ["console"], "level": "INFO"}
+LOGGING["loggers"]["orlovbot"] = {"handlers": ["console"], "level": "INFO"}
+
+# --- Structure board: one always-current message in #structure-board (runbook 10) ---
+ORLOVBOT_STRUCTURE_BOARD_CHANNEL = "structure-board"   # channel name; "" switches the board off
+# Names of the structure profiles. EVE's API only gives the number; add "number: name" pairs.
+ORLOVBOT_STRUCTURE_PROFILES = {
+}
+
+# Structure board alerts (runbook 10): a ping in the same channel when a new war appears, and
+# once a day per structure while its fuel is under 7 days or a service is offline.
+ORLOVBOT_STRUCTURE_ALERTS = True
+ORLOVBOT_STRUCTURE_ALERT_MENTION = "@everyone"
+
+# --- Kill feed: a post in #zkillboard for every kill and loss (runbook 11) ----
+ORLOVBOT_KILLFEED_CHANNEL = "zkillboard"      # channel name; "" switches the feed off
+ORLOVBOT_KILLFEED_ALLIANCE_IDS = [99015337]   # The Orlov Family
+ORLOVBOT_KILLFEED_CORPORATION_IDS = []        # extra corps outside the alliance, by corporation ID
+
+# Structure board: the reinforcement hour (EVE time) every structure must have, per the
+# contract with the mercenaries on retainer. Shown green when it matches, red when not.
+ORLOVBOT_STRUCTURE_REINFORCE_HOUR = 21
+
+# --- Jump freighter watch: JF losses EVE-wide in #jf-gank-board (runbook 12) ---
+ORLOVBOT_JFWATCH_CHANNEL = "jf-gank-board"       # channel name; "" switches the watch off
+ORLOVBOT_JFWATCH_SPACE = ["highsec", "lowsec"]   # also possible: "nullsec", "wormhole"

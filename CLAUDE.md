@@ -5,7 +5,7 @@ Documentation and deployment config for **The Orlov Family** (EVE Online allianc
 
 - `docs/research/` — why Alliance Auth was chosen over SeAT/Neucore, the phased plan, moon timers, and the ship-building dashboard plan (`04`)
 - `docs/design/membership.md` — states, groups → Discord roles, policies (source of truth for AA config)
-- `docs/runbooks/` — step-by-step, beginner-level runbooks (`00` Day 0 prep, `01` deploy, `02` membership + Discord, `03` nicknames + Member Audit, `04` operations, `05` cloud SSH attempt — superseded, `06` Claude Code on the PC with server access, `07` Day 5 moon timers)
+- `docs/runbooks/` — step-by-step, beginner-level runbooks (`00` Day 0 prep, `01` deploy, `02` membership + Discord, `03` nicknames + Member Audit, `04` operations, `05` cloud SSH attempt — superseded, `06` Claude Code on the PC with server access, `07` Day 5 moon timers, `08` Day 6 `/moons` slash command, `09` moon board in Discord, `10` structure board in Discord, `11` kill feed in `#zkillboard`, `12` jump freighter watch in `#jf-gank-board`)
 - `docs/guides/` — documents for other people: the member guide (for `#how-to-auth`) and the corp CEO onboarding checklist
 - `docs/handoff.md` — shared notebook between the cloud and local session (see "Session handoff")
 - `deploy/` — what differs from the upstream `aa-docker` stack on the server (sanitized; no secrets)
@@ -38,6 +38,7 @@ The cloud session and the local session share one notebook: **`docs/handoff.md`*
 - **Before resuming work with the owner:** `git pull`, then read the top entry of `docs/handoff.md`. Don't ask the owner to recap what is written there.
 - **Before the owner switches sessions** (a chunk of work is finished, or the owner says they are moving to the other session): add a new entry at the top, commit, push. Entry = date, which session wrote it, runbook + section, what was done, findings/corrections, what the owner still has to do by hand, and what is next for the other session.
 - A prompt for the other session (see "Division of labour" under Server access) goes in that entry's "Next" section instead of in chat. **Whenever the local session can do the next step, the cloud session writes the handoff entry, pushes, and replies with only the trigger phrase for the owner to type into the local session: "pull the latest and pick up the handoff"** (owner's rule, 2026-10-04). Nothing else is needed in chat; the entry carries the context. The rules under Server access still apply to whatever the entry asks for: state changes are announced first, one at a time.
+- **Owner's command "update on progress"** (owner's rule, 2026-10-05; applies to every session — cloud, PC, laptop): `git pull`, read what came in (commit log, the top entry of `docs/handoff.md`, changed runbooks and `deploy/` files) so you know what the owner did in other sessions. Then reply with a short confirmation only: that updates were found (or that there were none) and that you are up to date, plus the open step in one line. No lengthy recap, no work on the server.
 - Newest entry on top; keep the last five, older ones live in git history. No secrets, and no fenced blocks in the file.
 
 ## Secrets

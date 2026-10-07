@@ -3,6 +3,7 @@
 *Prerequisite: Days 0–4 and runbook 06 complete. First Athanor online with an extraction running (done 2026-10-04).*
 *Time: ~1.5 h, of which ~45 min is waiting for EVE data loads. Server sections are run by Claude in the **local session** (say "run Day 5 section B"); browser and Discord sections are yours.*
 *Convention: one code block = one Enter. Blocks that must be pasted whole are labelled.*
+*Update 2026-10-05 (end of day): the owner dropped all moon pings and removes `#moon-timers`; the always-current board in `#moon-board` (runbook 09) replaces them. On the server the two reminder rules, the Structure Timers webhook and the aa-structures "Moon Timers" webhook are switched off (rows kept, so they can be switched back on in the admin with a new webhook URL). Sections A2–A3, C, E3–E4 and the `#moon-timers` parts of the goal describe the earlier setup. Fuel and attack alerts to `#directors` are unchanged.*
 
 **Goal:** every moon extraction shows up as a timer, both in Discord (`#moon-timers`: "chunk arrives Fri 16 Oct 18:00", a reminder 1 h before, and "field is up") and on auth (a timer board plus the Moon Mining page with ore values and the mining ledger). Public Athanors in Piekura can be added to the same board by hand.
 
@@ -19,14 +20,15 @@ Decisions baked in (research in `docs/research/03-moon-extraction-timers.md`):
 | Server | `ssh orlov` → `~/aa-docker` (local session runs this) |
 | Admin | https://auth.orlovfamily.space/admin/ |
 | Packages added | `aa-structures==4.0.4`, `aa-moonmining==3.1.0`, `aa-structuretimers==3.2.0` |
-| Token character | Flapoor Hendrik, CEO of "Kazen die stinken zijn lekkerder" [KHAAS] (started the extraction) |
+| Token character | **Vieze Jonge Pass**, sole member (so CEO) of "Gewoon voor structures" [GWON], already on the `tony` auth account. The Athanor was transferred there from "Kazen die stinken zijn lekkerder" [KHAAS]; Flapoor Hendrik (KHAAS CEO) started the extraction but is no longer the token character. |
+| Structures read | Athanor "Orlov Mining Facility I" at Piekura V - Moon 1 and Raitaru "Orlov Family Facilities" in Isikano, both owned by GWON |
 | Channels | `#moon-timers` (new, ALLIANCE category), `#directors` (exists) |
 
 ---
 
 ## A. Preparation (browser + Discord, 10 min)
 
-**A1. Register the holding-corp character on auth.** Done on the server side 2026-10-04 (Flapoor Hendrik was detached from the test user; see `docs/handoff.md`). What remains is yours: log in to https://auth.orlovfamily.space with your **own `tony` account** (SSO with Catherine Frey or any character already on it) → dashboard → **Add Character** → log in with **Flapoor Hendrik** in the EVE SSO window → accept all scopes. He appears as an alt with corp "Kazen die stinken zijn lekkerder", no alliance; your state stays `Family Member` (states follow the main). ⚠️ Don't log in with Flapoor Hendrik while logged out of auth — that creates a separate user. Then **Member Audit → Add character** → Flapoor Hendrik again (his old token only had public scopes).
+**A1. Register the holding-corp character on auth.** *Update 2026-10-05: the Athanor now belongs to "Gewoon voor structures" [GWON], whose character Vieze Jonge Pass is already on the `tony` account, so nothing more is needed here for section E. The Flapoor Hendrik steps below are kept as the record of what was done.* Done on the server side 2026-10-04 (Flapoor Hendrik was detached from the test user; see `docs/handoff.md`). What remains is yours: log in to https://auth.orlovfamily.space with your **own `tony` account** (SSO with Catherine Frey or any character already on it) → dashboard → **Add Character** → log in with **Flapoor Hendrik** in the EVE SSO window → accept all scopes. He appears as an alt with corp "Kazen die stinken zijn lekkerder", no alliance; your state stays `Family Member` (states follow the main). ⚠️ Don't log in with Flapoor Hendrik while logged out of auth — that creates a separate user. Then **Member Audit → Add character** → Flapoor Hendrik again (his old token only had public scopes).
 
 **A2. Create `#moon-timers`** in Discord: right-click the `ALLIANCE` category → **Create Channel** → text, name `moon-timers`. Channel → **Edit Channel → Permissions**: `Family Member` View ✅ Send ❌; `Family Friend` ❌; `@everyone` ❌ (friends don't mine our moons). Leave the category default otherwise.
 
@@ -183,6 +185,8 @@ docker compose ps | grep -E "gunicorn|beat|worker"
 
 ## C. Webhooks and notification routing (browser, 10 min)
 
+*Done 2026-10-05 by the local session via Django (see `docs/handoff.md`); test messages sent to both channels.*
+
 **C1. aa-structures webhooks** — https://auth.orlovfamily.space/admin/structures/webhook/add/, twice:
 
 | Field | Webhook 1 | Webhook 2 |
@@ -202,7 +206,7 @@ docker compose ps | grep -E "gunicorn|beat|worker"
 | Trigger | Scheduled time reached | Scheduled time reached |
 | Scheduled time | 60 minutes before | 0 minutes (at the time) |
 | Webhook | `Moon Timers` | `Moon Timers` |
-| Ping type | none | `@here` |
+| Ping type | `@here` (was none until 2026-10-05; owner wants a ping 1 hour before) | `@here` |
 | Require timer types | `Moon Mining` | `Moon Mining` |
 | Is enabled | ✅ | ✅ |
 
@@ -210,27 +214,33 @@ Leave the other filter clauses empty (apply to all moon timers, ours and public 
 
 ## D. Permissions (browser, 5 min)
 
-https://auth.orlovfamily.space/admin/groupmanagement/group/ → open each group → **Permissions** box (search by the text after the pipe):
+*Done 2026-10-04 by the local session (via Django, see `docs/handoff.md`).*
 
-| Group | Add permissions |
+`Family Member` is a **state**, not a group: https://auth.orlovfamily.space/admin/authentication/state/. The two director groups are at https://auth.orlovfamily.space/admin/groupmanagement/group/. Open each → **Permissions** box (search by the text after the pipe):
+
+| State / group | Add permissions |
 |---|---|
-| `Family Member` | `moonmining \| general \| Can access the moonmining app`, `moonmining \| general \| Can access extractions and view owned moons`, `structuretimers \| general \| Can access this app and see timers` |
-| `Alliance Director` | all of the above plus `moonmining \| general \| Can add refinery owner`, `moonmining \| general \| Can view moon ledgers`, `moonmining \| general \| Can access reports`, `structures \| general \| Can add new structure owner`, `structures \| general \| Can view all structures`, `structures \| general \| Can view structure fittings`, `structuretimers \| general \| Can create new timers and edit own timers`, `structuretimers \| general \| Can edit and delete any timer` |
-| `Corp Director` | `structures \| general \| Can view corporation structures`, `structuretimers \| general \| Can create new timers and edit own timers` |
+| `Family Member` (state) | `moonmining \| general \| Can access the moonmining app`, `moonmining \| general \| Can access extractions and view owned moons`, `structuretimers \| general \| Can access this app and see timers` |
+| `Alliance Director` (group) | all of the above plus `moonmining \| general \| Can add refinery owner`, `moonmining \| general \| Can view moon ledgers`, `moonmining \| general \| Can access reports`, `structures \| general \| Can access this app and view public pages`, `structures \| general \| Can add new structure owner`, `structures \| general \| Can view all structures`, `structures \| general \| Can view structure fit`, `structuretimers \| general \| Can create new timers and edit own timers`, `structuretimers \| general \| Can edit and delete any timer` |
+| `Corp Director` (group) | `structures \| general \| Can access this app and view public pages`, `structures \| general \| Can view corporation structures`, `structuretimers \| general \| Can create new timers and edit own timers` |
 
-**Save** each. Log out and in once so your own permissions refresh.
+The Structures "access this app" permission is required for the other Structures permissions to do anything. **Save** each. Log out and in once so your own permissions refresh.
 
 ## E. Register the Athanor (browser, 5 min — after the task queue is empty)
 
-**E1. Structures → Add Owner** (left menu). The SSO window opens: log in with the **holding-corp character**, accept the scopes. ✅ Within a minute the Structures page lists the Athanor with fuel days; `#directors` may get a "structures owner added" note.
+*E1 and E2 done 2026-10-05 with Vieze Jonge Pass: Structures lists both GWON structures, Moon Mining shows the running extraction (chunk arrives Sat 10 Oct 17:01 EVE time). The timer for this first cycle was created by the local session (timer 1, Sat 10 Oct 17:01), so the `@here` reminders are scheduled for 16:01 and 17:01 EVE time.*
+
+**E1. Structures → Add Owner** (left menu). The SSO window opens: log in with the **holding-corp character** (Vieze Jonge Pass, corp GWON), accept the scopes. ✅ Within a minute the Structures page lists the Athanor with fuel days; `#directors` may get a "structures owner added" note.
 
 **E2. Moon Mining → Add Owner** → same character, accept. ✅ Moon Mining → *Extractions* shows your moon with the chunk arrival time; *Owned Moons* lists it. Values fill in at the next hourly report run.
 
-**E3. Structure Timers** (left menu) → the extraction appears as a `Moon Mining` timer with the arrival time (added by aa-structures from the `MoonminingExtractionStarted` notification; up to 5 min after E1). If it doesn't within 15 min, see Troubleshooting.
+**E3. Structure Timers** (left menu) → the extraction appears as a `Moon Mining` timer with the arrival time (added by aa-structures from the `MoonminingExtractionStarted` notification; up to 5 min after E1). If it doesn't within 15 min, see Troubleshooting. *For this first cycle expect it not to: the extraction was started under KHAAS, so the "extraction started" notification went to Flapoor Hendrik, not to the GWON character the apps now read. Add the timer by hand (section F, step 2). The same goes for the "Extraction started" post in E4.*
 
 **E4. Discord** → `#moon-timers` has the "Extraction started" post with the ore list and arrival time. The reminder and `@here` posts come from the rules in C2 when the time arrives.
 
 ## F. Public Athanors in Piekura (optional, by hand)
+
+*Not used — owner's decision 2026-10-05: only our own moon in Piekura is tracked, no public timers. Step 2 below is only relevant as the way to add our own timer by hand when the automatic one is missing (as in the first cycle).*
 
 ESI only exposes extractions to the owning corp, so other people's cycles can't be read automatically. What you can do:
 
@@ -246,13 +256,14 @@ Say "run the backup script", then "commit the Day 5 config changes" — the depl
 
 ## Day 5 completion checklist
 
-- [ ] Holding-corp character registered on auth (A1)
-- [ ] `#moon-timers` exists, two webhooks created and test messages received (A2–A3, C1)
-- [ ] Three apps installed, migrations and data loads done, task queue drained (B)
-- [ ] Two structuretimers rules: 60 min reminder, `@here` at pop (C2)
-- [ ] Permissions set for the three groups (D)
-- [ ] Athanor visible in Structures and Moon Mining; timer on the board; "Extraction started" in Discord (E)
-- [ ] Backup taken (G)
+- [x] Holding-corp character registered on auth (A1)
+- [x] `#moon-timers` exists, two webhooks created and test messages received (A2–A3, C1)
+- [x] Three apps installed, migrations and data loads done, task queue drained (B)
+- [x] Two structuretimers rules: 60 min reminder, `@here` at pop (C2)
+- [x] Permissions set for the three groups (D)
+- [x] Athanor visible in Structures and Moon Mining (E1–E2)
+- [x] Timer on the board (E3; created by hand for this first cycle, no "Extraction started" post because the extraction began under KHAAS)
+- [x] Backup taken (G) — `aa-db-2026-10-05-1028.sql.gz`
 
 ## Troubleshooting
 
@@ -263,4 +274,4 @@ Say "run the backup script", then "commit the Day 5 config changes" — the depl
 - **Test notification fails** → the channel's webhook was deleted, or the URL was pasted with a trailing space.
 - **Tasks pile up in the queue** → normal during the map load; if still >0 an hour later, `docker compose logs --tail 50 allianceauth_worker` in the local session. (The queue is split by priority in redis, so `llen celery` alone reads 0; trust the dashboard's *Task Queue* panel, or have the local session sum all `celery*` list keys.)
 
-**Next:** when the first chunk pops (Fri 16 Oct if scheduled as planned), check that `#moon-timers` got the reminder and the `@here`, and that Moon Mining → *Ledger* fills in once people mine. Then decide whether `aa-opcalendar` (pinned "upcoming events" embed) is worth adding.
+**Next:** when the first chunk pops (Sat 10 Oct 17:01 EVE time), check that `#moon-timers` got the reminder and the `@here`, and that Moon Mining → *Ledger* fills in once people mine. A `/moons` slash command that lists the upcoming extractions on request is runbook 08. A 24-hour reminder was considered and dropped (owner's decision; the admin only offers up to 120 minutes).

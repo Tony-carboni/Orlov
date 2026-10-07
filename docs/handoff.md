@@ -4,113 +4,190 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
-## 2026-10-04 (14:40 UTC) — cloud session → local session
+## 2026-10-06 (12:45 UTC) — local session (PC) → either session
 
-**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — sections C and D moved to the local session (database rows, no browser needed). E stays with the owner (SSO login).
+**Not a runbook step.** Membership changes on the owner's instruction, plus a research document.
 
-### Status
-- Owner reports A1–A3 done (Flapoor Hendrik on the `tony` account, `#moon-timers` created, two webhook URLs saved in Bitwarden).
-- Section B done (previous entry). Task queue empty.
+### Done (auth, via Django)
+- **Go Browns [GB44]** (corp_id 98845722) was accepted into the alliance; ESI shows the alliance only after the 24 h join delay. One-off: GB44 added to the `Family Member` state's `member_corporations` (now OARMI, GWON, GB44). Auth moved **Masterxxx** and **MrFreshy_Valterus** (3 characters) from Family Friend to Family Member at once; Discord roles and `[GB44]` nicknames followed within a minute.
+- Both users added to the **Corp Director** group (owner's instruction); the Discord role followed. Corp Director members are now tony, Masterxxx, MrFreshy_Valterus.
+- **Open: remove GB44 from the state's corporations once ESI shows Go Browns in ORLOV** (admin → Authentication → States → Family Member, or via Django), so membership follows the alliance again. Noted in `docs/design/membership.md`.
 
-### Next — local session: do runbook 07 sections C and D via Django, then hand E to the owner
-All through `docker compose exec -T allianceauth_gunicorn python /home/allianceauth/myauth/manage.py shell` with a script on stdin. Announce each write first, one at a time, show results. Never echo the webhook URLs back into chat, logs, or files; never commit them.
-1. Ask the owner to paste the two Discord webhook URLs into this chat: one for `#moon-timers` (name "Moon Timers"), one for `#directors` (name "Structure Alerts"). Treat them as secrets.
-2. C1, aa-structures: inspect `structures.models.Webhook` fields and the notification type choices (`structures.core.notification_types.NotificationType` or the field's choices). Create two webhooks: "Moon Timers" with every type whose value starts with `Moonmining` (ExtractionStarted, ExtractionFinished, AutomaticFracture, LaserFired, ExtractionCancelled); "Structure Alerts" with every type whose value starts with `Structure` (fuel alert, under attack, lost shields/armor, destroyed, low/high power, services offline, anchoring/unanchoring, reinforcement changed, refueled extra) — exclude Moonmining, sovereignty, orbital, tower, war and billing types. Both `is_active=True`, `is_default=True`, language `en`. Then send a test message through each (the model's test-message method, the one the admin action uses) and ask the owner to confirm both arrived in Discord.
-3. C2, aa-structuretimers: create `structuretimers.models.Webhook` "Moon Timers" (same `#moon-timers` URL, enabled). Create two `NotificationRule` rows, both enabled, webhook = that one, require timer types = the Moon Mining type only, all other filters empty: rule 1 trigger = scheduled time reached, 60 minutes before, ping type none; rule 2 trigger = scheduled time reached, 0 minutes (at the time), ping type `@here`. Inspect the model's choice constants first (trigger, scheduled_time, ping_type, timer type code for moon mining) and use those, don't guess numbers. No "new timer created" rule.
-4. D, permissions on the three groups, via `django.contrib.auth.models.Permission` looked up by `content_type__app_label` + `codename` (list the codenames of app labels `moonmining`, `structures`, `structuretimers` first and map by their descriptions):
-   - Family Member: moonmining basic access, moonmining extractions access, structuretimers basic access.
-   - Alliance Director: everything Family Member gets, plus moonmining add refinery owner, view moon ledgers, reports access; structures add structure owner, view all structures, view structure fittings; structuretimers create/edit own timers, manage (edit/delete any) timers.
-   - Corp Director: structures view corporation structures, structuretimers create/edit own timers.
-   Show the final permission list per group.
-5. Verify: 2 structures webhooks, 1 structuretimers webhook, 2 notification rules, permission counts per group. Then tell the owner: "log out and in once on auth, then do runbook 07 section E (Structures → Add Owner, Moon Mining → Add Owner, both with Flapoor Hendrik)".
-6. After the owner reports E done: check `structures` Owner rows (1, corp KHAAS), Structure rows (the Athanor, fuel expiry), `moonmining` Owner/Refinery/Extraction rows (chunk arrival time), `structuretimers` Timer rows (1 moon mining timer; if 0 after 15 min, say so — the "extraction started" notification may be too old, see runbook Troubleshooting), and the Notification rows for the Moonmining type and whether they were sent to the webhook. Report.
-7. Section G: run `~/bin/aa-backup.sh`; confirm server `conf/requirements.txt` and the Day 5 block of `conf/local.py` match `deploy/`. Also fix the Member Audit warning memberaudit.W001: in both server `conf/local.py` and repo `deploy/conf/local.py.append`, change the `memberaudit_run_regular_updates` schedule from the crontab to `3600` (seconds), then `docker compose restart allianceauth_beat` and confirm `check` has no warning. Commit the repo change.
-8. Write the next handoff entry (what was done, any model/field names that differed, E results), commit, push.
-Rules from CLAUDE.md apply.
+### Also
+- `docs/research/04-corp-industry-and-projects.md`: how corp blueprints, hangars, Corporation Projects and payouts work, with scenarios and theft risks; for the owner to consult.
 
 ---
 
-## 2026-10-04 (14:15 UTC) — local session (PC) → cloud session
+## 2026-10-06 — local session (laptop) → either session
 
-**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — section B complete. Sections C–E are next (browser, owner + cloud session).
-
-### Done (local, on the server)
-- Backup before changes: `~/backups/aa-db-2026-10-04-1327.sql.gz` ("backup ok", exit 0). Copies of the pre-change config: `~/backups/requirements.txt.pre-day5`, `~/backups/local.py.pre-day5`.
-- B1: `conf/requirements.txt` now has the four package lines (memberaudit 5.2.0, structures 4.0.4, moonmining 3.1.0, structuretimers 3.2.0).
-- B2: Day 5 block appended to `conf/local.py` straight from `deploy/conf/local.py.append` (128 → 174 lines, syntax ok), so server and repo are identical for that block.
-- B3: build exit 0, `up -d` recreated gunicorn, beat and the three workers, nginx restarted. Site answers (302 to login, login page 200).
-- B4: `check` ok; `migrate` applied 24 migrations (moonmining 7, structures 9, structuretimers 8), all OK; `collectstatic` copied 119 files; all four data loads run.
-- Verified at 14:10 UTC: task queue **0** (all priorities); eveuniverse has 114 regions, 1184 constellations, 8490 solar systems, **Piekura present**; 460 moonmining ore types; Athanor type present; the new periodic tasks are firing (structures fetch/update, moonmining regular updates, structuretimers dispatch); no errors in the container logs or `allianceauth.log` since rollout. Structures owners 0, webhooks 0, timers 0 — as expected before C–E.
-
-### Differences from the runbook
-- `eveuniverse_load_eve` does not exist; the command is **`eveuniverse_load_data map`**. Runbook B4 corrected. The map load finished in under 10 minutes, not 30–45.
-- `structuretimers_load_eve` and `moonmining_load_eve` have no `--noinput`; `y` was piped on stdin. `structures_load_eve` and `eveuniverse_load_data` accept `--noinput`.
-- `redis-cli llen celery` always reads 0 here: Alliance Auth splits the queue into priority keys. The real number is the sum over all `celery*` list keys (or the dashboard's Task Queue panel). Runbook troubleshooting updated.
-- Extra safety step, not in the runbook: before `up -d`, `manage.py check` was run in a throwaway container from the new image (needs `--entrypoint python`, the image's entrypoint is gunicorn).
-
-### Findings (not acted on)
-- Django check warning **memberaudit.W001**: `CELERYBEAT_SCHEDULE["memberaudit_run_regular_updates"]` uses a crontab; Member Audit 5.2.0 wants a number of seconds (e.g. 3600). Dates from Day 3, harmless so far. Decide with the owner; fix needs an edit to `conf/local.py` + `deploy/conf/local.py.append` and a restart of beat.
-- Server `conf/requirements.txt` has no comment header (the repo copy has two comment lines); package lines match.
-- Local-session permissions: the app's Auto mode refuses state changes on the server ("Modify Shared Resources"). The owner switched this session to **Manual** mode and approves each command. Expect the same for future server work.
-
-### Owner does by hand (browser) — status not confirmed
-- A1: Add Character (Flapoor Hendrik) on the `tony` account + Member Audit registration.
-- A2–A3: `#moon-timers`, the two webhooks, URLs in Bitwarden.
-
-### Next — cloud session
-The task queue is empty, so E is no longer blocked by the data load. Walk the owner through C (webhooks and rules), D (permissions) and E (register the Athanor) in the browser. Ask first whether A1–A3 are done. When E is finished, hand back to the local session for G (backup + verify server matches `deploy/`).
-
----
-
-## 2026-10-04 — cloud session → local session
-
-**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — section B (install the three apps).
-
-### Done (cloud)
-- Read the previous entry. Runbook 07 corrected: A1 now says the owner's auth account is `tony` (main Catherine Frey), warns against logging in as Flapoor Hendrik while logged out, and adds re-registering him in Member Audit. B4 notes the `manage.py` path for non-interactive use.
-- `deploy/conf/requirements.txt` and `deploy/conf/local.py.append` already carry the Day 5 lines (block starts at the comment line "# --- Day 5: moon timers"). Use them as the source for the server edits so the two stay identical.
-
-### Owner does by hand (browser), can run in parallel with section B
-- A1: Add Character (Flapoor Hendrik) on the `tony` account, then Member Audit registration.
-- A2–A3: create `#moon-timers`, two webhooks, save the URLs in Bitwarden.
-
-### Next — local session: run runbook 07 section B
-Context: install aa-structures 4.0.4, aa-moonmining 3.1.0, aa-structuretimers 3.2.0 into the custom image, exactly as runbook 07 section B describes. Announce each state change first, one at a time, show output. Steps:
-1. Check the stack is up (compose ps). Run `~/bin/aa-backup.sh`; confirm by the printed "backup ok" and the new file in `~/backups`.
-2. B1: append the three pinned package lines to `~/aa-docker/conf/requirements.txt` so it matches `deploy/conf/requirements.txt` in the repo (4 lines total; do not duplicate memberaudit). Show the file.
-3. B2: append the Day 5 block from `deploy/conf/local.py.append` (from the line "# --- Day 5: moon timers" to the end of the file) to `~/aa-docker/conf/local.py`. Check first that `conf/local.py` does not already contain "structuretimers" (idempotent). Show the last 10 lines afterwards. Do not print any other part of local.py and never print .env.
-4. B3: `docker compose --env-file=.env build` (takes ~5 min; report the tail of the output), then `docker compose --env-file=.env up -d`, then `docker compose restart nginx`. Confirm https://auth.orlovfamily.space answers 200 (curl -sI from the server or the PC).
-5. B4, all via `docker compose exec -T allianceauth_gunicorn python /home/allianceauth/myauth/manage.py <cmd>`: `check`, `migrate`, `collectstatic --noinput`, `eveuniverse_load_eve map --noinput`, `structures_load_eve`, `structuretimers_load_eve`, `moonmining_load_eve`. If a load command has no `--noinput`, pipe `y` on stdin. Report what each printed.
-6. Verify: compose ps shows gunicorn, beat, worker Up; the task queue is draining (`docker compose exec -T redis redis-cli llen celery` every few minutes until it trends down; the map load takes ~30–45 min). Report the queue length when you finish.
-7. Write the next handoff entry (what was done, queue status, anything that differed from the runbook), commit, push. The owner then does sections C–E in the browser with the cloud session.
-Rules from CLAUDE.md apply (backup first, no rm -rf, nothing in mysql-data/, never print .env).
-
----
-
-## 2026-10-04 — local session (PC) → cloud session
-
-**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — preparing the holding-corp CEO character.
+**Topic:** Discord's join messages moved from `#how-to-get-roles` to `#public-chat`.
 
 ### Done
-- Stack checked: all 10 containers up, health-checked ones healthy.
-- Backup before changes: `~/backups/aa-db-2026-10-04-1312.sql.gz` (script printed "backup ok", exit 0).
-- **Flapoor Hendrik detached from the test user.** Deleted via Django ORM: CharacterOwnership pk 15, OwnershipRecord pk 15, esi Token pk 36 (scope `publicData` only). Verified 0 rows of each remain. His EveCharacter row is kept: pk 7, character_id 2117517330, corp "Kazen die stinken zijn lekkerder" [KHAAS], corp_id 98845682, no alliance.
-- Test user (id 3, username `Flapoor_Hendrik`): main Gewoon Rudi, state Family Member, group `corp_OARMI`, owns only Gewoon Rudi. It was already in that state before the deletes; no main change or state check was needed. Gewoon Rudi's ownership (pk 16) and token untouched.
+- The "welcome" lines when somebody joins were **Discord's own system messages**, not the bot: the server's System Messages Channel was `#how-to-get-roles` (flags 0 = all system message types on). The bot has no welcome feature active (`DISCORD_BOT_COGS` = about, time; aadiscordbot WelcomeMessage/GoodbyeMessage tables empty).
+- Changed the server setting to `#public-chat` through the Discord service's API client (`PATCH guilds/{id}` with `system_channel_id`), read back: system messages channel = public-chat. Reversible in Discord: Server Settings → Overview → System Messages Channel.
+- No repo files other than this one changed. Previous session's open items (owner checks of `#jf-gank-board`, `#zkillboard`, the 3 Nov reinforcement date, Go Browns joining, profile names, Alliance Director read-only on the boards) are unchanged; see the 2026-10-05 15:15 entry.
 
-### Findings / corrections
-- **There is no character "Tony Carboni" in auth.** The owner's account is user id 1, username `tony` (superuser), main **Catherine Frey**, 10 characters: Catherine Frey, Doe-het-zelf Roger, JFFUELFUND, Sorema Rinah, Tommy McPhee, Vieze Jonge Pass, carbondnb, fluorescent pony, lkdsfjmqsfd, phosphorescent pony. Fix the runbook wherever it names "Tony Carboni" as the main.
-- The memberaudit Character for Flapoor Hendrik (pk 9) was **not** deleted by cascade: in this version it links to EveCharacter, not CharacterOwnership. It still exists, currently unowned.
-- Other users: id 2 `Gewoon_Rudi` (no main, Guest, no characters — leftover empty user), id 4 `Nashomon_Yoma_Itinen` and id 5 `Tavaga` (Family Member), id 6 `Claudio_Madullier` (Family Friend).
 
-### Owner still has to do (browser) — not confirmed done when this was written
-1. Log in to auth as the `tony` account (e.g. with Catherine Frey). Not with Flapoor Hendrik while logged out — auth would create a new separate user for him.
-2. Dashboard > Add Character > pick Flapoor Hendrik on EVE SSO.
-3. Register Flapoor Hendrik in Member Audit again (his old token had only `publicData`).
+---
 
-### Next
-Cloud session: continue Day 5 from the step after the character move, with Flapoor Hendrik as the holding-corp CEO character on the `tony` account. Ask the owner whether the three browser steps above are done.
+## 2026-10-05 (15:15 UTC) — local session (laptop) → either session
 
-### Notes for prompts aimed at the local session
-- `auth shell` does not work through `docker compose exec` (no `auth` executable in the container). Use `python /home/allianceauth/myauth/manage.py shell` in the `allianceauth_gunicorn` container with `exec -T`, script piped on stdin.
-- A manual run of `~/bin/aa-backup.sh` prints "backup ok" to the screen but does not append to `~/backups/backup.log` (only the 03:30 cron run does). Confirm manual backups by the printed line and the new file in `~/backups`.
-- On the PC, Git Bash's `ssh` cannot read the `orlov-claude` key; the local session uses Windows OpenSSH (`ssh` from PowerShell).
+**Topics:** structure board war banner (see below), and joining corp **Go Browns [GB44]** prepared in the role system before any of its members authed. **Corrected by the owner at 15:45 UTC: GB44 is not yet in the alliance, so its members are Family Friend until it is.** Design doc `docs/design/membership.md` updated.
+
+### Done on the server (via Django, Alliance Auth's own functions)
+- Corp looked up on public ESI: Go Browns, ticker GB44, corporation_id 98845722, 11 members, founded 2026-10-03, **no alliance**, CEO Masterxxx (character_id 2122385466).
+- `EveCorporationInfo` created (pk 9). It was first added to the `Family Member` state's member corporations and **removed again at 15:45 UTC on the owner's instruction**: nobody gets Family Member before their corp is actually in The Orlov Family in game. The state is back to alliance ORLOV plus corps OARMI and GWON. No GB44 account existed on auth in between. Rule recorded in `docs/design/membership.md`: a joining corp is not listed on the state.
+- Auto-group `corp_GB44` created in advance with `AutogroupsConfig.create_corp_group()` (group pk 10, managed link to config pk 3, 0 members).
+- Discord role `corp_GB44` created in advance with the Discord service's `match_or_create_role_from_name()` (role id 1556685567536930900, no colour, no permissions, at the bottom of the role list).
+
+### What happens when a Go Browns member auths
+- While GB44 is outside the alliance: state Family Friend → Discord roles `Family Friend` + `corp_GB44` (the corp auto-groups cover both states), nickname `[GB44] Name`.
+- Once GB44 is in alliance ORLOV in game: Family Member follows by itself at auth's next character update, because the state is keyed on the alliance. Nothing to configure.
+
+### Structure board: war banner (owner's request, deployed 15:14 UTC)
+- War eligibility removed from the board (and the public ESI read for it). New first line in heading size: green circle + "NOT AT WAR", or red circle + "AT WAR" while any registered corp has a declared or running war. The war detail lines and the red colour bar are unchanged; the "Wars: none declared or running" line is gone.
+- `deploy/orlovbot/cogs/structures.py` → server `~/aa-docker/orlovbot/cogs/structures.py` (old copy: `~/backups/structures.py.pre-war-banner`). Dry run in a fresh process first (live data green, synthetic war red, no alerts planned), then only the bot restarted. Bot output: "Structure status: board updated in #structure-board".
+- Not yet confirmed by the owner: that Discord draws the banner as a big heading. If it shows as a plain line starting with `#`, change `BANNER_PEACE` / `BANNER_WAR` to a bold line.
+
+### Early Founders badge (owner's request, 15:25 UTC; first named Founder, renamed 15:35 UTC)
+- Auth group `Early Founders` (pk 11, internal, no permissions) and Discord role `Early Founders` (id 1556687406663598113, no colour, no permissions). Created as `Founder`, then renamed on the owner's request: the Discord role in place through the Discord service's API client (same id), then the group. Auth's own rate limiter stops a burst of Discord calls; pause between them.
+- Rule decided by the owner (the literal request "joined before 2026" matched nobody: alliance founded 2026-10-01): **every Family Member account before 2027-01-01**; Go Browns members count once they are Family Member. Written into `docs/design/membership.md`.
+- Added: tony, Flapoor_Hendrik (main Gewoon Rudi), Nashomon_Yoma_Itinen, Tavaga. All four verified to have the role in Discord.
+- Not automatic. When the owner says "refresh the founders": add every account with state Family Member to the group (add-only), as long as the date is before 2027-01-01. Go Browns members need this once their corp is in the alliance and they show as Family Member.
+
+### Kill feed (runbook 11, owner's request, live 15:39 UTC)
+- New bot module `orlovbot/cogs/killfeed.py`: every 5 minutes it reads `zkillboard.com/api/allianceID/99015337/` and posts unseen killmails (not older than 3 days) in `#zkillboard` (category `bots`, created by the owner): green kill, red loss, max 10 per check, no pings. Seen ids live in the Django cache under `orlovbot:killfeed:seen`; a test post is queued with the cache key `orlovbot:killfeed:test`.
+- Server: `orlovbot/` updated (old folder: `~/backups/orlovbot.pre-killfeed`), `conf/local.py` + "Kill feed" block (210 lines; copy from before: `~/backups/local.py.pre-killfeed`). Dry run clean (11 logic checks pass), only the bot restarted. Bot output: module loaded, "first run, 2 existing killmails count as already posted", "posted test (Loss: Capsule (Nashomon Yoma Itinen))".
+- Slip to know about: the backup command contained an `rm -rf` on a path in `~/backups` that did not exist. Nothing was deleted, but it breaks the CLAUDE.md rule; do not repeat.
+
+### Boards: "Last checked" (owner's request, same deployment)
+- `orlovbot/board.py`: every board now ends with an entry "Last checked" (`<t:…:R>` and `<t:…:t>`), and the bot edits the board at every 10-minute check instead of only on change. "board updated" is still logged only when the content changed. Runbooks 09 and 10 updated.
+
+### Board tidy-up after the owner looked (15:41–15:43 UTC, three bot restarts)
+- Owner confirmed the war banner renders as a big heading with the green circle.
+- Structure board: the "Structure data read from EVE" line is gone (the owner saw two times). It now appears only as a warning when the data is more than 90 minutes old (`DATA_STALE_AFTER` in `structures.py`), which also turns the colour bar orange.
+- Both boards: footer "Kept up to date automatically, checked every 10 minutes" removed (`board.py`).
+- Moon board and `/moons`: the "Your time" line was removed at 15:43 and **restored at 15:46 UTC as "In your time zone"** (`moons.py`). The owner had read it as the current time; it is the chunk's arrival time in the reader's device time zone (17:01 EVE time = 7:01 PM at UTC+2), and the owner wants it kept.
+- Old copies in `~/backups`: `structures.py.pre-single-timestamp`, `board.py.pre-no-footer`, `moons.py.pre-no-local-time`.
+
+### Structure board: colours, bigger titles, "War over" ping (owner's requests, live 15:51 UTC)
+- Layout: each structure is now a `###` heading plus an `ansi` code block in the embed description (no embed fields any more). Colours: green normal state / full power / all services online; orange low power, services offline, fuel under 14 days; red abnormal state, abandoned, fuel under 7 days or none; fuel blue otherwise. The colour bar follows the worst line. The fuel hover link is gone (no links in code blocks); the run-out date is shown in grey.
+- Alerts: new `@everyone` "War over" ping when a known war is no longer declared or running. It replaces the "War declared" message and is removed after 24 h (`WAR_OVER_KEEP`). No false ping when the corp merely drops off the board. The daily fuel ping still starts at 7 days.
+- Dry run before the restart: live and synthetic layouts built, 12 alert scenarios pass. Bot output after restart: "Structure status: board updated in #structure-board", 0 errors. Old code: `~/backups/structures.py.pre-colours`.
+- Not yet confirmed by the owner: how the coloured panels look, on desktop and on a phone (older phone apps may show the colours differently). Fallback if disliked: restore the backup file and restart the bot.
+
+### Structure board: reinforcement hour (owner's request, live 15:57 UTC)
+- New line "Reinforce: HH:00 EVE" per structure, from aa-structures (`reinforce_hour`, `next_reinforce_hour`, `next_reinforce_apply`). Green when it equals `ORLOVBOT_STRUCTURE_REINFORCE_HOUR = 21` (new setting, appended to `conf/local.py`, now 214 lines; the contract with the mercenaries on retainer requires 21:00), and also green when 21 is set but not yet effective (owner, 16:00 UTC: the in-game delay cannot be beaten), shown as "21:00 EVE (from 03 Nov, now 04:00)". Red for any other hour and when a change away from 21 is scheduled. No ping for it.
+- Today both structures are green-pending: Orlov Family Facilities is at 04:00, Orlov Mining Facility I at 18:00, each with a change to 21:00 that EVE's data dates at 2026-11-03 18:35 UTC.
+- Notes in brackets are no longer grey (unreadable on the dark theme); they use the normal text colour. Discord's ansi palette has no lighter grey.
+- Old copies: `~/backups/structures.py.pre-reinforce-hour`, `~/backups/local.py.pre-reinforce-hour`, `~/backups/structures.py.pre-pending-green`.
+
+### Jump freighter watch (runbook 12, owner's request, live 16:03 UTC)
+- New module `orlovbot/cogs/jfwatch.py`: every 5 minutes one request to `zkillboard.com/api/losses/groupID/902/` (newest 200 JF losses, about two months). Highsec and lowsec only (zKillboard's `loc:` label; setting `ORLOVBOT_JFWATCH_SPACE`). A post per new loss (not older than 3 days) in `#jf-gank-board`, and a summary board "Jump freighter losses" kept as the last message: 24 h, 7 days vs the 7 before, 30 days, per-day bars, by hull, systems, final blows. `board.py` gained `drop()` (delete the board so it is re-posted at the bottom). Seen ids: cache key `orlovbot:jfwatch:seen`; test post: `orlovbot:jfwatch:test`.
+- Server: files installed (old folder: `~/backups/orlovbot.pre-jfwatch`), `conf/local.py` + "Jump freighter watch" block (218 lines; copy from before: `~/backups/local.py.pre-jfwatch`). Dry run clean; bot output: module loaded, "first run, 10 recent losses count as already posted", "posted test (Rhea lost in Oinasiken (lowsec))", "board posted in #jf-gank-board", 0 errors.
+- Same deployment: the structure board's fuel line no longer shows the run-out date in brackets (owner: just the days in colour).
+- The owner moved `#jf-gank-board` and `#structure-board` to a category "leadership bots"; the bot finds channels by name, so nothing changes for it.
+
+### Open (owner)
+- Look at `#zkillboard` (test post), `#moon-board` and `#structure-board` ("Last checked" entry) and confirm they look right.
+- Optional, in Discord: give the `Early Founders` role a colour or icon, and drag it where it should sit in the role list (it is at the bottom).
+- When the CEO (Masterxxx) has authed: add them to the `Corp Director` group, and have them add the Corp Stats token (`docs/guides/corp-ceo-onboarding.md`).
+- Tell a session when Go Browns has joined the alliance in game, so it can check the members switched to Family Member and refresh the founders.
+
+---
+
+## 2026-10-05 (later) — local session (PC) → either session
+
+**Runbooks:** `07-day-five-moon-timers.md` is **complete**. `08-day-six-moons-command.md`: A, B and C done; **D (owner tries `/moons` in Discord) is open.** `09-moon-board.md`: A and B done, the bot reported "Moon board posted in #moon-board" at 11:30 UTC; **C (owner confirms the message looks right) is open.** `10-structure-board.md`: A and B done, board posted 11:40 UTC; **C (owner confirms) and D (profile names) are open.**
+
+### Changed since the previous entry
+- **The Athanor moved corp.** The owner transferred it from KHAAS to **"Gewoon voor structures" [GWON]**, corp_id 98635713, 1 member, no alliance. The token character is **Vieze Jonge Pass** (sole member, so CEO; on the `tony` account), not Flapoor Hendrik. Wherever older entries say Flapoor Hendrik or KHAAS for E or step 6, read Vieze Jonge Pass and GWON.
+- The Athanor is now named **"Orlov Mining Facility I"** (was De Kaasfabriek), at Piekura V - Moon 1.
+
+### Owner's decisions (2026-10-05)
+- **No public timers.** Only the own moon in Piekura is tracked; runbook 07 section F is marked not used.
+- **Pings:** `@here` one hour before the chunk arrives (rule 1 changed from no ping) and `@here` at arrival (rule 2, unchanged). A 24-hour reminder was asked for and then withdrawn; it was not created. **Superseded later the same day: no moon pings at all, see "Pings switched off" below.**
+- **Wants a slash command** that lists the upcoming moon extractions on request → runbook 08.
+
+### Done on the server
+- Owner confirmed the three test messages arrived in Discord.
+- **E1–E2 (owner, browser)** with Vieze Jonge Pass. Verified: structures Owner 1 (GWON), active, both default webhooks attached; Structure 2 (Athanor "Orlov Mining Facility I" in Piekura, fuel until 2026-11-19 12:00 UTC; Raitaru "Orlov Family Facilities" in Isikano, fuel until 2026-11-06 14:00 UTC); moonmining Owner 1, Refinery 1, Extraction 1 (started 2026-10-04 07:08 UTC, **chunk arrives 2026-10-10 17:01 UTC**, auto fracture 20:01 UTC, status started — it survived the transfer).
+- structures Notification 120, all history; only the 2 `StructuresReinforcementChanged` from 2026-10-04 were sent to Discord. 0 `Moonmining…` notifications (the extraction started under KHAAS).
+- **structuretimers writes (announced, via Django):** rule 1 `ping_type` PN → PH; Timer pk 1 created for the current extraction (Athanor, Moon Mining, Piekura, 2026-10-10 17:01 UTC, objective friendly, user `tony`). Scheduled notifications now exist for 16:01 (rule 1) and 17:01 (rule 2) UTC on 2026-10-10.
+- **G:** backup `~/backups/aa-db-2026-10-05-1028.sql.gz` ("backup ok", 4.3M), taken before the two structuretimers writes above. Config check at that time: server `conf/requirements.txt` had the same four package lines as `deploy/`; in `conf/local.py` the Day 5 block was byte-identical to `deploy/conf/local.py.append`, Member Audit schedule 3600, earlier blocks differ in comment lines only.
+
+### Day 6 on the server (done 2026-10-05, about 10:53–11:05 UTC)
+- Owner did section A (intents).
+- Backup `~/backups/aa-db-2026-10-05-1053.sql.gz`; copies `requirements.txt`, `local.py`, `celery.py`, `docker-compose.yml` with suffix `.pre-day6` in `~/backups`.
+- `~/aa-docker/orlovbot/` created from `deploy/orlovbot/` (Unix line endings; `git archive` on the PC exports CRLF, so the files were converted on the server).
+- `conf/requirements.txt` + `allianceauth-discordbot==5.0.1`; `conf/local.py` + Day 6 block (byte-identical to the repo block, file now 187 lines); `conf/celery.py` + route `aadiscordbot.tasks.*` → queue `aadiscordbot` inside the existing dictionary, `discord.*` route kept; `docker-compose.yml` + volume `./orlovbot:/home/allianceauth/myauth/orlovbot` in the base block and service `allianceauth_discordbot`.
+- Build exit 0. In a throwaway container: `check` no issues, `orlovbot.cogs.moons` imports (aadiscordbot 5.0.1, py-cord 2.8.1), hook returns it. `migrate` applied 17 `aadiscordbot` migrations. `up -d` recreated gunicorn, beat and the three workers and started the bot; nginx restarted; `collectstatic` copied 119 files.
+- After: site 200, 11 containers up, workers healthy, no errors in the Alliance Auth containers. Bot output: "Authbot Started with command prefix !" and nothing else. Its INFO lines go nowhere (no logging handler for `aadiscordbot` configured), so login and command registration are not yet proven; section D proves them.
+
+### Pings switched off (owner's decision, 2026-10-05 about 11:35 UTC)
+- With the board live the owner wants **no moon pings** and removes the `#moon-timers` channel (which also deletes its Discord webhook).
+- Server, via Django, rows kept: structuretimers `NotificationRule` pk 1 and 2 `is_enabled` False, `DiscordWebhook` pk 1 `is_enabled` False, the 2 scheduled notifications for 2026-10-10 removed; structures `Webhook` pk 1 "Moon Timers" `is_active` False and `is_default` False and detached from owner GWON. structures `Webhook` pk 2 "Structure Alerts" (`#directors`) is untouched and still attached.
+- Timer pk 1 stays on the Structure Timers page on auth; it no longer triggers anything.
+- To bring pings back: new channel webhook URL into the two "Moon Timers" webhook rows, re-enable them and the rules, re-attach the structures webhook to the owner.
+
+### Structure board (runbook 10, done 2026-10-05 11:40 UTC)
+- Owner's wish: the same dashboard style for directors, `#structure-board`, with war status, fuel, structure state and if possible the profile.
+- New code: `orlovbot/board.py` (shared find/post/edit of a board message; the moon module now uses it too) and `orlovbot/cogs/structures.py`. `auth_hooks.py` registers both modules. Server folder replaced from the repo (old copy: `~/backups/orlovbot.pre-structure-board`); `conf/local.py` + "Structure board" block (now 200 lines; copy from before: `~/backups/local.py.pre-structure-board`). Only the bot was restarted.
+- Bot output after restart: four modules loaded, "Upcoming moon extractions: found the board message in #moon-board", "Structure status: board posted in #structure-board" (the owner had already created the channel).
+- Data sources: aa-structures models for state, power mode, fuel, services; public ESI `corporations/{id}` for `war_eligible` (GWON: true); wars reconstructed from the owner's stored war notifications (self-test on history: the 2025-10-09 declaration by Bully Brigade shows as running on 2025-10-10 and gone on 2025-10-12; none now); authenticated ESI `corporations/{id}/structures` with the existing structures token for `profile_id` (243511 Raitaru, 244593 Athanor). ESI gives no profile names, so `ORLOVBOT_STRUCTURE_PROFILES` maps number to name; it is empty until the owner supplies the names.
+- Why not the ESI war list: `/wars/` has no per-corp filter and the sampled IDs were not in date order, so scanning it is neither cheap nor reliable.
+- The bot's Discord role is `Orlov auth` (the only managed role).
+- **Alerts (owner's request, deployed 11:53 UTC):** `@everyone` messages in `#structure-board` for a new war (once), and per structure once every 24 h while fuel is under 7 days (or gone with low power) or a service is offline. A new reminder replaces the old one; fixed problems remove their alert. Sent-state lives in the Django cache under `orlovbot:structure-board:alerts` (written before sending, so a restart cannot re-ping). Settings `ORLOVBOT_STRUCTURE_ALERTS` and `ORLOVBOT_STRUCTURE_ALERT_MENTION` appended to `conf/local.py` (205 lines; copy from before: `~/backups/local.py.pre-structure-alerts`). `plan_alerts()` self-tested with 13 synthetic scenarios, all pass. One live test alert was queued via the cache key `orlovbot:structure-board:test`; bot output: "Structure alert sent: test". The bot removes it at its next check; the owner has not yet confirmed seeing the ping.
+- Owner's follow-up: fuel shows as "32 days left" instead of Discord's "in a month", with the run-out date as hover text. Discord only has hover text on links, so the amount is a masked link to `SITE_URL/structures/` with the date as link title (deployed 11:42 UTC).
+
+### Moon board (runbook 09, done 2026-10-05 11:27 UTC)
+- Owner's wish: an always-visible, self-updating list in Discord instead of asking with `/moons`. Chosen design: the bot posts one message in `#moon-board` and edits it in place (checks every 10 minutes, edits only on change; countdowns are Discord live timestamps). Discord Events, a channel-name ticker and aa-opcalendar were considered and not used.
+- Server: `orlovbot/cogs/moons.py` replaced (copy of the old one: `~/backups/moons.py.pre-board`); `conf/local.py` + "Moon board" block (`ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"` and console logging for the `aadiscordbot` and `orlovbot` loggers; file now 194 lines; copy from before: `~/backups/local.py.pre-board`). Only the bot container was restarted.
+- **The bot is now proven connected:** its output shows `on_ready Complete!`, the three loaded modules including `orlovbot.cogs.moons`, then the warning "no text channel named #moon-board yet". The board appears within 10 minutes of the owner creating the channel.
+- Bot output is now readable with `docker compose logs allianceauth_discordbot`.
+
+### Prepared in the repo for Day 6
+- `docs/runbooks/08-day-six-moons-command.md`.
+- `deploy/orlovbot/` — a small Django app with one command module, `cogs/moons.py` (`/moons`, restricted to the Discord role `Family Member`, reads `moonmining.Extraction`). Syntax-checked only; it has never run.
+- `deploy/conf/requirements.txt` now also lists `allianceauth-discordbot==5.0.1`, and `deploy/conf/local.py.append` ends with a Day 6 block. The server now has both.
+- Facts checked for the design: Alliance Auth 5.4.0, Django 5.2.17, Python 3.12 on the server; allianceauth-discordbot 5.0.1 requires `allianceauth<6,>=3` and py-cord 2; none of the installed apps registers a `discord_cogs_hook`; the bot loads modules from that hook in addition to `DISCORD_BOT_COGS`; server `conf/celery.py` already has an `app.conf.task_routes` dictionary with the `discord.*` route, so the add-on's route must be added inside it.
+- aa-structuretimers reminder offsets: the admin offers 0 to 120 minutes only, but the code subtracts any number of minutes, so a longer offset would work if set through Django. Not used.
+
+### Owner does by hand
+- Runbook 09 section C: look at the board message in `#moon-board` and confirm it is right.
+- Runbook 10 sections C and D: confirm `#structure-board` (and that only directors see it), and say which profile name belongs to which structure. Confirm the test ping arrived.
+- Optional Discord clean-up found while listing what Family Friend can do: the `@everyone` role has "Mention @everyone" on (any visitor can ping the server from `#public-chat`); `#how-to-get-roles` and `#moon-board` still allow creating threads.
+- Runbook 08 section D: type `/moons` in `#general`.
+
+### Next — local session, after the owner reports on D
+- If `/moons` answers: tick D in runbook 08, done. If it does not show or errors: runbook 08 Troubleshooting; read `docker compose logs --tail 50 allianceauth_discordbot`.
+- After the owner confirms the board: tick runbook 09 C. On 2026-10-10 after 17:01 UTC check the board switched to "Chunk has arrived". No pings are expected.
+
+### Open
+- Tavaga's Discord ticker (showed STI on 2026-10-03) was never checked on the server.
+
+### Notes for the local session
+- Piping a script to `ssh` from PowerShell 5.1 prepends a byte-order mark and Python rejects it. Pipe from Git Bash through Windows OpenSSH instead: `cat script.py | /c/Windows/System32/OpenSSH/ssh.exe orlov "..."`.
+
+---
+
+## 2026-10-05 — local session (PC) → cloud session
+
+**Runbook:** `docs/runbooks/07-day-five-moon-timers.md` — section C done via Django. **E is next (owner, browser).**
+
+### Done (local, on the server)
+- **C1, aa-structures webhooks:** "Moon Timers" (pk 1, the 5 `Moonmining…` types) and "Structure Alerts" (pk 2, the 16 types starting with `Structure`). Both active, default, language `en`.
+- **C2, aa-structuretimers:** `DiscordWebhook` "Moon Timers" (pk 1, enabled). Two `NotificationRule` rows, both enabled, trigger "Scheduled time reached", require timer type Moon Mining only: pk 1 at T-60 with no ping, pk 2 at T-0 with `@here`. No "new timer created" rule.
+- **Test messages:** all three webhooks returned success (two posts to `#moon-timers`, one to `#directors`). Owner has not yet confirmed seeing them in Discord.
+- The owner pasted the webhook URLs in the local chat. They are stored in the auth database (admin → Structures → Webhooks, admin → Structure Timers → Discord webhooks) and are **not** in the repo.
+
+### Finding — repo is public
+- `github.com/Tony-carboni/Orlov` answers anonymously (HTTP 200 from the GitHub API without login), so it is **public**. The owner asked to save the webhook URLs in the repo; the local session did not, because anyone could then post in `#directors` and `#moon-timers` as the bot. Open decision for the owner: make the repo private (then the URLs can be committed if still wanted), or keep them in Bitwarden and the auth admin only. Note the repo also publishes the server IP and SSH username in `CLAUDE.md`.
+
+### Owner does by hand (browser)
+- Confirm the three test messages arrived in Discord.
+- **E:** log out and in once on auth, then Structures → Add Owner and Moon Mining → Add Owner, both with Flapoor Hendrik.
+
+### Next — local session, after the owner reports E done
+- Step 6 of the 14:40 UTC cloud entry below: verify structures Owner (1, KHAAS) with both default webhooks attached, the Athanor and its fuel expiry, moonmining Owner/Refinery/Extraction (chunk arrival), the Moon Mining timer on the board (if 0 after 15 min, see runbook Troubleshooting), and the Moonmining notifications and whether they were sent.
+- Rest of G: backup, confirm server `conf/requirements.txt` and `conf/local.py` match `deploy/`.
