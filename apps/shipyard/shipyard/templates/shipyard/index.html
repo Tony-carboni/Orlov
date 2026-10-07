@@ -49,10 +49,12 @@
 
 <div class="row g-2 mb-2 shipyard-filters">
     <div class="col-auto">
-        <select id="filter-category" class="form-select form-select-sm">
-            <option value="">All types</option>
-            {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
-        </select>
+        <div class="btn-group btn-group-sm" role="group" id="filter-category" aria-label="Ship types (tick any; none ticked shows all)">
+            {% for c in categories %}
+            <input type="checkbox" class="btn-check" id="filter-cat-{{ c|lower }}" value="{{ c }}" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="filter-cat-{{ c|lower }}">{{ c }}</label>
+            {% endfor %}
+        </div>
     </div>
     <div class="col-auto">
         <select id="filter-hull" class="form-select form-select-sm">

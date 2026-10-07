@@ -125,7 +125,9 @@ class ShipConfig(models.Model):
 
     ship = models.OneToOneField(Ship, on_delete=models.CASCADE, related_name="config")
     bpc_price_isk = models.DecimalField(max_digits=15, decimal_places=2, default=0, help_text="Blueprint cost per run (ISK), bought on the market")
-    tag_cost_isk = models.DecimalField(max_digits=15, decimal_places=2, default=0, help_text="Tags or other extra inputs per run (ISK)")
+    tag_cost_isk = models.DecimalField(max_digits=15, decimal_places=2, default=0, help_text="Other extra inputs per run (ISK), typed by hand")
+    tag_type_id = models.PositiveIntegerField(null=True, blank=True, help_text="EVE type ID of a tag or other item the LP store offer needs; priced at the market's lowest sell at every refresh")
+    tag_quantity = models.PositiveSmallIntegerField(default=1, help_text="How many of that item one copy needs")
     lp_faction = models.ForeignKey(LpFaction, null=True, blank=True, on_delete=models.SET_NULL)
     lp_cost = models.PositiveIntegerField(default=0, help_text="LP for one blueprint copy in the LP store")
     lp_isk_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0, help_text="ISK part of the LP store offer")
@@ -145,6 +147,21 @@ class ShipConfig(models.Model):
         runs = max(1, self.lp_runs)
         total = float(self.lp_cost) * float(self.lp_faction.isk_per_lp) + float(self.lp_isk_cost)
         return total / runs
+
+    def tag_cost(self, tag_unit_price=None) -> tuple[float, bool]:
+        """Per-run cost of tags and extras, and whether the tag's market price was missing.
+
+        The hand-typed extras always count. A tag type is priced at `tag_unit_price`
+        (the market's lowest sell, looked up by the caller) times the quantity, spread
+        over the runs of the copy, like the LP price.
+        """
+        total = float(self.tag_cost_isk or 0)
+        if not self.tag_type_id:
+            return total, False
+        if tag_unit_price is None:
+            return total, True
+        runs = max(1, self.lp_runs)
+        return total + float(tag_unit_price) * self.tag_quantity / runs, False
 
 
 class MaterialType(models.Model):

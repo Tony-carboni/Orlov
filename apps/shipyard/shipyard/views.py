@@ -11,7 +11,9 @@ from django.views.decorators.http import require_POST
 from esi.decorators import token_required
 
 from . import constants
-from .models import Facility, LpFaction, MarketLocation, Ship, ShipConfig, UserSettings
+from .models import (
+    Facility, LpFaction, MarketLocation, MaterialType, PriceSnapshot, Ship, ShipConfig, UserSettings,
+)
 from .services import board, esi
 from .services.pricing import tax_rates
 
@@ -205,13 +207,19 @@ def blueprints(request):
                     if v is not None and v != getattr(cfg, field):
                         setattr(cfg, field, v)
                         changed = True
-                for field in ("lp_cost", "lp_runs"):
+                for field in ("lp_cost", "lp_runs", "tag_quantity"):
                     raw = request.POST.get(f"{field}_{p}")
                     if raw not in (None, ""):
                         v = _int(raw, getattr(cfg, field), 0 if field == "lp_cost" else 1)
                         if v != getattr(cfg, field):
                             setattr(cfg, field, v)
                             changed = True
+                raw_t = request.POST.get(f"tag_type_id_{p}")
+                if raw_t is not None:
+                    v = _int(raw_t, 0, 0) or None
+                    if v != cfg.tag_type_id:
+                        cfg.tag_type_id = v
+                        changed = True
                 raw_f = request.POST.get(f"lp_faction_{p}")
                 if raw_f is not None:
                     f = factions.get(raw_f)
@@ -222,13 +230,27 @@ def blueprints(request):
                     cfg.save()
         messages.success(request, "Blueprint and LP prices saved.")
         return redirect("shipyard:blueprints")
-    configs = (
+    configs = list(
         ShipConfig.objects.select_related("ship", "lp_faction")
         .filter(ship__is_active=True)
         .order_by("ship__category", "ship__hull_size", "ship__name")
     )
+    # show what the market-priced tags currently cost at the default market
+    tag_ids = {c.tag_type_id for c in configs if c.tag_type_id}
+    market = MarketLocation.objects.filter(is_default=True, is_active=True).first()
+    tag_prices = {}
+    if market and tag_ids:
+        tag_prices = {
+            p.type_id: p.sell_min
+            for p in PriceSnapshot.objects.filter(location=market, type_id__in=tag_ids)
+        }
+    tag_names = dict(MaterialType.objects.filter(type_id__in=tag_ids).values_list("type_id", "name"))
+    for c in configs:
+        c.tag_price = tag_prices.get(c.tag_type_id) if c.tag_type_id else None
+        c.tag_name = tag_names.get(c.tag_type_id) if c.tag_type_id else None
     context = {
         "configs": configs,
         "lp_factions": LpFaction.objects.all(),
+        "market": market,
     }
     return render(request, "shipyard/blueprints.html", context)

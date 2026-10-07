@@ -25,8 +25,10 @@
 
     <h5>Blueprint and tag prices per ship</h5>
     <p class="small text-muted">
-        <strong>Blueprint / run</strong>: what one run of the BPC costs on the market. <strong>Tags / extras</strong>: other per-run inputs not in the bill of materials.
-        <strong>LP offer</strong>: the LP store offer for the copy (LP, ISK part, runs on the copy) — the app divides by runs. Faction ships: select the faction's LP store.
+        <strong>Blueprint / run</strong>: what one run of the BPC costs on the market.
+        <strong>Tag</strong>: the EVE type ID of the tag the LP store wants per copy; it is priced at the lowest sell order{% if market %} at {{ market.name }}{% endif %} at every refresh, never typed.
+        <strong>Extras</strong>: anything else per run, typed by hand.
+        <strong>LP offer</strong>: the LP store offer for the copy (LP, ISK part, runs on the copy) — the app divides tag and LP price by runs. Faction ships: select the faction's LP store.
     </p>
     <div class="table-responsive">
     <table class="table table-sm table-striped align-middle" id="bp-table">
@@ -34,7 +36,9 @@
             <tr>
                 <th>Type</th><th>Hull</th><th>Ship</th>
                 <th class="text-end">Blueprint / run (ISK)</th>
-                <th class="text-end">Tags / extras (ISK)</th>
+                <th>Tag (type ID)</th>
+                <th class="text-end">× per copy</th>
+                <th class="text-end">Extras (ISK)</th>
                 <th>LP store</th>
                 <th class="text-end">LP / copy</th>
                 <th class="text-end">ISK / copy</th>
@@ -49,6 +53,11 @@
                 <td>{{ c.ship.hull_size }}</td>
                 <td class="fw-semibold">{{ c.ship.name }}</td>
                 <td><input type="text" class="form-control form-control-sm text-end" name="bpc_price_isk_{{ c.ship_id }}" value="{{ c.bpc_price_isk|floatformat:0 }}"></td>
+                <td>
+                    <input type="text" class="form-control form-control-sm text-end" name="tag_type_id_{{ c.ship_id }}" value="{{ c.tag_type_id|default_if_none:'' }}" style="width:7em">
+                    {% if c.tag_type_id %}<div class="small text-muted text-nowrap">{% if c.tag_name %}{{ c.tag_name }}{% else %}type {{ c.tag_type_id }}{% endif %}: {% if c.tag_price %}{{ c.tag_price|isk }}{% else %}no price yet{% endif %}</div>{% endif %}
+                </td>
+                <td><input type="text" class="form-control form-control-sm text-end" name="tag_quantity_{{ c.ship_id }}" value="{{ c.tag_quantity }}" style="width:4em"></td>
                 <td><input type="text" class="form-control form-control-sm text-end" name="tag_cost_isk_{{ c.ship_id }}" value="{{ c.tag_cost_isk|floatformat:0 }}"></td>
                 <td>
                     <select name="lp_faction_{{ c.ship_id }}" class="form-select form-select-sm">

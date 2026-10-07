@@ -139,11 +139,13 @@ def economics(
     avg_daily_volume=0.0,
     sell_volume_on_market=0.0,
     time_seconds=0,
+    tag_unit_price=None,
 ) -> ShipEconomics:
     """Assemble the economics of one ship from snapshot data.
 
     material_rows: [{type_id, quantity}], prices: {type_id: unit price or None},
-    names: {type_id: name}, volumes: {type_id: m³}.
+    names: {type_id: name}, volumes: {type_id: m³}, tag_unit_price: lowest sell of
+    the config's tag type (None when unknown, which marks the ship incomplete).
     """
     lines = []
     missing = 0
@@ -160,13 +162,16 @@ def economics(
             volume=float(volumes.get(tid, 0.0)),
         ))
     bpc, src = blueprint_cost(config, use_lp)
+    tag_cost, tag_missing = config.tag_cost(tag_unit_price) if config else (0.0, False)
+    if tag_missing:
+        missing += 1
     return ShipEconomics(
         sell_price=sell_price,
         materials=lines,
         job_cost=float(job_cost or 0),
         bpc_cost=bpc,
         bpc_source=src,
-        tag_cost=float(config.tag_cost_isk) if config else 0.0,
+        tag_cost=tag_cost,
         sales_tax_rate=rates.sales_tax,
         broker_fee_rate=rates.broker_fee,
         avg_daily_volume=float(avg_daily_volume or 0),

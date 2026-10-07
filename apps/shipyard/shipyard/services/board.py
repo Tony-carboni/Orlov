@@ -67,7 +67,8 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
     material_ids = set()
     for b in builds.values():
         material_ids.update(int(m["type_id"]) for m in b.materials)
-    type_ids = material_ids | {s.type_id for s in ships}
+    tag_ids = {c.tag_type_id for c in configs.values() if c.tag_type_id}
+    type_ids = material_ids | {s.type_id for s in ships} | tag_ids
     prices = _price_map(market, type_ids)
     names, volumes = _name_volume_maps(material_ids)
     unit_prices = {tid: (p.sell_min if p else None) for tid, p in prices.items()}
@@ -77,6 +78,7 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
         build = builds.get(ship.type_id)
         st = stats.get(ship.type_id)
         hull_price = prices.get(ship.type_id)
+        cfg = configs.get(ship.type_id)
         econ = pricing.economics(
             sell_price=hull_price.sell_min if hull_price else None,
             material_rows=build.materials if build else [],
@@ -90,8 +92,9 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
             avg_daily_volume=st.avg_daily_volume if st else 0,
             sell_volume_on_market=hull_price.sell_volume if hull_price else 0,
             time_seconds=build.time_seconds if build else 0,
+            tag_unit_price=unit_prices.get(cfg.tag_type_id) if cfg and cfg.tag_type_id else None,
         )
-        rows.append(BoardRow(ship=ship, econ=econ, config=configs.get(ship.type_id), stats=st, build=build))
+        rows.append(BoardRow(ship=ship, econ=econ, config=cfg, stats=st, build=build))
     rows.sort(key=lambda r: (r.econ.net_profit is None, -(r.econ.net_profit or 0)))
     return rows
 
@@ -122,7 +125,8 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
         material_rows, job_cost, time_seconds, source = [], 0, 0, "none"
 
     material_ids = {int(m["type_id"]) for m in material_rows}
-    prices = _price_map(market, material_ids | {ship.type_id})
+    tag_ids = {config.tag_type_id} if config and config.tag_type_id else set()
+    prices = _price_map(market, material_ids | {ship.type_id} | tag_ids)
     names, volumes = _name_volume_maps(material_ids)
     unit_prices = {tid: (p.sell_min if p else None) for tid, p in prices.items()}
     hull_price = prices.get(ship.type_id)
@@ -130,9 +134,12 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
     # ad-hoc overrides for the simulation panel
     sim_config = config
     if bpc is not None or tag is not None:
+        # a typed tag amount replaces the market-priced tag and the extras together
         sim_config = ShipConfig(ship=ship,
                                 bpc_price_isk=bpc if bpc is not None else (config.bpc_price_isk if config else 0),
                                 tag_cost_isk=tag if tag is not None else (config.tag_cost_isk if config else 0),
+                                tag_type_id=None if tag is not None else (config.tag_type_id if config else None),
+                                tag_quantity=config.tag_quantity if config else 1,
                                 lp_faction=config.lp_faction if config else None,
                                 lp_cost=config.lp_cost if config else 0,
                                 lp_isk_cost=config.lp_isk_cost if config else 0,
@@ -155,6 +162,7 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
         avg_daily_volume=stats.avg_daily_volume if stats else 0,
         sell_volume_on_market=hull_price.sell_volume if hull_price else 0,
         time_seconds=time_seconds,
+        tag_unit_price=unit_prices.get(sim_config.tag_type_id) if sim_config and sim_config.tag_type_id else None,
     )
     return {"econ": econ, "config": config, "stats": stats, "facility": facility, "market": market,
             "rates": rates, "source": source, "hull_price": hull_price, "me": me, "te": te}

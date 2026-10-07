@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from . import app_settings
 from .models import (
-    BuildSnapshot, Facility, MarketLocation, MaterialType, PriceSnapshot, RefreshRun, Ship,
+    BuildSnapshot, Facility, MarketLocation, MaterialType, PriceSnapshot, RefreshRun, Ship, ShipConfig,
     ShipMarketStats,
 )
 from .services import esi, everef, fuzzwork
@@ -81,6 +81,7 @@ def _ensure_material_names():
     needed = set()
     for mats in BuildSnapshot.objects.values_list("materials", flat=True):
         needed.update(int(m["type_id"]) for m in mats)
+    needed.update(_tag_type_ids())
     for tid in sorted(needed - known):
         try:
             t = everef.get_type(tid)
@@ -93,13 +94,19 @@ def _ensure_material_names():
         polite_pause()
 
 
+def _tag_type_ids() -> set:
+    """Tags and other LP-store items that are priced from the market."""
+    return {int(t) for t in ShipConfig.objects.exclude(tag_type_id=None).values_list("tag_type_id", flat=True)}
+
+
 @shared_task
 def refresh_prices():
-    """Jita aggregates for every hull and every material, per market location."""
+    """Jita aggregates for every hull, every material and every tag, per market location."""
     run = _run("prices")
     type_ids = set(Ship.objects.filter(is_active=True).values_list("type_id", flat=True))
     for mats in BuildSnapshot.objects.values_list("materials", flat=True):
         type_ids.update(int(m["type_id"]) for m in mats)
+    type_ids |= _tag_type_ids()
     n, errors = 0, []
     for loc in MarketLocation.objects.filter(is_active=True):
         try:
