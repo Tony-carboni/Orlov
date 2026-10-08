@@ -41,6 +41,10 @@ class Offer:
     station_id: int = 0
     region_id: int = 0
     date_expired: str = ""
+    copies: int = 1           # blueprint copies in the contract (sum of quantities)
+    title: str = ""
+    issuer_id: int = 0
+    issuer: str = ""          # resolved name, filled in by refresh()
 
     @property
     def per_run(self) -> float:
@@ -49,7 +53,8 @@ class Offer:
     def as_dict(self) -> dict:
         return {"contract_id": self.contract_id, "price": self.price, "runs": self.runs, "per_run": round(self.per_run, 2),
                 "me": self.me, "te": self.te, "station_id": self.station_id, "region_id": self.region_id,
-                "date_expired": self.date_expired}
+                "date_expired": self.date_expired, "copies": self.copies, "title": self.title,
+                "issuer_id": self.issuer_id, "issuer": self.issuer}
 
 
 @dataclass
@@ -145,7 +150,8 @@ def parse_snapshot(path: str, blueprint_type_ids, regions=None, stations=None) -
                 continue
             if price <= 0 or (regions and region not in regions) or (stations and station not in stations):
                 continue
-            contracts[row["contract_id"]] = (price, region, station, row.get("date_expired") or "")
+            contracts[row["contract_id"]] = (price, region, station, row.get("date_expired") or "",
+                                             (row.get("title") or "")[:100], row.get("issuer_id") or 0)
         items = defaultdict(list)
         for row in _rows(tar, "contract_items.csv"):
             cid = row.get("contract_id")
@@ -163,15 +169,21 @@ def parse_snapshot(path: str, blueprint_type_ids, regions=None, stations=None) -
             continue
         try:
             runs = sum(int(r.get("runs") or 0) * max(1, int(r.get("quantity") or 1)) for r in rows)
+            copies = sum(max(1, int(r.get("quantity") or 1)) for r in rows)
             me = int(rows[0].get("material_efficiency") or 0)
             te = int(rows[0].get("time_efficiency") or 0)
         except (TypeError, ValueError):
             continue
         if runs <= 0:
             continue
-        price, region, station, expires = contracts[cid]
+        price, region, station, expires, title, issuer_id = contracts[cid]
+        try:
+            issuer_id = int(issuer_id or 0)
+        except (TypeError, ValueError):
+            issuer_id = 0
         quotes[tid].offers.append(Offer(contract_id=int(cid), price=price, runs=runs, me=me, te=te,
-                                        station_id=int(station or 0), region_id=region, date_expired=expires))
+                                        station_id=int(station or 0), region_id=region, date_expired=expires,
+                                        copies=copies, title=title, issuer_id=issuer_id))
     return quotes, snapshot_at
 
 
@@ -206,6 +218,7 @@ def refresh(path: str | None = None) -> dict:
     want = app_settings.SHIPYARD_CONTRACT_RUNS
     factor = app_settings.SHIPYARD_CONTRACT_OUTLIER_FACTOR
     priced, offers_total, station_ids = 0, 0, set()
+    kept = {}
     for tid, ship in ships.items():
         q = quotes.get(tid)
         offers = q.offers if q else []
@@ -213,7 +226,12 @@ def refresh(path: str | None = None) -> dict:
         if average is None:
             ContractPrice.objects.filter(ship=ship).delete()
             continue
-        cheapest = q.sorted()[:max(offers_used, 5)]
+        kept[ship] = (q.sorted()[:max(offers_used, 5)], average, runs_used, offers_used, offers)
+    # issuer names for the kept offers (the in-game contract search filters by issuer)
+    names = _issuer_names({o.issuer_id for cheapest, *_ in kept.values() for o in cheapest if o.issuer_id})
+    for ship, (cheapest, average, runs_used, offers_used, offers) in kept.items():
+        for o in cheapest:
+            o.issuer = names.get(o.issuer_id, "")
         station_ids.update(o.station_id for o in cheapest if o.station_id)
         ContractPrice.objects.update_or_create(ship=ship, defaults={
             "price_per_run": round(average, 2),
@@ -235,6 +253,20 @@ def refresh(path: str | None = None) -> dict:
         except Exception as exc:  # noqa: BLE001
             logger.info("contract station names not resolved: %s", exc)
     return {"ships": len(ships), "priced": priced, "offers": offers_total, "snapshot_at": snapshot_at}
+
+
+def _issuer_names(ids) -> dict[int, str]:
+    """{character id: name} through eveuniverse's resolver; empty when unavailable."""
+    ids = {int(i) for i in ids if i}
+    if not ids:
+        return {}
+    try:
+        from eveuniverse.models import EveEntity
+        resolver = EveEntity.objects.bulk_resolve_names(ids)
+        return {i: resolver.to_name(i) or "" for i in ids}
+    except Exception as exc:  # noqa: BLE001
+        logger.info("contract issuer names not resolved: %s", exc)
+        return {}
 
 
 def fresh_prices(ship_ids=None) -> dict[int, ContractPrice]:

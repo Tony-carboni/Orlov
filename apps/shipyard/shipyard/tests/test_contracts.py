@@ -71,7 +71,7 @@ def make_snapshot(contract_rows, item_rows, scrape_end="2026-10-08T08:31:04Z"):
             w.writerow({f: r.get(f, "") for f in fields})
         return buf.getvalue()
 
-    cfields = ["contract_id", "type", "price", "region_id", "station_id", "date_expired", "title"]
+    cfields = ["contract_id", "type", "price", "region_id", "station_id", "date_expired", "title", "issuer_id"]
     ifields = ["contract_id", "type_id", "quantity", "is_included", "is_blueprint_copy", "runs", "material_efficiency", "time_efficiency"]
     with tarfile.open(path, "w:bz2") as tar:
         add(tar, "meta.json", json.dumps({"datasource": "tranquility", "scrape_end": scrape_end}))
@@ -90,7 +90,7 @@ class SnapshotTests(TestCase):
                                            category="Base", blueprint_type_id=688)
         c = lambda cid, price, kind="item_exchange", region=10000002, station=60003760: {  # noqa: E731
             "contract_id": cid, "type": kind, "price": price, "region_id": region, "station_id": station,
-            "date_expired": "2026-10-20T00:00:00Z", "title": "x"}
+            "date_expired": "2026-10-20T00:00:00Z", "title": f"copy {cid}", "issuer_id": 90000000 + cid}
         i = lambda cid, tid, runs, qty=1, included="true", bpc="true", me=0, te=0: {  # noqa: E731
             "contract_id": cid, "type_id": tid, "quantity": qty, "is_included": included, "is_blueprint_copy": bpc,
             "runs": runs, "material_efficiency": me, "time_efficiency": te}
@@ -130,6 +130,10 @@ class SnapshotTests(TestCase):
         self.assertAlmostEqual(float(row.lowest_per_run), 15e6)
         self.assertEqual((row.runs_used, row.offers_used, row.contracts, row.runs_available), (5, 4, 6, 24))
         self.assertEqual(row.offers[0]["per_run"], 15e6)
+        self.assertEqual((row.offers[0]["contract_id"], row.offers[0]["copies"], row.offers[0]["title"], row.offers[0]["issuer_id"]),
+                         (1, 1, "copy 1", 90000001))
+        ten = [o for o in row.offers if o["contract_id"] == 4][0]
+        self.assertEqual((ten["runs"], ten["copies"], ten["per_run"]), (10, 1, 18e6))
         self.assertFalse(ContractPrice.objects.filter(ship=self.worm).exists())
         self.assertFalse(ContractPrice.objects.filter(ship=self.caracal).exists())
         # fresh rows feed the board; stale ones do not

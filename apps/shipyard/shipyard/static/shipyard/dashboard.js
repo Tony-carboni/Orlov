@@ -63,7 +63,7 @@
                 form.action = form.dataset.action.replace(/\/0\/price\//, "/" + row.typeId + "/price/");
                 document.getElementById("bpc-price-ship").textContent = row.name + " blueprint";
                 input.value = row.ownPrice || "";
-                input.placeholder = row.contractPrice ? "contracts say " + row.contractPrice : "for example 25000000";
+                input.placeholder = row.contractPrice ? "cheapest contract " + row.contractPrice : "for example 25000000";
                 bootstrap.Modal.getOrCreateInstance(priceModal).show();
             });
             priceModal.addEventListener("shown.bs.modal", function () { input.focus(); input.select(); });
