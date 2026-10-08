@@ -58,7 +58,7 @@ class BoardTests(TestCase):
         s.manual_sales_tax = 4.81
         s.manual_broker_fee = 0
         s.save()
-        # the member typed 23 M for the Vindicator copy: it replaces "public contracts only"
+        # the member typed 23 M for the Vindicator copy: it replaces "Price not known"
         MemberBlueprintPrice.objects.create(user=self.user, ship=self.ship, price_isk=23_000_000)
         rows = board.dashboard_rows(s)
         e = rows[0].econ
