@@ -76,9 +76,10 @@ Suggested rule for the dashboard figure: the lowest per-run price when at least 
 
 Roughly one release (0.5.0), no new permissions, a migration, one new beat entry in `conf/local.py` and `deploy/conf/local.py.append`.
 
-## 7. Open decisions for the owner
+## 7. Decisions and result (2026-10-08)
 
-1. Regions: The Forge only, or all high-sec?
-2. Which figure on the dashboard: lowest, second lowest or median? (Suggested: lowest with the second-lowest safeguard.)
-3. Should the copy's ME feed the material cost, or only show in the tooltip for now?
-4. Keep the member's own price above the automatic one (suggested yes).
+The owner chose route B the same day, for Pirate, Triglavian and EDENCOM hulls, with this figure: **the average per-run price of the cheapest five runs on offer**, cheapest contracts first. Example: single-run copies at 1, 2, 3, 3, 3 M → (1+2+3+3+3)/5 = 2.4 M per run; a ten-run copy at 1 M per run covers the five runs alone. Regions: The Forge. The copy's ME/TE only shows in the tooltip for now. The member's own right-click price stays on top.
+
+Added safeguard: offers dearer than three times the cheapest per-run price are ignored. Reason from the first snapshot: the Vigilant had three copies at 32 to 37 M and one at 9 B, which would have made the figure 2.3 B.
+
+Built as Shipyard 0.5.0 (runbook 13 C). First snapshot (2026-10-08 08:31 EVE): 49,897 public contracts in the game, 33,811 priced item exchanges in The Forge, 1,101 of them single-blueprint contracts for our 37 hulls; 35 hulls priced, Mekubal and Tholos had no contract at all. Examples per run: Vindicator 16.2 M (47 contracts), Rattlesnake 12.0 M, Machariel 34.0 M, Nightmare 121.6 M, Barghest 223.4 M, Leshak 7.4 M, Thunderchild 660 M, Damavik 1.17 M.
