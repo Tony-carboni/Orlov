@@ -73,6 +73,8 @@ New commits to `apps/shipyard` don't reach the server by themselves. Update = ch
 
 ## D. Releasing to members (later, your call)
 
+*2026-10-08: closed again on the owner's wish. Only the user `tony` holds `shipyard.basic_access` (user permission); the states Family Member and Family Friend lost it. Reopening = the state grant below, done by the local session on request.*
+
 Admin → Groups → `Family Member` → add `shipyard | general | Can access the Shipyard dashboard`. Managers (`Alliance Director`) also get `Can edit blueprint prices…`. Until then only superusers see it. To let one tester in before release: admin → Users → the user → User permissions → add the basic access permission.
 
 ## Troubleshooting
