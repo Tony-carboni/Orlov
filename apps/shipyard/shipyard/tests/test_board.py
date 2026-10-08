@@ -109,6 +109,33 @@ class BoardTests(TestCase):
         self.assertEqual(rows[0].econ.bpc_source, "own")
         self.assertIsNone(rows[0].contract)
 
+    def test_refresh_button(self):
+        from django.contrib.auth.models import Permission
+        from django.core.cache import cache
+        from django.test import Client, override_settings
+        from django.urls import reverse
+        from .. import views
+        cache.delete(views.REFRESH_COOLDOWN_KEY)
+        perms = Permission.objects.filter(codename__in=("basic_access", "manage_shipyard"), content_type__app_label="shipyard")
+        client = Client()
+        client.force_login(self.user)
+        url = reverse("shipyard:refresh_now")
+        with override_settings(SHIPYARD_STANDALONE_HOST=""),              mock.patch("shipyard.tasks.refresh_prices_and_stats.delay") as p1,              mock.patch("shipyard.tasks.refresh_contract_prices.delay") as p2:
+            # members without the manage permission cannot press it
+            self.user.user_permissions.add(perms.get(codename="basic_access"))
+            self.assertIn(client.post(url).status_code, (302, 403))
+            self.assertEqual(p1.call_count, 0)
+            self.user.user_permissions.add(perms.get(codename="manage_shipyard"))
+            self.user = type(self.user).objects.get(pk=self.user.pk)  # permission cache
+            client.force_login(self.user)
+            self.assertEqual(client.post(url).status_code, 302)
+            self.assertEqual((p1.call_count, p2.call_count), (1, 1))
+            # second press inside the cooldown queues nothing
+            self.assertEqual(client.post(url).status_code, 302)
+            self.assertEqual((p1.call_count, p2.call_count), (1, 1))
+            self.assertEqual(client.get(url).status_code, 405)
+        cache.delete(views.REFRESH_COOLDOWN_KEY)
+
     def test_settings_defaults(self):
         s = board.get_user_settings(self.user)
         self.assertEqual(s.facility, self.fac)

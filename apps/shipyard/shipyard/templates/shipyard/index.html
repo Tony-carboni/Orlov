@@ -26,7 +26,15 @@
                     <a class="badge text-bg-warning text-decoration-none" href="{% url 'shipyard:settings' %}">none chosen yet: skills count as 0</a>
                 {% endif %}
             </div>
-            <div class="shipyard-k">Jita lowest sell, refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · builds {{ freshness.builds|date:"Y-m-d H:i" }} · volume {{ freshness.stats|date:"Y-m-d H:i" }}{% if freshness.contracts %} · contracts {{ freshness.contracts|date:"Y-m-d H:i" }}{% endif %}</div>
+            <div class="shipyard-k d-flex align-items-center flex-wrap gap-2">
+                <span>Jita lowest sell, refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · builds {{ freshness.builds|date:"Y-m-d H:i" }} · volume {{ freshness.stats|date:"Y-m-d H:i" }}{% if freshness.contracts %} · contracts {{ freshness.contracts|date:"Y-m-d H:i" }}{% endif %}</span>
+                {% if can_manage %}
+                <form method="post" action="{% url 'shipyard:refresh_now' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-light btn-sm py-0" title="Queue the Jita price, sales volume and contract price refreshes now (otherwise hourly at :40 and :50). Builds and indices stay on their 6-hour schedule."><i class="fas fa-rotate fa-fw"></i> Refresh</button>
+                </form>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>

@@ -4,9 +4,11 @@ from decimal import Decimal, InvalidOperation
 from allianceauth.authentication.models import CharacterOwnership
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
+from django.core.cache import cache
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from esi.models import Token
 from esi.views import sso_redirect
@@ -240,6 +242,32 @@ def set_bpc_price(request, type_id):
         messages.success(request, f"{ship.name}: blueprint priced at {price:,.0f} ISK per run in your numbers.")
     if request.POST.get("next") == "detail":
         return redirect("shipyard:ship_detail", type_id=ship.type_id)
+    return redirect("shipyard:index")
+
+
+REFRESH_COOLDOWN_KEY = "shipyard:refresh_now"
+REFRESH_COOLDOWN_SECONDS = 300
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+@require_POST
+def refresh_now(request):
+    """Refresh button on the dashboard (managers): queue the hourly refreshes right away.
+
+    Jita prices, sales volumes and the contract prices. Builds and indices are not
+    included (they take minutes of EVE Ref calls and change rarely). One click per
+    five minutes; the beat schedule keeps running regardless.
+    """
+    from . import tasks
+    if cache.get(REFRESH_COOLDOWN_KEY):
+        messages.info(request, "A refresh was started less than five minutes ago; the numbers update as it finishes.")
+        return redirect("shipyard:index")
+    cache.set(REFRESH_COOLDOWN_KEY, timezone.now().isoformat(), REFRESH_COOLDOWN_SECONDS)
+    tasks.refresh_prices_and_stats.delay()
+    tasks.refresh_contract_prices.delay()
+    logger.info("manual refresh queued by %s", request.user)
+    messages.success(request, "Refresh started: Jita prices, sales volumes and contract prices. Reload the page in about a minute.")
     return redirect("shipyard:index")
 
 

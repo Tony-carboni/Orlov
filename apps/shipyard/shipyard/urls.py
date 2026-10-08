@@ -12,6 +12,7 @@ urlpatterns = [
     path("settings/", views.settings_view, name="settings"),
     path("facility/<int:pk>/use/", views.set_facility, name="set_facility"),
     path("ship/<int:type_id>/price/", views.set_bpc_price, name="set_bpc_price"),
+    path("refresh/", views.refresh_now, name="refresh_now"),
     path("character/<int:character_id>/use/", views.use_character, name="use_character"),
     path("go/", views.go, name="go"),
     path("blueprints/", views.blueprints, name="blueprints"),
