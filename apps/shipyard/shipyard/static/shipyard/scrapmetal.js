@@ -7,14 +7,34 @@
         if (!el) { return; }
         var numCols = [];
         for (var i = parseInt(el.dataset.numFrom, 10); i <= parseInt(el.dataset.numTo, 10); i++) { numCols.push(i); }
+        // Grouped like the in-game tree: by group (the owner's order), best Sell % first within a group.
+        // A header row per group is drawn whenever the table is ordered by the (hidden) group column;
+        // sorting by another column gives a flat list again.
+        var colCount = el.querySelectorAll("thead th").length;
         var table = $("#scrap-table").DataTable({
-            order: [[8, "asc"]],
+            order: [[0, "asc"], [8, "asc"]],
             paging: false,
             info: true,
-            stateSave: true,
+            stateSave: false,
             dom: "rtip",
-            columnDefs: [{ targets: numCols, type: "num" }]
+            columnDefs: [{ targets: numCols, type: "num" }, { targets: 0, visible: false }],
+            drawCallback: function () {
+                var api = this.api();
+                var grouped = api.order().length && api.order()[0][0] === 0;
+                var last = null;
+                api.rows({ page: "current" }).nodes().each(function (row) {
+                    $(row).toggleClass("scrap-grouped", !!grouped);
+                    if (!grouped) { return; }
+                    var g = row.dataset.group;
+                    if (g !== last) {
+                        $(row).before('<tr class="scrap-group-row"><td colspan="' + (colCount - 1) + '"><i class="fas fa-folder-open fa-fw"></i> ' + $("<span>").text(g).html() + "</td></tr>");
+                        last = g;
+                    }
+                });
+            }
         });
+        // the group header rows must disappear before the next draw lays the rows out again
+        table.on("preDraw", function () { $("#scrap-table tbody tr.scrap-group-row").remove(); });
 
         function selected(group) {
             return $(group + " input:checked").map(function () { return this.value; }).get();

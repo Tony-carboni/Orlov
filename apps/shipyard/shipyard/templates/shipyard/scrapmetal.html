@@ -65,7 +65,7 @@
     <thead>
         <tr>
             <th>Group</th>
-            <th>Module</th>
+            <th title="Grouped as in the game's market tree; click any other column to sort the whole list instead">Module</th>
             <th class="text-end" title="Packaged volume of one unit">m³</th>
             <th class="text-end" title="Value of the minerals one module gives at {{ setup.yield|pct:0 }} yield, each rounded down, at Jita lowest sell">Value</th>
             <th class="text-end" title="Jita lowest sell price of the module: what you pay buying from sell orders">Sell</th>
@@ -81,8 +81,8 @@
     <tbody>
     {% for r in rows %}
         <tr data-group="{{ r.item.group }}" data-variant="{{ r.item.variant }}" data-favourable="{% if r.sell_ratio is not None and r.sell_ratio < 1 %}1{% else %}0{% endif %}">
-            <td><span class="badge text-bg-dark border border-secondary">{{ r.item.group }}</span></td>
-            <td><img src="https://images.evetech.net/types/{{ r.item.type_id }}/icon?size=32" width="24" height="24" class="me-1 rounded" alt=""><span class="fw-semibold">{{ r.item.name }}</span>{% if not r.complete %} <i class="fas fa-triangle-exclamation text-warning ms-1" title="A mineral or the module itself has no Jita price yet"></i>{% endif %}</td>
+            <td data-order="{{ r.item.group_order|stringformat:'03d' }} {{ r.item.group }}">{{ r.item.group }}</td>
+            <td class="scrap-module"><img src="https://images.evetech.net/types/{{ r.item.type_id }}/icon?size=32" width="24" height="24" class="me-1 rounded" alt=""><span class="fw-semibold">{{ r.item.name }}</span>{% if not r.complete %} <i class="fas fa-triangle-exclamation text-warning ms-1" title="A mineral or the module itself has no Jita price yet"></i>{% endif %}</td>
             <td class="text-end" data-order="{{ r.item.volume }}">{{ r.item.volume|num:1 }}</td>
             <td class="text-end fw-semibold" data-order="{{ r.net_value }}" title="Before tax {{ r.gross_value|isk:2 }}; yield {{ r.yield_fraction|pct:0 }}">{{ r.net_value|isk:2 }}</td>
             <td class="text-end" data-order="{{ r.sell_price|default_if_none:'-1' }}">{{ r.sell_price|isk:2 }}</td>
