@@ -54,6 +54,17 @@ SHIPYARD_CONTRACT_OUTLIER_FACTOR = getattr(settings, "SHIPYARD_CONTRACT_OUTLIER_
 # A contract price older than this is not shown any more ("Price not known").
 SHIPYARD_CONTRACT_MAX_AGE_HOURS = getattr(settings, "SHIPYARD_CONTRACT_MAX_AGE_HOURS", 48)
 
+# --- Reprocessing tab (owner's setup, 2026-10-08): T2-rigged Tatara in Sobaseki, all skills V,
+# RX-804 implant, 2 % service tax. Yield formula in services/reprocessing.py.
+SHIPYARD_REPRO_LOCATION = getattr(settings, "SHIPYARD_REPRO_LOCATION", "Tatara, Sobaseki")
+SHIPYARD_REPRO_STRUCTURE = getattr(settings, "SHIPYARD_REPRO_STRUCTURE", "tatara")   # tatara | athanor | other
+SHIPYARD_REPRO_RIG = getattr(settings, "SHIPYARD_REPRO_RIG", {"ore": 3, "ice": 3, "moon": 3, "abyssal": 3})  # 0 | 1 (T1) | 3 (T2), per kind
+SHIPYARD_REPRO_SECURITY = getattr(settings, "SHIPYARD_REPRO_SECURITY", 0.0)         # 0.0 high, 0.06 low, 0.12 null/WH
+SHIPYARD_REPRO_SKILLS = getattr(settings, "SHIPYARD_REPRO_SKILLS", {"reprocessing": 5, "efficiency": 5, "ore": 5})
+SHIPYARD_REPRO_IMPLANT = getattr(settings, "SHIPYARD_REPRO_IMPLANT", 0.04)           # RX-801 0.01, RX-802 0.02, RX-804 0.04
+SHIPYARD_REPRO_TAX = getattr(settings, "SHIPYARD_REPRO_TAX", 0.02)                   # structure service tax on the output value
+SHIPYARD_REPRO_PRICE_POINTS = getattr(settings, "SHIPYARD_REPRO_PRICE_POINTS", [90, 92, 95, 98, 100])
+
 # Cache lifetime for ad-hoc simulations on the detail page (seconds)
 SHIPYARD_SIM_CACHE_SECONDS = getattr(settings, "SHIPYARD_SIM_CACHE_SECONDS", 1800)
 

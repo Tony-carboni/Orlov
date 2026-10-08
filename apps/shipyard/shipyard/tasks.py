@@ -7,10 +7,10 @@ from django.utils import timezone
 
 from . import app_settings
 from .models import (
-    BuildSnapshot, Facility, MarketLocation, MaterialType, PriceSnapshot, RefreshRun, Ship, ShipConfig,
+    BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, PriceSnapshot, RefreshRun, Ship, ShipConfig,
     ShipMarketStats,
 )
-from .services import contracts, esi, everef, fuzzwork, industry
+from .services import contracts, esi, everef, fuzzwork, industry, reprocessing
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -107,6 +107,9 @@ def refresh_prices():
     for mats in BuildSnapshot.objects.values_list("materials", flat=True):
         type_ids.update(int(m["type_id"]) for m in mats)
     type_ids |= _tag_type_ids()
+    # the reprocessing tab: every compressed ore and what it gives
+    type_ids |= set(Ore.objects.filter(is_active=True).values_list("type_id", flat=True))
+    type_ids |= reprocessing.output_type_ids()
     n, errors = 0, []
     for loc in MarketLocation.objects.filter(is_active=True):
         try:
@@ -140,6 +143,19 @@ def refresh_market_stats():
             logger.warning("history failed for %s: %s", ship, exc)
         polite_pause()
     _done(run, not errors, n, "; ".join(errors[:20]))
+
+
+@shared_task
+def refresh_ore_catalog():
+    """Compressed ore and ice catalog from EVE Ref (beat entry shipyard_refresh_ore_catalog, weekly)."""
+    run = _run("ores")
+    try:
+        result = reprocessing.import_catalog()
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("ore catalog refresh failed")
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, True, result["ores"], f"{result['ores']} compressed types in {result['families']} families, {result['materials']} outputs, {result['retired']} retired")
 
 
 @shared_task

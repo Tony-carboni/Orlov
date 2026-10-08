@@ -77,4 +77,9 @@
 .shipyard-cat-edencom { background: #17a2b8; }
 .shipyard-cat-ore { background: #b8860b; }
 .shipyard-cat-other { background: #495057; }
+.shipyard-kind { font-weight: 500; text-transform: capitalize; }
+.shipyard-kind-ore { background: #6c757d; }
+.shipyard-kind-ice { background: #0dcaf0; color: #0b1e2d; }
+.shipyard-kind-moon { background: #6f42c1; }
+.shipyard-kind-abyssal { background: #c0392b; }
 #bp-table input { min-width: 7em; }

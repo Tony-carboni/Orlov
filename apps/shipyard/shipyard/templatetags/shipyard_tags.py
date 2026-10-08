@@ -134,6 +134,27 @@ def depth(value):
 
 
 @register.filter
+def get_item(mapping, key):
+    """{{ dict|get_item:key }}"""
+    try:
+        return mapping.get(key)
+    except AttributeError:
+        return None
+
+
+@register.filter
+def variant_label(value):
+    from ..services.reprocessing import variant_label as _label
+    return _label(value)
+
+
+@register.filter
+def slug(value):
+    import re
+    return re.sub(r"[^a-z0-9]+", "-", str(value).lower()).strip("-")
+
+
+@register.filter
 def profit_class(value):
     if value is None:
         return "text-muted"

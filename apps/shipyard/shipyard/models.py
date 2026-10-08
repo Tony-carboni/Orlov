@@ -216,6 +216,30 @@ class ContractPrice(models.Model):
         return f"{self.ship}: {self.price_per_run} per run from contracts"
 
 
+class Ore(models.Model):
+    """A compressed ore or ice type and what it reprocesses into (services/reprocessing.py)."""
+
+    type_id = models.PositiveIntegerField(primary_key=True)
+    name = models.CharField(max_length=100)
+    group_id = models.PositiveIntegerField()
+    group_name = models.CharField(max_length=100)
+    kind = models.CharField(max_length=10, help_text="ore | ice | moon | abyssal")
+    family = models.CharField(max_length=100, help_text="Base ore this is a variant of, e.g. Gneiss")
+    variant = models.CharField(max_length=10, default="base", help_text="base | 0 | II | III | IV | X (grade in the name) | +15 | +100 (moon ore)")
+    portion_size = models.PositiveIntegerField(default=1)
+    volume = models.FloatField(default=0, help_text="m³ per unit")
+    materials = models.JSONField(default=dict, help_text="{material type id: quantity per portion}")
+    skill_id = models.PositiveIntegerField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["kind", "family", "variant"]
+
+    def __str__(self):
+        return self.name
+
+
 class MaterialType(models.Model):
     """Name cache for material type IDs."""
 

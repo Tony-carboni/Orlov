@@ -1,0 +1,117 @@
+{% extends "shipyard/base.html" %}
+{% load static shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · Reprocessing{% endblock %}
+
+{% block shipyard_content %}
+<div class="row g-3 mb-3 align-items-stretch">
+    <div class="col-lg-5 col-xl-4">
+        <div class="card shipyard-facility h-100">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-recycle fa-2x text-info"></i>
+                    <div>
+                        <div class="fw-semibold">Reprocessing at {{ setup.location }}</div>
+                        <div class="small shipyard-k">T2-rigged {{ setup.structure|title }} · all skills V · implant +{{ setup.implant|pct:0 }} · service tax {{ setup.tax|pct:0 }}</div>
+                    </div>
+                </div>
+                <div class="small mt-2">
+                    {% for k, label in kinds %}<span class="me-3"><span class="shipyard-k">{{ label }}</span> <strong>{{ setup.yields|get_item:k|pct:1 }}</strong></span>{% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7 col-xl-8">
+        <div class="shipyard-infobar h-100">
+            <div><span class="shipyard-k">Prices at</span> <strong>{{ settings.market|default:"–" }}</strong> <span class="shipyard-k ms-2">ore bought at lowest sell · output valued at lowest sell · {{ complete_rows }} of {{ rows|length }} ores fully priced</span></div>
+            <div><span class="shipyard-k">Reading the table:</span> <strong>Value</strong> is what one unit of compressed ore gives after reprocessing and tax. <strong>Now</strong> is the Jita sell price as a share of that value: below 100 % the ore is cheaper than its minerals. The <strong>price points</strong> are the most you can pay per unit to keep that share.</div>
+            <div class="shipyard-k">Jita prices refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · figures per unit, no batch rounding</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-2 mb-2 align-items-center">
+    <div class="col-auto">
+        <input type="search" id="repro-text" class="form-control form-control-sm" placeholder="Search ore or mineral…" autocomplete="off" style="width: 16rem">
+    </div>
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" id="repro-kind" aria-label="Kinds (tick any; none ticked shows all)">
+            {% for k, label in kinds %}
+            <input type="checkbox" class="btn-check" id="repro-kind-{{ k }}" value="{{ k }}" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="repro-kind-{{ k }}">{{ label }}</label>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" id="repro-variant" aria-label="Variants (tick any; none ticked shows all)">
+            {% for v, label in variants %}
+            <input type="checkbox" class="btn-check" id="repro-variant-{{ v|slug }}" value="{{ v }}" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="repro-variant-{{ v|slug }}">{{ label }}</label>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#repro-families" aria-expanded="false" aria-controls="repro-families"><i class="fas fa-filter fa-fw"></i> Ore types <span class="badge text-bg-info" id="repro-family-count"></span></button>
+    </div>
+</div>
+<div class="collapse mb-2" id="repro-families">
+    <div class="card card-body py-2" id="repro-family">
+        {% for k, label in kinds %}{% with fams=families|get_item:k %}{% if fams %}
+        <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+            <span class="shipyard-k small me-1" style="min-width: 6.5rem">{{ label }}</span>
+            {% for f in fams %}
+            <input type="checkbox" class="btn-check" id="repro-family-{{ f|slug }}" value="{{ f }}" autocomplete="off">
+            <label class="btn btn-outline-secondary btn-sm py-0" for="repro-family-{{ f|slug }}">{{ f }}</label>
+            {% endfor %}
+        </div>
+        {% endif %}{% endwith %}{% endfor %}
+        <div class="small shipyard-k">Tick any number of ore types; none ticked shows all. Combine with the kind and grade buttons above (II/III/IV-Grade = +5/+10/+15 % minerals on asteroid ore, 0-Grade = half, X-Grade = a stand-alone rich ore; moon ore +15 % and +100 %).</div>
+    </div>
+</div>
+
+<div class="table-responsive">
+<table id="repro-table" class="table table-sm table-hover table-striped align-middle w-100" data-num-from="3" data-num-to="{{ price_points|length|add:7 }}">
+    <thead>
+        <tr>
+            <th>Kind</th>
+            <th>Ore</th>
+            <th>Variant</th>
+            <th class="text-end" title="Packaged volume of one unit">m³</th>
+            <th class="text-end" title="Value of the minerals one unit gives at this facility, after the service tax, at Jita lowest sell">Value</th>
+            <th class="text-end" title="Jita lowest sell price of the compressed ore">Sell</th>
+            <th class="text-end" title="Jita highest buy order for the compressed ore">Buy</th>
+            <th class="text-end" title="Jita sell price as a share of the value: below 100 % the ore costs less than the minerals it gives">Now</th>
+            {% for p in price_points %}<th class="text-end" title="The most you can pay per unit to keep the ore at {{ p }} % of its output value">{{ p }} %</th>{% endfor %}
+            <th>Gives per unit</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+        <tr data-kind="{{ r.ore.kind }}" data-family="{{ r.ore.family }}" data-variant="{{ r.ore.variant }}">
+            <td><span class="badge shipyard-kind shipyard-kind-{{ r.ore.kind }}">{{ r.ore.kind }}</span></td>
+            <td><img src="https://images.evetech.net/types/{{ r.ore.type_id }}/icon?size=32" width="24" height="24" class="me-1 rounded" alt=""><span class="fw-semibold">{{ r.ore.name }}</span>{% if not r.complete %} <i class="fas fa-triangle-exclamation text-warning ms-1" title="A mineral or the ore itself has no Jita price yet"></i>{% endif %}</td>
+            <td data-order="{{ forloop.counter }}">{% if r.ore.variant == 'base' %}<span class="shipyard-k">base</span>{% else %}{{ r.ore.variant|variant_label }}{% endif %}</td>
+            <td class="text-end" data-order="{{ r.ore.volume }}">{{ r.ore.volume|num:3 }}</td>
+            <td class="text-end fw-semibold" data-order="{{ r.net_value }}" title="Before tax {{ r.gross_value|isk:2 }}; yield {{ r.yield_fraction|pct:1 }}">{{ r.net_value|isk:2 }}</td>
+            <td class="text-end" data-order="{{ r.sell_price|default_if_none:'-1' }}">{{ r.sell_price|isk:2 }}</td>
+            <td class="text-end" data-order="{{ r.buy_price|default_if_none:'-1' }}">{{ r.buy_price|isk:2 }}</td>
+            {% with ratio=r.sell_ratio %}
+            <td class="text-end fw-semibold {% if ratio is None %}shipyard-k{% elif ratio <= 0.9 %}text-success{% elif ratio <= 1.0 %}text-warning{% else %}text-danger{% endif %}" data-order="{{ ratio|default_if_none:'9' }}" title="{% if r.buy_ratio %}At Jita buy orders: {{ r.buy_ratio|pct:1 }}{% endif %}">{{ ratio|pct:1 }}</td>
+            {% endwith %}
+            {% for p, price in r.price_points %}<td class="text-end" data-order="{{ price }}">{{ price|isk:2 }}</td>{% endfor %}
+            <td class="small">{% for o in r.outputs %}<span class="text-nowrap me-2" title="{{ o.quantity|num:3 }} × {{ o.unit_price|isk:2 }} ISK = {{ o.value|isk:2 }}">{{ o.name }} <span class="shipyard-k">{{ o.quantity|num:2 }}</span></span>{% endfor %}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+<p class="small text-muted mt-2">
+    Yield = (50 + rig 3) % × (1 + {{ setup.structure|title }} bonus) × skills (Reprocessing V, Reprocessing Efficiency V, ore skill V) × implant, then the structure's service tax on the output value.
+    Minerals are valued at Jita lowest sell; the ore's <strong>Sell</strong> is what you pay buying from sell orders, <strong>Buy</strong> what a buy order would get it for.
+    Outputs are per unit of compressed ore without batch rounding; in game a job rounds down per 100-unit batch, which matters only for tiny jobs.
+</p>
+{% endblock %}
+
+{% block shipyard_js %}
+<script src="{% static 'shipyard/reprocessing.js' %}"></script>
+{% endblock %}

@@ -17,7 +17,7 @@ from . import app_settings, constants
 from .models import (
     Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, Ship, ShipConfig,
 )
-from .services import board, characters, industry
+from .services import board, characters, industry, reprocessing
 from .services.pricing import tax_rates
 
 logger = logging.getLogger(__name__)
@@ -320,6 +320,28 @@ def use_character(request, character_id):
     note = " The character was also registered in Member Audit." if added else ""
     messages.success(request, f"Using {eve_character.character_name}: skills and standings loaded from EVE.{note}")
     return redirect("shipyard:index")
+
+
+@login_required
+@permission_required("shipyard.basic_access")
+def reprocessing_view(request):
+    """Reprocessing tab: compressed ore and ice worth buying at Jita to reprocess."""
+    settings = board.get_user_settings(request.user)
+    rows = reprocessing.dashboard_rows(settings.market)
+    context = _context(
+        request,
+        rows=rows,
+        settings=settings,
+        setup=reprocessing.setup_summary(),
+        kinds=[(k, reprocessing.KIND_LABELS[k]) for k in reprocessing.KINDS],
+        families=reprocessing.families_by_kind(),
+        variants=reprocessing.variants_present(),
+        price_points=list(app_settings.SHIPYARD_REPRO_PRICE_POINTS),
+        freshness=board.data_freshness(),
+        complete_rows=sum(1 for r in rows if r.complete),
+        can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+    )
+    return render(request, "shipyard/reprocessing.html", context)
 
 
 @login_required

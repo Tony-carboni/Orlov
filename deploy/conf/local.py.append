@@ -165,3 +165,9 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_contract_prices"] = {
     "task": "shipyard.tasks.refresh_contract_prices",
     "schedule": crontab(minute="50"),
 }
+
+# Shipyard: compressed ore and ice catalog for the Reprocessing tab (EVE Ref, weekly)
+CELERYBEAT_SCHEDULE["shipyard_refresh_ore_catalog"] = {
+    "task": "shipyard.tasks.refresh_ore_catalog",
+    "schedule": crontab(minute="20", hour="4", day_of_week="sunday"),
+}

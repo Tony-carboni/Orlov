@@ -19,6 +19,10 @@ def get_group(group_id: int) -> dict:
     return get_json(f"{REF_BASE}/groups/{int(group_id)}")
 
 
+def get_category(category_id: int) -> dict:
+    return get_json(f"{REF_BASE}/categories/{int(category_id)}")
+
+
 def type_name(data: dict) -> str:
     name = data.get("name") or {}
     if isinstance(name, dict):
