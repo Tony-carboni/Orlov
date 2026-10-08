@@ -54,7 +54,7 @@ class RowTests(TestCase):
         MaterialType.objects.create(type_id=34, name="Tritanium")
         MaterialType.objects.create(type_id=35, name="Pyerite")
         PriceSnapshot.objects.create(type_id=34, location=self.market, sell_min=4.0, buy_max=3.8)
-        PriceSnapshot.objects.create(type_id=62516, location=self.market, sell_min=12.0, buy_max=11.0)
+        PriceSnapshot.objects.create(type_id=62516, location=self.market, sell_min=12.0, buy_max=11.0, sell_volume=2_469_134.0)
         PriceSnapshot.objects.create(type_id=62520, location=self.market, sell_min=10.0, buy_max=9.0)
         OreMarketStats.objects.create(ore_id=62516, avg_daily_volume=1_234_567.0, avg_price=11.5)
 
@@ -70,6 +70,8 @@ class RowTests(TestCase):
         self.assertAlmostEqual(v.sell_ratio, 12.0 / v.net_value)
         self.assertAlmostEqual(v.buy_ratio, 11.0 / v.net_value)
         self.assertEqual((v.avg_daily_volume, v.avg_price), (1_234_567.0, 11.5))
+        self.assertAlmostEqual(v.market_depth_days, 2.0)
+        self.assertIsNone(rows["Compressed Scordite II-Grade"].market_depth_days)
         self.assertEqual(rows["Compressed Scordite II-Grade"].avg_daily_volume, 0.0)
         self.assertEqual([p for p, _ in v.price_points], [90, 92, 95, 98, 100])
         self.assertAlmostEqual(v.price_points[0][1], v.net_value * 0.9)

@@ -70,7 +70,7 @@
 </div>
 
 <div class="table-responsive">
-<table id="repro-table" class="table table-sm table-hover table-striped align-middle w-100" data-num-from="3" data-num-to="{{ price_points|length|add:9 }}">
+<table id="repro-table" class="table table-sm table-hover table-striped align-middle w-100" data-num-from="3" data-num-to="{{ price_points|length|add:10 }}">
     <thead>
         <tr>
             <th>Kind</th>
@@ -81,6 +81,7 @@
             <th class="text-end" title="Jita lowest sell price of the compressed ore">Sell</th>
             <th class="text-end" title="Jita highest buy order for the compressed ore">Buy</th>
             <th class="text-end" title="Units traded per day in The Forge, 7-day average (ESI history): a feel for how big a buy order can fill">Vol/day</th>
+            <th class="text-end" title="Units on Jita sell orders ÷ units traded per day: how many days of stock the sellers hold. Low = depleted market, sellers may come to buy orders.">Depth (d)</th>
             <th class="text-end" title="Jita highest buy order as a share of the value: what you get the ore at with a buy order. Below 100 % the ore costs less than the minerals it gives.">Buy %</th>
             <th class="text-end" title="Jita lowest sell order as a share of the value: what you pay buying from sell orders">Sell %</th>
             {% for p in price_points %}<th class="text-end" title="The most you can pay per unit to keep the ore at {{ p }} % of its output value">{{ p }} %</th>{% endfor %}
@@ -98,6 +99,7 @@
             <td class="text-end" data-order="{{ r.sell_price|default_if_none:'-1' }}">{{ r.sell_price|isk:2 }}</td>
             <td class="text-end" data-order="{{ r.buy_price|default_if_none:'-1' }}">{{ r.buy_price|isk:2 }}</td>
             <td class="text-end" data-order="{{ r.avg_daily_volume }}" title="7-day average trade price {{ r.avg_price|isk:2 }} ISK">{{ r.avg_daily_volume|num:0 }}</td>
+            <td class="text-end" data-order="{{ r.market_depth_days|default_if_none:'99999' }}" title="{{ r.sell_volume|num:0 }} units on sell orders">{{ r.market_depth_days|depth }}</td>
             {% with ratio=r.buy_ratio %}
             <td class="text-end fw-semibold {% if ratio is None %}shipyard-k{% elif ratio <= 0.9 %}text-success{% elif ratio <= 1.0 %}text-warning{% else %}text-danger{% endif %}" data-order="{{ ratio|default_if_none:'9' }}" title="Highest buy order {{ r.buy_price|isk:2 }} ÷ value {{ r.net_value|isk:2 }}">{{ ratio|pct:1 }}</td>
             {% endwith %}

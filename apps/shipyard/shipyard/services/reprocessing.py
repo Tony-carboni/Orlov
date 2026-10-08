@@ -179,6 +179,12 @@ class OreRow:
     missing: int = 0                 # outputs without a price
     avg_daily_volume: float = 0.0    # units traded per day in The Forge, 7-day average
     avg_price: float = 0.0           # 7-day average trade price
+    sell_volume: float = 0.0         # units on Jita sell orders right now
+
+    @property
+    def market_depth_days(self):
+        """Days the current sell orders would last at the 7-day volume; None without volume."""
+        return self.sell_volume / self.avg_daily_volume if self.avg_daily_volume else None
 
     @property
     def complete(self):
@@ -238,6 +244,7 @@ def dashboard_rows(market) -> list[OreRow]:
             ore=ore, yield_fraction=y, outputs=outputs, gross_value=gross, net_value=gross * (1.0 - tax),
             sell_price=p.sell_min if p else None, buy_price=p.buy_max if p else None, missing=missing,
             avg_daily_volume=st.avg_daily_volume if st else 0.0, avg_price=st.avg_price if st else 0.0,
+            sell_volume=p.sell_volume if p else 0.0,
         ))
     rows.sort(key=lambda r: (r.buy_ratio is None, r.buy_ratio or 0))  # the owner buys: buy-order share first
     return rows
