@@ -235,11 +235,17 @@ RELEVANT_SKILLS = {
 }
 
 # --- Scrapmetal tab: the modules the owner buys to reprocess (2026-10-08) --------------
-# (group label, exact in-game names). Order = display order. Managers add more in the admin.
+# (group label, exact in-game names). Order = the owner's in-game folder order (alphabetical by his folder
+# names: 100mn, 1600, 500mn, 800mm, clutch, EM hard, EXP hard, grapple, hull, kin hard, large guns, mega electron,
+# mega ion, mega neutron, neut, nos, pulse, remote shiebo, smartbomb, therm hard), so lines match the game. Managers add more in the admin.
 SCRAP_GROUPS = [
     ("100MN afterburners", [
         "100MN Monopropellant Enduring Afterburner",
         "100MN Y-S8 Compact Afterburner",
+    ]),
+    ("1600mm plates", [
+        "1600mm Crystalline Carbonide Restrained Plates",
+        "1600mm Rolled Tungsten Compact Plates",
     ]),
     ("500MN microwarpdrives", [
         "500MN Cold-Gas Enduring Microwarpdrive",
@@ -250,25 +256,23 @@ SCRAP_GROUPS = [
         "800mm Crystalline Carbonide Restrained Plates",
         "800mm Rolled Tungsten Compact Plates",
     ]),
-    ("1600mm plates", [
-        "1600mm Crystalline Carbonide Restrained Plates",
-        "1600mm Rolled Tungsten Compact Plates",
+    ("Warp disruption field generators", [
+        "Clutch Restrained Warp Disruption Field Generator",
+        "M-36 Enduring Warp Disruption Field Generator",
+        "Pitfall Compact Warp Disruption Field Generator",
     ]),
     ("EM armor hardeners", [
         "Experimental Enduring EM Armor Hardener I",
         "Prototype Compact EM Armor Hardener I",
     ]),
-    ("Thermal armor hardeners", [
-        "Experimental Enduring Thermal Armor Hardener I",
-        "Prototype Compact Thermal Armor Hardener I",
-    ]),
-    ("Kinetic armor hardeners", [
-        "Experimental Enduring Kinetic Armor Hardener I",
-        "Prototype Compact Kinetic Armor Hardener I",
-    ]),
     ("Explosive armor hardeners", [
         "Experimental Enduring Explosive Armor Hardener I",
         "Prototype Compact Explosive Armor Hardener I",
+    ]),
+    ("Heavy stasis grapplers", [
+        "Heavy Gunnar Compact Stasis Grappler",
+        "Heavy Jigoro Enduring Stasis Grappler",
+        "Heavy Karelin Scoped Stasis Grappler",
     ]),
     ("Large hull repairers", [
         "Large 'Hope' Hull Reconstructor I",
@@ -276,38 +280,9 @@ SCRAP_GROUPS = [
         "Large I-b Polarized Structural Regenerator",
         "Large Inefficient Hull Repair Unit",
     ]),
-    ("Large remote shield boosters", [
-        "Large Asymmetric Enduring Remote Shield Booster",
-        "Large Murky Compact Remote Shield Booster",
-        "Large S95a Scoped Remote Shield Booster",
-    ]),
-    ("Warp disruption field generators", [
-        "Clutch Restrained Warp Disruption Field Generator",
-        "M-36 Enduring Warp Disruption Field Generator",
-        "Pitfall Compact Warp Disruption Field Generator",
-    ]),
-    ("Heavy stasis grapplers", [
-        "Heavy Gunnar Compact Stasis Grappler",
-        "Heavy Jigoro Enduring Stasis Grappler",
-        "Heavy Karelin Scoped Stasis Grappler",
-    ]),
-    ("Heavy energy neutralizers", [
-        "Heavy Gremlin Compact Energy Neutralizer",
-        "Heavy Infectious Scoped Energy Neutralizer",
-    ]),
-    ("Heavy energy nosferatus", [
-        "Heavy Ghoul Compact Energy Nosferatu",
-        "Heavy Knave Scoped Energy Nosferatu",
-    ]),
-    ("Smartbombs", [
-        "'Concussion' Compact Large Graviton Smartbomb",
-        "'Concussion' Compact Medium Graviton Smartbomb",
-        "'Notos' Compact Large Proton Smartbomb",
-        "'Notos' Compact Medium Proton Smartbomb",
-        "'Vehemence' Compact Large EMP Smartbomb",
-        "'Vehemence' Compact Medium EMP Smartbomb",
-        "'YF-12a' Compact Large Plasma Smartbomb",
-        "'YF-12a' Compact Medium Plasma Smartbomb",
+    ("Kinetic armor hardeners", [
+        "Experimental Enduring Kinetic Armor Hardener I",
+        "Prototype Compact Kinetic Armor Hardener I",
     ]),
     ("Large guns (1400mm, 425mm, Tachyon)", [
         "1400mm Carbine Howitzer I",
@@ -320,11 +295,6 @@ SCRAP_GROUPS = [
         "Tachyon Afocal Laser I",
         "Tachyon Anode Particle Stream I",
         "Tachyon Modal Laser I",
-    ]),
-    ("Mega pulse lasers", [
-        "Mega Afocal Pulse Laser I",
-        "Mega Anode Pulse Particle Stream I",
-        "Mega Modal Pulse Laser I",
     ]),
     ("Mega electron blasters", [
         "Anode Mega Electron Particle Cannon I",
@@ -342,6 +312,38 @@ SCRAP_GROUPS = [
         "Limited Mega Neutron Blaster I",
         "Modal Mega Neutron Particle Accelerator I",
         "Regulated Mega Neutron Phase Cannon I",
+    ]),
+    ("Heavy energy neutralizers", [
+        "Heavy Gremlin Compact Energy Neutralizer",
+        "Heavy Infectious Scoped Energy Neutralizer",
+    ]),
+    ("Heavy energy nosferatus", [
+        "Heavy Ghoul Compact Energy Nosferatu",
+        "Heavy Knave Scoped Energy Nosferatu",
+    ]),
+    ("Mega pulse lasers", [
+        "Mega Afocal Pulse Laser I",
+        "Mega Anode Pulse Particle Stream I",
+        "Mega Modal Pulse Laser I",
+    ]),
+    ("Large remote shield boosters", [
+        "Large Asymmetric Enduring Remote Shield Booster",
+        "Large Murky Compact Remote Shield Booster",
+        "Large S95a Scoped Remote Shield Booster",
+    ]),
+    ("Smartbombs", [
+        "'Concussion' Compact Large Graviton Smartbomb",
+        "'Concussion' Compact Medium Graviton Smartbomb",
+        "'Notos' Compact Large Proton Smartbomb",
+        "'Notos' Compact Medium Proton Smartbomb",
+        "'Vehemence' Compact Large EMP Smartbomb",
+        "'Vehemence' Compact Medium EMP Smartbomb",
+        "'YF-12a' Compact Large Plasma Smartbomb",
+        "'YF-12a' Compact Medium Plasma Smartbomb",
+    ]),
+    ("Thermal armor hardeners", [
+        "Experimental Enduring Thermal Armor Hardener I",
+        "Prototype Compact Thermal Armor Hardener I",
     ]),
 ]
 

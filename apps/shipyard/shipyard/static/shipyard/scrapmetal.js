@@ -7,12 +7,13 @@
         if (!el) { return; }
         var numCols = [];
         for (var i = parseInt(el.dataset.numFrom, 10); i <= parseInt(el.dataset.numTo, 10); i++) { numCols.push(i); }
-        // Grouped like the in-game tree: by group (the owner's order), best Sell % first within a group.
+        // Grouped like the in-game tree: the owner's folder order, then the names alphabetically as the game lists them,
+        // so a line here is the same line in the client.
         // A header row per group is drawn whenever the table is ordered by the (hidden) group column;
         // sorting by another column gives a flat list again.
         var colCount = el.querySelectorAll("thead th").length;
         var table = $("#scrap-table").DataTable({
-            order: [[0, "asc"], [8, "asc"]],
+            order: [[0, "asc"], [1, "asc"]],
             paging: false,
             info: true,
             stateSave: false,
