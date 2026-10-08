@@ -43,6 +43,8 @@ SHIPYARD_CONTRACTS_URL = getattr(
 )
 # Regions whose contracts count (The Forge). Empty list = every region.
 SHIPYARD_CONTRACT_REGIONS = getattr(settings, "SHIPYARD_CONTRACT_REGIONS", [10000002])
+# Stations whose contracts count (owner, 2026-10-08: Jita 4-4 only). Empty list = every station.
+SHIPYARD_CONTRACT_STATIONS = getattr(settings, "SHIPYARD_CONTRACT_STATIONS", [60003760])
 # Ship categories priced this way (owner, 2026-10-08): the ones the corp cannot supply.
 SHIPYARD_CONTRACT_CATEGORIES = getattr(settings, "SHIPYARD_CONTRACT_CATEGORIES", ["Pirate", "Trig", "Edencom"])
 # The figure: average per-run price of the cheapest N runs on offer (owner's rule).

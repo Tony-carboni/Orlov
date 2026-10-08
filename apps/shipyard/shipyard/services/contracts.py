@@ -115,15 +115,16 @@ def _true(value) -> bool:
     return str(value).strip().lower() in ("true", "1", "t", "yes")
 
 
-def parse_snapshot(path: str, blueprint_type_ids, regions=None) -> tuple[dict[int, ShipQuote], datetime | None]:
+def parse_snapshot(path: str, blueprint_type_ids, regions=None, stations=None) -> tuple[dict[int, ShipQuote], datetime | None]:
     """Read one archive; returns ({blueprint_type_id: ShipQuote}, snapshot time).
 
-    Only item-exchange contracts with a price, in the wanted regions, whose included
+    Only item-exchange contracts with a price, in the wanted regions and stations, whose included
     items are all copies of the same wanted blueprint, count. Bundles with anything
     else in them are skipped: their price says nothing about the blueprint alone.
     """
     wanted = {int(t) for t in blueprint_type_ids}
     regions = {int(r) for r in (regions if regions is not None else app_settings.SHIPYARD_CONTRACT_REGIONS)}
+    stations = {int(s) for s in (stations if stations is not None else app_settings.SHIPYARD_CONTRACT_STATIONS)}
     quotes = {t: ShipQuote(blueprint_type_id=t) for t in wanted}
     with tarfile.open(path, mode="r:bz2") as tar:
         snapshot_at = None
@@ -139,12 +140,12 @@ def parse_snapshot(path: str, blueprint_type_ids, regions=None) -> tuple[dict[in
             try:
                 price = float(row.get("price") or 0)
                 region = int(row.get("region_id") or 0)
+                station = int(row.get("station_id") or row.get("start_location_id") or 0)
             except ValueError:
                 continue
-            if price <= 0 or (regions and region not in regions):
+            if price <= 0 or (regions and region not in regions) or (stations and station not in stations):
                 continue
-            contracts[row["contract_id"]] = (price, region, row.get("station_id") or row.get("start_location_id") or 0,
-                                             row.get("date_expired") or "")
+            contracts[row["contract_id"]] = (price, region, station, row.get("date_expired") or "")
         items = defaultdict(list)
         for row in _rows(tar, "contract_items.csv"):
             cid = row.get("contract_id")

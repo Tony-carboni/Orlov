@@ -88,21 +88,22 @@ class SnapshotTests(TestCase):
                                         category="Pirate", blueprint_type_id=17931)
         self.caracal = Ship.objects.create(type_id=621, name="Caracal", group_id=26, hull_size="Cruiser",
                                            category="Base", blueprint_type_id=688)
-        c = lambda cid, price, kind="item_exchange", region=10000002: {  # noqa: E731
-            "contract_id": cid, "type": kind, "price": price, "region_id": region, "station_id": 60003760,
+        c = lambda cid, price, kind="item_exchange", region=10000002, station=60003760: {  # noqa: E731
+            "contract_id": cid, "type": kind, "price": price, "region_id": region, "station_id": station,
             "date_expired": "2026-10-20T00:00:00Z", "title": "x"}
         i = lambda cid, tid, runs, qty=1, included="true", bpc="true", me=0, te=0: {  # noqa: E731
             "contract_id": cid, "type_id": tid, "quantity": qty, "is_included": included, "is_blueprint_copy": bpc,
             "runs": runs, "material_efficiency": me, "time_efficiency": te}
         self.path = make_snapshot(
             [c(1, 15e6), c(2, 15e6), c(3, 15e6), c(4, 180e6), c(5, 180e6), c(6, 20e6), c(7, 1e6, kind="auction"),
-             c(8, 50e6), c(9, 12e6, region=10000043), c(10, 100e6), c(11, 0)],
+             c(8, 50e6), c(9, 12e6, region=10000043), c(10, 100e6), c(11, 0), c(12, 1e6, station=60008494)],
             [i(1, 17741, 1), i(2, 17741, 1), i(3, 17741, 1), i(4, 17741, 10), i(5, 17741, 10, me=10, te=20),
              i(6, 17741, 1), i(7, 17741, 1),                       # 7: auction, skipped
              i(8, 17741, 1), i(8, 17740, 1, bpc="false"),          # 8: bundle with a hull, skipped
              i(9, 17741, 1),                                       # 9: other region, skipped
              i(10, 17741, 1, included="false"), i(10, 34, 1),      # 10: the copy is what the issuer wants, skipped
              i(11, 17741, 1),                                      # 11: no price, skipped
+             i(12, 17741, 1),                                      # 12: Perimeter, not Jita 4-4, skipped
              ],
         )
 
@@ -115,6 +116,9 @@ class SnapshotTests(TestCase):
         per_run = sorted(o.per_run for o in quotes[17741].offers)
         self.assertEqual(per_run, [15e6, 15e6, 15e6, 18e6, 18e6, 20e6])
         self.assertEqual(quotes[17931].offers, [])
+        # with the station filter off, the Perimeter contract counts as well
+        quotes_all, _ = contracts.parse_snapshot(self.path, [17741], stations=[])
+        self.assertEqual(len(quotes_all[17741].offers), 7)
         with override_settings(SHIPYARD_CONTRACT_CATEGORIES=["Pirate"]):
             from .. import app_settings
             with mock_setting(app_settings, "SHIPYARD_CONTRACT_CATEGORIES", ["Pirate"]):
