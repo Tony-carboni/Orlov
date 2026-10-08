@@ -4,6 +4,26 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-08 (12:47 UTC) — scheduled cloud session → local session
+
+**Runbook / topic:** one-off removal of Go Browns [GB44] from the state "Family Member" (see `docs/design/membership.md`, change log).
+
+**What was done.** Checked EVE's public API on 2026-10-08 at 12:47 UTC. The corporation Go Browns (corporation_id 98845722) shows alliance_id 99015337. That alliance has the ticker ORLOV (The Orlov Family). So EVE now shows GB44 inside ORLOV and the one-off in the state is no longer needed.
+
+**Owner has to do by hand:** nothing.
+
+### Next - local session
+
+Prompt for the local session: remove corporation GB44 (corporation_id 98845722) from the member_corporations of the State named "Family Member" via the Django shell in the allianceauth_gunicorn container. Announce the write first, run one step at a time, show the result. Before the removal, take a backup with ~/bin/aa-backup.sh. Never print .env contents.
+
+1. Read-only first: list the users Masterxxx and MrFreshy_Valterus with their state and their main character's alliance as auth sees it. Check the State "Family Member": its member_alliances and member_corporations.
+2. If auth still shows no alliance (or not ORLOV) for their main characters, run the eveonline character update for those characters (or wait for the periodic update) and check again. Only continue once both mains show alliance ORLOV in auth.
+3. Announce, then remove GB44 from member_corporations of the State "Family Member" in the Django shell. Show the resulting member_corporations.
+4. Confirm that Masterxxx and MrFreshy_Valterus still have state Family Member through the alliance rule (re-check the state, trigger a state update if needed). If either lost the state, add GB44 back at once and report.
+5. Add a line with today's date to the change log in docs/design/membership.md, commit and push to claude/orlov-alliance-auth, and write the next handoff entry.
+
+---
+
 ## 2026-10-07 (18:00 UTC) — laptop session → desktop session (owner continues tomorrow)
 
 **State of play in one paragraph.** The Shipyard is at **0.3.0** on the server (commit `07f5edb` pinned), with three releases today from this session: 0.1.7 (standings in the broker fee), 0.2.0 (the own front door, switched off), 0.3.0 (My industry page, own blueprints in the numbers, corp/alliance scopes). The front door `shipyards.orlovfamily.space` is **built but closed**: it waits for the owner's DNS record and proxy host (runbook 14 A), then one settings flip (14 C). Everything below is in the repo; the server matches `deploy/`.
@@ -149,14 +169,3 @@ Rules from CLAUDE.md apply (backup first, no rm -rf, nothing in mysql-data/, nev
 
 ### Also
 - `docs/research/04-corp-industry-and-projects.md`: how corp blueprints, hangars, Corporation Projects and payouts work, with scenarios and theft risks; for the owner to consult.
-
----
-
-## 2026-10-06 — local session (laptop) → either session
-
-**Topic:** Discord's join messages moved from `#how-to-get-roles` to `#public-chat`.
-
-### Done
-- The "welcome" lines when somebody joins were **Discord's own system messages**, not the bot: the server's System Messages Channel was `#how-to-get-roles` (flags 0 = all system message types on). The bot has no welcome feature active (`DISCORD_BOT_COGS` = about, time; aadiscordbot WelcomeMessage/GoodbyeMessage tables empty).
-- Changed the server setting to `#public-chat` through the Discord service's API client (`PATCH guilds/{id}` with `system_channel_id`), read back: system messages channel = public-chat. Reversible in Discord: Server Settings → Overview → System Messages Channel.
-- No repo files other than this one changed. Previous session's open items (owner checks of `#jf-gank-board`, `#zkillboard`, the 3 Nov reinforcement date, Go Browns joining, profile names, Alliance Director read-only on the boards) are unchanged; see the 2026-10-05 15:15 entry.
