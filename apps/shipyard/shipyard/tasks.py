@@ -7,10 +7,10 @@ from django.utils import timezone
 
 from . import app_settings
 from .models import (
-    BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun, Ship,
-    ShipConfig, ShipMarketStats,
+    BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun,
+    ScrapItem, Ship, ShipConfig, ShipMarketStats,
 )
-from .services import contracts, esi, everef, fuzzwork, industry, reprocessing
+from .services import contracts, esi, everef, fuzzwork, industry, reprocessing, scrapmetal
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -110,6 +110,9 @@ def refresh_prices():
     # the reprocessing tab: every compressed ore and what it gives
     type_ids |= set(Ore.objects.filter(is_active=True).values_list("type_id", flat=True))
     type_ids |= reprocessing.output_type_ids()
+    # the scrapmetal tab: every module on the list and its minerals
+    type_ids |= scrapmetal.type_ids()
+    type_ids |= scrapmetal.output_type_ids()
     n, errors = 0, []
     for loc in MarketLocation.objects.filter(is_active=True):
         try:
@@ -142,6 +145,19 @@ def refresh_market_stats():
             errors.append(f"{ship.name}: {exc}")
             logger.warning("history failed for %s: %s", ship, exc)
         polite_pause()
+    # the scrapmetal tab: how much of each module Jita trades per day
+    for item in ScrapItem.objects.filter(is_active=True):
+        try:
+            s = esi.volume_stats(region, item.type_id, days)
+            item.avg_daily_volume = s["avg_daily_volume"]
+            item.avg_price = s["avg_price"]
+            item.stats_fetched_at = timezone.now()
+            item.save(update_fields=["avg_daily_volume", "avg_price", "stats_fetched_at"])
+            n += 1
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{item.name}: {exc}")
+            logger.warning("history failed for %s: %s", item, exc)
+        polite_pause()
     # the reprocessing tab: how much of each compressed ore Jita trades per day
     for ore in Ore.objects.filter(is_active=True):
         try:
@@ -168,6 +184,24 @@ def refresh_ore_catalog():
         _done(run, False, 0, str(exc))
         return
     _done(run, True, result["ores"], f"{result['ores']} compressed types in {result['families']} families, {result['materials']} outputs, {result['retired']} retired")
+
+
+@shared_task
+def refresh_scrap_catalog():
+    """Modules of the Scrapmetal tab from the owner's list and EVE Ref (beat entry shipyard_refresh_scrap_catalog, weekly)."""
+    run = _run("scrap")
+    try:
+        result = scrapmetal.import_catalog()
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("scrap catalog refresh failed")
+        _done(run, False, 0, str(exc))
+        return
+    note = f"{result['items']} modules, {result['created']} new, {result['refreshed']} refreshed"
+    if result["unresolved"]:
+        note += "; not found in EVE: " + ", ".join(result["unresolved"])
+    if result["errors"]:
+        note += "; errors: " + "; ".join(result["errors"][:10])
+    _done(run, not result["errors"] and not result["unresolved"], result["items"], note)
 
 
 @shared_task

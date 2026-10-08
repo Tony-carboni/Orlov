@@ -17,7 +17,7 @@ from . import app_settings, constants
 from .models import (
     Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, Ship, ShipConfig,
 )
-from .services import board, characters, industry, reprocessing
+from .services import board, characters, industry, reprocessing, scrapmetal
 from .services.pricing import tax_rates
 
 logger = logging.getLogger(__name__)
@@ -344,6 +344,27 @@ def reprocessing_view(request):
         can_manage=request.user.has_perm("shipyard.manage_shipyard"),
     )
     return render(request, "shipyard/reprocessing.html", context)
+
+
+@login_required
+@permission_required("shipyard.basic_access")
+def scrapmetal_view(request):
+    """Scrapmetal tab: modules worth buying at Jita to reprocess for their minerals."""
+    settings = board.get_user_settings(request.user)
+    rows = scrapmetal.dashboard_rows(settings.market, settings)
+    context = _context(
+        request,
+        rows=rows,
+        settings=settings,
+        setup=scrapmetal.setup_summary(settings),
+        groups=scrapmetal.groups_present(),
+        variants=scrapmetal.variants_present(),
+        price_points=list(app_settings.SHIPYARD_SCRAP_PRICE_POINTS),
+        freshness=board.data_freshness(),
+        complete_rows=sum(1 for r in rows if r.complete),
+        can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+    )
+    return render(request, "shipyard/scrapmetal.html", context)
 
 
 @login_required

@@ -250,6 +250,31 @@ class Ore(models.Model):
         return self.MOON_RARITY.get(first, "")
 
 
+class ScrapItem(models.Model):
+    """A module the owner buys to reprocess, and what it gives (services/scrapmetal.py)."""
+
+    type_id = models.PositiveIntegerField(primary_key=True)
+    name = models.CharField(max_length=100)
+    group = models.CharField(max_length=60, default="Other", help_text="Group shown on the Scrapmetal tab, e.g. 'Smartbombs'")
+    group_order = models.PositiveIntegerField(default=999)
+    variant = models.CharField(max_length=12, default="other", help_text="Compact | Enduring | Scoped | Restrained | Ample | other, from the name")
+    meta_level = models.PositiveSmallIntegerField(default=0)
+    portion_size = models.PositiveIntegerField(default=1)
+    volume = models.FloatField(default=0, help_text="Packaged m³ per unit")
+    materials = models.JSONField(default=dict, help_text="{material type id: quantity per unit before yield}")
+    is_active = models.BooleanField(default=True)
+    avg_daily_volume = models.FloatField(default=0)
+    avg_price = models.FloatField(default=0)
+    stats_fetched_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["group_order", "group", "name"]
+
+    def __str__(self):
+        return self.name
+
+
 class OreMarketStats(models.Model):
     """Regional history aggregates for a compressed ore (same shape as ShipMarketStats)."""
 
@@ -348,6 +373,7 @@ class UserSettings(models.Model):
     adv_medium_ship = models.PositiveSmallIntegerField(default=0)
     adv_large_ship = models.PositiveSmallIntegerField(default=0)
     adv_industrial_ship = models.PositiveSmallIntegerField(default=0)
+    scrapmetal_processing = models.PositiveSmallIntegerField(default=0)
 
     bpc_markup = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Blueprint markup for this member in % (blank = the corp's default). Managers only; 0 for people who build from their own stash.")
     manual_sales_tax = models.DecimalField(max_digits=5, decimal_places=3, null=True, blank=True, help_text="Override sales tax % (from the in-game market window)")

@@ -1,0 +1,114 @@
+{% extends "shipyard/base.html" %}
+{% load static shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · Scrapmetal{% endblock %}
+
+{% block shipyard_content %}
+<div class="row g-3 mb-3 align-items-stretch">
+    <div class="col-lg-5 col-xl-4">
+        <div class="card shipyard-facility h-100">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-screwdriver-wrench fa-2x text-info"></i>
+                    <div>
+                        <div class="fw-semibold">Module reprocessing at {{ setup.location }}</div>
+                        <div class="small shipyard-k">Scrapmetal Processing {{ setup.level }}{% if setup.from_character %} ({{ settings.skills_character_name }}){% else %} (default; choose a character under My settings to use yours){% endif %} · service tax {{ setup.tax|pct:0 }}</div>
+                    </div>
+                </div>
+                <div class="small mt-2"><span class="shipyard-k">Yield</span> <strong>{{ setup.yield|pct:0 }}</strong> <span class="shipyard-k">— the structure, rigs and implants play no part for modules; each mineral is rounded down per unit, as in game</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7 col-xl-8">
+        <div class="shipyard-infobar h-100">
+            <div><span class="shipyard-k">Prices at</span> <strong>{{ settings.market|default:"–" }}</strong> <span class="shipyard-k ms-2">modules bought at lowest sell · output valued at lowest sell · {{ complete_rows }} of {{ rows|length }} modules fully priced</span></div>
+            <div><span class="shipyard-k">Reading the table:</span> <strong>Value</strong> is what one module gives after reprocessing. <strong>Sell %</strong> is the Jita lowest sell order as a share of that value: below 100 % the module costs less than its minerals; green at or below 90 %, amber up to 100 %, red above. <strong>Buy %</strong> is the same for the highest buy order. The <strong>price points</strong> are the most you can pay per unit to keep that share.</div>
+            <div class="shipyard-k">Jita prices refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · catalog from the owner's list; managers add modules in the admin (Shipyard → Scrap items)</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-2 mb-2 align-items-center">
+    <div class="col-auto">
+        <input type="search" id="scrap-text" class="form-control form-control-sm" placeholder="Search module or mineral…" autocomplete="off" style="width: 16rem">
+    </div>
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" id="scrap-variant" aria-label="Variants (tick any; none ticked shows all)">
+            {% for v in variants %}
+            <input type="checkbox" class="btn-check" id="scrap-variant-{{ v|slug }}" value="{{ v }}" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="scrap-variant-{{ v|slug }}">{{ v }}</label>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-auto form-check form-switch ms-2 mt-1">
+        <input class="form-check-input" type="checkbox" id="scrap-favourable">
+        <label class="form-check-label small" for="scrap-favourable">Only favourable (Sell % under 100)</label>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#scrap-groups" aria-expanded="false" aria-controls="scrap-groups"><i class="fas fa-filter fa-fw"></i> Module groups <span class="badge text-bg-info" id="scrap-group-count"></span></button>
+    </div>
+</div>
+<div class="collapse mb-2" id="scrap-groups">
+    <div class="card card-body py-2" id="scrap-group">
+        <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+            {% for g in groups %}
+            <input type="checkbox" class="btn-check" id="scrap-group-{{ g|slug }}" value="{{ g }}" autocomplete="off">
+            <label class="btn btn-outline-secondary btn-sm py-0" for="scrap-group-{{ g|slug }}">{{ g }}</label>
+            {% endfor %}
+        </div>
+        <div class="small shipyard-k">Tick any number of groups; none ticked shows all.</div>
+    </div>
+</div>
+
+<div class="table-responsive">
+<table id="scrap-table" class="table table-sm table-hover table-striped align-middle w-100" data-num-from="2" data-num-to="{{ price_points|length|add:9 }}">
+    <thead>
+        <tr>
+            <th>Group</th>
+            <th>Module</th>
+            <th class="text-end" title="Packaged volume of one unit">m³</th>
+            <th class="text-end" title="Value of the minerals one module gives at {{ setup.yield|pct:0 }} yield, each rounded down, at Jita lowest sell">Value</th>
+            <th class="text-end" title="Jita lowest sell price of the module: what you pay buying from sell orders">Sell</th>
+            <th class="text-end" title="Jita highest buy order for the module">Buy</th>
+            <th class="text-end" title="Units traded per day in The Forge, 7-day average (ESI history)">Vol/day</th>
+            <th class="text-end" title="Units on Jita sell orders ÷ units traded per day">Depth (d)</th>
+            <th class="text-end" title="Jita lowest sell as a share of the value: what you pay now. Below 100 % the module costs less than the minerals it gives.">Sell %</th>
+            <th class="text-end" title="Jita highest buy order as a share of the value: what a buy order would get it at">Buy %</th>
+            {% for p in price_points %}<th class="text-end" title="The most you can pay per unit to keep the module at {{ p }} % of its output value">{{ p }} %</th>{% endfor %}
+            <th>Gives per unit</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+        <tr data-group="{{ r.item.group }}" data-variant="{{ r.item.variant }}" data-favourable="{% if r.sell_ratio is not None and r.sell_ratio < 1 %}1{% else %}0{% endif %}">
+            <td><span class="badge text-bg-dark border border-secondary">{{ r.item.group }}</span></td>
+            <td><img src="https://images.evetech.net/types/{{ r.item.type_id }}/icon?size=32" width="24" height="24" class="me-1 rounded" alt=""><span class="fw-semibold">{{ r.item.name }}</span>{% if not r.complete %} <i class="fas fa-triangle-exclamation text-warning ms-1" title="A mineral or the module itself has no Jita price yet"></i>{% endif %}</td>
+            <td class="text-end" data-order="{{ r.item.volume }}">{{ r.item.volume|num:1 }}</td>
+            <td class="text-end fw-semibold" data-order="{{ r.net_value }}" title="Before tax {{ r.gross_value|isk:2 }}; yield {{ r.yield_fraction|pct:0 }}">{{ r.net_value|isk:2 }}</td>
+            <td class="text-end" data-order="{{ r.sell_price|default_if_none:'-1' }}">{{ r.sell_price|isk:2 }}</td>
+            <td class="text-end" data-order="{{ r.buy_price|default_if_none:'-1' }}">{{ r.buy_price|isk:2 }}</td>
+            <td class="text-end" data-order="{{ r.item.avg_daily_volume }}" title="7-day average trade price {{ r.item.avg_price|isk:2 }} ISK">{{ r.item.avg_daily_volume|num:0 }}</td>
+            <td class="text-end" data-order="{{ r.market_depth_days|default_if_none:'99999' }}" title="{{ r.sell_volume|num:0 }} units on sell orders">{{ r.market_depth_days|depth }}</td>
+            {% with ratio=r.sell_ratio %}
+            <td class="text-end fw-semibold {% if ratio is None %}shipyard-k{% elif ratio <= 0.9 %}text-success{% elif ratio <= 1.0 %}text-warning{% else %}text-danger{% endif %}" data-order="{{ ratio|default_if_none:'9' }}" title="Lowest sell order {{ r.sell_price|isk:2 }} ÷ value {{ r.net_value|isk:2 }}">{{ ratio|pct:1 }}</td>
+            {% endwith %}
+            {% with ratio=r.buy_ratio %}
+            <td class="text-end {% if ratio is None %}shipyard-k{% elif ratio <= 0.9 %}text-success{% elif ratio <= 1.0 %}text-warning{% else %}text-danger{% endif %}" data-order="{{ ratio|default_if_none:'9' }}" title="Highest buy order {{ r.buy_price|isk:2 }} ÷ value {{ r.net_value|isk:2 }}">{{ ratio|pct:1 }}</td>
+            {% endwith %}
+            {% for p, price in r.price_points %}<td class="text-end" data-order="{{ price }}">{{ price|isk:2 }}</td>{% endfor %}
+            <td class="small">{% for o in r.outputs %}<span class="text-nowrap me-2" title="{{ o.quantity }} × {{ o.unit_price|isk:2 }} ISK = {{ o.value|isk:2 }}">{{ o.name }} <span class="shipyard-k">{{ o.quantity }}</span></span>{% endfor %}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+<p class="small text-muted mt-2">
+    Yield = 50 % + 2 % per level of Scrapmetal Processing; the structure, its rigs and implants do not apply to modules, and the Isikano Raitaru takes no tax.
+    Each mineral is rounded down per unit reprocessed, as the game does, so cheap modules with tiny mineral amounts lose more than the yield alone suggests.
+    Minerals are valued at Jita lowest sell; the module's <strong>Sell</strong> is what you pay buying from sell orders, <strong>Buy</strong> what a buy order would get it for.
+</p>
+{% endblock %}
+
+{% block shipyard_js %}
+<script src="{% static 'shipyard/scrapmetal.js' %}"></script>
+{% endblock %}

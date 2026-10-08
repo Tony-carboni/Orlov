@@ -220,6 +220,7 @@ SKILL_ADV_SMALL_SHIP = 3395
 SKILL_ADV_MEDIUM_SHIP = 3396
 SKILL_ADV_LARGE_SHIP = 3397
 SKILL_ADV_INDUSTRIAL_SHIP = 3398
+SKILL_SCRAPMETAL = 12196
 
 RELEVANT_SKILLS = {
     SKILL_ACCOUNTING: ("accounting", "Accounting", "−11 % sales tax per level"),
@@ -230,7 +231,119 @@ RELEVANT_SKILLS = {
     SKILL_ADV_MEDIUM_SHIP: ("adv_medium_ship", "Advanced Medium Ship Construction", "−1 % build time per level (cruisers, battlecruisers)"),
     SKILL_ADV_LARGE_SHIP: ("adv_large_ship", "Advanced Large Ship Construction", "−1 % build time per level (battleships)"),
     SKILL_ADV_INDUSTRIAL_SHIP: ("adv_industrial_ship", "Advanced Industrial Ship Construction", "−1 % build time per level (haulers, barges)"),
+    SKILL_SCRAPMETAL: ("scrapmetal_processing", "Scrapmetal Processing", "+2 % module reprocessing yield per level (Scrapmetal tab)"),
 }
+
+# --- Scrapmetal tab: the modules the owner buys to reprocess (2026-10-08) --------------
+# (group label, exact in-game names). Order = display order. Managers add more in the admin.
+SCRAP_GROUPS = [
+    ("100MN afterburners", [
+        "100MN Monopropellant Enduring Afterburner",
+        "100MN Y-S8 Compact Afterburner",
+    ]),
+    ("500MN microwarpdrives", [
+        "500MN Cold-Gas Enduring Microwarpdrive",
+        "500MN Quad LiF Restrained Microwarpdrive",
+        "500MN Y-T8 Compact Microwarpdrive",
+    ]),
+    ("800mm plates", [
+        "800mm Crystalline Carbonide Restrained Plates",
+        "800mm Rolled Tungsten Compact Plates",
+    ]),
+    ("1600mm plates", [
+        "1600mm Crystalline Carbonide Restrained Plates",
+        "1600mm Rolled Tungsten Compact Plates",
+    ]),
+    ("EM armor hardeners", [
+        "Experimental Enduring EM Armor Hardener I",
+        "Prototype Compact EM Armor Hardener I",
+    ]),
+    ("Thermal armor hardeners", [
+        "Experimental Enduring Thermal Armor Hardener I",
+        "Prototype Compact Thermal Armor Hardener I",
+    ]),
+    ("Kinetic armor hardeners", [
+        "Experimental Enduring Kinetic Armor Hardener I",
+        "Prototype Compact Kinetic Armor Hardener I",
+    ]),
+    ("Explosive armor hardeners", [
+        "Experimental Enduring Explosive Armor Hardener I",
+        "Prototype Compact Explosive Armor Hardener I",
+    ]),
+    ("Large hull repairers", [
+        "Large 'Hope' Hull Reconstructor I",
+        "Large Automated Structural Restoration",
+        "Large I-b Polarized Structural Regenerator",
+        "Large Inefficient Hull Repair Unit",
+    ]),
+    ("Large remote shield boosters", [
+        "Large Asymmetric Enduring Remote Shield Booster",
+        "Large Murky Compact Remote Shield Booster",
+        "Large S95a Scoped Remote Shield Booster",
+    ]),
+    ("Warp disruption field generators", [
+        "Clutch Restrained Warp Disruption Field Generator",
+        "M-36 Enduring Warp Disruption Field Generator",
+        "Pitfall Compact Warp Disruption Field Generator",
+    ]),
+    ("Heavy stasis grapplers", [
+        "Heavy Gunnar Compact Stasis Grappler",
+        "Heavy Jigoro Enduring Stasis Grappler",
+        "Heavy Karelin Scoped Stasis Grappler",
+    ]),
+    ("Heavy energy neutralizers", [
+        "Heavy Gremlin Compact Energy Neutralizer",
+        "Heavy Infectious Scoped Energy Neutralizer",
+    ]),
+    ("Heavy energy nosferatus", [
+        "Heavy Ghoul Compact Energy Nosferatu",
+        "Heavy Knave Scoped Energy Nosferatu",
+    ]),
+    ("Smartbombs", [
+        "'Concussion' Compact Large Graviton Smartbomb",
+        "'Concussion' Compact Medium Graviton Smartbomb",
+        "'Notos' Compact Large Proton Smartbomb",
+        "'Notos' Compact Medium Proton Smartbomb",
+        "'Vehemence' Compact Large EMP Smartbomb",
+        "'Vehemence' Compact Medium EMP Smartbomb",
+        "'YF-12a' Compact Large Plasma Smartbomb",
+        "'YF-12a' Compact Medium Plasma Smartbomb",
+    ]),
+    ("Large guns (1400mm, 425mm, Tachyon)", [
+        "1400mm Carbine Howitzer I",
+        "1400mm Gallium Cannon",
+        "1400mm Prototype Siege Cannon",
+        "425mm 'Scout' Accelerator Cannon",
+        "425mm Carbide Railgun I",
+        "425mm Compressed Coil Gun I",
+        "425mm Prototype Gauss Gun",
+        "Tachyon Afocal Laser I",
+        "Tachyon Anode Particle Stream I",
+        "Tachyon Modal Laser I",
+    ]),
+    ("Mega pulse lasers", [
+        "Mega Afocal Pulse Laser I",
+        "Mega Anode Pulse Particle Stream I",
+        "Mega Modal Pulse Laser I",
+    ]),
+    ("Mega electron blasters", [
+        "Anode Mega Electron Particle Cannon I",
+        "Limited Electron Blaster Cannon I",
+        "Modal Mega Electron Particle Accelerator I",
+        "Regulated Mega Electron Phase Cannon I",
+    ]),
+    ("Mega ion blasters", [
+        "Limited Mega Ion Blaster I",
+        "Modal Mega Ion Particle Accelerator I",
+        "Regulated Mega Ion Phase Cannon I",
+    ]),
+    ("Mega neutron blasters", [
+        "Anode Mega Neutron Particle Cannon I",
+        "Limited Mega Neutron Blaster I",
+        "Modal Mega Neutron Particle Accelerator I",
+        "Regulated Mega Neutron Phase Cannon I",
+    ]),
+]
 
 # EVE Ref cost API skill parameter names, keyed by our field names
 EVEREF_SKILL_PARAMS = {

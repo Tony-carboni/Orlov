@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    ScrapItem,
     BuildSnapshot, CharacterSync, Facility, IndustryJob, LocationName, LpFaction, MarketLocation, RefreshRun,
     Ship, ShipConfig, ShipMarketStats, UserSettings,
 )
@@ -77,3 +78,14 @@ class UserSettingsAdmin(admin.ModelAdmin):
 class RefreshRunAdmin(admin.ModelAdmin):
     list_display = ("started_at", "finished_at", "step", "ok", "items", "message")
     list_filter = ("step", "ok")
+
+
+@admin.register(ScrapItem)
+class ScrapItemAdmin(admin.ModelAdmin):
+    """Modules of the Scrapmetal tab. Add a row with the type id and a group; the weekly catalog task fills the rest."""
+
+    list_display = ("name", "type_id", "group", "group_order", "variant", "meta_level", "volume", "is_active", "updated_at")
+    list_filter = ("group", "variant", "is_active")
+    list_editable = ("group", "group_order", "is_active")
+    search_fields = ("name",)
+

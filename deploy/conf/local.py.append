@@ -171,3 +171,9 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_ore_catalog"] = {
     "task": "shipyard.tasks.refresh_ore_catalog",
     "schedule": crontab(minute="20", hour="4", day_of_week="sunday"),
 }
+
+# Shipyard: modules of the Scrapmetal tab (owner's list + EVE Ref, weekly)
+CELERYBEAT_SCHEDULE["shipyard_refresh_scrap_catalog"] = {
+    "task": "shipyard.tasks.refresh_scrap_catalog",
+    "schedule": crontab(minute="30", hour="4", day_of_week="sunday"),
+}
