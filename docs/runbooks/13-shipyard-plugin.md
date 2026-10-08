@@ -81,6 +81,8 @@ New commits to `apps/shipyard` don't reach the server by themselves. Update = ch
 
 *Releases 0.8.1 and 0.8.2, 2026-10-08 (commit `5a4d295` pinned): the Scrapmetal table reads like the in-game market tree. Grouped by the owner's folders **in his exact in-game order** (100mn, 1600, 500mn, 800mm, clutch, EM hard, EXP hard, grapple, hull, kin hard, large guns, mega electron, mega ion, mega neutron, neut, nos, pulse, remote shiebo, smartbomb, therm hard = `constants.SCRAP_GROUPS` order), a header row per group, the modules indented beneath it in the client's alphabetical order, so a line on the tab is the same line in the game. Clicking any other column sorts the flat list; the Group column is hidden but still searched. No migration; the stored `group_order` was updated from the constants after the rollout.*
 
+*Release 0.8.3, 2026-10-08 (commit `ba0a844` pinned): the Scrapmetal table drops the **Sell %** column (the owner buys with buy orders); **Buy %** is the bold, coloured ratio and the "Only favourable" switch means Buy % under 100. Sell price and Buy price columns stay. No migration. Tests 66.*
+
 ## D. Releasing to members (later, your call)
 
 *2026-10-08: closed again on the owner's wish. Only the user `tony` holds `shipyard.basic_access` (user permission); the states Family Member and Family Friend lost it. Reopening = the state grant below, done by the local session on request.*
