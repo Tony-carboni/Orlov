@@ -7,8 +7,8 @@ from django.utils import timezone
 
 from . import app_settings
 from .models import (
-    BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, PriceSnapshot, RefreshRun, Ship, ShipConfig,
-    ShipMarketStats,
+    BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun, Ship,
+    ShipConfig, ShipMarketStats,
 )
 from .services import contracts, esi, everef, fuzzwork, industry, reprocessing
 from .services.http import polite_pause
@@ -141,6 +141,18 @@ def refresh_market_stats():
         except Exception as exc:  # noqa: BLE001
             errors.append(f"{ship.name}: {exc}")
             logger.warning("history failed for %s: %s", ship, exc)
+        polite_pause()
+    # the reprocessing tab: how much of each compressed ore Jita trades per day
+    for ore in Ore.objects.filter(is_active=True):
+        try:
+            s = esi.volume_stats(region, ore.type_id, days)
+            OreMarketStats.objects.update_or_create(
+                ore=ore, defaults={**s, "region_id": region, "fetched_at": timezone.now()}
+            )
+            n += 1
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{ore.name}: {exc}")
+            logger.warning("history failed for %s: %s", ore, exc)
         polite_pause()
     _done(run, not errors, n, "; ".join(errors[:20]))
 

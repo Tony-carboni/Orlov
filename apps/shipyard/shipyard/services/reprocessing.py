@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from django.utils import timezone
 
 from .. import app_settings
-from ..models import MaterialType, Ore, PriceSnapshot
+from ..models import MaterialType, Ore, OreMarketStats, PriceSnapshot
 from . import everef
 
 logger = logging.getLogger(__name__)
@@ -177,6 +177,8 @@ class OreRow:
     sell_price: float | None = None  # Jita lowest sell of the compressed ore
     buy_price: float | None = None   # Jita highest buy
     missing: int = 0                 # outputs without a price
+    avg_daily_volume: float = 0.0    # units traded per day in The Forge, 7-day average
+    avg_price: float = 0.0           # 7-day average trade price
 
     @property
     def complete(self):
@@ -212,6 +214,7 @@ def dashboard_rows(market) -> list[OreRow]:
     if market is not None:
         prices = {p.type_id: p for p in PriceSnapshot.objects.filter(location=market, type_id__in=type_ids)}
     names = {m.type_id: m.name for m in MaterialType.objects.filter(type_id__in=mat_ids)}
+    stats = {s.ore_id: s for s in OreMarketStats.objects.filter(ore__in=ores)}
     tax = float(app_settings.SHIPYARD_REPRO_TAX)
     rows = []
     for ore in ores:
@@ -230,9 +233,11 @@ def dashboard_rows(market) -> list[OreRow]:
             outputs.append(Output(type_id=tid, name=names.get(tid, f"Type {tid}"), quantity=per_unit, unit_price=unit_price, value=value))
         outputs.sort(key=lambda o: -(o.value or 0))
         p = prices.get(ore.type_id)
+        st = stats.get(ore.type_id)
         rows.append(OreRow(
             ore=ore, yield_fraction=y, outputs=outputs, gross_value=gross, net_value=gross * (1.0 - tax),
             sell_price=p.sell_min if p else None, buy_price=p.buy_max if p else None, missing=missing,
+            avg_daily_volume=st.avg_daily_volume if st else 0.0, avg_price=st.avg_price if st else 0.0,
         ))
     rows.sort(key=lambda r: (r.buy_ratio is None, r.buy_ratio or 0))  # the owner buys: buy-order share first
     return rows

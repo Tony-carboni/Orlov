@@ -1,7 +1,7 @@
 """Reprocessing tab: yield formula, families from material signatures, dashboard rows."""
 from django.test import SimpleTestCase, TestCase
 
-from ..models import MarketLocation, MaterialType, Ore, PriceSnapshot
+from ..models import MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot
 from ..services import reprocessing
 from ..services.reprocessing import family_and_variant, yield_fraction
 
@@ -56,6 +56,7 @@ class RowTests(TestCase):
         PriceSnapshot.objects.create(type_id=34, location=self.market, sell_min=4.0, buy_max=3.8)
         PriceSnapshot.objects.create(type_id=62516, location=self.market, sell_min=12.0, buy_max=11.0)
         PriceSnapshot.objects.create(type_id=62520, location=self.market, sell_min=10.0, buy_max=9.0)
+        OreMarketStats.objects.create(ore_id=62516, avg_daily_volume=1_234_567.0, avg_price=11.5)
 
     def test_rows(self):
         rows = {r.ore.name: r for r in reprocessing.dashboard_rows(self.market)}
@@ -67,6 +68,9 @@ class RowTests(TestCase):
         self.assertAlmostEqual(v.net_value, 16 * y * 0.98, places=6)
         self.assertTrue(v.complete)
         self.assertAlmostEqual(v.sell_ratio, 12.0 / v.net_value)
+        self.assertAlmostEqual(v.buy_ratio, 11.0 / v.net_value)
+        self.assertEqual((v.avg_daily_volume, v.avg_price), (1_234_567.0, 11.5))
+        self.assertEqual(rows["Compressed Scordite II-Grade"].avg_daily_volume, 0.0)
         self.assertEqual([p for p, _ in v.price_points], [90, 92, 95, 98, 100])
         self.assertAlmostEqual(v.price_points[0][1], v.net_value * 0.9)
         self.assertAlmostEqual(v.price_points[-1][1], v.net_value)

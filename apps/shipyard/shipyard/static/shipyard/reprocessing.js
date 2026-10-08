@@ -8,7 +8,7 @@
         var numCols = [];
         for (var i = parseInt(el.dataset.numFrom, 10); i <= parseInt(el.dataset.numTo, 10); i++) { numCols.push(i); }
         var table = $("#repro-table").DataTable({
-            order: [[7, "asc"]],
+            order: [[8, "asc"]],
             paging: false,
             info: true,
             stateSave: true,

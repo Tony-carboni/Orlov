@@ -240,6 +240,17 @@ class Ore(models.Model):
         return self.name
 
 
+class OreMarketStats(models.Model):
+    """Regional history aggregates for a compressed ore (same shape as ShipMarketStats)."""
+
+    ore = models.OneToOneField(Ore, on_delete=models.CASCADE, related_name="market_stats")
+    region_id = models.PositiveIntegerField(default=constants.THE_FORGE_REGION_ID)
+    avg_daily_volume = models.FloatField(default=0)
+    avg_price = models.FloatField(default=0)
+    days = models.PositiveSmallIntegerField(default=7)
+    fetched_at = models.DateTimeField(default=timezone.now)
+
+
 class MaterialType(models.Model):
     """Name cache for material type IDs."""
 
