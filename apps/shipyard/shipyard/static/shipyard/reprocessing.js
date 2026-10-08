@@ -31,6 +31,7 @@
         remember("#repro-kind", "shipyard.repro.kinds");
         remember("#repro-variant", "shipyard.repro.variants");
         remember("#repro-family", "shipyard.repro.families");
+        remember("#repro-rarity", "shipyard.repro.rarities");
 
         $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
             if (settings.nTable.id !== "repro-table") { return true; }
@@ -39,6 +40,8 @@
             if (kinds.length && kinds.indexOf(row.dataset.kind) < 0) { return false; }
             if (variants.length && variants.indexOf(row.dataset.variant) < 0) { return false; }
             if (families.length && families.indexOf(row.dataset.family) < 0) { return false; }
+            var rarities = selected("#repro-rarity");
+            if (rarities.length && rarities.indexOf(row.dataset.rarity) < 0) { return false; }
             return true;
         });
 
@@ -48,7 +51,7 @@
         }
         $("#repro-text").val(table.search());
         $("#repro-text").on("input search", function () { table.search(this.value).draw(); });
-        $("#repro-kind input, #repro-variant input, #repro-family input").on("change", function () { familyCount(); table.draw(); });
+        $("#repro-kind input, #repro-variant input, #repro-family input, #repro-rarity input").on("change", function () { familyCount(); table.draw(); });
         familyCount();
         table.draw();
     });

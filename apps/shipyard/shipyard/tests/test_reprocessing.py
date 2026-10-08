@@ -84,3 +84,11 @@ class RowTests(TestCase):
         self.assertEqual(reprocessing.families_by_kind()["ore"], ["Scordite", "Veldspar"])
         self.assertIn(34, reprocessing.output_type_ids())
         self.assertEqual(reprocessing.variants_present(), [("base", "base"), ("II", "II-Grade")])
+        # moon ore rarity from the group name
+        z = Ore.objects.create(type_id=62463, name="Compressed Zeolites", group_id=1884, group_name="Ubiquitous Moon Asteroids",
+                               kind="moon", family="Zeolites", variant="base", portion_size=100, volume=0.1, materials={"16634": 65})
+        Ore.objects.create(type_id=62471, name="Compressed Monazite", group_id=1923, group_name="Exceptional Moon Asteroids",
+                           kind="moon", family="Monazite", variant="base", portion_size=100, volume=0.1, materials={"16650": 4})
+        self.assertEqual(z.rarity, "R4")
+        self.assertEqual(Ore.objects.get(type_id=62516).rarity, "")
+        self.assertEqual(reprocessing.rarities_present(), ["R4", "R64"])

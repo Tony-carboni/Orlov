@@ -50,6 +50,16 @@
             {% endfor %}
         </div>
     </div>
+    {% if rarities %}
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" id="repro-rarity" aria-label="Moon ore rarity (tick any; none ticked shows all)">
+            {% for r in rarities %}
+            <input type="checkbox" class="btn-check" id="repro-rarity-{{ r }}" value="{{ r }}" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="repro-rarity-{{ r }}" title="{% if r == 'R4' %}Ubiquitous{% elif r == 'R8' %}Common{% elif r == 'R16' %}Uncommon{% elif r == 'R32' %}Rare{% else %}Exceptional{% endif %} moon ore">{{ r }}</label>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
     <div class="col-auto">
         <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#repro-families" aria-expanded="false" aria-controls="repro-families"><i class="fas fa-filter fa-fw"></i> Ore types <span class="badge text-bg-info" id="repro-family-count"></span></button>
     </div>
@@ -90,8 +100,8 @@
     </thead>
     <tbody>
     {% for r in rows %}
-        <tr data-kind="{{ r.ore.kind }}" data-family="{{ r.ore.family }}" data-variant="{{ r.ore.variant }}">
-            <td><span class="badge shipyard-kind shipyard-kind-{{ r.ore.kind }}">{{ r.ore.kind }}</span></td>
+        <tr data-kind="{{ r.ore.kind }}" data-family="{{ r.ore.family }}" data-variant="{{ r.ore.variant }}" data-rarity="{{ r.ore.rarity }}">
+            <td><span class="badge shipyard-kind shipyard-kind-{{ r.ore.kind }}">{{ r.ore.kind }}</span>{% if r.ore.rarity %} <span class="badge text-bg-dark border border-secondary" title="{{ r.ore.group_name }}">{{ r.ore.rarity }}</span>{% endif %}</td>
             <td><img src="https://images.evetech.net/types/{{ r.ore.type_id }}/icon?size=32" width="24" height="24" class="me-1 rounded" alt=""><span class="fw-semibold">{{ r.ore.name }}</span>{% if not r.complete %} <i class="fas fa-triangle-exclamation text-warning ms-1" title="A mineral or the ore itself has no Jita price yet"></i>{% endif %}</td>
             <td data-order="{{ forloop.counter }}">{% if r.ore.variant == 'base' %}<span class="shipyard-k">base</span>{% else %}{{ r.ore.variant|variant_label }}{% endif %}</td>
             <td class="text-end" data-order="{{ r.ore.volume }}">{{ r.ore.volume|num:3 }}</td>
