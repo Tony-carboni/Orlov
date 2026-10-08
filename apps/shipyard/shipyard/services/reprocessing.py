@@ -234,7 +234,7 @@ def dashboard_rows(market) -> list[OreRow]:
             ore=ore, yield_fraction=y, outputs=outputs, gross_value=gross, net_value=gross * (1.0 - tax),
             sell_price=p.sell_min if p else None, buy_price=p.buy_max if p else None, missing=missing,
         ))
-    rows.sort(key=lambda r: (r.sell_ratio is None, r.sell_ratio or 0))
+    rows.sort(key=lambda r: (r.buy_ratio is None, r.buy_ratio or 0))  # the owner buys: buy-order share first
     return rows
 
 

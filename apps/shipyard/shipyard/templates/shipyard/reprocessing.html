@@ -24,7 +24,7 @@
     <div class="col-lg-7 col-xl-8">
         <div class="shipyard-infobar h-100">
             <div><span class="shipyard-k">Prices at</span> <strong>{{ settings.market|default:"–" }}</strong> <span class="shipyard-k ms-2">ore bought at lowest sell · output valued at lowest sell · {{ complete_rows }} of {{ rows|length }} ores fully priced</span></div>
-            <div><span class="shipyard-k">Reading the table:</span> <strong>Value</strong> is what one unit of compressed ore gives after reprocessing and tax. <strong>Now</strong> is the Jita sell price as a share of that value: below 100 % the ore is cheaper than its minerals. The <strong>price points</strong> are the most you can pay per unit to keep that share.</div>
+            <div><span class="shipyard-k">Reading the table:</span> <strong>Value</strong> is what one unit of compressed ore gives after reprocessing and tax. <strong>Buy %</strong> is the Jita highest buy order as a share of that value, the figure for you as a buyer: a buy order at that price gets the ore at that share of its minerals. <strong>Sell %</strong> is the same for the lowest sell order. The <strong>price points</strong> are the most you can pay per unit to keep that share.</div>
             <div class="shipyard-k">Jita prices refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · figures per unit, no batch rounding</div>
         </div>
     </div>
@@ -70,7 +70,7 @@
 </div>
 
 <div class="table-responsive">
-<table id="repro-table" class="table table-sm table-hover table-striped align-middle w-100" data-num-from="3" data-num-to="{{ price_points|length|add:7 }}">
+<table id="repro-table" class="table table-sm table-hover table-striped align-middle w-100" data-num-from="3" data-num-to="{{ price_points|length|add:8 }}">
     <thead>
         <tr>
             <th>Kind</th>
@@ -80,7 +80,8 @@
             <th class="text-end" title="Value of the minerals one unit gives at this facility, after the service tax, at Jita lowest sell">Value</th>
             <th class="text-end" title="Jita lowest sell price of the compressed ore">Sell</th>
             <th class="text-end" title="Jita highest buy order for the compressed ore">Buy</th>
-            <th class="text-end" title="Jita sell price as a share of the value: below 100 % the ore costs less than the minerals it gives">Now</th>
+            <th class="text-end" title="Jita highest buy order as a share of the value: what you get the ore at with a buy order. Below 100 % the ore costs less than the minerals it gives.">Buy %</th>
+            <th class="text-end" title="Jita lowest sell order as a share of the value: what you pay buying from sell orders">Sell %</th>
             {% for p in price_points %}<th class="text-end" title="The most you can pay per unit to keep the ore at {{ p }} % of its output value">{{ p }} %</th>{% endfor %}
             <th>Gives per unit</th>
         </tr>
@@ -95,8 +96,11 @@
             <td class="text-end fw-semibold" data-order="{{ r.net_value }}" title="Before tax {{ r.gross_value|isk:2 }}; yield {{ r.yield_fraction|pct:1 }}">{{ r.net_value|isk:2 }}</td>
             <td class="text-end" data-order="{{ r.sell_price|default_if_none:'-1' }}">{{ r.sell_price|isk:2 }}</td>
             <td class="text-end" data-order="{{ r.buy_price|default_if_none:'-1' }}">{{ r.buy_price|isk:2 }}</td>
+            {% with ratio=r.buy_ratio %}
+            <td class="text-end fw-semibold {% if ratio is None %}shipyard-k{% elif ratio <= 0.9 %}text-success{% elif ratio <= 1.0 %}text-warning{% else %}text-danger{% endif %}" data-order="{{ ratio|default_if_none:'9' }}" title="Highest buy order {{ r.buy_price|isk:2 }} ÷ value {{ r.net_value|isk:2 }}">{{ ratio|pct:1 }}</td>
+            {% endwith %}
             {% with ratio=r.sell_ratio %}
-            <td class="text-end fw-semibold {% if ratio is None %}shipyard-k{% elif ratio <= 0.9 %}text-success{% elif ratio <= 1.0 %}text-warning{% else %}text-danger{% endif %}" data-order="{{ ratio|default_if_none:'9' }}" title="{% if r.buy_ratio %}At Jita buy orders: {{ r.buy_ratio|pct:1 }}{% endif %}">{{ ratio|pct:1 }}</td>
+            <td class="text-end {% if ratio is None %}shipyard-k{% elif ratio <= 0.9 %}text-success{% elif ratio <= 1.0 %}text-warning{% else %}text-danger{% endif %}" data-order="{{ ratio|default_if_none:'9' }}" title="Lowest sell order {{ r.sell_price|isk:2 }} ÷ value {{ r.net_value|isk:2 }}">{{ ratio|pct:1 }}</td>
             {% endwith %}
             {% for p, price in r.price_points %}<td class="text-end" data-order="{{ price }}">{{ price|isk:2 }}</td>{% endfor %}
             <td class="small">{% for o in r.outputs %}<span class="text-nowrap me-2" title="{{ o.quantity|num:3 }} × {{ o.unit_price|isk:2 }} ISK = {{ o.value|isk:2 }}">{{ o.name }} <span class="shipyard-k">{{ o.quantity|num:2 }}</span></span>{% endfor %}</td>
