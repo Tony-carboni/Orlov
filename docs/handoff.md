@@ -4,6 +4,12 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-08 (13:50 UTC) — desktop session → any session
+
+**Done (desktop).** The GB44 one-off below is closed: both mains showed alliance ORLOV in auth, backup `aa-db-2026-10-08-1347.sql.gz` taken, GB44 removed from the `Family Member` state's corporations (now OARMI, GWON), both users re-evaluated and still `Family Member`; `docs/design/membership.md` change log updated. Shipyard today went 0.3.4 → 0.7.4 (contract prices, own prices, Refresh button, Reprocessing tab with Buy % / Sell %, Vol/day, Depth, grades, moon rarity R4–R64 and area filters); every release is in runbook 13 C. Access to the Shipyard is the owner only for now. Open: the owner may correct the ore-area table (`DEFAULT_AREAS` in services/reprocessing.py, overrides via `SHIPYARD_ORE_AREAS`); a part B of the reprocessing request may follow.
+
+---
+
 ## 2026-10-08 (12:47 UTC) — scheduled cloud session → local session
 
 **Runbook / topic:** one-off removal of Go Browns [GB44] from the state "Family Member" (see `docs/design/membership.md`, change log).

@@ -9,7 +9,7 @@
 | The Orlov Family | alliance | `ORLOV` | *(zkillboard URL `/alliance/<id>/`)* | created in-game (before 2026-10-02) |
 | Orlov Arms International | corporation | `OARMI` | *(zkillboard URL `/corporation/<id>/`)* | executor corp |
 | Gewoon voor structures | corporation | `GWON` | 98635713 | holding corp for the structures, not in the alliance; listed on the state |
-| Go Browns | corporation | `GB44` | 98845722 | joining corp, **not yet in the alliance** on 2026-10-05 (11 members, CEO Masterxxx). Its members are `Family Friend` until the corp is in the alliance in game; then `Family Member` follows automatically. Group and Discord role `corp_GB44` exist already |
+| Go Browns | corporation | `GB44` | 98845722 | in the alliance since 2026-10-06, visible in ESI 2026-10-08 (11 members, CEO Masterxxx); members are `Family Member` through the alliance rule. Group and Discord role `corp_GB44` |
 | — | allied (Family Friend) | — | — | not needed: Family Friend is a public state |
 
 The `Family Member` state is keyed on **alliance ORLOV** (member alliances) plus two corporations: OARMI (harmless, kept as belt-and-braces) and GWON (the owner's structure holding corp). New corps joining the alliance are covered automatically.
@@ -58,3 +58,4 @@ Discord role hierarchy (top → bottom): bot role · Alliance Director · Corp D
 - 2026-10-05 — `Early Founders` badge group and Discord role created (first named `Founder`, renamed the same day); first four founders: tony (Catherine Frey), Flapoor_Hendrik (main Gewoon Rudi), Nashomon Yoma Itinen, Tavaga.
 - 2026-10-02 — `DISCORD_SYNC_NAMES` temporarily `False` so the owner could activate (403 on owner nickname); re-enabled on Day 3 with the `[{corp_ticker}] {character_name}` formatter. discordbot deferred until there are members.
 - 2026-10-06 — **Go Browns [GB44]** accepted into the alliance; because of the 24 h join delay the corp was added to the `Family Member` state's corporation list as a one-off (like GWON). **To do once ESI shows GB44 inside ORLOV: remove GB44 from the state's corporations again**, so membership follows the alliance. Users Masterxxx and MrFreshy_Valterus also added to the `Corp Director` group (owner's instruction).
+- 2026-10-08 — ESI shows Go Browns [GB44] inside ORLOV (scheduled check 12:47 UTC); the one-off removed: GB44 taken off the `Family Member` state's corporation list (backup `aa-db-2026-10-08-1347.sql.gz` first). Masterxxx and MrFreshy_Valterus keep `Family Member` through the alliance rule. The state's corporations are OARMI and GWON again.
