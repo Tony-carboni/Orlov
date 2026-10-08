@@ -13,7 +13,7 @@ from esi.views import sso_redirect
 
 from . import app_settings, constants
 from .models import (
-    Facility, LpFaction, MarketLocation, MaterialType, PriceSnapshot, Ship, ShipConfig,
+    Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, Ship, ShipConfig,
 )
 from .services import board, characters, industry
 from .services.pricing import tax_rates
@@ -218,6 +218,28 @@ def set_facility(request, pk):
     settings.facility = facility
     settings.save(update_fields=["facility"])
     messages.success(request, f"Building at {facility.name}.")
+    return redirect("shipyard:index")
+
+
+@login_required
+@permission_required("shipyard.basic_access")
+@require_POST
+def set_bpc_price(request, type_id):
+    """Right-click on the dashboard's Blueprint cell: the member's own price for this copy.
+
+    A blank or zero price removes the member's entry, the corp's policy applies again.
+    """
+    ship = get_object_or_404(Ship, type_id=type_id, is_active=True)
+    price = _dec(request.POST.get("price"))
+    if price is None or price <= 0:
+        deleted, _ = MemberBlueprintPrice.objects.filter(user=request.user, ship=ship).delete()
+        if deleted:
+            messages.info(request, f"{ship.name}: your blueprint price is cleared, the corp's figure applies again.")
+    else:
+        MemberBlueprintPrice.objects.update_or_create(user=request.user, ship=ship, defaults={"price_isk": price})
+        messages.success(request, f"{ship.name}: blueprint priced at {price:,.0f} ISK per run in your numbers.")
+    if request.POST.get("next") == "detail":
+        return redirect("shipyard:ship_detail", type_id=ship.type_id)
     return redirect("shipyard:index")
 
 

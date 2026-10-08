@@ -174,6 +174,25 @@ class ShipConfig(models.Model):
         return total + float(tag_unit_price) * self.tag_quantity / runs, False
 
 
+class MemberBlueprintPrice(models.Model):
+    """A blueprint price one member typed for themselves (right-click on the dashboard's Blueprint cell).
+
+    It replaces the corp's policy figure in that member's numbers only. It is the whole
+    copy as the member can get it, so no tags or markup are added on top.
+    """
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="shipyard_bpc_prices")
+    ship = models.ForeignKey(Ship, on_delete=models.CASCADE, related_name="member_prices")
+    price_isk = models.DecimalField(max_digits=15, decimal_places=2, help_text="Blueprint cost per run (ISK) as this member gets it")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [("user", "ship")]
+
+    def __str__(self):
+        return f"{self.user} {self.ship}: {self.price_isk}"
+
+
 class MaterialType(models.Model):
     """Name cache for material type IDs."""
 

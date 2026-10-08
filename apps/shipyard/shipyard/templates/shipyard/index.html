@@ -108,7 +108,8 @@
     {% for r in rows %}
         <tr data-category="{{ r.ship.category }}" data-hull="{{ r.ship.hull_size }}"
             data-complete="{{ r.econ.complete|yesno:'1,0' }}" data-profit="{{ r.econ.net_profit|default_if_none:'' }}"
-            data-href="{% url 'shipyard:ship_detail' r.ship.type_id %}">
+            data-href="{% url 'shipyard:ship_detail' r.ship.type_id %}"
+            data-type-id="{{ r.ship.type_id }}" data-name="{{ r.ship.name }}" data-own-price="{{ r.own_price|default_if_none:''|floatformat:0 }}">
             <td><span class="badge shipyard-cat shipyard-cat-{{ r.ship.category|lower }}">{{ r.ship.category }}</span></td>
             <td>{{ r.ship.hull_size }}</td>
             <td>
@@ -126,14 +127,16 @@
             <td class="text-end" data-order="{{ r.econ.material_cost }}">{{ r.econ.material_cost|isk }}</td>
             <td class="text-end" data-order="{{ r.econ.avg_daily_volume }}">{{ r.econ.avg_daily_volume|num:1 }}</td>
             <td class="text-end" data-order="{{ r.econ.market_depth_days|default_if_none:'99999' }}">{{ r.econ.market_depth_days|depth }}</td>
-            {% if r.econ.bpc_source == 'public' %}
-            <td class="text-end small text-muted" data-order="0" title="The corp has no source for this blueprint; members buy copies on public contracts">public contracts only</td>
+            {% if r.econ.bpc_source == 'own' %}
+            <td class="text-end shipyard-bpc" data-order="{{ r.econ.bpc_cost }}" title="Your own price for this copy, used in your numbers instead of the corp's figure. Right-click to change or clear it.">{{ r.econ.bpc_cost|isk }} <sup class="text-warning">yours</sup></td>
+            {% elif r.econ.bpc_source == 'public' %}
+            <td class="text-end small text-muted shipyard-bpc" data-order="0" title="The corp has no source for this blueprint; members buy copies on public contracts. Right-click to type the price you found.">public contracts only</td>
             {% elif r.econ.bpc_source == 'free' %}
-            <td class="text-end small text-success" data-order="0" title="The corp hands this blueprint copy out for free">Free for corp members</td>
+            <td class="text-end small text-success shipyard-bpc" data-order="0" title="The corp hands this blueprint copy out for free. Right-click to type your own price instead.">Free for corp members</td>
             {% elif r.econ.bpc_source == 'manual' and not r.econ.bpc_cost %}
-            <td class="text-end small text-muted" data-order="0" title="No blueprint price entered yet (Blueprints &amp; LP page)">not priced yet</td>
+            <td class="text-end small text-muted shipyard-bpc" data-order="0" title="No blueprint price entered yet (Blueprints &amp; LP page). Right-click to type your own.">not priced yet</td>
             {% else %}
-            <td class="text-end" data-order="{{ r.econ.bpc_cost }}" title="{% if r.econ.bpc_source == 'lp' %}LP store offer{% if r.econ.bpc_markup %} plus the corp's {{ r.econ.bpc_markup|pct:0 }} markup{% endif %}{% else %}entered price{% endif %}">{{ r.econ.bpc_cost|isk }}</td>
+            <td class="text-end shipyard-bpc" data-order="{{ r.econ.bpc_cost }}" title="{% if r.econ.bpc_source == 'lp' %}LP store offer{% if r.econ.bpc_markup %} plus the corp's {{ r.econ.bpc_markup|pct:0 }} markup{% endif %}{% else %}entered price{% endif %}. Right-click to type your own price instead.">{{ r.econ.bpc_cost|isk }}</td>
             {% endif %}
             <td class="text-end" data-order="{{ r.econ.time_seconds }}">{{ r.econ.time_seconds|duration }}</td>
         </tr>
@@ -145,8 +148,31 @@
     Net profit = Jita lowest sell − materials (Jita lowest sell, ME 0 at your facility, or your own blueprint's ME where you have one) − job cost − blueprint − tags − sales tax − broker fee.
     Build time assumes all industry skills at V. Click a ship for the full breakdown and simulations.<br>
     <strong>Blueprints:</strong> Base hulls up to battlecruiser are handed out by the corp for free; base battleships are not (members source those on the market). Navy hulls come from the corp at the LP-store cost plus its markup.
-    Pirate, Triglavian and EDENCOM hulls cannot be supplied by the corp either: <em>public contracts only</em>, and their net profit (<sup class="text-info">no BPC</sup>) is <strong>without</strong> the blueprint.
+    Pirate, Triglavian and EDENCOM hulls cannot be supplied by the corp either: <em>public contracts only</em>, and their net profit (<sup class="text-info">no BPC</sup>) is <strong>without</strong> the blueprint.<br>
+    <strong>Your own price:</strong> right-click a Blueprint cell to type what a copy costs you; it replaces the corp's figure in your numbers (marked <sup class="text-warning">yours</sup>) until you clear it.
 </p>
+
+{# own blueprint price: opened by a right-click on a Blueprint cell #}
+<div class="modal fade" id="bpc-price" tabindex="-1" aria-labelledby="bpc-price-title" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <form class="modal-content" method="post" id="bpc-price-form" data-action="{% url 'shipyard:set_bpc_price' 0 %}">
+            {% csrf_token %}
+            <div class="modal-header py-2">
+                <h5 class="modal-title" id="bpc-price-title"><i class="fas fa-tag fa-fw"></i> <span id="bpc-price-ship">Blueprint</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label small mb-0" for="bpc-price-input">Blueprint cost per run, ISK</label>
+                <input type="text" class="form-control" id="bpc-price-input" name="price" inputmode="numeric" autocomplete="off" placeholder="for example 25000000">
+                <div class="form-text">Used in your numbers instead of the corp's figure; no tags or markup on top. Leave empty to clear.</div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="submit" class="btn btn-outline-secondary btn-sm" id="bpc-price-clear"><i class="fas fa-eraser fa-fw"></i> Clear</button>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save fa-fw"></i> Save</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block shipyard_js %}

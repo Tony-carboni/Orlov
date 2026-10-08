@@ -51,5 +51,22 @@
             var href = this.dataset.href;
             if (href) { window.location = href; }
         });
+
+        // right-click on a Blueprint cell: the member's own price for that copy
+        var priceModal = document.getElementById("bpc-price");
+        if (priceModal && window.bootstrap) {
+            var form = document.getElementById("bpc-price-form");
+            var input = document.getElementById("bpc-price-input");
+            $("#shipyard-table tbody").on("contextmenu", "td.shipyard-bpc", function (e) {
+                e.preventDefault();
+                var row = this.parentNode.dataset;
+                form.action = form.dataset.action.replace(/\/0\/price\//, "/" + row.typeId + "/price/");
+                document.getElementById("bpc-price-ship").textContent = row.name + " blueprint";
+                input.value = row.ownPrice || "";
+                bootstrap.Modal.getOrCreateInstance(priceModal).show();
+            });
+            priceModal.addEventListener("shown.bs.modal", function () { input.focus(); input.select(); });
+            document.getElementById("bpc-price-clear").addEventListener("click", function () { input.value = ""; });
+        }
     });
 })(jQuery);

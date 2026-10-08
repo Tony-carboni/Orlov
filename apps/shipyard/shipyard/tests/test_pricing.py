@@ -150,6 +150,12 @@ class BlueprintCostTests(TestCase):
         # pirate / trig / edencom: no source, blueprint and its tags left out, profit marked
         for cat in ("Pirate", "Trig", "Edencom"):
             self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category=cat), (0.0, "public"))
+        # the member's own typed price wins over every policy and carries no tags or markup
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Pirate", own_price=5_000_000), (5_000_000.0, "own"))
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Navy", own_price=7_500_000.5), (7_500_000.5, "own"))
+        eo = pricing.economics(sell_price=100.0, material_rows=[], prices={}, names={}, volumes={}, job_cost=0,
+                               config=cfg, use_lp=True, rates=rates, tag_unit_price=1_000.0, category="Navy", own_price=5_000_000)
+        self.assertEqual((eo.bpc_cost, eo.bpc_source, eo.bpc_excluded, eo.tag_cost, eo.bpc_markup), (5_000_000.0, "own", False, 0.0, 0.0))
         # per-ship exception: the Perseverance (ORE destroyer) is public contracts only
         self.assertEqual(constants.bpc_policy("ORE", "Destroyer"), constants.BPC_MANUAL)
         self.assertEqual(constants.bpc_policy("ORE", "Destroyer", "Perseverance"), constants.BPC_PUBLIC)

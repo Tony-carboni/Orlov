@@ -62,7 +62,7 @@ class ShipEconomics:
     materials: list[MaterialLine] = field(default_factory=list)
     job_cost: float = 0.0
     bpc_cost: float = 0.0
-    bpc_source: str = "manual"  # free | lp | manual | public
+    bpc_source: str = "manual"  # free | lp | manual | public | own (the member's own typed price)
     bpc_excluded: bool = False  # True: no blueprint source, net profit is without the blueprint
     bpc_markup: float = 0.0  # fraction added on top of the LP-store cost (corp policy)
     tag_cost: float = 0.0
@@ -126,13 +126,16 @@ def corp_markup(markup=None) -> float:
     return float(markup) if markup is not None else float(app_settings.SHIPYARD_CORP_BPC_MARKUP)
 
 
-def blueprint_cost(config, use_lp: bool, category: str | None = None, hull_size: str | None = None, markup=None, name=None) -> tuple[float, str]:
+def blueprint_cost(config, use_lp: bool, category: str | None = None, hull_size: str | None = None, markup=None, name=None, own_price=None) -> tuple[float, str]:
     """Blueprint price per run and where it came from, following the blueprint policy.
 
     Without a category (older callers, tests) only the LP/manual choice applies.
     `markup` overrides the corp's default rate (a fraction; 0 = at cost).
     `name` lets the per-ship exceptions apply (constants.BPC_POLICY_BY_NAME).
+    `own_price` is the member's own typed price for the copy: it wins over everything.
     """
+    if own_price is not None:
+        return float(own_price), "own"
     policy = constants.bpc_policy(category, hull_size, name)
     if policy == constants.BPC_FREE:
         return 0.0, "free"
@@ -168,6 +171,7 @@ def economics(
     hull_size=None,
     markup=None,
     name=None,
+    own_price=None,
 ) -> ShipEconomics:
     """Assemble the economics of one ship from snapshot data.
 
@@ -189,10 +193,11 @@ def economics(
             unit_price=price,
             volume=float(volumes.get(tid, 0.0)),
         ))
-    bpc, src = blueprint_cost(config, use_lp, category, hull_size, markup, name)
+    bpc, src = blueprint_cost(config, use_lp, category, hull_size, markup, name, own_price)
     applied_markup = 0.0
-    if src == "public":
-        # no blueprint source: the tags that come with the LP offer are left out as well
+    if src in ("public", "own"):
+        # no blueprint source, or the member's own quote for the whole copy:
+        # the tags that come with the LP offer are left out as well
         tag_cost, tag_missing = 0.0, False
     else:
         tag_cost, tag_missing = config.tag_cost(tag_unit_price) if config else (0.0, False)

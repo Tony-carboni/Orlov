@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from .. import app_settings, constants
 from ..models import (
-    BuildSnapshot, Facility, MarketLocation, MaterialType, PriceSnapshot, Ship, ShipConfig,
+    BuildSnapshot, Facility, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, Ship, ShipConfig,
     ShipMarketStats, UserSettings,
 )
 from . import everef, pricing
@@ -53,6 +53,7 @@ class BoardRow:
     stats: ShipMarketStats | None
     build: BuildSnapshot | None
     owned_bp: dict | None = None  # the member's best blueprint for this ship, when it has one
+    own_price: float | None = None  # the member's own typed blueprint price, when there is one
 
 
 def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
@@ -74,6 +75,9 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
     from . import industry
 
     owned = industry.owned_blueprints(settings.user) if settings.user_id else {}
+    own_prices = {}
+    if settings.user_id:
+        own_prices = {p.ship_id: float(p.price_isk) for p in MemberBlueprintPrice.objects.filter(user_id=settings.user_id)}
     live_budget = industry.MAX_LIVE_BUILDS
     # materials of the live builds may not be in the snapshot's name map yet
     for ship in ships:
@@ -119,8 +123,10 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
             hull_size=ship.hull_size,
             markup=settings.markup_fraction,
             name=ship.name,
+            own_price=own_prices.get(ship.type_id),
         )
-        rows.append(BoardRow(ship=ship, econ=econ, config=cfg, stats=st, build=build, owned_bp=bp))
+        rows.append(BoardRow(ship=ship, econ=econ, config=cfg, stats=st, build=build, owned_bp=bp,
+                             own_price=own_prices.get(ship.type_id)))
     rows.sort(key=lambda r: (r.econ.net_profit is None, -(r.econ.net_profit or 0)))
     return rows
 
@@ -174,6 +180,11 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
         use_lp = False  # a typed blueprint price always wins in the simulation
     if use_lp is None:
         use_lp = True
+    # the member's own price from the dashboard, unless the simulation types another one
+    own_price = None
+    if bpc is None and settings.user_id:
+        own = MemberBlueprintPrice.objects.filter(user_id=settings.user_id, ship=ship).first()
+        own_price = float(own.price_isk) if own else None
 
     econ = pricing.economics(
         sell_price=hull_price.sell_min if hull_price else None,
@@ -194,6 +205,7 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
         hull_size=ship.hull_size,
         markup=settings.markup_fraction,
         name=ship.name,
+        own_price=own_price,
     )
     return {"econ": econ, "config": config, "stats": stats, "facility": facility, "market": market,
             "rates": rates, "source": source, "hull_price": hull_price, "me": me, "te": te}

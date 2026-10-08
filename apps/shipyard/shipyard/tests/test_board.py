@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from ..models import (
-    BuildSnapshot, Facility, MarketLocation, MaterialType, PriceSnapshot, Ship, ShipConfig,
+    BuildSnapshot, Facility, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, Ship, ShipConfig,
     ShipMarketStats,
 )
 from ..services import board
@@ -49,6 +49,40 @@ class BoardTests(TestCase):
             other.is_active = False
             other.save()
             self.assertEqual(client.post(reverse("shipyard:set_facility", args=[other.pk])).status_code, 404)
+
+    def test_own_blueprint_price(self):
+        from django.contrib.auth.models import Permission
+        from django.test import Client, override_settings
+        from django.urls import reverse
+        s = board.get_user_settings(self.user)
+        s.manual_sales_tax = 4.81
+        s.manual_broker_fee = 0
+        s.save()
+        # the member typed 23 M for the Vindicator copy: it replaces "public contracts only"
+        MemberBlueprintPrice.objects.create(user=self.user, ship=self.ship, price_isk=23_000_000)
+        rows = board.dashboard_rows(s)
+        e = rows[0].econ
+        self.assertEqual(e.bpc_source, "own")
+        self.assertFalse(e.bpc_excluded)
+        self.assertAlmostEqual(e.bpc_cost, 23_000_000.0)
+        self.assertAlmostEqual(e.net_profit, 92_683_787.9, delta=10)
+        self.assertEqual(rows[0].own_price, 23_000_000.0)
+        # the detail page follows, unless the simulation types another price
+        self.assertEqual(board.ship_detail(self.ship, s)["econ"].bpc_source, "own")
+        self.assertEqual(board.ship_detail(self.ship, s, bpc=1)["econ"].bpc_cost, 1.0)
+        # the right-click form: set, change, clear; only active ships
+        self.user.user_permissions.add(Permission.objects.get(codename="basic_access", content_type__app_label="shipyard"))
+        client = Client()
+        client.force_login(self.user)
+        with override_settings(SHIPYARD_STANDALONE_HOST=""):
+            url = reverse("shipyard:set_bpc_price", args=[self.ship.type_id])
+            self.assertEqual(client.post(url, {"price": "25,000,000"}).status_code, 302)
+            self.assertEqual(float(MemberBlueprintPrice.objects.get(user=self.user, ship=self.ship).price_isk), 25_000_000.0)
+            self.assertEqual(client.post(url, {"price": ""}).status_code, 302)
+            self.assertFalse(MemberBlueprintPrice.objects.filter(user=self.user, ship=self.ship).exists())
+            self.assertEqual(client.get(url).status_code, 405)
+            self.assertEqual(client.post(reverse("shipyard:set_bpc_price", args=[999999]), {"price": "1"}).status_code, 404)
+        self.assertEqual(board.dashboard_rows(s)[0].econ.bpc_source, "public")
 
     def test_settings_defaults(self):
         s = board.get_user_settings(self.user)
