@@ -345,6 +345,10 @@ SCRAP_GROUPS = [
         "Experimental Enduring Thermal Armor Hardener I",
         "Prototype Compact Thermal Armor Hardener I",
     ]),
+    ("Metal scraps", [  # owner, 2026-10-08: below the thermal hardeners
+        "Metal Scraps",
+        "Reinforced Metal Scraps",
+    ]),
 ]
 
 # EVE Ref cost API skill parameter names, keyed by our field names
