@@ -4,6 +4,19 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-08 (15:45 UTC) — laptop session → any session
+
+**Done**
+- "update user braadslee": SAK (NPC corp) → OARMI/ORLOV, Family Friend → Family Member, `corp_OARMI`, Discord roles and nickname synced (runbook 04 E; the first Discord push hit auth's rate limiter, the retry a minute later went through).
+- **Shipyard 0.8.0: the Scrapmetal tab** (owner's part B of the reprocessing request; details in runbook 13 C and research 07 §6). Working copy tested in a throwaway container (66 tests); migration 0010 applied to the live DB from there; catalog imported (66 modules, all priced, volumes read); owner's skills reloaded (Scrapmetal Processing V); released per runbook 13 C (commit `15a30ad` pinned, backup `aa-db-2026-10-08-1526.sql.gz`, `requirements.txt.pre-0.8.0` and `local.py.pre-0.8.0` in `~/backups`, beat entry `shipyard_refresh_scrap_catalog`).
+- Other members' Scrapmetal Processing level arrives with their next daily skill refresh (or when they click a character); until then the tab uses the default V and says so.
+
+**Open (owner)**
+- Look at the Scrapmetal tab: group names were polished (say if any should change); the v2 sheet's extra groups "cap booster" and "fr-x heavy" were not in the list and are not in the app. More modules: admin → Shipyard → Scrap items (type id + group), or hand the local session a list.
+
+
+---
+
 ## 2026-10-08 (13:50 UTC) — desktop session → any session
 
 **Done (desktop).** The GB44 one-off below is closed: both mains showed alliance ORLOV in auth, backup `aa-db-2026-10-08-1347.sql.gz` taken, GB44 removed from the `Family Member` state's corporations (now OARMI, GWON), both users re-evaluated and still `Family Member`; `docs/design/membership.md` change log updated. Shipyard today went 0.3.4 → 0.7.4 (contract prices, own prices, Refresh button, Reprocessing tab with Buy % / Sell %, Vol/day, Depth, grades, moon rarity R4–R64 and area filters); every release is in runbook 13 C. Access to the Shipyard is the owner only for now. Open: the owner may correct the ore-area table (`DEFAULT_AREAS` in services/reprocessing.py, overrides via `SHIPYARD_ORE_AREAS`); a part B of the reprocessing request may follow.
@@ -139,39 +152,3 @@ Prompt for the local session: remove corporation GB44 (corporation_id 98845722) 
 
 ### Next — cloud session
 - Walk the owner through section B; collect any mismatch against the sheet and fix in the plugin (then a new pinned commit → runbook 13 section C via the local session).
-
----
-
-## 2026-10-07 (12:30 UTC) — cloud session → local session
-
-**Runbook:** `docs/runbooks/13-shipyard-plugin.md` — section A (install the Shipyard plugin, private test release).
-
-### Done (cloud)
-- Built the **Shipyard** Alliance Auth plugin in `apps/shipyard/` (dashboard, ship detail with simulation, per-member settings incl. ESI skills, Blueprints & LP manager page, Celery refresh, catalog loader). 19 unit tests pass; wheel builds with templates/static/migrations included. Plan: `docs/research/05-industry-dashboard.md`.
-- `deploy/conf/requirements.txt` has the install line with a `<commit-sha>` placeholder; `deploy/conf/local.py.append` has the Shipyard block (INSTALLED_APPS + two beat entries).
-- Nothing is released: no group has the permission; the superuser `tony` sees the menu automatically.
-
-### Next — local session: runbook 13 section A
-Announce every state change first, one at a time, show output. Steps:
-1. Pull the branch; note the full SHA of HEAD (`git rev-parse HEAD`). Check the stack is up. Run `~/bin/aa-backup.sh`.
-2. Append the Shipyard line to `~/aa-docker/conf/requirements.txt` with `<commit-sha>` replaced by that SHA (idempotent: skip if a line starting with `orlov-shipyard` exists; replace the SHA if it differs). Show the file.
-3. Append the Shipyard block from `deploy/conf/local.py.append` (from `# --- Shipyard` to the end of the file) to `~/aa-docker/conf/local.py` unless `"shipyard"` is already in it. Show the tail. Never print .env.
-4. `docker compose --env-file=.env build` (watch for a pip error on the orlov-shipyard line — if the archive download fails, report it and stop), `up -d`, `restart nginx`; confirm the site answers.
-5. Via `docker compose exec -T allianceauth_gunicorn python /home/allianceauth/myauth/manage.py <cmd>`: `check`, `migrate shipyard`, `collectstatic --noinput`, `shipyard_load_ships`, `shipyard_refresh`. Report the counts each prints (expect ≈190 ships, four refresh steps ok).
-6. Verify in Django: `Ship.objects.count()`, active count, `BuildSnapshot.objects.count()`, `PriceSnapshot.objects.count()`, `RefreshRun` rows with ok/message. Report anything not ok with the message.
-7. Write the next handoff entry (what was done, SHA used, any error text), commit, push. Then the owner does runbook 13 section B in the browser with the cloud session.
-Rules from CLAUDE.md apply (backup first, no rm -rf, nothing in mysql-data/, never print .env).
-
----
-
-## 2026-10-06 (12:45 UTC) — local session (PC) → either session
-
-**Not a runbook step.** Membership changes on the owner's instruction, plus a research document.
-
-### Done (auth, via Django)
-- **Go Browns [GB44]** (corp_id 98845722) was accepted into the alliance; ESI shows the alliance only after the 24 h join delay. One-off: GB44 added to the `Family Member` state's `member_corporations` (now OARMI, GWON, GB44). Auth moved **Masterxxx** and **MrFreshy_Valterus** (3 characters) from Family Friend to Family Member at once; Discord roles and `[GB44]` nicknames followed within a minute.
-- Both users added to the **Corp Director** group (owner's instruction); the Discord role followed. Corp Director members are now tony, Masterxxx, MrFreshy_Valterus.
-- **Open: remove GB44 from the state's corporations once ESI shows Go Browns in ORLOV** (admin → Authentication → States → Family Member, or via Django), so membership follows the alliance again. Noted in `docs/design/membership.md`.
-
-### Also
-- `docs/research/04-corp-industry-and-projects.md`: how corp blueprints, hangars, Corporation Projects and payouts work, with scenarios and theft risks; for the owner to consult.

@@ -41,3 +41,12 @@ Everything in that table is a setting (`SHIPYARD_REPRO_*` in app_settings.py, ov
 ## 5. Filters
 
 Like the ship dashboard: kind buttons (asteroid ore, ice, moon ore, abyssal ore), variant buttons (base, +5, +10, +15, +100 %), a collapsible panel with one button per ore family (Gneiss, Veldspar, Zeolites, …) grouped by kind, and a free-text search that also matches the mineral names. All remembered per browser; nothing ticked shows everything.
+
+## 6. Part B: the Scrapmetal tab (modules bought to reprocess), 2026-10-08
+
+Owner's story: he buys meta modules to reprocess them. Module reprocessing is not affected by the structure, rigs or implants, only by the Scrapmetal Processing skill, so he does it at 0 % tax in the Isikano Raitaru. Question: which modules are favourable to buy, given the Jita sell value of their minerals. Inspiration: his sheet "Faction ships dashboard v2.xlsx", tab "Repro backend" (one column per module group, `ROUNDDOWN(0.55 × quantity)` per mineral, Jita mineral prices, 90/92/95 % price points on the main dashboard).
+
+- **Yield:** 50 % + 2 % per level (55 % at V). Per unit, each mineral is rounded down, as the game and the sheet do; the sheet's figures for the 100MN Monopropellant Enduring Afterburner (9,842 tritanium, 4,416 pyerite, 551 mexallon, 24 isogen, 12 nocxium, 1 zydrine, 0 megacyte) are reproduced exactly.
+- **Catalog:** the owner's list of 66 modules in 20 groups (`constants.SCRAP_GROUPS`, names polished: "Heavy energy nosferatus", "Large guns (1400mm, 425mm, Tachyon)" …); names resolved to type ids through ESI, materials and volumes from EVE Ref. Managers can add modules in the admin; the weekly task fills the rest. The sheet also had "cap booster" and "fr-x heavy" columns, which were not in the owner's list for the app.
+- **Figures:** Value (minerals at Jita lowest sell, no tax), Sell and Buy of the module, Vol/day and Depth from ESI history, Sell % (what you pay from sell orders; leads the table), Buy %, price points 90/92/95/98/100 %, Gives per unit.
+- **Member's skill:** Scrapmetal Processing is now one of the skills read with the character (`UserSettings.scrapmetal_processing`); the tab says whose level is used.
