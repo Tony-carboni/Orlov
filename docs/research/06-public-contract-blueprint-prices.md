@@ -78,7 +78,7 @@ Roughly one release (0.5.0), no new permissions, a migration, one new beat entry
 
 ## 7. Decisions and result (2026-10-08)
 
-The owner chose route B the same day, for Pirate, Triglavian and EDENCOM hulls, with this figure: **the average per-run price of the cheapest five runs on offer**, cheapest contracts first. Example: single-run copies at 1, 2, 3, 3, 3 M → (1+2+3+3+3)/5 = 2.4 M per run; a ten-run copy at 1 M per run covers the five runs alone. Regions: The Forge. The copy's ME/TE only shows in the tooltip for now. The member's own right-click price stays on top.
+The owner chose route B the same day, for Pirate, Triglavian and EDENCOM hulls, with this figure: **the average per-run price of the cheapest five runs on offer**, cheapest contracts first. Example: single-run copies at 1, 2, 3, 3, 3 M → (1+2+3+3+3)/5 = 2.4 M per run; a ten-run copy at 1 M per run covers the five runs alone. Regions: The Forge, narrowed the same day to contracts at Jita 4-4 only (station 60003760). The copy's ME/TE only shows in the tooltip for now. The member's own right-click price stays on top.
 
 Added safeguard: offers dearer than three times the cheapest per-run price are ignored. Reason from the first snapshot: the Vigilant had three copies at 32 to 37 M and one at 9 B, which would have made the figure 2.3 B.
 
