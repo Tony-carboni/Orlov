@@ -29,7 +29,7 @@ class YieldTests(SimpleTestCase):
         self.assertEqual(scrapmetal.group_of("Not A Module"), (None, None))
         self.assertEqual(scrapmetal.variant_of("Heavy Knave Scoped Energy Nosferatu"), "Scoped")
         self.assertEqual(scrapmetal.variant_of("1400mm Gallium Cannon"), "other")
-        self.assertEqual(sum(len(names) for _, names in constants.SCRAP_GROUPS), 66)
+        self.assertEqual(sum(len(names) for _, names in constants.SCRAP_GROUPS), 68)
         all_names = [n for _, names in constants.SCRAP_GROUPS for n in names]
         self.assertEqual(len(all_names), len(set(all_names)))
 
