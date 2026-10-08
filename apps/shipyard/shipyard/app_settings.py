@@ -64,6 +64,9 @@ SHIPYARD_REPRO_SKILLS = getattr(settings, "SHIPYARD_REPRO_SKILLS", {"reprocessin
 SHIPYARD_REPRO_IMPLANT = getattr(settings, "SHIPYARD_REPRO_IMPLANT", 0.04)           # RX-801 0.01, RX-802 0.02, RX-804 0.04
 SHIPYARD_REPRO_TAX = getattr(settings, "SHIPYARD_REPRO_TAX", 0.02)                   # structure service tax on the output value
 SHIPYARD_REPRO_PRICE_POINTS = getattr(settings, "SHIPYARD_REPRO_PRICE_POINTS", [90, 92, 95, 98, 100])
+# Where each ore family is mined (not in EVE's data): overrides for the table in services/reprocessing.py,
+# {"Family": "highsec" | "lowsec" | "nullsec" | "anomaly"}.
+SHIPYARD_ORE_AREAS = getattr(settings, "SHIPYARD_ORE_AREAS", {})
 
 # Cache lifetime for ad-hoc simulations on the detail page (seconds)
 SHIPYARD_SIM_CACHE_SECONDS = getattr(settings, "SHIPYARD_SIM_CACHE_SECONDS", 1800)

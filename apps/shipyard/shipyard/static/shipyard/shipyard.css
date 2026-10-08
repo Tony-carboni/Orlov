@@ -82,4 +82,8 @@
 .shipyard-kind-ice { background: #0dcaf0; color: #0b1e2d; }
 .shipyard-kind-moon { background: #6f42c1; }
 .shipyard-kind-abyssal { background: #c0392b; }
+.shipyard-area-highsec { border-color: #198754 !important; color: #75d39a !important; }
+.shipyard-area-lowsec { border-color: #ffc107 !important; color: #ffd75e !important; }
+.shipyard-area-nullsec { border-color: #dc3545 !important; color: #f28b94 !important; }
+.shipyard-area-anomaly { border-color: #6f42c1 !important; color: #b197e6 !important; }
 #bp-table input { min-width: 7em; }

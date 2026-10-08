@@ -149,6 +149,12 @@ def variant_label(value):
 
 
 @register.filter
+def area_label(value):
+    from ..services.reprocessing import AREA_LABELS
+    return AREA_LABELS.get(value, value)
+
+
+@register.filter
 def slug(value):
     import re
     return re.sub(r"[^a-z0-9]+", "-", str(value).lower()).strip("-")

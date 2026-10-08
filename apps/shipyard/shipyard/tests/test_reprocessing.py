@@ -92,3 +92,13 @@ class RowTests(TestCase):
         self.assertEqual(z.rarity, "R4")
         self.assertEqual(Ore.objects.get(type_id=62516).rarity, "")
         self.assertEqual(reprocessing.rarities_present(), ["R4", "R64"])
+        # area from the family table; IV-Grade empire ice is low-sec; moon ore has none
+        self.assertEqual(reprocessing.area_for(Ore.objects.get(type_id=62516)), "highsec")
+        self.assertEqual(reprocessing.area_for(z), "")
+        ice = Ore(type_id=1, name="Compressed Blue Ice IV-Grade", kind="ice", family="Blue Ice", variant="IV", group_name="Ice")
+        self.assertEqual(reprocessing.area_for(ice), "lowsec")
+        self.assertEqual(reprocessing.area_for(Ore(type_id=2, name="x", kind="ore", family="Gneiss", variant="base", group_name="Gneiss")), "nullsec")
+        self.assertEqual(reprocessing.area_for(Ore(type_id=3, name="x", kind="abyssal", family="Bezdnacine", variant="base", group_name="Bezdnacine")), "anomaly")
+        self.assertEqual(reprocessing.areas_present(), [("highsec", "High-sec")])
+        rows = {r.ore.name: r for r in reprocessing.dashboard_rows(self.market)}
+        self.assertEqual(rows["Compressed Veldspar"].area, "highsec")

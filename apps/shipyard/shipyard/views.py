@@ -337,6 +337,7 @@ def reprocessing_view(request):
         families=reprocessing.families_by_kind(),
         variants=reprocessing.variants_present(),
         rarities=reprocessing.rarities_present(),
+        areas=reprocessing.areas_present(),
         price_points=list(app_settings.SHIPYARD_REPRO_PRICE_POINTS),
         freshness=board.data_freshness(),
         complete_rows=sum(1 for r in rows if r.complete),

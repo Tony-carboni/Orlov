@@ -177,6 +177,7 @@ class OreRow:
     sell_price: float | None = None  # Jita lowest sell of the compressed ore
     buy_price: float | None = None   # Jita highest buy
     missing: int = 0                 # outputs without a price
+    area: str = ""                   # highsec | lowsec | nullsec | anomaly, "" for moon ore
     avg_daily_volume: float = 0.0    # units traded per day in The Forge, 7-day average
     avg_price: float = 0.0           # 7-day average trade price
     sell_volume: float = 0.0         # units on Jita sell orders right now
@@ -244,7 +245,7 @@ def dashboard_rows(market) -> list[OreRow]:
             ore=ore, yield_fraction=y, outputs=outputs, gross_value=gross, net_value=gross * (1.0 - tax),
             sell_price=p.sell_min if p else None, buy_price=p.buy_max if p else None, missing=missing,
             avg_daily_volume=st.avg_daily_volume if st else 0.0, avg_price=st.avg_price if st else 0.0,
-            sell_volume=p.sell_volume if p else 0.0,
+            sell_volume=p.sell_volume if p else 0.0, area=area_for(ore),
         ))
     rows.sort(key=lambda r: (r.buy_ratio is None, r.buy_ratio or 0))  # the owner buys: buy-order share first
     return rows
@@ -259,6 +260,43 @@ def families_by_kind(ores=None) -> dict[str, list[str]]:
 
 
 RARITY_ORDER = ["R4", "R8", "R16", "R32", "R64"]
+
+# Where an ore family is mined. Not in EVE's reference data, so a table (owner can
+# correct it; SHIPYARD_ORE_AREAS in local.py overrides single entries).
+AREA_ORDER = ["highsec", "lowsec", "nullsec", "anomaly"]
+AREA_LABELS = {"highsec": "High-sec", "lowsec": "Low-sec", "nullsec": "Null-sec", "anomaly": "Anomaly"}
+DEFAULT_AREAS = {
+    # asteroid belts
+    "Veldspar": "highsec", "Scordite": "highsec", "Pyroxeres": "highsec", "Plagioclase": "highsec",
+    "Omber": "highsec", "Kernite": "highsec", "Mordunium": "highsec",
+    "Jaspet": "lowsec", "Hemorphite": "lowsec", "Hedbergite": "lowsec", "Eifyrium": "lowsec", "Kylixium": "lowsec",
+    "Dark Ochre": "nullsec", "Gneiss": "nullsec", "Crokite": "nullsec", "Bistot": "nullsec", "Arkonor": "nullsec",
+    "Spodumain": "nullsec", "Mercoxit": "nullsec", "Ytirium": "nullsec", "Ducinium": "nullsec",
+    # anomaly-only ores (Equinox / Havoc sites, the X-Grade crystal ores, abyssal deadspace)
+    "Griemeer": "anomaly", "Hezorime": "anomaly", "Nocxite": "anomaly", "Ueganite": "anomaly",
+    "Kangite": "anomaly", "Moissanite": "anomaly", "Polycrase": "anomaly", "Raspite": "anomaly",
+    "Bezdnacine": "anomaly", "Rakovene": "anomaly", "Talassonite": "anomaly",
+    # ice: the four empire ices in high-sec, their IV-Grade in low-sec, the rest null-sec and wormholes
+    "Blue Ice": "highsec", "Clear Icicle": "highsec", "Glacial Mass": "highsec", "White Glaze": "highsec",
+    "Glare Crust": "nullsec", "Dark Glitter": "nullsec", "Gelidus": "nullsec", "Krystallos": "nullsec",
+}
+
+
+def area_for(ore) -> str:
+    """Area code for a non-moon ore ("" for moon ore and unknown families)."""
+    if ore.kind == "moon":
+        return ""
+    areas = {**DEFAULT_AREAS, **app_settings.SHIPYARD_ORE_AREAS}
+    area = areas.get(ore.family, "")
+    if ore.kind == "ice" and area == "highsec" and ore.variant == "IV":
+        return "lowsec"
+    return area
+
+
+def areas_present(ores=None) -> list[tuple[str, str]]:
+    ores = ores if ores is not None else Ore.objects.filter(is_active=True).exclude(kind="moon")
+    present = {area_for(o) for o in ores}
+    return [(a, AREA_LABELS[a]) for a in AREA_ORDER if a in present]
 
 
 def rarities_present(ores=None) -> list[str]:
