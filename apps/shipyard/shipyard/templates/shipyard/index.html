@@ -108,7 +108,8 @@
             <th class="text-end">Input cost</th>
             <th class="text-end" title="Average units sold per day in The Forge, last 7 days">Vol/day</th>
             <th class="text-end" title="Units on Jita sell orders ÷ units sold per day">Depth (d)</th>
-            <th class="text-end">Blueprint</th>
+            <th class="text-end" title="The blueprint price in your numbers: your own set price (right-click), else the corp's figure">Blueprint</th>
+            <th class="text-end" title="Public contracts at Jita 4-4, for information only: average per run of the cheapest five runs on offer. Never used in the numbers.">Contracts</th>
             <th class="text-end">Build time</th>
         </tr>
     </thead>
@@ -117,7 +118,7 @@
         <tr data-category="{{ r.ship.category }}" data-hull="{{ r.ship.hull_size }}"
             data-complete="{{ r.econ.complete|yesno:'1,0' }}" data-profit="{{ r.econ.net_profit|default_if_none:'' }}"
             data-href="{% url 'shipyard:ship_detail' r.ship.type_id %}"
-            data-type-id="{{ r.ship.type_id }}" data-name="{{ r.ship.name }}" data-own-price="{{ r.own_price|default_if_none:''|floatformat:0 }}">
+            data-type-id="{{ r.ship.type_id }}" data-name="{{ r.ship.name }}" data-own-price="{{ r.own_price|default_if_none:''|floatformat:0 }}" data-contract-price="{% if r.contract %}{{ r.contract.price_per_run|floatformat:0 }}{% endif %}">
             <td><span class="badge shipyard-cat shipyard-cat-{{ r.ship.category|lower }}">{{ r.ship.category }}</span></td>
             <td>{{ r.ship.hull_size }}</td>
             <td>
@@ -137,8 +138,6 @@
             <td class="text-end" data-order="{{ r.econ.market_depth_days|default_if_none:'99999' }}">{{ r.econ.market_depth_days|depth }}</td>
             {% if r.econ.bpc_source == 'own' %}
             <td class="text-end shipyard-bpc" data-order="{{ r.econ.bpc_cost }}" title="Your own price for this copy, used in your numbers instead of the corp's figure. Right-click to change or clear it.">{{ r.econ.bpc_cost|isk }} <sup class="text-warning">yours</sup></td>
-            {% elif r.econ.bpc_source == 'contract' %}
-            <td class="text-end shipyard-bpc" data-order="{{ r.econ.bpc_cost }}" title="From public contracts at Jita 4-4: average per run of the cheapest {{ r.contract.runs_used }} run{{ r.contract.runs_used|pluralize }} on offer ({{ r.contract.offers_used }} contract{{ r.contract.offers_used|pluralize }}; cheapest {{ r.contract.lowest_per_run|isk }} per run, ME {{ r.contract.offers.0.me }} / TE {{ r.contract.offers.0.te }}, {{ r.contract.offers.0.runs }} run{{ r.contract.offers.0.runs|pluralize }}). {{ r.contract.contracts }} contract{{ r.contract.contracts|pluralize }} with {{ r.contract.runs_available }} runs listed, snapshot {{ r.contract.snapshot_at|date:'Y-m-d H:i' }} EVE. Right-click to use your own price instead.">{{ r.econ.bpc_cost|isk }} <sup class="text-info">contracts</sup></td>
             {% elif r.econ.bpc_source == 'public' %}
             <td class="text-end small text-muted shipyard-bpc" data-order="0" title="No price known for this copy yet. Right-click to enter what it costs you.">Price not known</td>
             {% elif r.econ.bpc_source == 'free' %}
@@ -147,6 +146,11 @@
             <td class="text-end small text-muted shipyard-bpc" data-order="0" title="No price known for this copy yet. Right-click to enter what it costs you.">Price not known</td>
             {% else %}
             <td class="text-end shipyard-bpc" data-order="{{ r.econ.bpc_cost }}" title="{% if r.econ.bpc_source == 'lp' %}LP store offer{% if r.econ.bpc_markup %} plus the corp's {{ r.econ.bpc_markup|pct:0 }} markup{% endif %}{% else %}entered price{% endif %}. Right-click to type your own price instead.">{{ r.econ.bpc_cost|isk }}</td>
+            {% endif %}
+            {% if r.contract %}
+            <td class="text-end text-info" data-order="{{ r.contract.price_per_run }}" title="Public contracts at Jita 4-4, information only: average per run of the cheapest {{ r.contract.runs_used }} run{{ r.contract.runs_used|pluralize }} on offer ({{ r.contract.offers_used }} contract{{ r.contract.offers_used|pluralize }}; cheapest {{ r.contract.lowest_per_run|isk }} per run, ME {{ r.contract.offers.0.me }} / TE {{ r.contract.offers.0.te }}, {{ r.contract.offers.0.runs }} run{{ r.contract.offers.0.runs|pluralize }} in that contract). {{ r.contract.contracts }} contract{{ r.contract.contracts|pluralize }} with {{ r.contract.runs_available }} runs listed, snapshot {{ r.contract.snapshot_at|date:'Y-m-d H:i' }} EVE.">{{ r.contract.price_per_run|isk }}</td>
+            {% else %}
+            <td class="text-end small text-muted" data-order="-1" title="No single-blueprint contract at Jita 4-4 in the last snapshot, or not a hull priced from contracts">–</td>
             {% endif %}
             <td class="text-end" data-order="{{ r.econ.time_seconds }}">{{ r.econ.time_seconds|duration }}</td>
         </tr>
@@ -158,8 +162,9 @@
     Net profit = Jita lowest sell − materials (Jita lowest sell, ME 0 at your facility, or your own blueprint's ME where you have one) − job cost − blueprint − tags − sales tax − broker fee.
     Build time assumes all industry skills at V. Click a ship for the full breakdown and simulations.<br>
     <strong>Blueprints:</strong> Base hulls up to battlecruiser are handed out by the corp for free; base battleships are not (members source those on the market). Navy hulls come from the corp at the LP-store cost plus its markup.
-    Pirate, Triglavian and EDENCOM hulls cannot be supplied by the corp either: their blueprint price (<sup class="text-info">contracts</sup>) comes from public contracts at Jita 4-4, the average per run of the cheapest five runs on offer, refreshed hourly from EVE Ref's snapshot. Without any contract the cell shows <em>Price not known</em> and the net profit (<sup class="text-info">no BPC</sup>) is <strong>without</strong> the blueprint.<br>
-    <strong>Your own price:</strong> right-click a Blueprint cell and type what a copy costs you; the value then replaces the text or the corp's figure in your numbers (marked <sup class="text-warning">yours</sup>) until you clear it.
+    Pirate, Triglavian and EDENCOM hulls cannot be supplied by the corp either: their Blueprint cell shows <em>Price not known</em> and the net profit (<sup class="text-info">no BPC</sup>) is <strong>without</strong> the blueprint until you set a price.<br>
+    <strong>Your own price:</strong> right-click a Blueprint cell and type what a copy costs you; that value is what your numbers use (marked <sup class="text-warning">yours</sup>) until you clear it.
+    <strong>Contracts</strong> is information only: public contracts at Jita 4-4, the average per run of the cheapest five runs on offer, refreshed hourly from EVE Ref's snapshot. It never enters the numbers; use it to spot copies worth buying.
 </p>
 
 {# own blueprint price: opened by a right-click on a Blueprint cell #}

@@ -94,20 +94,21 @@ class BoardTests(TestCase):
         ContractPrice.objects.create(ship=self.ship, price_per_run=16_200_000, lowest_per_run=15_000_000, runs_used=5,
                                      offers_used=4, contracts=6, runs_available=24, snapshot_at=timezone.now(),
                                      offers=[{"per_run": 15e6, "runs": 1, "me": 0, "te": 0}])
+        # information only: the contract figure rides along but never enters the numbers
         rows = board.dashboard_rows(s)
         e = rows[0].econ
-        self.assertEqual(e.bpc_source, "contract")
-        self.assertFalse(e.bpc_excluded)
-        self.assertAlmostEqual(e.bpc_cost, 16_200_000.0)
-        self.assertAlmostEqual(e.net_profit, 92_683_787.9 + 23_000_000 - 16_200_000, delta=10)
+        self.assertEqual(e.bpc_source, "public")
+        self.assertTrue(e.bpc_excluded)
+        self.assertAlmostEqual(e.net_profit, 92_683_787.9 + 23_000_000, delta=10)
         self.assertEqual(rows[0].contract.contracts, 6)
-        self.assertEqual(board.ship_detail(self.ship, s)["econ"].bpc_source, "contract")
+        self.assertEqual(board.ship_detail(self.ship, s)["econ"].bpc_source, "public")
         self.assertEqual(board.ship_detail(self.ship, s)["contract"].contracts, 6)
-        # the member's own price still wins
+        # the member's own price is what the numbers use; the contract figure stays visible
         MemberBlueprintPrice.objects.create(user=self.user, ship=self.ship, price_isk=23_000_000)
         rows = board.dashboard_rows(s)
         self.assertEqual(rows[0].econ.bpc_source, "own")
-        self.assertIsNone(rows[0].contract)
+        self.assertAlmostEqual(rows[0].econ.net_profit, 92_683_787.9, delta=10)
+        self.assertEqual(rows[0].contract.contracts, 6)
 
     def test_refresh_button(self):
         from django.contrib.auth.models import Permission

@@ -62,7 +62,7 @@ class ShipEconomics:
     materials: list[MaterialLine] = field(default_factory=list)
     job_cost: float = 0.0
     bpc_cost: float = 0.0
-    bpc_source: str = "manual"  # free | lp | manual | public | contract (public contracts) | own (the member's own typed price)
+    bpc_source: str = "manual"  # free | lp | manual | public | own (the member's own typed price)
     bpc_excluded: bool = False  # True: no blueprint source, net profit is without the blueprint
     bpc_markup: float = 0.0  # fraction added on top of the LP-store cost (corp policy)
     tag_cost: float = 0.0
@@ -126,14 +126,15 @@ def corp_markup(markup=None) -> float:
     return float(markup) if markup is not None else float(app_settings.SHIPYARD_CORP_BPC_MARKUP)
 
 
-def blueprint_cost(config, use_lp: bool, category: str | None = None, hull_size: str | None = None, markup=None, name=None, own_price=None, contract_price=None) -> tuple[float, str]:
+def blueprint_cost(config, use_lp: bool, category: str | None = None, hull_size: str | None = None, markup=None, name=None, own_price=None) -> tuple[float, str]:
     """Blueprint price per run and where it came from, following the blueprint policy.
 
     Without a category (older callers, tests) only the LP/manual choice applies.
     `markup` overrides the corp's default rate (a fraction; 0 = at cost).
     `name` lets the per-ship exceptions apply (constants.BPC_POLICY_BY_NAME).
     `own_price` is the member's own typed price for the copy: it wins over everything.
-    `contract_price` is the public-contract figure for hulls the corp cannot supply.
+    The public-contract figure (ContractPrice) is information only and never used here
+    (owner's rule, 2026-10-08: he builds at a scale a few cheap copies do not cover).
     """
     if own_price is not None:
         return float(own_price), "own"
@@ -141,8 +142,6 @@ def blueprint_cost(config, use_lp: bool, category: str | None = None, hull_size:
     if policy == constants.BPC_FREE:
         return 0.0, "free"
     if policy == constants.BPC_PUBLIC:
-        if contract_price is not None:
-            return float(contract_price), "contract"
         return 0.0, "public"
     if config is None:
         return 0.0, "none"
@@ -175,7 +174,6 @@ def economics(
     markup=None,
     name=None,
     own_price=None,
-    contract_price=None,
 ) -> ShipEconomics:
     """Assemble the economics of one ship from snapshot data.
 
@@ -197,10 +195,10 @@ def economics(
             unit_price=price,
             volume=float(volumes.get(tid, 0.0)),
         ))
-    bpc, src = blueprint_cost(config, use_lp, category, hull_size, markup, name, own_price, contract_price)
+    bpc, src = blueprint_cost(config, use_lp, category, hull_size, markup, name, own_price)
     applied_markup = 0.0
-    if src in ("public", "own", "contract"):
-        # no blueprint source, or a quote for the whole copy (member's own, public contracts):
+    if src in ("public", "own"):
+        # no blueprint source, or the member's own quote for the whole copy:
         # the tags that come with the LP offer are left out as well
         tag_cost, tag_missing = 0.0, False
     else:

@@ -54,7 +54,7 @@ class BoardRow:
     build: BuildSnapshot | None
     owned_bp: dict | None = None  # the member's best blueprint for this ship, when it has one
     own_price: float | None = None  # the member's own typed blueprint price, when there is one
-    contract: object = None  # ContractPrice row when the figure comes from public contracts
+    contract: object = None  # ContractPrice row (Jita 4-4 contracts), information only
 
 
 def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
@@ -126,11 +126,9 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
             markup=settings.markup_fraction,
             name=ship.name,
             own_price=own_prices.get(ship.type_id),
-            contract_price=float(contract_prices[ship.type_id].price_per_run) if ship.type_id in contract_prices else None,
         )
         rows.append(BoardRow(ship=ship, econ=econ, config=cfg, stats=st, build=build, owned_bp=bp,
-                             own_price=own_prices.get(ship.type_id),
-                             contract=contract_prices.get(ship.type_id) if econ.bpc_source == "contract" else None))
+                             own_price=own_prices.get(ship.type_id), contract=contract_prices.get(ship.type_id)))
     rows.sort(key=lambda r: (r.econ.net_profit is None, -(r.econ.net_profit or 0)))
     return rows
 
@@ -189,7 +187,7 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
     if bpc is None and settings.user_id:
         own = MemberBlueprintPrice.objects.filter(user_id=settings.user_id, ship=ship).first()
         own_price = float(own.price_isk) if own else None
-    contract = contracts.fresh_prices([ship.type_id]).get(ship.type_id) if bpc is None else None
+    contract = contracts.fresh_prices([ship.type_id]).get(ship.type_id)  # shown for information only
 
     econ = pricing.economics(
         sell_price=hull_price.sell_min if hull_price else None,
@@ -211,11 +209,10 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
         markup=settings.markup_fraction,
         name=ship.name,
         own_price=own_price,
-        contract_price=float(contract.price_per_run) if contract else None,
     )
     return {"econ": econ, "config": config, "stats": stats, "facility": facility, "market": market,
             "rates": rates, "source": source, "hull_price": hull_price, "me": me, "te": te,
-            "contract": contract if econ.bpc_source == "contract" else None}
+            "contract": contract}
 
 
 def simulate_build(ship: Ship, facility: Facility, *, me=0, te=0, settings=None) -> dict:

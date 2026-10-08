@@ -9,7 +9,7 @@
             info: true,
             stateSave: true,
             dom: "rtip",  // our own search box above the filters replaces the built-in one
-            columnDefs: [{ targets: [4, 5, 6, 7, 8, 9, 10, 11, 12], type: "num" }]
+            columnDefs: [{ targets: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13], type: "num" }]
         });
 
         // custom filters read the data-* attributes on each row
@@ -63,6 +63,7 @@
                 form.action = form.dataset.action.replace(/\/0\/price\//, "/" + row.typeId + "/price/");
                 document.getElementById("bpc-price-ship").textContent = row.name + " blueprint";
                 input.value = row.ownPrice || "";
+                input.placeholder = row.contractPrice ? "contracts say " + row.contractPrice : "for example 25000000";
                 bootstrap.Modal.getOrCreateInstance(priceModal).show();
             });
             priceModal.addEventListener("shown.bs.modal", function () { input.focus(); input.select(); });
