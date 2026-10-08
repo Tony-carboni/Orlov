@@ -80,6 +80,8 @@ Roughly one release (0.5.0), no new permissions, a migration, one new beat entry
 
 The owner chose route B the same day, for Pirate, Triglavian and EDENCOM hulls, with this figure: **the average per-run price of the cheapest five runs on offer**, cheapest contracts first. Example: single-run copies at 1, 2, 3, 3, 3 M → (1+2+3+3+3)/5 = 2.4 M per run; a ten-run copy at 1 M per run covers the five runs alone. Regions: The Forge, narrowed the same day to contracts at Jita 4-4 only (station 60003760). The copy's ME/TE only shows in the tooltip for now. The member's own right-click price stays on top.
 
+Same day, after seeing it live, the owner changed the use: the contract figure is **information only**, in its own "Contracts" column, and never enters the numbers. Reason: he builds at a scale that a handful of cheap copies does not cover, so a few bargains would make the profit column jump; the column is there to spot copies worth buying, and the price in his numbers is the one he sets himself by right-click (Shipyard 0.6.0).
+
 Added safeguard: offers dearer than three times the cheapest per-run price are ignored. Reason from the first snapshot: the Vigilant had three copies at 32 to 37 M and one at 9 B, which would have made the figure 2.3 B.
 
 Built as Shipyard 0.5.0 (runbook 13 C). First snapshot (2026-10-08 08:31 EVE): 49,897 public contracts in the game, 33,811 priced item exchanges in The Forge, 1,101 of them single-blueprint contracts for our 37 hulls; 35 hulls priced, Mekubal and Tholos had no contract at all. Examples per run: Vindicator 16.2 M (47 contracts), Rattlesnake 12.0 M, Machariel 34.0 M, Nightmare 121.6 M, Barghest 223.4 M, Leshak 7.4 M, Thunderchild 660 M, Damavik 1.17 M.
