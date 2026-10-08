@@ -13,7 +13,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 - **0.8.1/0.8.2 (commit `5a4d295`):** the owner wants the table to mirror the in-game market tree for quick scanning: groups in his exact in-game folder order, a header row per group, modules indented and in the client's alphabetical order. Done and released (same procedure, backup `aa-db-2026-10-08-1604.sql.gz`); `group_order` of the stored rows updated from the constants.
 
-**0.8.3 (desktop session, 16:30 UTC):** Sell % column removed from the Scrapmetal table; favourable switch and colouring follow Buy %.
+**0.8.3 (desktop session, 16:30 UTC):** Sell % column removed from the Scrapmetal table; favourable switch and colouring follow Buy %. **0.8.4:** Metal Scraps and Reinforced Metal Scraps as the group "Metal scraps" below the thermal hardeners.
 
 **Open (owner)**
 - Look at the Scrapmetal tab: group names were polished (say if any should change); the v2 sheet's extra groups "cap booster" and "fr-x heavy" were not in the list and are not in the app. More modules: admin → Shipyard → Scrap items (type id + group), or hand the local session a list.
