@@ -239,6 +239,16 @@ class Ore(models.Model):
     def __str__(self):
         return self.name
 
+    MOON_RARITY = {"ubiquitous": "R4", "common": "R8", "uncommon": "R16", "rare": "R32", "exceptional": "R64"}
+
+    @property
+    def rarity(self) -> str:
+        """Moon ore rarity from the group name ("Common Moon Asteroids" → "R8"); empty for other ores."""
+        if self.kind != "moon":
+            return ""
+        first = self.group_name.split(" ", 1)[0].lower()
+        return self.MOON_RARITY.get(first, "")
+
 
 class OreMarketStats(models.Model):
     """Regional history aggregates for a compressed ore (same shape as ShipMarketStats)."""

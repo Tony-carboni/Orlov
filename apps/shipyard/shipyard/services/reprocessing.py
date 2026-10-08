@@ -258,6 +258,15 @@ def families_by_kind(ores=None) -> dict[str, list[str]]:
     return out
 
 
+RARITY_ORDER = ["R4", "R8", "R16", "R32", "R64"]
+
+
+def rarities_present(ores=None) -> list[str]:
+    ores = ores if ores is not None else Ore.objects.filter(is_active=True, kind="moon")
+    present = {o.rarity for o in ores if o.rarity}
+    return [r for r in RARITY_ORDER if r in present]
+
+
 def variant_label(variant: str) -> str:
     return VARIANT_LABELS.get(variant, variant)
 
