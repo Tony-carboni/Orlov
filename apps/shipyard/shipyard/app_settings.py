@@ -35,14 +35,22 @@ def standalone_host() -> str:
 # Skills and standings of the member's character are re-read from ESI when older than this
 SHIPYARD_ESI_REFRESH_HOURS = getattr(settings, "SHIPYARD_ESI_REFRESH_HOURS", 24)
 
-# The Shipyard's own hostname (second front door, docs/research/06-shipyards-frontend.md).
-# Empty = off. Read at request time so tests can override it.
-def standalone_host() -> str:
-    return (getattr(settings, "SHIPYARD_STANDALONE_HOST", "") or "").strip().lower()
-
-
-# Skills and standings of the member's character are re-read from ESI when older than this
-SHIPYARD_ESI_REFRESH_HOURS = getattr(settings, "SHIPYARD_ESI_REFRESH_HOURS", 24)
+# --- Blueprint copies on public contracts (docs/research/06-public-contract-blueprint-prices.md)
+# EVE Ref's half-hourly snapshot of every public contract; one download per refresh.
+SHIPYARD_CONTRACTS_URL = getattr(
+    settings, "SHIPYARD_CONTRACTS_URL",
+    "https://data.everef.net/public-contracts/public-contracts-latest.v2.tar.bz2",
+)
+# Regions whose contracts count (The Forge). Empty list = every region.
+SHIPYARD_CONTRACT_REGIONS = getattr(settings, "SHIPYARD_CONTRACT_REGIONS", [10000002])
+# Ship categories priced this way (owner, 2026-10-08): the ones the corp cannot supply.
+SHIPYARD_CONTRACT_CATEGORIES = getattr(settings, "SHIPYARD_CONTRACT_CATEGORIES", ["Pirate", "Trig", "Edencom"])
+# The figure: average per-run price of the cheapest N runs on offer (owner's rule).
+SHIPYARD_CONTRACT_RUNS = getattr(settings, "SHIPYARD_CONTRACT_RUNS", 5)
+# Offers dearer than this × the cheapest per-run price are ignored (scams, typos); None = keep all.
+SHIPYARD_CONTRACT_OUTLIER_FACTOR = getattr(settings, "SHIPYARD_CONTRACT_OUTLIER_FACTOR", 3.0)
+# A contract price older than this is not shown any more ("Price not known").
+SHIPYARD_CONTRACT_MAX_AGE_HOURS = getattr(settings, "SHIPYARD_CONTRACT_MAX_AGE_HOURS", 48)
 
 # Cache lifetime for ad-hoc simulations on the detail page (seconds)
 SHIPYARD_SIM_CACHE_SECONDS = getattr(settings, "SHIPYARD_SIM_CACHE_SECONDS", 1800)

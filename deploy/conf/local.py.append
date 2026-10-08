@@ -159,3 +159,9 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_industry"] = {
     "task": "shipyard.tasks.refresh_industry",
     "schedule": crontab(minute="5,35"),
 }
+
+# Shipyard: pirate/Trig/EDENCOM blueprint prices from public contracts (EVE Ref snapshot, hourly)
+CELERYBEAT_SCHEDULE["shipyard_refresh_contract_prices"] = {
+    "task": "shipyard.tasks.refresh_contract_prices",
+    "schedule": crontab(minute="50"),
+}

@@ -156,6 +156,13 @@ class BlueprintCostTests(TestCase):
         eo = pricing.economics(sell_price=100.0, material_rows=[], prices={}, names={}, volumes={}, job_cost=0,
                                config=cfg, use_lp=True, rates=rates, tag_unit_price=1_000.0, category="Navy", own_price=5_000_000)
         self.assertEqual((eo.bpc_cost, eo.bpc_source, eo.bpc_excluded, eo.tag_cost, eo.bpc_markup), (5_000_000.0, "own", False, 0.0, 0.0))
+        # public contracts: the figure fills in for hulls the corp cannot supply, whole copy, no tags
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Pirate", contract_price=16_200_000), (16_200_000.0, "contract"))
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Base", contract_price=16_200_000), (0.0, "free"))
+        self.assertEqual(pricing.blueprint_cost(cfg, use_lp=True, category="Pirate", own_price=1, contract_price=16_200_000), (1.0, "own"))
+        ec = pricing.economics(sell_price=100.0, material_rows=[], prices={}, names={}, volumes={}, job_cost=0,
+                               config=cfg, use_lp=True, rates=rates, tag_unit_price=1_000.0, category="Pirate", contract_price=16_200_000)
+        self.assertEqual((ec.bpc_cost, ec.bpc_source, ec.bpc_excluded, ec.tag_cost), (16_200_000.0, "contract", False, 0.0))
         # per-ship exception: the Perseverance (ORE destroyer) is public contracts only
         self.assertEqual(constants.bpc_policy("ORE", "Destroyer"), constants.BPC_MANUAL)
         self.assertEqual(constants.bpc_policy("ORE", "Destroyer", "Perseverance"), constants.BPC_PUBLIC)

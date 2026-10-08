@@ -193,6 +193,29 @@ class MemberBlueprintPrice(models.Model):
         return f"{self.user} {self.ship}: {self.price_isk}"
 
 
+class ContractPrice(models.Model):
+    """Blueprint copy price per ship from public contracts (services/contracts.py).
+
+    price_per_run is the owner's figure: the average per-run price of the cheapest
+    SHIPYARD_CONTRACT_RUNS runs on offer. `offers` keeps the cheapest contracts for the
+    tooltip. Rows older than SHIPYARD_CONTRACT_MAX_AGE_HOURS are ignored.
+    """
+
+    ship = models.OneToOneField(Ship, on_delete=models.CASCADE, related_name="contract_price")
+    price_per_run = models.DecimalField(max_digits=15, decimal_places=2)
+    lowest_per_run = models.DecimalField(max_digits=15, decimal_places=2)
+    runs_used = models.PositiveIntegerField(default=0, help_text="Runs that went into the average")
+    offers_used = models.PositiveIntegerField(default=0, help_text="Contracts that went into the average")
+    contracts = models.PositiveIntegerField(default=0, help_text="Matching contracts in the snapshot")
+    runs_available = models.PositiveIntegerField(default=0, help_text="Runs on offer in all matching contracts")
+    offers = models.JSONField(default=list, blank=True, help_text="The cheapest contracts: price, runs, ME/TE, station")
+    snapshot_at = models.DateTimeField(help_text="EVE Ref scrape time of the snapshot")
+    fetched_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.ship}: {self.price_per_run} per run from contracts"
+
+
 class MaterialType(models.Model):
     """Name cache for material type IDs."""
 

@@ -8,10 +8,10 @@ from django.utils import timezone
 
 from .. import app_settings, constants
 from ..models import (
-    BuildSnapshot, Facility, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, Ship, ShipConfig,
+    BuildSnapshot, ContractPrice, Facility, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, Ship, ShipConfig,
     ShipMarketStats, UserSettings,
 )
-from . import everef, pricing
+from . import contracts, everef, pricing
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,7 @@ class BoardRow:
     build: BuildSnapshot | None
     owned_bp: dict | None = None  # the member's best blueprint for this ship, when it has one
     own_price: float | None = None  # the member's own typed blueprint price, when there is one
+    contract: object = None  # ContractPrice row when the figure comes from public contracts
 
 
 def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
@@ -78,6 +79,7 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
     own_prices = {}
     if settings.user_id:
         own_prices = {p.ship_id: float(p.price_isk) for p in MemberBlueprintPrice.objects.filter(user_id=settings.user_id)}
+    contract_prices = contracts.fresh_prices()
     live_budget = industry.MAX_LIVE_BUILDS
     # materials of the live builds may not be in the snapshot's name map yet
     for ship in ships:
@@ -124,9 +126,11 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
             markup=settings.markup_fraction,
             name=ship.name,
             own_price=own_prices.get(ship.type_id),
+            contract_price=float(contract_prices[ship.type_id].price_per_run) if ship.type_id in contract_prices else None,
         )
         rows.append(BoardRow(ship=ship, econ=econ, config=cfg, stats=st, build=build, owned_bp=bp,
-                             own_price=own_prices.get(ship.type_id)))
+                             own_price=own_prices.get(ship.type_id),
+                             contract=contract_prices.get(ship.type_id) if econ.bpc_source == "contract" else None))
     rows.sort(key=lambda r: (r.econ.net_profit is None, -(r.econ.net_profit or 0)))
     return rows
 
@@ -185,6 +189,7 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
     if bpc is None and settings.user_id:
         own = MemberBlueprintPrice.objects.filter(user_id=settings.user_id, ship=ship).first()
         own_price = float(own.price_isk) if own else None
+    contract = contracts.fresh_prices([ship.type_id]).get(ship.type_id) if bpc is None else None
 
     econ = pricing.economics(
         sell_price=hull_price.sell_min if hull_price else None,
@@ -206,9 +211,11 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
         markup=settings.markup_fraction,
         name=ship.name,
         own_price=own_price,
+        contract_price=float(contract.price_per_run) if contract else None,
     )
     return {"econ": econ, "config": config, "stats": stats, "facility": facility, "market": market,
-            "rates": rates, "source": source, "hull_price": hull_price, "me": me, "te": te}
+            "rates": rates, "source": source, "hull_price": hull_price, "me": me, "te": te,
+            "contract": contract if econ.bpc_source == "contract" else None}
 
 
 def simulate_build(ship: Ship, facility: Facility, *, me=0, te=0, settings=None) -> dict:
@@ -238,4 +245,5 @@ def data_freshness() -> dict:
     price = PriceSnapshot.objects.order_by("-fetched_at").values_list("fetched_at", flat=True).first()
     build = BuildSnapshot.objects.order_by("-fetched_at").values_list("fetched_at", flat=True).first()
     stats = ShipMarketStats.objects.order_by("-fetched_at").values_list("fetched_at", flat=True).first()
-    return {"prices": price, "builds": build, "stats": stats, "now": timezone.now()}
+    contract = ContractPrice.objects.order_by("-snapshot_at").values_list("snapshot_at", flat=True).first()
+    return {"prices": price, "builds": build, "stats": stats, "contracts": contract, "now": timezone.now()}

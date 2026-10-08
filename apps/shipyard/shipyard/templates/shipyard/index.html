@@ -26,7 +26,7 @@
                     <a class="badge text-bg-warning text-decoration-none" href="{% url 'shipyard:settings' %}">none chosen yet: skills count as 0</a>
                 {% endif %}
             </div>
-            <div class="shipyard-k">Jita lowest sell, refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · builds {{ freshness.builds|date:"Y-m-d H:i" }} · volume {{ freshness.stats|date:"Y-m-d H:i" }}</div>
+            <div class="shipyard-k">Jita lowest sell, refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · builds {{ freshness.builds|date:"Y-m-d H:i" }} · volume {{ freshness.stats|date:"Y-m-d H:i" }}{% if freshness.contracts %} · contracts {{ freshness.contracts|date:"Y-m-d H:i" }}{% endif %}</div>
         </div>
     </div>
 </div>
@@ -129,6 +129,8 @@
             <td class="text-end" data-order="{{ r.econ.market_depth_days|default_if_none:'99999' }}">{{ r.econ.market_depth_days|depth }}</td>
             {% if r.econ.bpc_source == 'own' %}
             <td class="text-end shipyard-bpc" data-order="{{ r.econ.bpc_cost }}" title="Your own price for this copy, used in your numbers instead of the corp's figure. Right-click to change or clear it.">{{ r.econ.bpc_cost|isk }} <sup class="text-warning">yours</sup></td>
+            {% elif r.econ.bpc_source == 'contract' %}
+            <td class="text-end shipyard-bpc" data-order="{{ r.econ.bpc_cost }}" title="From public contracts in The Forge: average per run of the cheapest {{ r.contract.runs_used }} run{{ r.contract.runs_used|pluralize }} on offer ({{ r.contract.offers_used }} contract{{ r.contract.offers_used|pluralize }}; cheapest {{ r.contract.lowest_per_run|isk }} per run, ME {{ r.contract.offers.0.me }} / TE {{ r.contract.offers.0.te }}, {{ r.contract.offers.0.runs }} run{{ r.contract.offers.0.runs|pluralize }}). {{ r.contract.contracts }} contract{{ r.contract.contracts|pluralize }} with {{ r.contract.runs_available }} runs listed, snapshot {{ r.contract.snapshot_at|date:'Y-m-d H:i' }} EVE. Right-click to use your own price instead.">{{ r.econ.bpc_cost|isk }} <sup class="text-info">contracts</sup></td>
             {% elif r.econ.bpc_source == 'public' %}
             <td class="text-end small text-muted shipyard-bpc" data-order="0" title="No price known for this copy yet. Right-click to enter what it costs you.">Price not known</td>
             {% elif r.econ.bpc_source == 'free' %}
@@ -148,7 +150,7 @@
     Net profit = Jita lowest sell − materials (Jita lowest sell, ME 0 at your facility, or your own blueprint's ME where you have one) − job cost − blueprint − tags − sales tax − broker fee.
     Build time assumes all industry skills at V. Click a ship for the full breakdown and simulations.<br>
     <strong>Blueprints:</strong> Base hulls up to battlecruiser are handed out by the corp for free; base battleships are not (members source those on the market). Navy hulls come from the corp at the LP-store cost plus its markup.
-    Pirate, Triglavian and EDENCOM hulls cannot be supplied by the corp either: their blueprint shows <em>Price not known</em> and their net profit (<sup class="text-info">no BPC</sup>) is <strong>without</strong> the blueprint until you enter one.<br>
+    Pirate, Triglavian and EDENCOM hulls cannot be supplied by the corp either: their blueprint price (<sup class="text-info">contracts</sup>) comes from public contracts in The Forge, the average per run of the cheapest five runs on offer, refreshed hourly from EVE Ref's snapshot. Without any contract the cell shows <em>Price not known</em> and the net profit (<sup class="text-info">no BPC</sup>) is <strong>without</strong> the blueprint.<br>
     <strong>Your own price:</strong> right-click a Blueprint cell and type what a copy costs you; the value then replaces the text or the corp's figure in your numbers (marked <sup class="text-warning">yours</sup>) until you clear it.
 </p>
 

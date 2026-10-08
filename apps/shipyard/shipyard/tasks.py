@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, PriceSnapshot, RefreshRun, Ship, ShipConfig,
     ShipMarketStats,
 )
-from .services import esi, everef, fuzzwork, industry
+from .services import contracts, esi, everef, fuzzwork, industry
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -140,6 +140,24 @@ def refresh_market_stats():
             logger.warning("history failed for %s: %s", ship, exc)
         polite_pause()
     _done(run, not errors, n, "; ".join(errors[:20]))
+
+
+@shared_task
+def refresh_contract_prices():
+    """Blueprint copy prices for pirate/Trig/EDENCOM hulls from EVE Ref's public-contract snapshot.
+
+    Beat entry: shipyard_refresh_contract_prices (hourly). One 6 MB download, no ESI calls.
+    """
+    run = _run("contracts")
+    try:
+        result = contracts.refresh()
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("contract price refresh failed")
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, True, result.get("priced", 0),
+          f"{result.get('priced', 0)} of {result.get('ships', 0)} ships priced from {result.get('offers', 0)} contracts, "
+          f"snapshot {result.get('snapshot_at')}")
 
 
 @shared_task

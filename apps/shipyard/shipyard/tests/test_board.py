@@ -84,6 +84,31 @@ class BoardTests(TestCase):
             self.assertEqual(client.post(reverse("shipyard:set_bpc_price", args=[999999]), {"price": "1"}).status_code, 404)
         self.assertEqual(board.dashboard_rows(s)[0].econ.bpc_source, "public")
 
+    def test_contract_price_on_the_board(self):
+        from ..models import ContractPrice
+        from django.utils import timezone
+        s = board.get_user_settings(self.user)
+        s.manual_sales_tax = 4.81
+        s.manual_broker_fee = 0
+        s.save()
+        ContractPrice.objects.create(ship=self.ship, price_per_run=16_200_000, lowest_per_run=15_000_000, runs_used=5,
+                                     offers_used=4, contracts=6, runs_available=24, snapshot_at=timezone.now(),
+                                     offers=[{"per_run": 15e6, "runs": 1, "me": 0, "te": 0}])
+        rows = board.dashboard_rows(s)
+        e = rows[0].econ
+        self.assertEqual(e.bpc_source, "contract")
+        self.assertFalse(e.bpc_excluded)
+        self.assertAlmostEqual(e.bpc_cost, 16_200_000.0)
+        self.assertAlmostEqual(e.net_profit, 92_683_787.9 + 23_000_000 - 16_200_000, delta=10)
+        self.assertEqual(rows[0].contract.contracts, 6)
+        self.assertEqual(board.ship_detail(self.ship, s)["econ"].bpc_source, "contract")
+        self.assertEqual(board.ship_detail(self.ship, s)["contract"].contracts, 6)
+        # the member's own price still wins
+        MemberBlueprintPrice.objects.create(user=self.user, ship=self.ship, price_isk=23_000_000)
+        rows = board.dashboard_rows(s)
+        self.assertEqual(rows[0].econ.bpc_source, "own")
+        self.assertIsNone(rows[0].contract)
+
     def test_settings_defaults(self):
         s = board.get_user_settings(self.user)
         self.assertEqual(s.facility, self.fac)
