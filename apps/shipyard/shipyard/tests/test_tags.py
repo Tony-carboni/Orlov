@@ -18,6 +18,6 @@ class IskTests(SimpleTestCase):
         self.assertEqual(isk_auto(12_345), "12.3 k")
         self.assertEqual(isk_auto(99_950), "100.0 k")
         self.assertEqual(isk_auto(153_910), "154 k")
-        self.assertEqual(isk_auto(2_345_678), "2.35 M")
+        self.assertEqual(isk_auto(2_345_678), "2.346 M")  # millions keep their thousands
         self.assertEqual(isk_auto(512), "512.00")
         self.assertEqual(isk_auto(None), "–")
