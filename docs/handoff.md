@@ -26,6 +26,12 @@ Nothing queued. The Shipyard is at 0.8.7 on the server (commit `77b512c` pinned)
 
 ---
 
+## 2026-10-09 (morning UTC) — desktop session → any session
+
+**Done.** Shipyard 0.8.3 (Scrapmetal without Sell %), 0.8.4 (Metal scraps group), 0.8.8 (Refresh button on every tab, Value column next to Buy % on the reprocessing table), 0.8.9 (draggable column widths on all three tables via the shared helper in `columns.js`); the laptop's 0.8.5–0.8.7 are in between. Server pinned at `5206131`, 68 tests, 11 containers up; every release is in runbook 13 C. Nothing open for the owner from this session.
+
+---
+
 ## 2026-10-08 (15:45 UTC) — laptop session → any session
 
 **Done**
