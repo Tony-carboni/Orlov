@@ -66,6 +66,7 @@ class RowTests(TestCase):
         self.assertAlmostEqual(v.outputs[0].quantity, 4 * y, places=6)
         self.assertAlmostEqual(v.gross_value, 16 * y, places=6)
         self.assertAlmostEqual(v.net_value, 16 * y * 0.98, places=6)
+        self.assertAlmostEqual(v.outputs[0].share, 1.0)  # Veldspar gives only tritanium: the whole value
         self.assertTrue(v.complete)
         self.assertAlmostEqual(v.sell_ratio, 12.0 / v.net_value)
         self.assertAlmostEqual(v.buy_ratio, 11.0 / v.net_value)

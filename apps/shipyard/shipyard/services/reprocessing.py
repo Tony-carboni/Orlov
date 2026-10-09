@@ -165,6 +165,7 @@ class Output:
     quantity: float          # per unit of compressed ore, after yield
     unit_price: float | None
     value: float | None
+    share: float | None = None  # of the ore's gross value; None while the mineral has no price
 
 
 @dataclass
@@ -239,6 +240,8 @@ def dashboard_rows(market) -> list[OreRow]:
                 gross += value
             outputs.append(Output(type_id=tid, name=names.get(tid, f"Type {tid}"), quantity=per_unit, unit_price=unit_price, value=value))
         outputs.sort(key=lambda o: -(o.value or 0))
+        for o in outputs:
+            o.share = (o.value / gross) if (gross and o.value is not None) else None
         p = prices.get(ore.type_id)
         st = stats.get(ore.type_id)
         rows.append(OreRow(

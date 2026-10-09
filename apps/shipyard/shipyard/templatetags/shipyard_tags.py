@@ -68,6 +68,18 @@ def isk(value, digits=1):
 
 
 @register.filter
+def isk_auto(value):
+    """ISK with the decimals the size allows (owner's rule): under 10 k two decimals ('1.23 k'),
+    from 10 k one ('12.3 k'), from 100 k none ('154 k'); millions keep two ('2.35 M', still
+    10 k precision); None → '–'."""
+    try:
+        a = abs(float(value))
+    except (TypeError, ValueError):
+        return "–"
+    return isk(value, 2 if a >= 1e6 else 0 if a >= 1e5 else 1 if a >= 1e4 else 2)
+
+
+@register.filter
 def isk_full(value):
     """Full ISK with thousands separators."""
     if value is None:
