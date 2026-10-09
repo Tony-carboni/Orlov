@@ -101,11 +101,11 @@
             <th data-key="ore">Ore</th>
             <th data-key="variant">Variant</th>
             <th data-key="m3" class="text-end" title="Packaged volume of one unit">m³</th>
-            <th data-key="value" class="text-end" title="Value of the minerals one unit gives at this facility, after the service tax, at Jita lowest sell">Value</th>
             <th data-key="sell" class="text-end" title="Jita lowest sell price of the compressed ore">Sell</th>
             <th data-key="buy" class="text-end" title="Jita highest buy order for the compressed ore">Buy</th>
             <th data-key="vol" class="text-end" title="Units traded per day in The Forge, 7-day average (ESI history): a feel for how big a buy order can fill">Vol/day</th>
             <th data-key="depth" class="text-end" title="Units on Jita sell orders ÷ units traded per day: how many days of stock the sellers hold. Low = depleted market, sellers may come to buy orders.">Depth (d)</th>
+            <th data-key="value" class="text-end" title="Value of the minerals one unit gives at this facility, after the service tax, at Jita lowest sell">Value</th>
             <th data-key="buypct" class="text-end" title="Jita highest buy order as a share of the value: what you get the ore at with a buy order. Below 100 % the ore costs less than the minerals it gives.">Buy %</th>
             <th data-key="sellpct" class="text-end" title="Jita lowest sell order as a share of the value: what you pay buying from sell orders">Sell %</th>
             {% for p in price_points %}<th data-key="p{{ p }}" class="text-end" title="The most you can pay per unit to keep the ore at {{ p }} % of its output value">{{ p }} %</th>{% endfor %}
@@ -119,11 +119,11 @@
             <td><img src="https://images.evetech.net/types/{{ r.ore.type_id }}/icon?size=32" width="24" height="24" class="me-1 rounded" alt=""><span class="fw-semibold">{{ r.ore.name }}</span>{% if not r.complete %} <i class="fas fa-triangle-exclamation text-warning ms-1" title="A mineral or the ore itself has no Jita price yet"></i>{% endif %}</td>
             <td data-order="{{ forloop.counter }}">{% if r.ore.variant == 'base' %}<span class="shipyard-k">base</span>{% else %}{{ r.ore.variant|variant_label }}{% endif %}</td>
             <td class="text-end" data-order="{{ r.ore.volume }}">{{ r.ore.volume|num:3 }}</td>
-            <td class="text-end fw-semibold" data-order="{{ r.net_value }}" title="{{ r.net_value|isk_full }} ISK; before tax {{ r.gross_value|isk_full }}; yield {{ r.yield_fraction|pct:1 }}">{{ r.net_value|isk_auto }}</td>
             <td class="text-end" data-order="{{ r.sell_price|default_if_none:'-1' }}" title="{{ r.sell_price|isk_full }} ISK">{{ r.sell_price|isk_auto }}</td>
             <td class="text-end" data-order="{{ r.buy_price|default_if_none:'-1' }}" title="{{ r.buy_price|isk_full }} ISK">{{ r.buy_price|isk_auto }}</td>
             <td class="text-end" data-order="{{ r.avg_daily_volume }}" title="7-day average trade price {{ r.avg_price|isk:2 }} ISK">{{ r.avg_daily_volume|num:0 }}</td>
             <td class="text-end" data-order="{{ r.market_depth_days|default_if_none:'99999' }}" title="{{ r.sell_volume|num:0 }} units on sell orders">{{ r.market_depth_days|depth }}</td>
+            <td class="text-end fw-semibold" data-order="{{ r.net_value }}" title="{{ r.net_value|isk_full }} ISK; before tax {{ r.gross_value|isk_full }}; yield {{ r.yield_fraction|pct:1 }}">{{ r.net_value|isk_auto }}</td>
             {% with ratio=r.buy_ratio %}
             <td class="text-end fw-semibold {% if ratio is None %}shipyard-k{% elif ratio <= 0.9 %}text-success{% elif ratio <= 1.0 %}text-warning{% else %}text-danger{% endif %}" data-order="{{ ratio|default_if_none:'9' }}" title="Highest buy order {{ r.buy_price|isk:2 }} ÷ value {{ r.net_value|isk:2 }}">{{ ratio|pct:1 }}</td>
             {% endwith %}
