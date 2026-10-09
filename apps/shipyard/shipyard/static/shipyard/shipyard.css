@@ -96,13 +96,14 @@ td.shipyard-gives img { vertical-align: -4px; border-radius: 3px; }
 td.shipyard-gives > span { margin-right: .45rem; }
 td.shipyard-gives > span.shipyard-gives-minor { margin-right: .15rem; opacity: .55; }
 /* resizable columns: a handle on the right edge of each header; once a column has been dragged the table is laid out fixed */
-#scrap-table thead th { position: relative; box-sizing: border-box; }  /* DataTables makes headers content-box; the saved widths are the rendered ones */
-#scrap-table thead th .scrap-resizer { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; user-select: none; z-index: 2; }
-#scrap-table thead th .scrap-resizer:hover, #scrap-table thead th .scrap-resizer.is-active { background: var(--sy-accent); opacity: .6; }
-#scrap-table.scrap-fixed { table-layout: fixed; }
-#scrap-table.scrap-fixed td, #scrap-table.scrap-fixed th { overflow: hidden; }
-#scrap-table.scrap-fixed td.text-end { white-space: nowrap; text-overflow: ellipsis; }
-body.scrap-resizing, body.scrap-resizing * { cursor: col-resize !important; user-select: none !important; }
+/* draggable column widths (columns.js, every table): a handle on the right edge of each header; once a column has been dragged the table is laid out fixed */
+table.dataTable thead th { position: relative; box-sizing: border-box; }  /* DataTables makes headers content-box; the saved widths are the rendered ones */
+table.dataTable thead th .shipyard-resizer { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; user-select: none; z-index: 2; }
+table.dataTable thead th .shipyard-resizer:hover, table.dataTable thead th .shipyard-resizer.is-active { background: var(--sy-accent); opacity: .6; }
+table.shipyard-fixed { table-layout: fixed; }
+table.shipyard-fixed td, table.shipyard-fixed th { overflow: hidden; }
+table.shipyard-fixed td.text-end { white-space: nowrap; text-overflow: ellipsis; }
+body.shipyard-resizing, body.shipyard-resizing * { cursor: col-resize !important; user-select: none !important; }
 /* "Columns" picker (columns.js): tick boxes in a dropdown, two columns of them so the price points fit */
 .shipyard-columns-menu { min-width: 16rem; columns: 2; column-gap: 1rem; }
 .shipyard-columns-menu > li { break-inside: avoid; padding: .1rem .5rem .1rem 1.75rem; white-space: nowrap; }

@@ -16,6 +16,7 @@
             columnDefs: [{ targets: numCols, type: "num" }]
         });
         // which columns to show: the member's choice, remembered per browser; m³ hidden until ticked
+        window.shipyardColumnResizer(table, el, { storageKey: "shipyard.repro.widths" });
         window.shipyardColumnPicker(table, el, { container: "#repro-columns", storageKey: "shipyard.repro.columns", hiddenByDefault: ["m3"] });
 
         function selected(group) {

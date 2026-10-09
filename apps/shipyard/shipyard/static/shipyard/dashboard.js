@@ -12,6 +12,11 @@
             columnDefs: [{ targets: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13], type: "num" }]
         });
 
+        // draggable column widths (shared helper in columns.js)
+        if (window.shipyardColumnResizer) {
+            window.shipyardColumnResizer(table, document.getElementById("shipyard-table"), { storageKey: "shipyard.dashboard.widths" });
+        }
+
         // custom filters read the data-* attributes on each row
         $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
             if (settings.nTable.id !== "shipyard-table") { return true; }
