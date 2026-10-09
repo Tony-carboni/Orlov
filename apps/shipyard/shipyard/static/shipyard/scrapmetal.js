@@ -29,7 +29,7 @@
                     if (!grouped) { return; }
                     var g = row.dataset.group;
                     if (g !== last) {
-                        $(row).before('<tr class="scrap-group-row"><td colspan="' + (colCount - 1) + '"><i class="fas fa-folder-open fa-fw"></i> ' + $("<span>").text(g).html() + "</td></tr>");
+                        $(row).before('<tr class="scrap-group-row"><td colspan="' + api.columns(":visible").count() + '"><i class="fas fa-folder-open fa-fw"></i> ' + $("<span>").text(g).html() + "</td></tr>");
                         last = g;
                     }
                 });
@@ -110,6 +110,10 @@
             if (justResized) { e.stopPropagation(); e.preventDefault(); }
         }, true);
         applyWidths();
+        // which columns to show: the member's choice, remembered per browser; m³ hidden until ticked.
+        // The hidden Group column is not offered. After a change the dragged widths are laid out again.
+        $(el).on("shipyard:columns", applyWidths);
+        window.shipyardColumnPicker(table, el, { container: "#scrap-columns", storageKey: "shipyard.scrap.columns", hiddenByDefault: ["m3"], skip: ["group"] });
 
         function selected(group) {
             return $(group + " input:checked").map(function () { return this.value; }).get();

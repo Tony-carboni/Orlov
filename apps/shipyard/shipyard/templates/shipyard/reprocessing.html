@@ -73,6 +73,7 @@
     <div class="col-auto">
         <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#repro-families" aria-expanded="false" aria-controls="repro-families"><i class="fas fa-filter fa-fw"></i> Ore types <span class="badge text-bg-info" id="repro-family-count"></span></button>
     </div>
+    <div class="col-auto" id="repro-columns" title="Choose which columns to show; remembered in this browser"></div>
 </div>
 <div class="collapse mb-2" id="repro-families">
     <div class="card card-body py-2" id="repro-family">
@@ -93,19 +94,19 @@
 <table id="repro-table" class="table table-sm table-hover table-striped align-middle w-100" data-num-from="3" data-num-to="{{ price_points|length|add:10 }}">
     <thead>
         <tr>
-            <th>Kind</th>
-            <th>Ore</th>
-            <th>Variant</th>
-            <th class="text-end" title="Packaged volume of one unit">m³</th>
-            <th class="text-end" title="Value of the minerals one unit gives at this facility, after the service tax, at Jita lowest sell">Value</th>
-            <th class="text-end" title="Jita lowest sell price of the compressed ore">Sell</th>
-            <th class="text-end" title="Jita highest buy order for the compressed ore">Buy</th>
-            <th class="text-end" title="Units traded per day in The Forge, 7-day average (ESI history): a feel for how big a buy order can fill">Vol/day</th>
-            <th class="text-end" title="Units on Jita sell orders ÷ units traded per day: how many days of stock the sellers hold. Low = depleted market, sellers may come to buy orders.">Depth (d)</th>
-            <th class="text-end" title="Jita highest buy order as a share of the value: what you get the ore at with a buy order. Below 100 % the ore costs less than the minerals it gives.">Buy %</th>
-            <th class="text-end" title="Jita lowest sell order as a share of the value: what you pay buying from sell orders">Sell %</th>
-            {% for p in price_points %}<th class="text-end" title="The most you can pay per unit to keep the ore at {{ p }} % of its output value">{{ p }} %</th>{% endfor %}
-            <th title="Each mineral's share of the value, largest first: the three largest with their percentage, the rest as icons only; hover an icon for units and ISK">Gives</th>
+            <th data-key="kind">Kind</th>
+            <th data-key="ore">Ore</th>
+            <th data-key="variant">Variant</th>
+            <th data-key="m3" class="text-end" title="Packaged volume of one unit">m³</th>
+            <th data-key="value" class="text-end" title="Value of the minerals one unit gives at this facility, after the service tax, at Jita lowest sell">Value</th>
+            <th data-key="sell" class="text-end" title="Jita lowest sell price of the compressed ore">Sell</th>
+            <th data-key="buy" class="text-end" title="Jita highest buy order for the compressed ore">Buy</th>
+            <th data-key="vol" class="text-end" title="Units traded per day in The Forge, 7-day average (ESI history): a feel for how big a buy order can fill">Vol/day</th>
+            <th data-key="depth" class="text-end" title="Units on Jita sell orders ÷ units traded per day: how many days of stock the sellers hold. Low = depleted market, sellers may come to buy orders.">Depth (d)</th>
+            <th data-key="buypct" class="text-end" title="Jita highest buy order as a share of the value: what you get the ore at with a buy order. Below 100 % the ore costs less than the minerals it gives.">Buy %</th>
+            <th data-key="sellpct" class="text-end" title="Jita lowest sell order as a share of the value: what you pay buying from sell orders">Sell %</th>
+            {% for p in price_points %}<th data-key="p{{ p }}" class="text-end" title="The most you can pay per unit to keep the ore at {{ p }} % of its output value">{{ p }} %</th>{% endfor %}
+            <th data-key="gives" title="Each mineral's share of the value, largest first: the three largest with their percentage, the rest as icons only; hover an icon for units and ISK">Gives</th>
         </tr>
     </thead>
     <tbody>
@@ -141,5 +142,6 @@
 {% endblock %}
 
 {% block shipyard_js %}
+<script src="{% static 'shipyard/columns.js' %}"></script>
 <script src="{% static 'shipyard/reprocessing.js' %}"></script>
 {% endblock %}

@@ -103,3 +103,8 @@ td.shipyard-gives > span.shipyard-gives-minor { margin-right: .15rem; opacity: .
 #scrap-table.scrap-fixed td, #scrap-table.scrap-fixed th { overflow: hidden; }
 #scrap-table.scrap-fixed td.text-end { white-space: nowrap; text-overflow: ellipsis; }
 body.scrap-resizing, body.scrap-resizing * { cursor: col-resize !important; user-select: none !important; }
+/* "Columns" picker (columns.js): tick boxes in a dropdown, two columns of them so the price points fit */
+.shipyard-columns-menu { min-width: 16rem; columns: 2; column-gap: 1rem; }
+.shipyard-columns-menu > li { break-inside: avoid; padding: .1rem .5rem .1rem 1.75rem; white-space: nowrap; }
+.shipyard-columns-menu > li:last-child, .shipyard-columns-menu > li:nth-last-child(2) { column-span: all; padding-left: .5rem; }
+.shipyard-root .shipyard-columns-menu, .shipyard-body .shipyard-columns-menu { --bs-dropdown-bg: var(--sy-panel-2); --bs-dropdown-color: var(--sy-text); --bs-dropdown-border-color: var(--sy-line); }
