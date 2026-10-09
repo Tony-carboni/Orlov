@@ -87,6 +87,11 @@
         function saveWidths() {
             try { window.localStorage.setItem(opts.storageKey, JSON.stringify(widths)); } catch (e) { /* ignore */ }
         }
+        // A resize starts only once the pointer has moved a few pixels: a plain click on the handle
+        // (it sits right next to DataTables' sort arrows, so clicks aimed at the arrows land on it)
+        // must sort the column as usual and must not freeze the widths. 0.9.4: before this, such a
+        // click was swallowed and silently switched the table to fixed widths.
+        var DRAG_START = 3;
         var justResized = false;
         headers().forEach(function (th) {
             var handle = document.createElement("span");
@@ -95,24 +100,34 @@
             th.appendChild(handle);
             handle.addEventListener("mousedown", function (e) {
                 if (e.button !== 0) { return; }
-                e.preventDefault();
                 e.stopPropagation();
-                if (!Object.keys(widths).length) {
-                    // first drag: freeze every visible column at its current size so nothing else moves
-                    headers().forEach(function (h) {
-                        if (h.offsetParent !== null) { widths[keyOf(h)] = Math.round(h.getBoundingClientRect().width); }
-                    });
+                var startX = e.pageX, startW = null, dragging = false;
+                function begin() {
+                    dragging = true;
+                    e.preventDefault();
+                    if (!Object.keys(widths).length) {
+                        // first drag: freeze every visible column at its current size so nothing else moves
+                        headers().forEach(function (h) {
+                            if (h.offsetParent !== null) { widths[keyOf(h)] = Math.round(h.getBoundingClientRect().width); }
+                        });
+                    }
+                    startW = widths[keyOf(th)] || Math.round(th.getBoundingClientRect().width);
+                    handle.classList.add("is-active");
+                    document.body.classList.add("shipyard-resizing");
                 }
-                var startX = e.pageX, startW = widths[keyOf(th)] || Math.round(th.getBoundingClientRect().width);
-                handle.classList.add("is-active");
-                document.body.classList.add("shipyard-resizing");
                 function move(ev) {
+                    if (!dragging) {
+                        if (Math.abs(ev.pageX - startX) < DRAG_START) { return; }
+                        begin();
+                    }
+                    ev.preventDefault();
                     widths[keyOf(th)] = Math.max(36, startW + ev.pageX - startX);
                     applyWidths();
                 }
                 function up() {
                     document.removeEventListener("mousemove", move);
                     document.removeEventListener("mouseup", up);
+                    if (!dragging) { return; }  // a plain click: let it reach the header and sort
                     handle.classList.remove("is-active");
                     document.body.classList.remove("shipyard-resizing");
                     saveWidths();
@@ -122,7 +137,6 @@
                 document.addEventListener("mousemove", move);
                 document.addEventListener("mouseup", up);
             });
-            handle.addEventListener("click", function (e) { e.stopPropagation(); });
             handle.addEventListener("dblclick", function (e) {
                 e.preventDefault();
                 e.stopPropagation();
