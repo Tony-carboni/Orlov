@@ -4,24 +4,23 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
-## 2026-10-09 (07:50 UTC) — desktop session → desktop session (release still to do)
+## 2026-10-09 (08:00 UTC) — desktop session → any session
 
-**Runbook / topic:** runbook 13 C, Shipyard **0.8.5** (Scrapmetal table easier to read; the owner's request from the screenshot of 2026-10-09).
+**Runbook / topic:** runbook 13 C, Shipyard **0.8.5 released** (Scrapmetal table easier to read; the owner's request from the screenshot of 2026-10-09).
 
 **Done**
 - Confirmed for the owner: **Value** = Σ floor(quantity × yield) × Jita lowest sell × (1 − tax), yield from the character's Scrapmetal Processing (V for the owner), tax 0 at the Isikano Raitaru.
-- Commit `ce24e15`: ISK columns in whole thousands (exact amount on hover); **Gives** column = each mineral's share of the value with its in-game icon, the three largest with a percentage, the rest dimmed icons, names still searchable; **column widths** draggable at the header's right edge, remembered per browser, double-click resets. Version 0.8.5. Tests 66 in a throwaway container against the working copy (`~/shipyard-dev`), live page render 200 on the standalone host, the drag tested in the desktop app's browser.
-- Fixed on the PC: the SSH key `~/.ssh/orlov-claude` had Windows line endings and no trailing newline (OpenSSH: "invalid format"); rewritten with LF and a final newline, read-only ACL restored, backup `orlov-claude.crlf-backup` beside it. Git identity set for this repository only (`git config user.name/user.email`, same as earlier commits).
-- Python 3.12 install for the owner's user via winget started (the owner asked for it); result in the chat reply.
+- Commit `ce24e15` (version 0.8.5): ISK columns in whole thousands (exact amount on hover); **Gives** column = each mineral's share of the value with its in-game icon, the three largest with a percentage, the rest dimmed icons, names still searchable; **column widths** draggable at the header's right edge, remembered per browser (localStorage), double-click resets. Tests 66 in a throwaway container against the working copy (`~/shipyard-dev`), live page render 200 on the standalone host, the drag tested in the desktop app's browser.
+- Released per runbook 13 C: backup `aa-db-2026-10-09-0740.sql.gz`, `requirements.txt.pre-0.8.5` in `~/backups`, `ce24e15` pinned, build, throwaway `check` (no migration), `up -d` (all healthy), nginx restarted, collectstatic (124 copied); the served CSS/JS contain the new code, 0 gunicorn errors.
+- Fixed on the PC: the SSH key `~/.ssh/orlov-claude` had Windows line endings and no trailing newline (OpenSSH: "invalid format"); rewritten with LF and a final newline, read-only ACL restored, backup `orlov-claude.crlf-backup` beside it. Git identity set for this repository only (same name and e-mail as earlier commits). The first push needed a one-time GitHub sign-in in the Git Credential Manager window; the credential is stored now.
+- Python 3.12.10 installed for the owner's user via winget (the owner asked); on the user PATH for new terminals.
 
-**Blocked**
-- `git push` of `ce24e15` is waiting on a **Git Credential Manager window "Connect to GitHub"** on the PC; only the owner can sign in. The server pins commits from the GitHub archive, so the release waits for the push.
+**Open (owner)**
+- Look at the Scrapmetal tab on `shipyards.orlovfamily.space`: whole-thousand ISK, icons in Gives, drag a column edge. Say if the share percentages should be shown for more or fewer than three minerals, or if the icons should be bigger.
+- From the previous entry: group names polished (say if any should change); more modules via admin → Shipyard → Scrap items or a list for the local session.
 
-**Owner has to do by hand**
-- Sign in to GitHub in the Git Credential Manager window on the PC (or close it and tell the session; then the push is retried after the sign-in).
-
-### Next — desktop session
-After the push is through: release 0.8.5 per runbook 13 C (announce each state change first, one at a time): backup with `~/bin/aa-backup.sh`, copy `conf/requirements.txt` to `~/backups/requirements.txt.pre-0.8.5`, pin `ce24e15` in the requirements line, build, throwaway `check` (no migration in this release), `up -d`, `restart nginx`, `collectstatic`, verify the page on `shipyards.orlovfamily.space` (whole-thousand ISK, icons in Gives, drag a column edge), then update the handoff and push the docs.
+### Next — any session
+Nothing queued. Pick up whatever the owner asks next; the Shipyard is at 0.8.5 on the server (commit `ce24e15` pinned).
 
 ---
 
