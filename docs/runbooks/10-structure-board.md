@@ -109,6 +109,7 @@ When you make a new profile or move a structure to another one, the board shows 
 | Another agreed reinforcement hour, or no check | `ORLOVBOT_STRUCTURE_REINFORCE_HOUR` in `conf/local.py` and `deploy/` (remove the line to show the hour without colour), restart the bot |
 | Switch the board off | `ORLOVBOT_STRUCTURE_BOARD_CHANNEL = ""`, restart the bot, delete the message |
 | Other fuel threshold or repeat interval for the alerts | `FUEL_WARNING_DAYS` and `ALERT_REPEAT` in `structures.py` |
+| Anchoring structures | no fuel or service pings while a structure anchors (states 1 and 2, `ANCHORING_STATES`); one ping "Anchoring finished" when it leaves that state, with the fuel line, kept 24 h (`ANCHORED_KEEP`); the daily reminders start a day later. Owner's rule 2026-10-09. |
 | No alerts, board only | `ORLOVBOT_STRUCTURE_ALERTS = False`, restart the bot |
 
 ## Completion checklist

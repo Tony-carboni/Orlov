@@ -51,6 +51,10 @@ FUEL_WARNING_DAYS = 7  # fuel shown in red, and the daily alert starts
 FUEL_NOTICE_DAYS = 14  # fuel shown in orange
 DATA_STALE_AFTER = dt.timedelta(minutes=90)  # aa-structures reads EVE every 30 minutes
 STATE_NORMAL = 11  # aa-structures: shield vulnerable, the resting state of an Upwell structure
+# aa-structures: anchor vulnerable (1) and anchoring (2). While a structure anchors it cannot be
+# fuelled, so no fuel or service pings (owner, 2026-10-09); one ping when anchoring is done.
+ANCHORING_STATES = {1, 2}
+ANCHORED_KEEP = dt.timedelta(hours=24)  # how long the "anchoring finished" message stays
 STRUCTURES_SCOPE = "esi-corporations.read_structures.v1"
 
 ALERT_REPEAT = dt.timedelta(hours=24)  # low fuel / offline services: once a day while it lasts
@@ -430,6 +434,8 @@ def _amount_left(fuel, now) -> str:
 def structure_problems(structure: dict, now) -> dict:
     """The things worth a daily ping, by kind: 'fuel' and 'services'."""
     problems = {}
+    if structure["state"] in ANCHORING_STATES:
+        return problems  # nothing can be done about fuel or services until it is anchored
     fuel = structure["fuel_expires_at"]
     if fuel is not None and fuel - now < dt.timedelta(days=FUEL_WARNING_DAYS):
         problems["fuel"] = (
@@ -485,6 +491,28 @@ def plan_alerts(owners: list, state: dict, now) -> tuple:
             key = f"structure:{structure['id']}"
             entry = state.get(key)
             problems = structure_problems(structure, now)
+            # anchoring: remember it; the first check that sees it anchored pings once
+            anchoring_key = f"anchoring:{structure['id']}"
+            if structure["state"] in ANCHORING_STATES:
+                new_state[anchoring_key] = state.get(anchoring_key) or {"since": now.isoformat()}
+                continue
+            if anchoring_key in state:
+                where = f"**{structure['name']}** ({structure['type']}, {structure['system']})"
+                text = f"{mention} **Anchoring finished.** {where} is anchored and can be fuelled now."
+                if problems:
+                    text += "\n" + "\n".join(f"- {line}" for line in problems.values())
+                actions.append(("send", f"anchored:{structure['id']}", text, None))
+                new_state[f"anchored:{structure['id']}"] = {
+                    "message_id": None,
+                    "until": (now + ANCHORED_KEEP).isoformat(),
+                }
+                # the daily reminders start a day later; this message covers today
+                if problems:
+                    new_state[key] = {
+                        "kinds": {kind: now.isoformat() for kind in problems},
+                        "message_id": entry["message_id"] if entry else None,
+                    }
+                continue
             if not problems:
                 continue  # an old alert, if any, is removed below
             sent = dict(entry["kinds"]) if entry else {}
@@ -536,10 +564,12 @@ def plan_alerts(owners: list, state: dict, now) -> tuple:
             }
         elif key.startswith("warover:") and now < dt.datetime.fromisoformat(entry["until"]):
             new_state[key] = entry
+        elif key.startswith("anchored:") and now < dt.datetime.fromisoformat(entry["until"]):
+            new_state[key] = entry
 
     # whatever is no longer a problem (fuel topped up, test done, old "war over"): remove its alert
     for key, entry in state.items():
-        if key not in new_state and not key.startswith("war:"):
+        if key not in new_state and not key.startswith(("war:", "anchoring:")):
             actions.append(("delete", key, entry.get("message_id")))
     return actions, new_state
 
