@@ -91,3 +91,15 @@
 #scrap-table tr.scrap-group-row td { background: rgba(255, 255, 255, 0.06); font-weight: 600; letter-spacing: .01em; padding-top: .45rem; padding-bottom: .3rem; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
 #scrap-table tr.scrap-grouped td.scrap-module { padding-left: 1.75rem; }
 #scrap-table tr.scrap-group-row .fa-folder-open { color: var(--sy-muted); }
+/* Gives column: mineral icons with their share of the value; minor minerals (after the top three) are icons only, dimmed */
+#scrap-table td.scrap-gives img { vertical-align: -4px; border-radius: 3px; }
+#scrap-table td.scrap-gives > span { margin-right: .45rem; }
+#scrap-table td.scrap-gives > span.scrap-minor { margin-right: .15rem; opacity: .55; }
+/* resizable columns: a handle on the right edge of each header; once a column has been dragged the table is laid out fixed */
+#scrap-table thead th { position: relative; box-sizing: border-box; }  /* DataTables makes headers content-box; the saved widths are the rendered ones */
+#scrap-table thead th .scrap-resizer { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; user-select: none; z-index: 2; }
+#scrap-table thead th .scrap-resizer:hover, #scrap-table thead th .scrap-resizer.is-active { background: var(--sy-accent); opacity: .6; }
+#scrap-table.scrap-fixed { table-layout: fixed; }
+#scrap-table.scrap-fixed td, #scrap-table.scrap-fixed th { overflow: hidden; }
+#scrap-table.scrap-fixed td.text-end { white-space: nowrap; text-overflow: ellipsis; }
+body.scrap-resizing, body.scrap-resizing * { cursor: col-resize !important; user-select: none !important; }

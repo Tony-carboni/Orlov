@@ -54,6 +54,8 @@ class RowTests(TestCase):
         self.assertAlmostEqual(r.buy_ratio, 1500 / 3080)
         self.assertAlmostEqual(dict((p, round(v, 2)) for p, v in r.price_points)[90], 2772.0)
         self.assertEqual([o.name for o in r.outputs], ["Tritanium", "Pyerite"])
+        self.assertAlmostEqual(r.outputs[0].share, 2200 / 3080)  # the Gives column shows shares of the value
+        self.assertAlmostEqual(sum(o.share for o in r.outputs), 1.0)
         self.assertTrue(r.complete)
 
     def test_missing_price_marks_the_row(self):
@@ -61,6 +63,7 @@ class RowTests(TestCase):
         r = scrapmetal.dashboard_rows(self.market)[0]
         self.assertFalse(r.complete)
         self.assertEqual(r.missing, 1)
+        self.assertIsNone([o for o in r.outputs if o.name == "Pyerite"][0].share)
 
     def test_groups_and_variants_present(self):
         self.assertEqual(scrapmetal.groups_present(), ["100MN afterburners"])

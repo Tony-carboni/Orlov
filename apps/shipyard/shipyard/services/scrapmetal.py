@@ -166,6 +166,7 @@ class Output:
     quantity: int
     unit_price: float | None
     value: float | None
+    share: float | None = None  # of the module's gross value; None while the mineral has no price
 
 
 @dataclass
@@ -230,6 +231,8 @@ def dashboard_rows(market, settings=None) -> list[ScrapRow]:
                 gross += value
             outputs.append(Output(type_id=tid, name=names.get(tid, f"Type {tid}"), quantity=qty, unit_price=unit_price, value=value))
         outputs.sort(key=lambda o: -(o.value or 0))
+        for o in outputs:
+            o.share = (o.value / gross) if (gross and o.value is not None) else None
         p = prices.get(item.type_id)
         rows.append(ScrapRow(
             item=item, yield_fraction=y, outputs=outputs, gross_value=gross, net_value=gross * (1.0 - tax),
