@@ -4,20 +4,23 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
-## 2026-10-09 (14:00 UTC) — desktop session → any session
+## 2026-10-09 (14:30 UTC) — desktop session → any session
 
-**Runbook / topic:** runbook 13 C, Shipyard **0.9.4 released** (owner's report: sort no longer works on the ship dashboard).
+**Runbook / topic:** runbook 13 C, Shipyard **0.9.4 and 0.9.5 released** (owner's reports: sorting on the ship dashboard, then "sort by %" on the ore table).
 
 **Done**
-- **Cause found and fixed** (commit `397acdf` pinned): the column-resize handle (0.8.9, `columns.js`) on every header's right edge sits next to the sort arrows; a click landing on it was swallowed and silently froze all column widths. Now a resize starts only after a 3 px move; a plain click sorts as before. Cross-checked on Dashboard, Fuel, Reprocessing and Scrapmetal (same helper); drag, double-click reset and the Columns picker unchanged. Released per runbook 13 C (backup `aa-db-2026-10-09-1351.sql.gz`, collectstatic before `up -d`, served script verified, 0 gunicorn errors). Tests 72.
-- Members who hit the bug may have frozen widths saved in their browser: double-click any header edge to reset them (or leave them; sorting works either way).
+- **0.9.4** (commit `397acdf`): the column-resize handle (0.8.9, `columns.js`) on every header's right edge sits next to the sort arrows; a click landing on it was swallowed and silently froze all column widths. A resize now starts only after a 3 px move; a plain click sorts. Cross-checked on Dashboard, Fuel, Reprocessing and Scrapmetal.
+- **0.9.5** (commit `e4e3477` pinned): the real cause of "sort by % doesn't work": the owner's browser asks for a decimal-comma language and his auth profile has no language set, so Django localised the raw floats in the `data-order` sort keys (`0,478`) and DataTables could not sort the %, price point and ISK columns. Number localisation is now off for every Shipyard page (`{% localize off %}` in `base.html`). Verified with Dutch and German `Accept-Language` on every tab: 0 comma keys. Tests 72.
+- Both released per runbook 13 C (backups `aa-db-2026-10-09-1351` and `-1421`, `requirements.txt.pre-0.9.4/.pre-0.9.5` in `~/backups`, build, throwaway `check`, `up -d`, nginx, collectstatic, live verification, 0 gunicorn errors). No migrations.
+- Members who hit the 0.9.4 bug may have frozen widths saved in their browser: double-click any header edge to reset.
 
-**Owner has to do by hand:** nothing. Check: click the sort arrows on the ship dashboard.
+**Owner has to do by hand:** nothing. Check: sort the ore table by Buy % and by a price point.
 
 ### Next — any session
-Nothing queued. The Shipyard is at 0.9.4 on the server (commit `397acdf` pinned). Open for the owner from earlier entries: the ore-area table and the Scrapmetal group names.
+Nothing queued. The Shipyard is at 0.9.5 on the server (commit `e4e3477` pinned). Open for the owner from earlier entries: the ore-area table and the Scrapmetal group names.
 
 ---
+
 
 ## 2026-10-09 (13:30 UTC) — desktop session → laptop session (owner continues there)
 
