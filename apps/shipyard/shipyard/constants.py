@@ -72,7 +72,12 @@ CAT_TRIG = "Trig"
 CAT_EDENCOM = "Edencom"
 CAT_ORE = "ORE"
 CAT_OTHER = "Other"
+CAT_FUEL = "Fuel"  # fuel blocks: their own tab, not on the ship dashboard
 CATEGORY_ORDER = [CAT_BASE, CAT_NAVY, CAT_PIRATE, CAT_TRIG, CAT_EDENCOM, CAT_ORE, CAT_OTHER]
+
+# Fuel blocks (owner, 2026-10-09): built from the corp's own BPOs, 40 blocks per run
+FUEL_GROUP_ID = 1136
+FUEL_UNITS_PER_RUN = 40
 
 # --- Blueprint policy (owner's decision 2026-10-07): who provides the blueprint ----
 # free:   the corp hands the copy out for nothing (T1 hulls, BPOs are cheap and owned).
@@ -89,6 +94,7 @@ BPC_POLICY = {
     CAT_EDENCOM: BPC_PUBLIC,
     CAT_ORE: BPC_MANUAL,
     CAT_OTHER: BPC_MANUAL,
+    CAT_FUEL: BPC_FREE,  # own BPO
 }
 # Exceptions by hull: base battleships are not newbro ships; by then members source
 # their own blueprints on the Jita market (owner's decision 2026-10-07).

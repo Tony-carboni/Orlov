@@ -10,6 +10,7 @@ urlpatterns = [
     path("api/sim/<int:type_id>/", views.api_simulate, name="api_simulate"),
     path("industry/", views.industry_view, name="industry"),
     path("reprocessing/", views.reprocessing_view, name="reprocessing"),
+    path("fuel/", views.fuel_view, name="fuel"),
     path("scrapmetal/", views.scrapmetal_view, name="scrapmetal"),
     path("settings/", views.settings_view, name="settings"),
     path("facility/<int:pk>/use/", views.set_facility, name="set_facility"),

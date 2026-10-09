@@ -62,7 +62,7 @@ def _int(value, default=0, lo=None, hi=None):
 def index(request):
     settings = board.get_user_settings(request.user)
     data_notice = characters.ensure_fresh(settings, request.user)
-    rows = board.dashboard_rows(settings)
+    rows = board.dashboard_rows(settings, exclude=[constants.CAT_FUEL])
     context = _context(
         request,
         rows=rows,
@@ -76,6 +76,32 @@ def index(request):
         freshness=board.data_freshness(),
         complete_rows=sum(1 for r in rows if r.econ.complete),
         can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+    )
+    return render(request, "shipyard/index.html", context)
+
+
+@login_required
+@permission_required("shipyard.basic_access")
+def fuel_view(request):
+    """Fuel blocks tab: the ship dashboard for the four fuel blocks, figures per run of 40 blocks."""
+    settings = board.get_user_settings(request.user)
+    data_notice = characters.ensure_fresh(settings, request.user)
+    rows = board.dashboard_rows(settings, categories=[constants.CAT_FUEL])
+    context = _context(
+        request,
+        fuel=True,
+        rows=rows,
+        settings=settings,
+        data_notice=data_notice,
+        rates=tax_rates(settings.market, settings),
+        facilities=Facility.objects.filter(is_active=True),
+        markets=MarketLocation.objects.filter(is_active=True),
+        categories=[],
+        hulls=[],
+        freshness=board.data_freshness(),
+        complete_rows=sum(1 for r in rows if r.econ.complete),
+        can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+        units_per_run=constants.FUEL_UNITS_PER_RUN,
     )
     return render(request, "shipyard/index.html", context)
 

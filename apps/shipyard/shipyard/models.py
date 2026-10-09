@@ -115,6 +115,7 @@ class Ship(models.Model):
     faction_name = models.CharField(max_length=50, blank=True)
     meta_group_id = models.PositiveIntegerField(null=True, blank=True)
     blueprint_type_id = models.PositiveIntegerField()
+    units_per_run = models.PositiveIntegerField(default=1, help_text="Products per blueprint run (40 for fuel blocks)")
     volume = models.FloatField(default=0, help_text="Packaged volume m³")
     is_active = models.BooleanField(default=True, help_text="Shown on the dashboard")
     updated_at = models.DateTimeField(auto_now=True)

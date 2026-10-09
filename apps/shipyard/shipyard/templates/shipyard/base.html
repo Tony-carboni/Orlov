@@ -14,6 +14,9 @@
         <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'shipyard:index' %}">
             <i class="fas fa-table-list fa-fw"></i> Dashboard
         </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'fuel' %}active{% endif %}" href="{% url 'shipyard:fuel' %}">
+            <i class="fas fa-gas-pump fa-fw"></i> Fuel blocks
+        </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'reprocessing' %}active{% endif %}" href="{% url 'shipyard:reprocessing' %}">
             <i class="fas fa-recycle fa-fw"></i> Reprocessing
         </a>

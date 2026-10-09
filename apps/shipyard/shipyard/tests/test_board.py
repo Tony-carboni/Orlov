@@ -137,6 +137,26 @@ class BoardTests(TestCase):
             self.assertEqual(client.get(url).status_code, 405)
         cache.delete(views.REFRESH_COOLDOWN_KEY)
 
+    def test_fuel_block_rows_are_per_run(self):
+        fuel = Ship.objects.create(type_id=4247, name="Helium Fuel Block", group_id=1136, hull_size="Fuel block",
+                                   category="Fuel", blueprint_type_id=4313, units_per_run=40, volume=5)
+        BuildSnapshot.objects.create(ship=fuel, facility=self.fac, me=0,
+                                     materials=[{"type_id": 34, "quantity": 10}], job_cost=1000, time_seconds=600)
+        PriceSnapshot.objects.create(type_id=4247, location=self.market, sell_min=20_000, sell_volume=1e6)
+        s = board.get_user_settings(self.user)
+        s.manual_sales_tax = 0
+        s.manual_broker_fee = 0
+        s.save()
+        # the fuel tab sees only fuel, the ship dashboard never does
+        fuel_rows = board.dashboard_rows(s, categories=["Fuel"])
+        self.assertEqual([r.ship.name for r in fuel_rows], ["Helium Fuel Block"])
+        self.assertEqual([r.ship.name for r in board.dashboard_rows(s, exclude=["Fuel"])], ["Vindicator"])
+        e = fuel_rows[0].econ
+        self.assertAlmostEqual(e.sell_price, 20_000 * 40)        # revenue per run of 40 blocks
+        self.assertEqual(e.bpc_source, "free")                   # own BPO
+        self.assertAlmostEqual(e.net_profit, 800_000 - 10 * 818_135.38 - 1000, delta=1)
+        self.assertAlmostEqual(board.ship_detail(fuel, s)["econ"].sell_price, 800_000)
+
     def test_settings_defaults(self):
         s = board.get_user_settings(self.user)
         self.assertEqual(s.facility, self.fac)

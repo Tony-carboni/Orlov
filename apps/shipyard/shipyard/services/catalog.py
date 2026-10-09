@@ -59,8 +59,48 @@ def classify(type_data: dict) -> dict | None:
     }
 
 
+def classify_fuel(type_data: dict) -> dict | None:
+    """Ship fields for a fuel block (its own tab; 40 blocks per run from the corp's BPO)."""
+    if not type_data.get("published"):
+        return None
+    blueprints = type_data.get("produced_by_blueprints") or {}
+    manufacturing = [int(k) for k, v in blueprints.items() if (v or {}).get("blueprint_activity") == "manufacturing"]
+    if not manufacturing:
+        return None
+    return {
+        "type_id": int(type_data["type_id"]),
+        "name": everef.type_name(type_data),
+        "group_id": constants.FUEL_GROUP_ID,
+        "hull_size": "Fuel block",
+        "category": constants.CAT_FUEL,
+        "faction_id": None,
+        "faction_name": "",
+        "meta_group_id": None,
+        "blueprint_type_id": min(manufacturing),
+        "units_per_run": constants.FUEL_UNITS_PER_RUN,
+        "volume": float(type_data.get("packaged_volume") or type_data.get("volume") or 0),
+        "default_active": True,
+    }
+
+
+def iter_fuel():
+    """Yield the fuel blocks (group 1136)."""
+    group = everef.get_group(constants.FUEL_GROUP_ID)
+    for type_id in group.get("type_ids") or []:
+        try:
+            data = everef.get_type(type_id)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("EVE Ref type %s failed: %s", type_id, exc)
+            continue
+        row = classify_fuel(data)
+        if row:
+            yield row
+        polite_pause()
+
+
 def iter_catalog():
-    """Yield classified ship dicts for every type in the hull groups."""
+    """Yield classified ship dicts for every type in the hull groups, then the fuel blocks."""
+    yield from iter_fuel()
     for group_id in constants.HULL_GROUPS:
         group = everef.get_group(group_id)
         for type_id in group.get("type_ids") or []:

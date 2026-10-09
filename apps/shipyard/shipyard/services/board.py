@@ -57,10 +57,16 @@ class BoardRow:
     contract: object = None  # ContractPrice row (Jita 4-4 contracts), information only
 
 
-def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
+def dashboard_rows(settings: UserSettings, *, categories=None, exclude=None) -> list[BoardRow]:
+    """Rows for the dashboard; `categories` keeps only those, `exclude` drops those (the fuel tab vs the ships)."""
     facility, market = settings.facility, settings.market
     rates = pricing.tax_rates(market, settings)
-    ships = list(Ship.objects.filter(is_active=True).order_by("name"))
+    qs = Ship.objects.filter(is_active=True)
+    if categories:
+        qs = qs.filter(category__in=list(categories))
+    if exclude:
+        qs = qs.exclude(category__in=list(exclude))
+    ships = list(qs.order_by("name"))
     configs = {c.ship_id: c for c in ShipConfig.objects.select_related("lp_faction").filter(ship__in=ships)}
     stats = {s.ship_id: s for s in ShipMarketStats.objects.filter(ship__in=ships)}
     builds = {}
@@ -108,7 +114,7 @@ def dashboard_rows(settings: UserSettings) -> list[BoardRow]:
             except Exception as exc:  # noqa: BLE001
                 logger.warning("live build with the member's blueprint failed for %s: %s", ship, exc)
         econ = pricing.economics(
-            sell_price=hull_price.sell_min if hull_price else None,
+            sell_price=hull_price.sell_min * ship.units_per_run if hull_price and hull_price.sell_min is not None else None,
             material_rows=material_rows,
             prices=unit_prices,
             names=names,
@@ -190,7 +196,7 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
     contract = contracts.fresh_prices([ship.type_id]).get(ship.type_id)  # shown for information only
 
     econ = pricing.economics(
-        sell_price=hull_price.sell_min if hull_price else None,
+        sell_price=hull_price.sell_min * ship.units_per_run if hull_price and hull_price.sell_min is not None else None,
         material_rows=material_rows,
         prices=unit_prices,
         names=names,

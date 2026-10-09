@@ -1,7 +1,7 @@
 {% extends "shipyard/base.html" %}
 {% load static shipyard_tags %}
 
-{% block shipyard_title %}Shipyard · Dashboard{% endblock %}
+{% block shipyard_title %}{% if fuel %}Shipyard · Fuel blocks{% else %}Shipyard · Dashboard{% endif %}{% endblock %}
 
 {% block shipyard_content %}
 <div class="row g-3 mb-3 align-items-stretch">
@@ -70,6 +70,7 @@
     <div class="col-12 col-md-4 col-lg-3">
         <input type="search" id="filter-text" class="form-control form-control-sm" placeholder="Search: name, faction, type, hull…" title="Several words: every word must match somewhere in the row, in any order" autocomplete="off">
     </div>
+    {% if not fuel %}
     <div class="col-auto">
         <div class="btn-group btn-group-sm" role="group" id="filter-category" aria-label="Ship types (tick any; none ticked shows all)">
             {% for c in categories %}
@@ -86,6 +87,9 @@
             {% endfor %}
         </div>
     </div>
+    {% else %}
+    <div class="col-auto small shipyard-k mt-1">Figures per blueprint run = {{ units_per_run }} blocks; the Sell column is the Jita lowest sell × {{ units_per_run }}. Built from the corp's own BPOs (your own blueprint's ME counts where you have one).</div>
+    {% endif %}
 </div>
 
 <div class="table-responsive">
@@ -136,7 +140,7 @@
             {% elif r.econ.bpc_source == 'public' %}
             <td class="text-end small text-muted shipyard-bpc" data-order="0" title="No price known for this copy yet. Right-click to enter what it costs you.">Price not known</td>
             {% elif r.econ.bpc_source == 'free' %}
-            <td class="text-end small text-success shipyard-bpc" data-order="0" title="The corp hands this blueprint copy out for free. Right-click to type your own price instead.">Free for corp members</td>
+            <td class="text-end small text-success shipyard-bpc" data-order="0" title="{% if r.ship.category == 'Fuel' %}Built from the corp's own BPO{% else %}The corp hands this blueprint copy out for free{% endif %}. Right-click to type your own price instead.">{% if r.ship.category == 'Fuel' %}own BPO{% else %}Free for corp members{% endif %}</td>
             {% elif r.econ.bpc_source == 'manual' and not r.econ.bpc_cost %}
             <td class="text-end small text-muted shipyard-bpc" data-order="0" title="No price known for this copy yet. Right-click to enter what it costs you.">Price not known</td>
             {% else %}
