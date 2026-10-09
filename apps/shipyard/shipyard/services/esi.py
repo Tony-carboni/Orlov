@@ -14,6 +14,21 @@ def market_history(region_id: int, type_id: int) -> list[dict]:
     return get_json(f"{ESI}/markets/{int(region_id)}/history/", params={"datasource": "tranquility", "type_id": int(type_id)})
 
 
+def buy_orders(region_id: int, type_id: int, max_pages: int = 10) -> list[dict]:
+    """Every open buy order for one type in a region (public, paged)."""
+    params = {"datasource": "tranquility", "order_type": "buy", "type_id": int(type_id)}
+    url = f"{ESI}/markets/{int(region_id)}/orders/"
+    first = session().get(url, params={**params, "page": 1}, timeout=30)
+    first.raise_for_status()
+    orders = list(first.json() or [])
+    pages = min(int(first.headers.get("X-Pages") or 1), max_pages)
+    for page in range(2, pages + 1):
+        r = session().get(url, params={**params, "page": page}, timeout=30)
+        r.raise_for_status()
+        orders.extend(r.json() or [])
+    return orders
+
+
 def volume_stats(region_id: int, type_id: int, days: int) -> dict:
     """Average daily volume and average price over the last `days` entries."""
     hist = market_history(region_id, type_id)

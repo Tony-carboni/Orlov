@@ -308,6 +308,7 @@ class PriceSnapshot(models.Model):
     sell_volume = models.FloatField(default=0, help_text="Units on sell orders")
     sell_orders = models.PositiveIntegerField(default=0)
     buy_max = models.FloatField(null=True)
+    buy_max_near = models.FloatField(null=True, help_text="Highest buy order that reaches the station, incl. nearby systems in range (ESI)")
     fetched_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

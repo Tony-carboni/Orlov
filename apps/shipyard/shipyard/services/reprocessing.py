@@ -246,7 +246,7 @@ def dashboard_rows(market) -> list[OreRow]:
         st = stats.get(ore.type_id)
         rows.append(OreRow(
             ore=ore, yield_fraction=y, outputs=outputs, gross_value=gross, net_value=gross * (1.0 - tax),
-            sell_price=p.sell_min if p else None, buy_price=p.buy_max if p else None, missing=missing,
+            sell_price=p.sell_min if p else None, buy_price=(p.buy_max_near if p.buy_max_near is not None else p.buy_max) if p else None, missing=missing,
             avg_daily_volume=st.avg_daily_volume if st else 0.0, avg_price=st.avg_price if st else 0.0,
             sell_volume=p.sell_volume if p else 0.0, area=area_for(ore),
         ))

@@ -236,7 +236,7 @@ def dashboard_rows(market, settings=None) -> list[ScrapRow]:
         p = prices.get(item.type_id)
         rows.append(ScrapRow(
             item=item, yield_fraction=y, outputs=outputs, gross_value=gross, net_value=gross * (1.0 - tax),
-            sell_price=p.sell_min if p else None, buy_price=p.buy_max if p else None, missing=missing,
+            sell_price=p.sell_min if p else None, buy_price=(p.buy_max_near if p.buy_max_near is not None else p.buy_max) if p else None, missing=missing,
             sell_volume=p.sell_volume if p else 0.0,
         ))
     rows.sort(key=lambda r: (r.sell_ratio is None, r.sell_ratio or 0))  # modules are bought from sell orders

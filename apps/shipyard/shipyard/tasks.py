@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun,
     ScrapItem, Ship, ShipConfig, ShipMarketStats,
 )
-from .services import contracts, esi, everef, fuzzwork, industry, reprocessing, scrapmetal
+from .services import contracts, esi, everef, fuzzwork, industry, nearbuy, reprocessing, scrapmetal
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -124,6 +124,14 @@ def refresh_prices():
         except Exception as exc:  # noqa: BLE001
             errors.append(f"{loc.name}: {exc}")
             logger.exception("price refresh failed for %s", loc)
+    # buy orders from nearby systems that reach the station (reprocessing and scrapmetal tabs)
+    near_station = int(app_settings.SHIPYARD_NEAR_BUY_STATION)
+    for loc in MarketLocation.objects.filter(is_active=True, station_id=near_station):
+        near_ids = set(Ore.objects.filter(is_active=True).values_list("type_id", flat=True))
+        near_ids |= set(ScrapItem.objects.filter(is_active=True).values_list("type_id", flat=True))
+        got, errs = nearbuy.refresh(loc, near_ids)
+        n += got
+        errors.extend(errs[:5])
     _done(run, not errors, n, "; ".join(errors))
 
 

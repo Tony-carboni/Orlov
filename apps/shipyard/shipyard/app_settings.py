@@ -72,6 +72,13 @@ SHIPYARD_SCRAP_TAX = getattr(settings, "SHIPYARD_SCRAP_TAX", 0.0)
 SHIPYARD_SCRAP_SKILL_DEFAULT = getattr(settings, "SHIPYARD_SCRAP_SKILL_DEFAULT", 5)
 SHIPYARD_SCRAP_PRICE_POINTS = getattr(settings, "SHIPYARD_SCRAP_PRICE_POINTS", [90, 92, 95, 98, 100])
 
+# Buy orders that reach the market station from nearby systems count as well (owner, 2026-10-09):
+# {system id: jumps from the station}. A buy order in one of these systems counts when its range
+# covers that many jumps (or the region); orders in the station's own system count with any range
+# but "station" (those only at the station itself). Used for the reprocessing and scrapmetal tabs.
+SHIPYARD_NEAR_BUY_SYSTEMS = getattr(settings, "SHIPYARD_NEAR_BUY_SYSTEMS", {30000142: 0, 30000144: 1})  # Jita, Perimeter
+SHIPYARD_NEAR_BUY_STATION = getattr(settings, "SHIPYARD_NEAR_BUY_STATION", 60003760)  # Jita 4-4
+
 # Where each ore family is mined (not in EVE's data): overrides for the table in services/reprocessing.py,
 # {"Family": "highsec" | "lowsec" | "nullsec" | "anomaly"}.
 SHIPYARD_ORE_AREAS = getattr(settings, "SHIPYARD_ORE_AREAS", {})
