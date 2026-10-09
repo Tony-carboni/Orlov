@@ -4,6 +4,21 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-09 (14:00 UTC) — desktop session → any session
+
+**Runbook / topic:** runbook 13 C, Shipyard **0.9.4 released** (owner's report: sort no longer works on the ship dashboard).
+
+**Done**
+- **Cause found and fixed** (commit `397acdf` pinned): the column-resize handle (0.8.9, `columns.js`) on every header's right edge sits next to the sort arrows; a click landing on it was swallowed and silently froze all column widths. Now a resize starts only after a 3 px move; a plain click sorts as before. Cross-checked on Dashboard, Fuel, Reprocessing and Scrapmetal (same helper); drag, double-click reset and the Columns picker unchanged. Released per runbook 13 C (backup `aa-db-2026-10-09-1351.sql.gz`, collectstatic before `up -d`, served script verified, 0 gunicorn errors). Tests 72.
+- Members who hit the bug may have frozen widths saved in their browser: double-click any header edge to reset them (or leave them; sorting works either way).
+
+**Owner has to do by hand:** nothing. Check: click the sort arrows on the ship dashboard.
+
+### Next — any session
+Nothing queued. The Shipyard is at 0.9.4 on the server (commit `397acdf` pinned). Open for the owner from earlier entries: the ore-area table and the Scrapmetal group names.
+
+---
+
 ## 2026-10-09 (13:30 UTC) — desktop session → laptop session (owner continues there)
 
 **State of play.** Shipyard is at **0.9.3** on the server (commit `0d5d678` pinned, 72 tests, 11 containers up, migrations applied through 0012, backups `aa-db-2026-10-09-1159` and `-1207`). Access is still the owner only (`shipyard.basic_access` on user `tony`). Everything below is in runbook 13 C; this entry is the map.
@@ -66,10 +81,3 @@ Nothing queued. The Shipyard is at 0.8.7 on the server (commit `77b512c` pinned)
 
 
 ---
-
-## 2026-10-08 (13:50 UTC) — desktop session → any session
-
-**Done (desktop).** The GB44 one-off below is closed: both mains showed alliance ORLOV in auth, backup `aa-db-2026-10-08-1347.sql.gz` taken, GB44 removed from the `Family Member` state's corporations (now OARMI, GWON), both users re-evaluated and still `Family Member`; `docs/design/membership.md` change log updated. Shipyard today went 0.3.4 → 0.7.4 (contract prices, own prices, Refresh button, Reprocessing tab with Buy % / Sell %, Vol/day, Depth, grades, moon rarity R4–R64 and area filters); every release is in runbook 13 C. Access to the Shipyard is the owner only for now. Open: the owner may correct the ore-area table (`DEFAULT_AREAS` in services/reprocessing.py, overrides via `SHIPYARD_ORE_AREAS`); a part B of the reprocessing request may follow.
-
----
-
