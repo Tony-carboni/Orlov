@@ -88,15 +88,15 @@
             <td data-order="{{ r.item.group_order|stringformat:'03d' }} {{ r.item.group }}">{{ r.item.group }}</td>
             <td class="scrap-module"><img src="https://images.evetech.net/types/{{ r.item.type_id }}/icon?size=32" width="24" height="24" class="me-1 rounded" alt=""><span class="fw-semibold">{{ r.item.name }}</span>{% if not r.complete %} <i class="fas fa-triangle-exclamation text-warning ms-1" title="A mineral or the module itself has no Jita price yet"></i>{% endif %}</td>
             <td class="text-end" data-order="{{ r.item.volume }}">{{ r.item.volume|num:1 }}</td>
-            <td class="text-end fw-semibold" data-order="{{ r.net_value }}" title="{{ r.net_value|isk_full }} ISK; before tax {{ r.gross_value|isk:2 }}; yield {{ r.yield_fraction|pct:0 }}">{{ r.net_value|isk:0 }}</td>
-            <td class="text-end" data-order="{{ r.sell_price|default_if_none:'-1' }}" title="{{ r.sell_price|isk_full }} ISK">{{ r.sell_price|isk:0 }}</td>
-            <td class="text-end" data-order="{{ r.buy_price|default_if_none:'-1' }}" title="{{ r.buy_price|isk_full }} ISK">{{ r.buy_price|isk:0 }}</td>
+            <td class="text-end fw-semibold" data-order="{{ r.net_value }}" title="{{ r.net_value|isk_full }} ISK; before tax {{ r.gross_value|isk:2 }}; yield {{ r.yield_fraction|pct:0 }}">{{ r.net_value|isk_auto }}</td>
+            <td class="text-end" data-order="{{ r.sell_price|default_if_none:'-1' }}" title="{{ r.sell_price|isk_full }} ISK">{{ r.sell_price|isk_auto }}</td>
+            <td class="text-end" data-order="{{ r.buy_price|default_if_none:'-1' }}" title="{{ r.buy_price|isk_full }} ISK">{{ r.buy_price|isk_auto }}</td>
             <td class="text-end" data-order="{{ r.item.avg_daily_volume }}" title="7-day average trade price {{ r.item.avg_price|isk:2 }} ISK">{{ r.item.avg_daily_volume|num:0 }}</td>
             <td class="text-end" data-order="{{ r.market_depth_days|default_if_none:'99999' }}" title="{{ r.sell_volume|num:0 }} units on sell orders">{{ r.market_depth_days|depth }}</td>
             {% with ratio=r.buy_ratio %}
             <td class="text-end fw-semibold {% if ratio is None %}shipyard-k{% elif ratio <= 0.9 %}text-success{% elif ratio <= 1.0 %}text-warning{% else %}text-danger{% endif %}" data-order="{{ ratio|default_if_none:'9' }}" title="Highest buy order {{ r.buy_price|isk:2 }} ÷ value {{ r.net_value|isk:2 }}">{{ ratio|pct:1 }}</td>
             {% endwith %}
-            {% for p, price in r.price_points %}<td class="text-end" data-order="{{ price }}" title="{{ price|isk_full }} ISK">{{ price|isk:0 }}</td>{% endfor %}
+            {% for p, price in r.price_points %}<td class="text-end" data-order="{{ price }}" title="{{ price|isk_full }} ISK">{{ price|isk_auto }}</td>{% endfor %}
             <td class="small shipyard-gives" data-order="{{ r.outputs.0.share|default_if_none:'0' }}">{% for o in r.outputs %}<span class="text-nowrap{% if forloop.counter > 3 %} shipyard-gives-minor{% endif %}" title="{{ o.name }}: {{ o.quantity }} × {{ o.unit_price|isk:2 }} ISK = {{ o.value|isk:2 }}{% if o.share is not None %} ({{ o.share|pct:1 }}){% endif %}"><img src="https://images.evetech.net/types/{{ o.type_id }}/icon?size=32" width="18" height="18" alt="">{% if forloop.counter <= 3 and o.share is not None %} {{ o.share|pct:0 }}{% endif %}</span>{% endfor %}<span class="visually-hidden">{% for o in r.outputs %}{{ o.name }} {% endfor %}</span></td>
         </tr>
     {% endfor %}
