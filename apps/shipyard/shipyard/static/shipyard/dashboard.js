@@ -45,6 +45,12 @@
         remember("#filter-hull", "shipyard.hulls");
 
         // free-text search over every column; DataTables remembers it with the table state
+        if (window.shipyardFilterPresets && document.getElementById("dashboard-presets")) {
+            window.shipyardFilterPresets({
+                container: "#dashboard-presets", storageKey: "shipyard.dashboard.presets", text: "#filter-text",
+                groups: ["#filter-category", "#filter-hull"]
+            });
+        }
         $("#filter-text").val(table.search());
         $("#filter-text").on("input search", function () { table.search(this.value).draw(); });
 

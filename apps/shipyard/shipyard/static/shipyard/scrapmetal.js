@@ -75,6 +75,12 @@
             var n = selected("#scrap-group").length;
             $("#scrap-group-count").text(n ? n : "");
         }
+        // All / None on the group panel; saved filter presets
+        window.shipyardSelectAll("#scrap-group");
+        window.shipyardFilterPresets({
+            container: "#scrap-presets", storageKey: "shipyard.scrap.presets", text: "#scrap-text",
+            groups: ["#scrap-variant", "#scrap-group"], switches: ["#scrap-favourable"]
+        });
         $("#scrap-text").val(table.search());
         $("#scrap-text").on("input search", function () { table.search(this.value).draw(); });
         $("#scrap-variant input, #scrap-group input").on("change", function () { groupCount(); table.draw(); });

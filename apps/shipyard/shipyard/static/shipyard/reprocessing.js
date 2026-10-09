@@ -60,6 +60,12 @@
             var n = selected("#repro-family").length;
             $("#repro-family-count").text(n ? n : "");
         }
+        // All / None per kind line of the ore-type panel; saved filter presets
+        window.shipyardSelectAll("#repro-family", { rows: ".d-flex", after: "span.shipyard-k" });
+        window.shipyardFilterPresets({
+            container: "#repro-presets", storageKey: "shipyard.repro.presets", text: "#repro-text",
+            groups: ["#repro-kind", "#repro-variant", "#repro-rarity", "#repro-area", "#repro-family"]
+        });
         $("#repro-text").val(table.search());
         $("#repro-text").on("input search", function () { table.search(this.value).draw(); });
         $("#repro-kind input, #repro-variant input, #repro-family input, #repro-rarity input, #repro-area input").on("change", function () { familyCount(); table.draw(); });

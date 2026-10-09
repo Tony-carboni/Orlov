@@ -139,3 +139,105 @@
         applyWidths();
     };
 })(jQuery);
+
+/* Shipyard: "All" / "None" buttons for a big selector (the ore types, the scrap groups).
+   opts.rows: selector of the lines inside the container that each get their own pair
+   (the kind lines of the ore panel); without it the container gets one pair. Ticking
+   fires one change event so the tab's own handlers store and redraw as usual. */
+(function ($) {
+    "use strict";
+
+    window.shipyardSelectAll = function (container, opts) {
+        opts = opts || {};
+        var $root = $(container);
+        var targets = opts.rows ? $root.find(opts.rows).get() : [$root.get(0)];
+        targets.forEach(function (row) {
+            var $inputs = $(row).find("input[type=checkbox]");
+            if (!$inputs.length) { return; }
+            function set(v) {
+                $inputs.prop("checked", v);
+                $inputs.first().trigger("change");
+            }
+            var $all = $('<button type="button" class="btn btn-link btn-sm py-0 px-1 shipyard-k" title="Tick every one on this line">all</button>').on("click", function () { set(true); });
+            var $none = $('<button type="button" class="btn btn-link btn-sm py-0 px-1 shipyard-k" title="Untick every one on this line">none</button>').on("click", function () { set(false); });
+            var $where = opts.after ? $(row).find(opts.after).first() : $();
+            if ($where.length) { $where.after($none).after($all); } else { $(row).prepend($none).prepend($all); }
+        });
+    };
+})(jQuery);
+
+/* Shipyard: saved filter presets. A "Presets" dropdown next to the filters: save the current
+   filters under a name, load one with a click, delete with the ×, or clear every filter.
+   A preset = the ticked values of each filter group, the switches and the search text;
+   stored per browser (localStorage, opts.storageKey). Loading fires the usual change
+   events so the tab's own handlers store and redraw. */
+(function ($) {
+    "use strict";
+
+    window.shipyardFilterPresets = function (opts) {
+        var container = document.querySelector(opts.container);
+        if (!container) { return; }
+        var presets = {};
+        try { presets = JSON.parse(window.localStorage.getItem(opts.storageKey) || "{}") || {}; } catch (e) { presets = {}; }
+        function save() {
+            try { window.localStorage.setItem(opts.storageKey, JSON.stringify(presets)); } catch (e) { /* ignore */ }
+        }
+        function current() {
+            var state = { groups: {}, switches: {}, text: opts.text ? ($(opts.text).val() || "") : "" };
+            (opts.groups || []).forEach(function (g) {
+                state.groups[g] = $(g + " input:checked").map(function () { return this.value; }).get();
+            });
+            (opts.switches || []).forEach(function (s) { state.switches[s] = $(s).is(":checked"); });
+            return state;
+        }
+        function apply(state) {
+            (opts.groups || []).forEach(function (g) {
+                var want = (state.groups && state.groups[g]) || [];
+                var $inputs = $(g + " input");
+                $inputs.each(function () { this.checked = want.indexOf(this.value) >= 0; });
+                $inputs.first().trigger("change");
+            });
+            (opts.switches || []).forEach(function (s) {
+                var $s = $(s);
+                $s.prop("checked", !!(state.switches && state.switches[s])).trigger("change");
+            });
+            if (opts.text) { $(opts.text).val(state.text || "").trigger("input"); }
+        }
+        var id = "presets-" + Math.random().toString(36).slice(2, 8);
+        var $btn = $('<button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="fas fa-bookmark fa-fw"></i> Presets</button>').attr("id", id);
+        var $menu = $('<ul class="dropdown-menu dropdown-menu-dark shadow"></ul>').attr("aria-labelledby", id);
+        function render() {
+            $menu.empty();
+            var names = Object.keys(presets).sort(function (a, b) { return a.localeCompare(b); });
+            if (!names.length) {
+                $menu.append('<li><span class="dropdown-item-text small shipyard-k">No presets saved yet</span></li>');
+            }
+            names.forEach(function (name) {
+                var $li = $('<li class="d-flex align-items-center"></li>');
+                var $load = $('<a class="dropdown-item flex-grow-1" href="#"></a>').text(name).on("click", function (e) { e.preventDefault(); apply(presets[name]); });
+                var $del = $('<button type="button" class="btn btn-link btn-sm text-danger px-2" title="Delete this preset">&times;</button>').on("click", function () {
+                    if (window.confirm("Delete preset \u201c" + name + "\u201d?")) { delete presets[name]; save(); render(); }
+                });
+                $li.append($load, $del);
+                $menu.append($li);
+            });
+            $menu.append('<li><hr class="dropdown-divider"></li>');
+            $menu.append($('<li><a class="dropdown-item" href="#"><i class="fas fa-floppy-disk fa-fw"></i> Save current filters as\u2026</a></li>').on("click", function (e) {
+                e.preventDefault();
+                var name = window.prompt("Name for this preset:");
+                if (!name) { return; }
+                name = name.trim().slice(0, 40);
+                if (!name) { return; }
+                presets[name] = current();
+                save();
+                render();
+            }));
+            $menu.append($('<li><a class="dropdown-item" href="#"><i class="fas fa-eraser fa-fw"></i> Clear all filters</a></li>').on("click", function (e) {
+                e.preventDefault();
+                apply({ groups: {}, switches: {}, text: "" });
+            }));
+        }
+        render();
+        $(container).addClass("dropdown").append($btn, $menu);
+    };
+})(jQuery);
