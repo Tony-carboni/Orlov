@@ -6,6 +6,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ## 2026-10-09 (14:30 UTC) — desktop session → any session
 
+**Also (desktop, after the laptop's 0.9.4/0.9.5):** 0.9.6 released, millions show three decimals (2.850 M) in `isk_auto`, Scrapmetal price columns use it; server pinned at `5c804b6`.
 **Runbook / topic:** runbook 13 C, Shipyard **0.9.4 and 0.9.5 released** (owner's reports: sorting on the ship dashboard, then "sort by %" on the ore table).
 
 **Done**
