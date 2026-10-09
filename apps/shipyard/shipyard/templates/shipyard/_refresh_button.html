@@ -1,0 +1,7 @@
+{% if can_manage %}
+<form method="post" action="{% url 'shipyard:refresh_now' %}" class="d-inline">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ refresh_next|default:'index' }}">
+    <button class="btn btn-outline-light btn-sm py-0" title="Queue the Jita price, sales volume and contract price refreshes now (otherwise hourly at :40 and :50). Builds and indices stay on their 6-hour schedule."><i class="fas fa-rotate fa-fw"></i> Refresh</button>
+</form>
+{% endif %}

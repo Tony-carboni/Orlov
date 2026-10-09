@@ -260,15 +260,18 @@ def refresh_now(request):
     five minutes; the beat schedule keeps running regardless.
     """
     from . import tasks
+    # back to the tab the button was pressed on
+    back = request.POST.get("next", "index")
+    target = "shipyard:" + (back if back in ("index", "reprocessing", "scrapmetal") else "index")
     if cache.get(REFRESH_COOLDOWN_KEY):
         messages.info(request, "A refresh was started less than five minutes ago; the numbers update as it finishes.")
-        return redirect("shipyard:index")
+        return redirect(target)
     cache.set(REFRESH_COOLDOWN_KEY, timezone.now().isoformat(), REFRESH_COOLDOWN_SECONDS)
     tasks.refresh_prices_and_stats.delay()
     tasks.refresh_contract_prices.delay()
     logger.info("manual refresh queued by %s", request.user)
     messages.success(request, "Refresh started: Jita prices, sales volumes and contract prices. Reload the page in about a minute.")
-    return redirect("shipyard:index")
+    return redirect(target)
 
 
 @login_required

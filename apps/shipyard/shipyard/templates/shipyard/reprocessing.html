@@ -25,7 +25,10 @@
         <div class="shipyard-infobar h-100">
             <div><span class="shipyard-k">Prices at</span> <strong>{{ settings.market|default:"–" }}</strong> <span class="shipyard-k ms-2">ore bought at lowest sell · output valued at lowest sell · {{ complete_rows }} of {{ rows|length }} ores fully priced</span></div>
             <div><span class="shipyard-k">Reading the table:</span> <strong>Value</strong> is what one unit of compressed ore gives after reprocessing and tax. <strong>Buy %</strong> is the Jita highest buy order as a share of that value, the figure for you as a buyer: a buy order at that price gets the ore at that share of its minerals. <strong>Sell %</strong> is the same for the lowest sell order. The <strong>price points</strong> are the most you can pay per unit to keep that share. <strong>Gives</strong> shows each mineral's share of the value, the three largest with their percentage; hover an icon for units and ISK. ISK figures show two decimals under 10 k, one from 10 k, none from 100 k; hover for the exact amount.</div>
-            <div class="shipyard-k">Jita prices refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · figures per unit, no batch rounding</div>
+            <div class="shipyard-k d-flex align-items-center flex-wrap gap-2">
+                <span>Jita prices refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · figures per unit, no batch rounding</span>
+                {% include "shipyard/_refresh_button.html" with refresh_next="reprocessing" %}
+            </div>
         </div>
     </div>
 </div>

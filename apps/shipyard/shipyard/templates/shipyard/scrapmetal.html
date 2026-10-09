@@ -23,7 +23,10 @@
         <div class="shipyard-infobar h-100">
             <div><span class="shipyard-k">Prices at</span> <strong>{{ settings.market|default:"–" }}</strong> <span class="shipyard-k ms-2">modules bought at lowest sell · output valued at lowest sell · {{ complete_rows }} of {{ rows|length }} modules fully priced</span></div>
             <div><span class="shipyard-k">Reading the table:</span> <strong>Value</strong> is what one module gives after reprocessing. <strong>Buy %</strong> is the Jita highest buy order as a share of that value, the figure for you as a buyer: below 100 % a buy order at that price gets the module for less than its minerals; green at or below 90 %, amber up to 100 %, red above. The <strong>price points</strong> are the most you can pay per unit to keep that share. <strong>Gives</strong> shows each mineral's share of the value, the three largest with their percentage; hover an icon for units and ISK. Drag a column's right edge to resize it; double-click an edge to reset.</div>
-            <div class="shipyard-k">Jita prices refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · catalog from the owner's list; managers add modules in the admin (Shipyard → Scrap items)</div>
+            <div class="shipyard-k d-flex align-items-center flex-wrap gap-2">
+                <span>Jita prices refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · catalog from the owner's list; managers add modules in the admin (Shipyard → Scrap items)</span>
+                {% include "shipyard/_refresh_button.html" with refresh_next="scrapmetal" %}
+            </div>
         </div>
     </div>
 </div>
