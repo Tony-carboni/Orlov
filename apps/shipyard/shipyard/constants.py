@@ -79,6 +79,10 @@ CATEGORY_ORDER = [CAT_BASE, CAT_NAVY, CAT_PIRATE, CAT_TRIG, CAT_EDENCOM, CAT_ORE
 FUEL_GROUP_ID = 1136
 FUEL_UNITS_PER_RUN = 40
 
+# Researched corp BPOs (owner, 2026-10-09): base hulls and fuel blocks are priced at ME 10 / TE 20;
+# everything else at ME 0 unless the member owns a blueprint for it.
+RESEARCHED_ME_TE = {CAT_BASE: (10, 20), CAT_FUEL: (10, 20)}
+
 # --- Blueprint policy (owner's decision 2026-10-07): who provides the blueprint ----
 # free:   the corp hands the copy out for nothing (T1 hulls, BPOs are cheap and owned).
 # corp:   the corp buys the copy in the LP store and sells it on at cost + markup.

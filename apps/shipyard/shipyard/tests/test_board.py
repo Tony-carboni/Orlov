@@ -137,10 +137,26 @@ class BoardTests(TestCase):
             self.assertEqual(client.get(url).status_code, 405)
         cache.delete(views.REFRESH_COOLDOWN_KEY)
 
+    def test_researched_defaults(self):
+        self.assertEqual(Ship(category="Base").default_me_te, (10, 20))
+        self.assertEqual(Ship(category="Fuel").default_me_te, (10, 20))
+        self.assertEqual(Ship(category="Pirate").default_me_te, (0, 0))
+        # a base hull reads its ME 10 snapshot, not an ME 0 one
+        base = Ship.objects.create(type_id=621, name="Caracal", group_id=26, hull_size="Cruiser", category="Base", blueprint_type_id=688)
+        BuildSnapshot.objects.create(ship=base, facility=self.fac, me=0, materials=[{"type_id": 34, "quantity": 1000}], job_cost=1, time_seconds=1)
+        BuildSnapshot.objects.create(ship=base, facility=self.fac, me=10, materials=[{"type_id": 34, "quantity": 900}], job_cost=1, time_seconds=1)
+        PriceSnapshot.objects.create(type_id=621, location=self.market, sell_min=10_000_000, sell_volume=1)
+        s = board.get_user_settings(self.user)
+        row = [r for r in board.dashboard_rows(s) if r.ship.name == "Caracal"][0]
+        self.assertEqual(row.econ.materials[0].quantity, 900)
+        d = board.ship_detail(base, s)
+        self.assertEqual((d["me"], d["te"], d["source"]), (10, 20, "snapshot"))
+        self.assertEqual(d["econ"].materials[0].quantity, 900)
+
     def test_fuel_block_rows_are_per_run(self):
         fuel = Ship.objects.create(type_id=4247, name="Helium Fuel Block", group_id=1136, hull_size="Fuel block",
                                    category="Fuel", blueprint_type_id=4313, units_per_run=40, volume=5)
-        BuildSnapshot.objects.create(ship=fuel, facility=self.fac, me=0,
+        BuildSnapshot.objects.create(ship=fuel, facility=self.fac, me=10,
                                      materials=[{"type_id": 34, "quantity": 10}], job_cost=1000, time_seconds=600)
         PriceSnapshot.objects.create(type_id=4247, location=self.market, sell_min=20_000, sell_volume=1e6)
         s = board.get_user_settings(self.user)

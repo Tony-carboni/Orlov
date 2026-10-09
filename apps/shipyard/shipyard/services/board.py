@@ -71,8 +71,10 @@ def dashboard_rows(settings: UserSettings, *, categories=None, exclude=None) -> 
     stats = {s.ship_id: s for s in ShipMarketStats.objects.filter(ship__in=ships)}
     builds = {}
     if facility:
-        for b in BuildSnapshot.objects.filter(facility=facility, me=0, ship__in=ships):
-            builds[b.ship_id] = b
+        default_me = {s.type_id: s.default_me_te[0] for s in ships}
+        for b in BuildSnapshot.objects.filter(facility=facility, ship__in=ships):
+            if b.me == default_me.get(b.ship_id):
+                builds[b.ship_id] = b
     material_ids = set()
     for b in builds.values():
         material_ids.update(int(m["type_id"]) for m in b.materials)
@@ -106,7 +108,7 @@ def dashboard_rows(settings: UserSettings, *, categories=None, exclude=None) -> 
         material_rows = build.materials if build else []
         job_cost = build.job_cost if build else 0
         time_seconds = build.time_seconds if build else 0
-        if bp and facility and (bp["me"] or bp["te"]) and live_budget > 0:
+        if bp and facility and (bp["me"], bp["te"]) != ship.default_me_te and live_budget > 0:
             try:
                 data = simulate_build(ship, facility, me=bp["me"], te=bp["te"], settings=settings)
                 material_rows, job_cost, time_seconds = data["materials"], data["job_cost"], data["time_seconds"]
@@ -139,7 +141,7 @@ def dashboard_rows(settings: UserSettings, *, categories=None, exclude=None) -> 
     return rows
 
 
-def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0, bpc=None, tag=None, use_lp=None):
+def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=None, te=None, bpc=None, tag=None, use_lp=None):
     """Economics for one ship; `me`, `bpc`, `tag`, `facility`, `use_lp` are ad-hoc overrides.
 
     ME 0 at a known facility comes from the stored snapshot; anything else is a live
@@ -150,10 +152,13 @@ def ship_detail(ship: Ship, settings: UserSettings, *, facility=None, me=0, te=0
     rates = pricing.tax_rates(market, settings)
     config = ShipConfig.objects.select_related("lp_faction").filter(ship=ship).first()
     stats = ShipMarketStats.objects.filter(ship=ship).first()
+    default_me, default_te = ship.default_me_te
+    me = default_me if me is None else me
+    te = default_te if te is None else te
 
     build = None
-    if facility and me == 0 and te == 0:
-        build = BuildSnapshot.objects.filter(ship=ship, facility=facility, me=0).first()
+    if facility and (me, te) == (default_me, default_te):
+        build = BuildSnapshot.objects.filter(ship=ship, facility=facility, me=me).first()
     if build:
         material_rows, job_cost, time_seconds = build.materials, build.job_cost, build.time_seconds
         source = "snapshot"

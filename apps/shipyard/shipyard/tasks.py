@@ -48,11 +48,12 @@ def refresh_facility_indices():
 
 @shared_task
 def refresh_builds():
-    """ME 0 bill of materials and job cost for every active ship × active facility."""
+    """Bill of materials and job cost for every active ship × active facility at the ship's default ME/TE."""
     run = _run("builds")
     n, errors = 0, []
     for fac in Facility.objects.filter(is_active=True):
         for ship in Ship.objects.filter(is_active=True):
+            me, te = ship.default_me_te
             try:
                 block = everef.manufacturing_cost(
                     ship.type_id,
@@ -60,10 +61,12 @@ def refresh_builds():
                     structure_type_id=fac.structure_type_id or None,
                     rig_type_ids=fac.rig_type_ids,
                     facility_tax_pct=float(fac.facility_tax),
+                    me=me,
+                    te=te,
                 )
                 data = everef.normalise_cost_block(block)
                 BuildSnapshot.objects.update_or_create(
-                    ship=ship, facility=fac, me=0,
+                    ship=ship, facility=fac, me=me,
                     defaults={**data, "fetched_at": timezone.now()},
                 )
                 n += 1

@@ -116,6 +116,11 @@ class Ship(models.Model):
     meta_group_id = models.PositiveIntegerField(null=True, blank=True)
     blueprint_type_id = models.PositiveIntegerField()
     units_per_run = models.PositiveIntegerField(default=1, help_text="Products per blueprint run (40 for fuel blocks)")
+
+    @property
+    def default_me_te(self) -> tuple[int, int]:
+        """ME/TE the dashboard assumes without a member's own blueprint (constants.RESEARCHED_ME_TE)."""
+        return constants.RESEARCHED_ME_TE.get(self.category, (0, 0))
     volume = models.FloatField(default=0, help_text="Packaged volume m³")
     is_active = models.BooleanField(default=True, help_text="Shown on the dashboard")
     updated_at = models.DateTimeField(auto_now=True)

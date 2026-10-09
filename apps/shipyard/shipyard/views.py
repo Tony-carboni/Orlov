@@ -143,8 +143,8 @@ def api_simulate(request, type_id):
     """Ad-hoc simulation for the detail page. Never writes anything."""
     ship = get_object_or_404(Ship, type_id=type_id)
     settings = board.get_user_settings(request.user)
-    me = _int(request.GET.get("me"), 0, 0, 10)
-    te = _int(request.GET.get("te"), 0, 0, 20)
+    me = _int(request.GET.get("me"), ship.default_me_te[0], 0, 10)
+    te = _int(request.GET.get("te"), ship.default_me_te[1], 0, 20)
     facility = None
     if request.GET.get("facility"):
         facility = Facility.objects.filter(pk=_int(request.GET.get("facility")), is_active=True).first()
