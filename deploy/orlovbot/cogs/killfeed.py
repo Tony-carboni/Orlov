@@ -1,14 +1,22 @@
 """The kill feed: one post for every ship our pilots kill or lose.
 
-Every 5 minutes the bot asks zKillboard for the latest killmails of our alliance (and of
-any extra corps in ORLOVBOT_KILLFEED_CORPORATION_IDS) and posts the ones it has not posted
-yet in the channel named by ORLOVBOT_KILLFEED_CHANNEL: green for a kill, red for a loss.
-What was posted is remembered in the Django cache (redis), so a bot restart neither repeats
-nor floods. docs/runbooks/11-kill-feed.md
+Two sources, one memory:
+- **The live feed** (zKillboard's R2Z2, https://zkillboard.com/api/docs/): the bot reads
+  the sequence of killmail files as zKillboard writes them, keeps the ones with our pilots
+  on either side and posts them within seconds of zKillboard having them.
+- **The hourly list** (zKillboard's API, cached by Cloudflare for an hour): every 5 minutes
+  the bot asks for the latest killmails of our alliance (and of any extra corps in
+  ORLOVBOT_KILLFEED_CORPORATION_IDS) and posts what the stream missed, oldest first.
+
+Posts go to the channel named by ORLOVBOT_KILLFEED_CHANNEL: green for a kill, red for a
+loss. What was posted is remembered in the Django cache (redis), so a bot restart neither
+repeats nor floods. docs/runbooks/11-kill-feed.md
 """
 
+import asyncio
 import datetime as dt
 import logging
+import time
 
 import discord
 import requests
@@ -38,6 +46,22 @@ MAX_POSTS_PER_ROUND = 10  # the rest follows at the next check
 MAX_OWN_PILOTS = 5
 SEEN_KEY = "orlovbot:killfeed:seen"  # killmail id -> killmail time, kept in the cache
 TEST_KEY = "orlovbot:killfeed:test"  # set to make the bot post the newest killmail once more
+
+# R2Z2, zKillboard's live feed (https://zkillboard.com/api/docs/, "ephemeral"): every killmail
+# zKillboard parses is written as <sequence>.json, sequence numbers strictly increasing; the
+# pointer sequence.json names a recent one (refreshed every 51 killmails). A reader fetches
+# the files one after the other and waits 6 s after a 404 (= nothing new yet). Files stay
+# for 24 h. Every killmail in EVE comes through; we keep the ones with our pilots on them.
+# (RedisQ, the earlier stream, was sunset on 2026-05-31; its hostname points at 127.0.0.1.)
+R2Z2 = "https://r2z2.zkillboard.com/ephemeral"
+STREAM_PAUSE = 1  # seconds between two rounds
+STREAM_IDLE_WAIT = 6  # seconds to wait after a 404, as the docs ask
+STREAM_STEP_PAUSE = 0.1  # seconds between two files inside a round (the docs' pace; limit 15/s)
+STREAM_MAX_PER_ROUND = 50  # files per round, then the memory is saved and Discord gets its turn
+STREAM_MAX_BACKLOG = 3000  # further behind than this (about an hour of EVE) → jump to the pointer
+STREAM_BACKOFF = 60  # seconds to wait after a failed request
+STREAM_LOG_EVERY = dt.timedelta(minutes=15)  # one warning per this while the feed keeps failing
+SEQUENCE_KEY = "orlovbot:killfeed:sequence"  # the next sequence number to read, kept in the cache
 
 
 def _ours() -> tuple:
@@ -262,6 +286,83 @@ def forget(killmail_id: int) -> None:
         cache.set(SEEN_KEY, seen, timeout=None)
 
 
+# --- the live feed (R2Z2) ---------------------------------------------------------------
+
+def _stream_enabled() -> bool:
+    return bool(getattr(settings, "ORLOVBOT_KILLFEED_STREAM", True))
+
+
+def fetch_pointer() -> int:
+    """The sequence number zKillboard currently points at (a recent one, not the newest)."""
+    response = requests.get(f"{R2Z2}/sequence.json", headers=HEADERS, timeout=30)
+    response.raise_for_status()
+    return int(response.json()["sequence"])
+
+
+def fetch_sequence(sequence: int) -> dict | None:
+    """One killmail file in our usual shape (the ESI killmail plus 'zkb'); None on 404."""
+    response = requests.get(f"{R2Z2}/{int(sequence)}.json", headers=HEADERS, timeout=30)
+    if response.status_code == 404:
+        return None
+    response.raise_for_status()
+    data = response.json()
+    killmail = data.get("esi") or {}
+    if "victim" not in killmail or "attackers" not in killmail:
+        raise ValueError(f"sequence {sequence} without a killmail: {str(data)[:100]}")
+    return {**killmail, "killmail_id": int(data.get("killmail_id") or killmail.get("killmail_id")), "zkb": data.get("zkb") or {}}
+
+
+def stream_round(next_sequence: int, alliances: set, corporations: set) -> tuple:
+    """Read files from next_sequence on, up to STREAM_MAX_PER_ROUND or the first 404.
+    HTTP only, no cache or database. Returns (next sequence to read, our killmails, idle):
+    idle is True when the feed has nothing newer yet."""
+    ours = []
+    for _ in range(STREAM_MAX_PER_ROUND):
+        killmail = fetch_sequence(next_sequence)
+        if killmail is None:
+            return next_sequence, ours, True
+        next_sequence += 1
+        if involves_us(killmail, alliances, corporations):
+            ours.append(killmail)
+        time.sleep(STREAM_STEP_PAUSE)
+    return next_sequence, ours, False
+
+
+def involves_us(killmail: dict, alliances: set, corporations: set) -> bool:
+    """True when the victim or any attacker is one of ours. Pure."""
+    if _is_ours(killmail.get("victim") or {}, alliances, corporations):
+        return True
+    return any(_is_ours(a, alliances, corporations) for a in killmail.get("attackers") or [])
+
+
+def plan_stream(killmail: dict, seen, now) -> tuple:
+    """Decide whether one stream killmail is posted. Pure.
+
+    Returns (post, new_seen); new_seen None means: leave the memory as it is.
+    While seen is None the 5-minute check has not had its first run yet; posting now would
+    make that first run post everything older as well, so the stream waits for it.
+    """
+    if seen is None or now - _when(killmail) > MAX_AGE:
+        return False, None
+    killmail_id = str(killmail["killmail_id"])
+    if killmail_id in seen:
+        return False, None
+    return True, {**seen, killmail_id: killmail["killmail_time"]}
+
+
+def prepare_stream(killmail: dict):
+    """Memory and embed for one stream killmail, in a thread (cache and database).
+    Returns the embed, or None when the killmail is not posted."""
+    alliances, corporations = _ours()
+    if not involves_us(killmail, alliances, corporations):
+        return None
+    post, new_seen = plan_stream(killmail, cache.get(SEEN_KEY), timezone.now())
+    if not post:
+        return None
+    cache.set(SEEN_KEY, new_seen, timeout=None)  # remember first, post second
+    return build_embed(killmail, alliances, corporations)
+
+
 class Killfeed(commands.Cog):
     """Kills and losses of our pilots, from zKillboard."""
 
@@ -269,15 +370,94 @@ class Killfeed(commands.Cog):
         self.bot = bot
         # only used to find the channel by name
         self.board = Board(bot, FEED_NAME, "ORLOVBOT_KILLFEED_CHANNEL")
+        self.stream_failing_since = None
+        self.stream_last_warned = None
+        self.rounds = 0
 
     @commands.Cog.listener()
     async def on_ready(self):
-        # on_ready also fires after a reconnect, so only start the loop once
+        # on_ready also fires after a reconnect, so only start the loops once
         if not self.check.is_running():
             self.check.start()
+        if _stream_enabled() and not self.stream.is_running():
+            self.stream.start()
 
     def cog_unload(self):
         self.check.cancel()
+        self.stream.cancel()
+
+    async def _next_sequence(self) -> int:
+        """Where to read next: the remembered position, or zKillboard's pointer when there is
+        none or the memory is too far behind (a long outage; replaying it all is not worth it)."""
+        remembered = await sync_to_async(cache.get)(SEQUENCE_KEY)
+        if remembered is None:
+            pointer = await sync_to_async(fetch_pointer, thread_sensitive=False)()
+            logger.info("%s: live feed starts at sequence %s", FEED_NAME, pointer)
+            return pointer
+        if self.rounds % 50 == 0:  # about once a minute while idle: compare with the pointer
+            pointer = await sync_to_async(fetch_pointer, thread_sensitive=False)()
+            if pointer - int(remembered) > STREAM_MAX_BACKLOG:
+                logger.warning(
+                    "%s: live feed was at sequence %s, zKillboard is at %s; skipping ahead",
+                    FEED_NAME, remembered, pointer,
+                )
+                return pointer
+        return int(remembered)
+
+    @tasks.loop(seconds=STREAM_PAUSE)
+    async def stream(self):
+        """One round of the live feed: read the next files, post the killmails of ours at once."""
+        try:
+            channel = self.board.get_channel()
+            if channel is None:
+                await asyncio.sleep(STREAM_BACKOFF)
+                return
+            self.rounds += 1
+            alliances, corporations = _ours()
+            # HTTP in a thread of its own: a round may take seconds and must not hold up the
+            # database thread the other cogs share
+            try:
+                next_sequence = await self._next_sequence()
+                next_sequence, ours, idle = await sync_to_async(stream_round, thread_sensitive=False)(
+                    next_sequence, alliances, corporations
+                )
+            except Exception as ex:
+                self._stream_warn(ex)
+                await asyncio.sleep(STREAM_BACKOFF)
+                return
+            await sync_to_async(cache.set)(SEQUENCE_KEY, next_sequence, None)
+            if self.stream_failing_since is not None:
+                logger.info("%s: live feed is back", FEED_NAME)
+                self.stream_failing_since = self.stream_last_warned = None
+            for killmail in ours:
+                embed = await sync_to_async(prepare_stream)(killmail)
+                if embed is None:
+                    continue
+                try:
+                    await channel.send(embed=embed)
+                except discord.HTTPException:
+                    logger.exception("%s: killmail %s could not be posted", FEED_NAME, killmail["killmail_id"])
+                    await sync_to_async(forget)(killmail["killmail_id"])
+                    continue
+                logger.info("%s: posted %s from the live feed (%s)", FEED_NAME, killmail["killmail_id"], embed.title)
+            if idle:
+                await asyncio.sleep(STREAM_IDLE_WAIT)
+        except Exception:
+            # never let one failed round stop the loop
+            logger.exception("%s: live feed round failed", FEED_NAME)
+            await asyncio.sleep(STREAM_BACKOFF)
+
+    def _stream_warn(self, ex) -> None:
+        """One warning when the feed starts failing, then one every STREAM_LOG_EVERY."""
+        now = timezone.now()
+        if self.stream_failing_since is None:
+            self.stream_failing_since = now
+        if self.stream_last_warned is None or now - self.stream_last_warned >= STREAM_LOG_EVERY:
+            self.stream_last_warned = now
+            logger.warning(
+                "%s: live feed gave no answer (since %s): %s; the 5-minute check carries on",
+                FEED_NAME, self.stream_failing_since.strftime("%H:%M UTC"), ex,
+            )
 
     @tasks.loop(minutes=CHECK_MINUTES)
     async def check(self):
