@@ -16,7 +16,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - Dry run in a throwaway container: pointer, file, 404, a round of 14 files in 2.1 s, filter and memory rules on the known kill, embed. Deployed 13:50 UTC: old cog in `~/backups/killfeed.py.pre-r2z2`, file copied, bot restarted; log `live feed starts at sequence 99956887`; the position then kept within a few files of the pointer, no errors.
 - Runbook 11 rewritten where it matters (how it works, known values, changing things, troubleshooting, considered-and-not-used).
 
-**Owner has to do by hand:** nothing. Check `#zkillboard`: the 12 kills of the 13:23 fight arrive through the fallback at its first check after 14:19 UTC (10, then 2); anything later arrives within seconds through the live feed.
+**Owner has to do by hand:** nothing. The 8 kills of ours from the 13:23 fight (Mastodon, Capsule, 6 Kikimoras, all by Simon Aurio; the other 4 killmails in the alliance list were older or already posted) were posted at 14:03–14:04 UTC after the live feed's position was set back by hand to sequence 99956250 (just before the fight); the memory of posted kills kept the fallback from repeating them at 14:19. Anything new arrives within seconds through the live feed. Rewinding = `cache.set("orlovbot:killfeed:sequence", <sequence>, None)` from the gunicorn container; files stay on zKillboard for 24 h.
 
 ### Next — any session
 Nothing queued. If the live feed misbehaves: `ORLOVBOT_KILLFEED_STREAM = False` in `conf/local.py` and restart the bot, or put back `~/backups/killfeed.py.pre-r2z2`. Shipyard is at 0.9.6 (commit `5c804b6` pinned). Cartographers [1E3] fully prepared (07:30 entry).
