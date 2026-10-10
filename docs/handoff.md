@@ -4,6 +4,26 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-10 (07:30 UTC) — desktop session → any session
+
+**Runbook / topic:** new joining corp **Cartographers [1E3]** prepared in the role system (owner's request from the in-game corp window); design doc `docs/design/membership.md` updated. Also: the owner's Naga job cost confirmed (3,930,942 ISK = system cost 1.90 M + facility tax 50.9 k + SCC surcharge 2.04 M = 7.72 % of the 50.93 M EIV; the dashboard uses EVE Ref's total, SCC included).
+
+**Done**
+- Corp looked up on public ESI: Cartographers, ticker 1E3, corporation_id 98846240, founded 2026-10-09 17:55, 2 members, **no alliance**, CEO Eemar (character_id 2116146613).
+- `EveCorporationInfo` created (pk 14). **Not** added to the `Family Member` state (owner's rule of 2026-10-05: no Family Member before the corp is in the alliance in game); its members are `Family Friend` until then, and `Family Member` automatically once ESI shows the corp in ORLOV.
+- Auto-group `corp_1E3` created in advance with `AutogroupsConfig.create_corp_group()` (group pk 14, managed link pk 10, hidden/internal, 0 members).
+- **Not done:** the Discord role `corp_1E3`. The desktop session's permission classifier blocked the Discord write (`match_or_create_role_from_name`). Auth creates the role itself when the first 1E3 member links Discord, so nothing breaks; the owner can also create it by hand in Discord (name exactly `corp_1E3`, no colour, no permissions, below `Family Friend`) or ask a session with that permission.
+
+**Owner has to do by hand**
+- Optional: create the Discord role `corp_1E3` now (otherwise it appears on the first member's sync).
+- When Eemar has authed: add them to the `Corp Director` group (auth admin) and send them `docs/guides/corp-ceo-onboarding.md` (Corp Stats / Member Audit token).
+- When the corp is accepted into the alliance: nothing; the state follows the alliance rule once ESI shows it (24 h join delay). Do not list 1E3 on the state.
+
+### Next — any session
+Nothing queued. Shipyard is at 0.9.6 on the server (commit `5c804b6` pinned, released by the other desktop session). Open for the owner from earlier entries: the ore-area table and the Scrapmetal group names.
+
+---
+
 ## 2026-10-09 (14:30 UTC) — desktop session → any session
 
 **Also (desktop, after the laptop's 0.9.4/0.9.5):** 0.9.6 released, millions show three decimals (2.850 M) in `isk_auto`, Scrapmetal price columns use it; server pinned at `5c804b6`. Structure board (runbook 10): no fuel pings while a structure anchors, one "Anchoring finished" ping afterwards; deployed to the bot 19:44 UTC, the alert for the anchoring structure 1055997584926 was cleared and its anchoring is tracked (timer ends 2026-10-10 19:16 EVE).
@@ -66,22 +86,5 @@ Nothing queued. The Shipyard is at 0.8.7 on the server (commit `77b512c` pinned)
 ## 2026-10-09 (morning UTC) — desktop session → any session
 
 **Done.** Shipyard 0.8.3 (Scrapmetal without Sell %), 0.8.4 (Metal scraps group), 0.8.8 (Refresh button on every tab, Value column next to Buy % on the reprocessing table), 0.8.9 (draggable column widths on all three tables via the shared helper in `columns.js`); the laptop's 0.8.5–0.8.7 are in between. Server pinned at `5206131`, 68 tests, 11 containers up; every release is in runbook 13 C. Later the same day: 0.9.0 Fuel blocks tab, 0.9.1 Perimeter buy orders that reach Jita count (ESI), 0.9.2 All/None and saved filter presets, 0.9.3 base hulls and fuel at ME 10 / TE 20; server pinned at `0d5d678`, 72 tests, migrations 0011 and 0012 applied, ME 10 snapshots computed. Nothing open for the owner from this session.
-
----
-
-## 2026-10-08 (15:45 UTC) — laptop session → any session
-
-**Done**
-- "update user braadslee": SAK (NPC corp) → OARMI/ORLOV, Family Friend → Family Member, `corp_OARMI`, Discord roles and nickname synced (runbook 04 E; the first Discord push hit auth's rate limiter, the retry a minute later went through).
-- **Shipyard 0.8.0: the Scrapmetal tab** (owner's part B of the reprocessing request; details in runbook 13 C and research 07 §6). Working copy tested in a throwaway container (66 tests); migration 0010 applied to the live DB from there; catalog imported (66 modules, all priced, volumes read); owner's skills reloaded (Scrapmetal Processing V); released per runbook 13 C (commit `15a30ad` pinned, backup `aa-db-2026-10-08-1526.sql.gz`, `requirements.txt.pre-0.8.0` and `local.py.pre-0.8.0` in `~/backups`, beat entry `shipyard_refresh_scrap_catalog`).
-- Other members' Scrapmetal Processing level arrives with their next daily skill refresh (or when they click a character); until then the tab uses the default V and says so.
-
-- **0.8.1/0.8.2 (commit `5a4d295`):** the owner wants the table to mirror the in-game market tree for quick scanning: groups in his exact in-game folder order, a header row per group, modules indented and in the client's alphabetical order. Done and released (same procedure, backup `aa-db-2026-10-08-1604.sql.gz`); `group_order` of the stored rows updated from the constants.
-
-**0.8.3 (desktop session, 16:30 UTC):** Sell % column removed from the Scrapmetal table; favourable switch and colouring follow Buy %. **0.8.4:** Metal Scraps and Reinforced Metal Scraps as the group "Metal scraps" below the thermal hardeners.
-
-**Open (owner)**
-- Look at the Scrapmetal tab: group names were polished (say if any should change); the v2 sheet's extra groups "cap booster" and "fr-x heavy" were not in the list and are not in the app. More modules: admin → Shipyard → Scrap items (type id + group), or hand the local session a list.
-
 
 ---
