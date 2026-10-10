@@ -36,7 +36,7 @@ Nothing queued. If the live feed misbehaves: `ORLOVBOT_KILLFEED_STREAM = False` 
 
 **Owner has to do by hand**
 - Nothing for the Discord role; it exists.
-- When Eemar has authed: add them to the `Corp Director` group (auth admin) and send them `docs/guides/corp-ceo-onboarding.md` (Corp Stats / Member Audit token).
+- Eemar has authed and is in `Corp Director` (done 15:16 UTC, Discord role synced). Still to send them: `docs/guides/corp-ceo-onboarding.md` (Corp Stats / Member Audit token).
 - When the corp is accepted into the alliance: nothing; the state follows the alliance rule once ESI shows it (24 h join delay). Do not list 1E3 on the state.
 
 ### Next — any session
