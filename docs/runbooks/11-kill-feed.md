@@ -7,7 +7,7 @@
 
 How it works:
 - Every **5 minutes** the bot asks zKillboard for the alliance's latest killmails and posts the ones it has not posted yet, oldest first.
-- A kill shows up as fast as zKillboard has it. That is usually within minutes, but zKillboard only learns of a killmail when one of the pilots involved (or their corp) is linked to zKillboard, or when somebody posts it there by hand. A killmail that reaches zKillboard up to **3 days** late is still posted; older ones are skipped.
+- A kill shows up **up to an hour after zKillboard has it** (found 2026-10-10: zKillboard's API answers are cached by Cloudflare for one hour, `cache-control: max-age=3600`; the server keeps getting the copy it was first served until that hour is up, so a fight at 13:23 posted only after 14:19). Within that limit it is as fast as zKillboard, but zKillboard only learns of a killmail when one of the pilots involved (or their corp) is linked to zKillboard, or when somebody posts it there by hand. A killmail that reaches zKillboard up to **3 days** late is still posted; older ones are skipped.
 - The feed never pings. It posts at most 10 killmails per check; the rest follows 5 minutes later.
 - What was posted is remembered outside the bot (in the cache), so restarting the bot or the server neither repeats nor floods. On its very first run the bot marks everything that already exists as known and posts nothing.
 - A loss caused by one of our own pilots is posted as a loss with a line "Friendly fire by".
@@ -69,6 +69,7 @@ Considered and not used: the Alliance Auth app `aa-killtracker` (a full tracker 
 - [ ] First real kill or loss appeared by itself
 
 ## Troubleshooting
+- **A kill is on zKillboard but not in the channel, and the bot log shows nothing** → most likely the one-hour cache. Check from the server with curl: a `cf-cache-status: HIT` with an `age` in the hundreds or thousands and a `last-modified` before the kill means the list the bot sees is stale; it refreshes at the `expires` time (`last-modified` + 1 h) and the bot posts at its first 5-minute check after that, 10 per check. Your PC may see the kill earlier because it talks to a different Cloudflare edge with its own copy. Nothing to fix on the server; the alternatives are in the handoff of 2026-10-10.
 
 - **A kill is on zKillboard but not in the channel** → wait two checks (10 minutes). Then the local session reads `docker compose logs --tail 50 allianceauth_discordbot`: "zKillboard gave no answer" means zKillboard was down or slow and the bot retries by itself; "could not be posted" with "Missing Permissions" means the `Orlov auth` role lacks a permission from A2.
 - **A kill is not on zKillboard at all** → nobody involved is linked to zKillboard. Log in once on zkillboard.com with the character (or have the corp CEO add the corp there), or post the killmail by hand; the feed picks it up if that happens within 3 days.
