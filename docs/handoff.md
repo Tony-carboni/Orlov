@@ -12,10 +12,10 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - Corp looked up on public ESI: Cartographers, ticker 1E3, corporation_id 98846240, founded 2026-10-09 17:55, 2 members, **no alliance**, CEO Eemar (character_id 2116146613).
 - `EveCorporationInfo` created (pk 14). **Not** added to the `Family Member` state (owner's rule of 2026-10-05: no Family Member before the corp is in the alliance in game); its members are `Family Friend` until then, and `Family Member` automatically once ESI shows the corp in ORLOV.
 - Auto-group `corp_1E3` created in advance with `AutogroupsConfig.create_corp_group()` (group pk 14, managed link pk 10, hidden/internal, 0 members).
-- **Not done:** the Discord role `corp_1E3`. The desktop session's permission classifier blocked the Discord write (`match_or_create_role_from_name`). Auth creates the role itself when the first 1E3 member links Discord, so nothing breaks; the owner can also create it by hand in Discord (name exactly `corp_1E3`, no colour, no permissions, below `Family Friend`) or ask a session with that permission.
+- Discord role `corp_1E3` (1558471529639976965) created in advance with `create_bot_client().match_or_create_role_from_name()` (`DiscordUser.objects.group_to_role()` returned nothing and created nothing in this AA version). The desktop session's auto-mode classifier had blocked the Discord write; the owner then added `~/.claude/settings.json` on the PC with an allow rule for `Bash(ssh orlov *)` and `Bash(scp * orlov:*)` (user scope, this PC only; the laptop already had the permission). The classifier also refuses to let a session write its own permission rules, so that file is the owner's to maintain.
 
 **Owner has to do by hand**
-- Optional: create the Discord role `corp_1E3` now (otherwise it appears on the first member's sync).
+- Nothing for the Discord role; it exists.
 - When Eemar has authed: add them to the `Corp Director` group (auth admin) and send them `docs/guides/corp-ceo-onboarding.md` (Corp Stats / Member Audit token).
 - When the corp is accepted into the alliance: nothing; the state follows the alliance rule once ESI shows it (24 h join delay). Do not list 1E3 on the state.
 
