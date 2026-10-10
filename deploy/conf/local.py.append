@@ -125,6 +125,7 @@ ORLOVBOT_STRUCTURE_ALERT_MENTION = "@everyone"
 ORLOVBOT_KILLFEED_CHANNEL = "zkillboard"      # channel name; "" switches the feed off
 ORLOVBOT_KILLFEED_ALLIANCE_IDS = [99015337]   # The Orlov Family
 ORLOVBOT_KILLFEED_CORPORATION_IDS = []        # extra corps outside the alliance, by corporation ID
+ORLOVBOT_KILLFEED_STREAM = True               # live feed from zKillboard's R2Z2 files; False leaves only the 5-minute check
 
 # Structure board: the reinforcement hour (EVE time) every structure must have, per the
 # contract with the mercenaries on retainer. Shown green when it matches, red when not.

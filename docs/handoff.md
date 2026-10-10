@@ -4,23 +4,25 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
-## 2026-10-10 (13:50 UTC) — desktop session → any session
+## 2026-10-10 (14:00 UTC) — desktop session → any session
 
-**Runbook / topic:** runbook 11 (kill feed): the owner asked why kill 139051327 (13:23 UTC, a 1.17 B kill with one alliance pilot on it, eleven more kills in the same fight by 13:26) was not in `#zkillboard`.
+**Runbook / topic:** runbook 11 (kill feed): **live feed from zKillboard's R2Z2 added** (owner's "go" on the real-time option after kill 139051327 and eleven more from a 13:23 fight did not show).
 
-**Finding.** The bot is healthy (cog loaded, loop running, last posts 00:19 and 04:39 UTC today, no errors). zKillboard's API is cached by **Cloudflare for one hour** (`cache-control: public, max-age=3600`). The server's copy of `/api/allianceID/99015337/` was served at 13:19:39 (`cf-cache-status: HIT`, `age` 1315 at 13:41, `expires` 14:19:39) and holds 4 killmails; the owner's PC, on another edge, already saw 12. So the feed posts the fight at its first check after 14:19 UTC, 10 killmails then and the last 2 five minutes later. Verified by running the cog's `collect()` and `plan()` by hand from the gunicorn container (read-only): plan would post nothing until the cache turns. Runbook 11 corrected (the "within minutes" claim) and a troubleshooting entry added.
+**Why.** zKillboard's API list (`/api/allianceID/…`) is cached by Cloudflare for one hour (`max-age=3600`); the server's copy was from 13:19, so the 5-minute check could not see the fight before 14:19. The bot itself was healthy.
 
-**Options for the owner (nothing changed yet):**
-1. Live with up to an hour of delay (current behaviour, zero work).
-2. Cache-bust: add a changing query string per 5-minute check (`?_=<bucket>`), which makes Cloudflare fetch fresh, at most 12 backend requests per hour per entity. Small code change in `deploy/orlovbot/cogs/killfeed.py`; zKillboard sets that cache on purpose, so this is slightly impolite but light.
-3. Switch the feed to zKillboard's RedisQ (`https://zkillredisq.stream/listen.php?queueID=...`): near real time, the way zKillboard intends for live feeds; the bot long-polls every ~10 s and filters our alliance out of the global stream. A few hours of work and a new cog loop.
+**What was done**
+- RedisQ was the plan, but it was sunset on 2026-05-31 (archived repo) and `zkillredisq.stream` resolves to 127.0.0.1 everywhere. zKillboard's replacement is **R2Z2**: every killmail as `https://r2z2.zkillboard.com/ephemeral/<sequence>.json` (fields `killmail_id`, `hash`, `esi`, `zkb`, `uploaded_at`, `sequence_id`), pointer `sequence.json`, rules: 6 s wait after a 404, at most 15 requests/s, a User-Agent. The third-party relay `killmail.stream` also works (RedisQ-compatible, packages without the killmail body) but was not used.
+- `deploy/orlovbot/cogs/killfeed.py` (commit `e68e472`): second loop `stream` in the cog reads the files from the remembered position (cache key `orlovbot:killfeed:sequence`, started at the pointer), up to 50 per round at 0.1 s, 6 s pause on 404, `involves_us()` keeps killmails with our pilots on either side, `plan_stream()` applies the same 3-day window and the same seen-memory as the 5-minute check (which stays as fallback), `prepare_stream()` remembers then posts. Backlog over 3000 files after an outage → skip to the pointer with a warning. Failures: one warning, then one per 15 min, 60 s backoff. HTTP runs in a non-thread-sensitive thread so the long rounds never block the other cogs' database thread. Setting `ORLOVBOT_KILLFEED_STREAM` (default True; documented in `deploy/conf/local.py.append`, not added to the server's `local.py`, the default applies).
+- Dry run in a throwaway container: pointer, file, 404, a round of 14 files in 2.1 s, filter and memory rules on the known kill, embed. Deployed 13:50 UTC: old cog in `~/backups/killfeed.py.pre-r2z2`, file copied, bot restarted; log `live feed starts at sequence 99956887`; the position then kept within a few files of the pointer, no errors.
+- Runbook 11 rewritten where it matters (how it works, known values, changing things, troubleshooting, considered-and-not-used).
 
-**Owner has to do by hand:** nothing. Decide between the options above.
+**Owner has to do by hand:** nothing. Check `#zkillboard`: the 12 kills of the 13:23 fight arrive through the fallback at its first check after 14:19 UTC (10, then 2); anything later arrives within seconds through the live feed.
 
 ### Next — any session
-If the owner picks option 2 or 3: implement in `deploy/orlovbot/cogs/killfeed.py`, copy to `~/aa-docker/orlovbot/cogs/`, restart the bot container (announce first), check the log for `posted` lines, update runbook 11. Shipyard is at 0.9.6 (commit `5c804b6` pinned). Cartographers [1E3] fully prepared (see the 07:30 entry).
+Nothing queued. If the live feed misbehaves: `ORLOVBOT_KILLFEED_STREAM = False` in `conf/local.py` and restart the bot, or put back `~/backups/killfeed.py.pre-r2z2`. Shipyard is at 0.9.6 (commit `5c804b6` pinned). Cartographers [1E3] fully prepared (07:30 entry).
 
 ---
+
 
 ## 2026-10-10 (07:30 UTC) — desktop session → any session
 
