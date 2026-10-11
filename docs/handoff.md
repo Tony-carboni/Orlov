@@ -12,6 +12,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Done.** Fuel pings removed on the owner's instruction: `FUEL_PINGS = False` in `deploy/orlovbot/cogs/structures.py` (`structure_problems()` skips the fuel kind; services pings, war messages and the one "Anchoring finished" message stay; the anchoring message no longer carries a fuel line). Backup `~/backups/structures.py.pre-no-fuel-pings`, file copied, bot restarted 05:56 UTC, all four cogs loaded, boards found. Runbook 10 (alert table, changing things, anchoring row) updated.
 
+**Also (desktop, 2026-10-11):** "refresh user Ranos Zain" done per runbook 04 E: character record FNA → OARMI/ORLOV, state Family Member and `corp_OARMI` were already right, Discord roles and nickname pushed (both True).
+
 **Owner has to do by hand:** nothing.
 
 ### Next — any session

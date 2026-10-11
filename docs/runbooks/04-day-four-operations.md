@@ -212,7 +212,7 @@ What the local session does, through the Django shell with Alliance Auth's own f
 3. `AutogroupsConfig.update_group_membership_for_user(user)` for each auto-group config, so the `corp_<TICKER>` group moves.
 4. `DiscordUser.update_groups()` and `DiscordUser.update_nickname()` so the Discord roles and the `[TICKER] Name` nickname follow at once.
 
-✅ Done when the shell shows the new state and groups and both Discord calls return True. Done 2026-10-07 for Francis01 (FNA → OARMI, Family Friend → Family Member) and, by the PC session, for Lexxus, phoenix4 and Josh Havenguard.
+✅ Done when the shell shows the new state and groups and both Discord calls return True. Done 2026-10-07 for Francis01 (FNA → OARMI, Family Friend → Family Member) and, by the PC session, for Lexxus, phoenix4 and Josh Havenguard. 2026-10-11 (desktop): Ranos Zain, whose record was half-updated (corp id OARMI, ticker still FNA, no alliance); the refresh fixed the ticker and alliance, state and group were already right.
 
 ## Day 4 completion checklist
 
