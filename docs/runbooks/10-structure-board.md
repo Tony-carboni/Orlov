@@ -37,7 +37,7 @@ Added 2026-10-05 on the owner's request. Besides the board, the bot posts a shor
 |---|---|---|
 | **War declared** | a war appears that the board did not know yet (ours or against us), with who and when fighting starts | no, once per war |
 | **War over** | a war the board knew is no longer declared or running (added 2026-10-05). It replaces the "War declared" message and is removed after 24 hours | no, once per war |
-| **Structure needs attention: fuel** | fuel under 7 days (the red threshold; orange at 14 days shows on the board only), or no fuel and the structure in low power | once every 24 hours while it lasts |
+| ~~**Structure needs attention: fuel**~~ | **switched off 2026-10-11** (owner: the board shows the fuel in colour, that is enough). `FUEL_PINGS = True` in `structures.py` brings it back: fuel under 7 days, or no fuel and the structure in low power | was: once every 24 hours |
 | **Structure needs attention: services offline** | one or more services of the structure are offline | once every 24 hours while it lasts |
 
 - Fuel and services of one structure go into **one** message. If a second problem shows up later the same day (fuel was low, now a service drops too), the bot pings again at once with both, and the 24 hours start over.
@@ -108,8 +108,8 @@ When you make a new profile or move a structure to another one, the board shows 
 | Other fuel colours | `FUEL_NOTICE_DAYS` (orange, 14) and `FUEL_WARNING_DAYS` (red and the daily ping, 7) in `structures.py` |
 | Another agreed reinforcement hour, or no check | `ORLOVBOT_STRUCTURE_REINFORCE_HOUR` in `conf/local.py` and `deploy/` (remove the line to show the hour without colour), restart the bot |
 | Switch the board off | `ORLOVBOT_STRUCTURE_BOARD_CHANNEL = ""`, restart the bot, delete the message |
-| Other fuel threshold or repeat interval for the alerts | `FUEL_WARNING_DAYS` and `ALERT_REPEAT` in `structures.py` |
-| Anchoring structures | no fuel or service pings while a structure anchors (states 1 and 2, `ANCHORING_STATES`); one ping "Anchoring finished" when it leaves that state, with the fuel line, kept 24 h (`ANCHORED_KEEP`); the daily reminders start a day later. Owner's rule 2026-10-09. |
+| Fuel pings back on, or another threshold or repeat interval | `FUEL_PINGS` (False since 2026-10-11), `FUEL_WARNING_DAYS` and `ALERT_REPEAT` in `structures.py`, restart the bot |
+| Anchoring structures | no fuel or service pings while a structure anchors (states 1 and 2, `ANCHORING_STATES`); one ping "Anchoring finished" when it leaves that state (with the offline-services line if any; the fuel line went with the fuel pings on 2026-10-11), kept 24 h (`ANCHORED_KEEP`); the daily reminders start a day later. Owner's rule 2026-10-09. |
 | No alerts, board only | `ORLOVBOT_STRUCTURE_ALERTS = False`, restart the bot |
 
 ## Completion checklist
@@ -122,6 +122,7 @@ When you make a new profile or move a structure to another one, the board shows 
 - [ ] Owner confirms the test ping arrived in `#structure-board`
 
 ## Troubleshooting
+- **A freshly onlined structure shows ABANDONED (and no fuel) although it is cored, fuelled and even extracting** → EVE's own API is behind you, not the bot. The Structures app reads EVE's corporation structures list, which EVE caches for an hour (and the extraction list for half an hour); until that hour turns, the list still says "onlining, no services, no fuel", and with no fuel and no online record the app files the structure under power mode "Abandoned?", which the board prints as ABANDONED. Seen 2026-10-11 with Orlov Mining Facility II: online 2026-10-10 19:17, fuelled and extracting 05:23, EVE's list still dated 04:50 at 05:30; right again after the 05:51 refresh. A once-only situation per structure: read it as "EVE has not caught up yet" and look again after the hour. The owner chose to keep the wording (2026-10-11).
 
 - **No board message** → local session reads `docker compose logs --tail 50 allianceauth_discordbot`. "no text channel named" = name differs; "Missing Permissions" / "Missing Access" = the `Orlov auth` role lacks one of the four permissions in A2.
 - **"Structure data from EVE is old"** → the Structures app cannot read EVE: on auth open Structures, or admin → Structures → Owners, and check the owner's status; usually the character's token was revoked (changed password, left the corp, lost the Director role). Fix with Structures → Add Owner again.

@@ -4,6 +4,21 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-11 (06:05 UTC) — desktop session → any session
+
+**Runbook / topic:** runbooks 09 and 10: the moon board showed no extraction and the structure board showed Orlov Mining Facility II as ABANDONED while, in game, it was online, fuelled and extracting. Plus the owner's rule: **no more fuel pings**.
+
+**Finding.** Nothing was broken. EVE's own API was behind: queried directly with the GWON owner token at 05:30 it still returned zero extractions (answer dated 05:10, cached until 05:40) and Facility II as "onlining, no services, no fuel" (dated 04:50, cached until 05:50). Auth's notifications show the real timeline: online 2026-10-10 19:17, fuelled (high power) and extraction started 05:23/05:24 on 2026-10-11, extraction on Facility I started 05:28. With no fuel and no online record the Structures app files a structure under power mode "Abandoned?", which the board prints as ABANDONED. Once the caches turned, the 05:50 Moon Mining run and the 05:51 forced refresh of both apps picked everything up: two refineries (Piekura I, Saatuban II), extractions arriving Sat 17 Oct 15:01 (II) and Fri 23 Oct 17:01 (I), Facility II shield vulnerable, full power, fuel to 2027-01-11, Moon Drilling online. Moon board updated 05:50, structure board 05:56 (after the restart below). Rendered from the bot container to confirm both rows. Runbook 10 troubleshooting has the interpretation (owner: once-only per structure, no UI change).
+
+**Done.** Fuel pings removed on the owner's instruction: `FUEL_PINGS = False` in `deploy/orlovbot/cogs/structures.py` (`structure_problems()` skips the fuel kind; services pings, war messages and the one "Anchoring finished" message stay; the anchoring message no longer carries a fuel line). Backup `~/backups/structures.py.pre-no-fuel-pings`, file copied, bot restarted 05:56 UTC, all four cogs loaded, boards found. Runbook 10 (alert table, changing things, anchoring row) updated.
+
+**Owner has to do by hand:** nothing.
+
+### Next — any session
+Nothing queued. Shipyard is at 0.9.6 (commit `5c804b6` pinned). Kill feed with live R2Z2 feed since 2026-10-10. Cartographers [1E3] prepared, Eemar is Corp Director (token still to add by Eemar).
+
+---
+
 ## 2026-10-10 (14:00 UTC) — desktop session → any session
 
 **Runbook / topic:** runbook 11 (kill feed): **live feed from zKillboard's R2Z2 added** (owner's "go" on the real-time option after kill 139051327 and eleven more from a 13:23 fight did not show).
@@ -78,27 +93,5 @@ Nothing queued. The Shipyard is at 0.9.5 on the server (commit `e4e3477` pinned)
 **Owner does by hand:** nothing pending. Open for the owner when he gets to it: correct the ore-area table if any family sits in the wrong area (`DEFAULT_AREAS` in `services/reprocessing.py`, overrides via `SHIPYARD_ORE_AREAS` in `conf/local.py`); the Scrapmetal group names from the 08:55 entry.
 
 **Next — laptop session.** No open step from this session; continue with the owner's next request. Procedure reminders: release per runbook 13 C (pin sha → build → check → migrate --plan → tests via the stdin script with SQLite → migrate → up -d → restart nginx → collectstatic → verify → docs); backup before any migration; tests count 72; the catalog of fuel blocks is loaded by `shipyard_load_ships` (now includes `iter_fuel()`), the ME 10 snapshots by the hourly/6-hourly `refresh_builds`. Patch scripts in the desktop's scratchpad are not in the repo; everything that matters is in the code and runbook 13.
-
----
-
-## 2026-10-09 (08:55 UTC) — desktop session → any session
-
-**Runbook / topic:** runbook 13 C, Shipyard **0.8.5 to 0.8.7 released** (owner's requests of 2026-10-09: the Scrapmetal and Reprocessing tables easier to read).
-
-**Done**
-- Confirmed for the owner: Scrapmetal **Value** = Σ floor(quantity × yield) × Jita lowest sell × (1 − tax), yield from the character's Scrapmetal Processing (V for the owner), tax 0 at the Isikano Raitaru.
-- **0.8.5** (commit `ce24e15`): Scrapmetal ISK columns in whole thousands (exact amount on hover); **Gives** column = each mineral's share of the value with its in-game icon, the three largest with a percentage, the rest dimmed icons, names still searchable; **column widths** draggable at the header's right edge, remembered per browser, double-click resets.
-- **0.8.6** (commit `83525a8` pinned): the Reprocessing tab gets the same Gives column and size-based ISK rounding (two decimals under 10 k, one from 10 k, none from 100 k, millions keep two; filter `isk_auto`) for Value, Sell, Buy and the price points. Tests 68.
-- **0.8.7** (commit `77b512c` pinned): a **Columns** button on both tables (tick boxes, remembered per browser), m³ hidden by default, Show all restores; backup `aa-db-2026-10-09-0847.sql.gz`; collectstatic was run from a throwaway container before `up -d` because of the new `columns.js` (lesson noted in runbook 13 C).
-- All released per runbook 13 C (backups `aa-db-2026-10-09-0740.sql.gz` and `-0833.sql.gz`, `requirements.txt.pre-0.8.5/.pre-0.8.6` in `~/backups`, build, throwaway `check`, `up -d`, nginx, collectstatic, served CSS/JS verified, 0 gunicorn errors). No migrations.
-- Fixed on the PC: the SSH key `~/.ssh/orlov-claude` had Windows line endings and no trailing newline (OpenSSH: "invalid format"); rewritten with LF and a final newline, read-only ACL restored, backup `orlov-claude.crlf-backup` beside it. Git identity set for this repository only. The first push needed a one-time GitHub sign-in in the Git Credential Manager window; the credential is stored now.
-- Python 3.12.10 installed for the owner's user via winget (the owner asked); on the user PATH for new terminals.
-
-**Open (owner)**
-- Look at both tabs on `shipyards.orlovfamily.space`: icons in Gives, the rounding, drag a column edge on Scrapmetal, use the Columns button. Say if the percentages should cover more or fewer than three minerals, if the icons should be bigger, or if the Reprocessing tab should get draggable columns too.
-- From earlier: Scrapmetal group names (say if any should change); more modules via admin → Shipyard → Scrap items or a list for the local session.
-
-### Next — any session
-Nothing queued. The Shipyard is at 0.8.7 on the server (commit `77b512c` pinned).
 
 ---

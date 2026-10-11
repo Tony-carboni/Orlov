@@ -47,8 +47,11 @@ LEVELS = {"orange": 1, "red": 2}  # how a text colour counts for the message's c
 LABEL_WIDTH = 11
 REINFORCE_LABEL = "Reinforce:"
 WAR_OVER_KEEP = dt.timedelta(hours=24)  # how long the "war over" message stays in the channel
-FUEL_WARNING_DAYS = 7  # fuel shown in red, and the daily alert starts
+FUEL_WARNING_DAYS = 7  # fuel shown in red
 FUEL_NOTICE_DAYS = 14  # fuel shown in orange
+# No daily ping for low or missing fuel: the board shows it in colour and that is enough
+# (owner, 2026-10-11). True brings the ping back (under FUEL_WARNING_DAYS, or none and low power).
+FUEL_PINGS = False
 DATA_STALE_AFTER = dt.timedelta(minutes=90)  # aa-structures reads EVE every 30 minutes
 STATE_NORMAL = 11  # aa-structures: shield vulnerable, the resting state of an Upwell structure
 # aa-structures: anchor vulnerable (1) and anchoring (2). While a structure anchors it cannot be
@@ -432,12 +435,14 @@ def _amount_left(fuel, now) -> str:
 
 
 def structure_problems(structure: dict, now) -> dict:
-    """The things worth a daily ping, by kind: 'fuel' and 'services'."""
+    """The things worth a daily ping, by kind: 'fuel' (off, see FUEL_PINGS) and 'services'."""
     problems = {}
     if structure["state"] in ANCHORING_STATES:
         return problems  # nothing can be done about fuel or services until it is anchored
     fuel = structure["fuel_expires_at"]
-    if fuel is not None and fuel - now < dt.timedelta(days=FUEL_WARNING_DAYS):
+    if not FUEL_PINGS:
+        pass  # the board shows the fuel in colour; that is enough (owner, 2026-10-11)
+    elif fuel is not None and fuel - now < dt.timedelta(days=FUEL_WARNING_DAYS):
         problems["fuel"] = (
             f"Fuel: **{_amount_left(fuel, now)} left**, runs out {_stamp(fuel, 'F')}"
         )
