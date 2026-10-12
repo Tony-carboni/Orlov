@@ -33,6 +33,7 @@ def _context(request, **extra):
         "frame": "shipyard/frame_standalone.html" if standalone else "shipyard/frame_auth.html",
         "standalone": standalone,
         "full_access": access.has_full_access(request.user),
+        "tabs": access.tabs(request.user),
     }
     context.update(extra)
     return context
@@ -60,7 +61,7 @@ def _int(value, default=0, lo=None, hi=None):
 
 
 @login_required
-@permission_required("shipyard.basic_access")
+@access.allows("index")
 def index(request):
     settings = board.get_user_settings(request.user)
     data_notice = characters.ensure_fresh(settings, request.user)
@@ -109,7 +110,7 @@ def fuel_view(request):
 
 
 @login_required
-@permission_required("shipyard.basic_access")
+@access.allows("ship_detail")
 def ship_detail(request, type_id):
     ship = get_object_or_404(Ship, type_id=type_id)
     settings = board.get_user_settings(request.user)
@@ -140,7 +141,7 @@ def ship_detail(request, type_id):
 
 
 @login_required
-@permission_required("shipyard.basic_access")
+@access.allows("api_simulate")
 def api_simulate(request, type_id):
     """Ad-hoc simulation for the detail page. Never writes anything."""
     ship = get_object_or_404(Ship, type_id=type_id)
@@ -190,7 +191,7 @@ def api_simulate(request, type_id):
 
 
 @login_required
-@permission_required("shipyard.basic_access")
+@access.allows("settings")
 def settings_view(request):
     settings = board.get_user_settings(request.user)
     if request.method == "POST":
@@ -239,7 +240,7 @@ def _market_standings(settings):
 
 
 @login_required
-@permission_required("shipyard.basic_access")
+@access.allows("set_facility")
 @require_POST
 def set_facility(request, pk):
     """The Swap button on the dashboard: build at this facility from now on."""
@@ -252,7 +253,7 @@ def set_facility(request, pk):
 
 
 @login_required
-@permission_required("shipyard.basic_access")
+@access.allows("set_bpc_price")
 @require_POST
 def set_bpc_price(request, type_id):
     """Right-click on the dashboard's Blueprint cell: the member's own price for this copy.
@@ -303,7 +304,7 @@ def refresh_now(request):
 
 
 @login_required
-@permission_required("shipyard.basic_access")
+@access.allows("use_character")
 def use_character(request, character_id):
     """Make one of the member's auth characters the dashboard's character.
 
@@ -360,7 +361,7 @@ def use_character(request, character_id):
 
 
 @login_required
-@access.reprocessing_allowed
+@access.allows("reprocessing")
 @require_POST
 def reprocessing_skills(request):
     """The skills card on the Reprocessing tab: save typed levels, read them from EVE, or go back to V."""
@@ -373,7 +374,7 @@ def reprocessing_skills(request):
 
 
 @login_required
-@access.reprocessing_allowed
+@access.allows("reprocessing")
 def reprocessing_view(request):
     """Reprocessing tab: compressed ore and ice worth buying at Jita to reprocess."""
     settings = board.get_user_settings(request.user)
@@ -449,9 +450,10 @@ def industry_view(request):
 def go(request):
     """Bounce after auth's SSO login: back to the Shipyard's own address."""
     host = app_settings.standalone_host()
+    path = access.landing(request.user) if not access.has_full_access(request.user) else "/shipyard/"
     if host:
-        return redirect(f"https://{host}/shipyard/")
-    return redirect("shipyard:index")
+        return redirect(f"https://{host}{path}")
+    return redirect(path)
 
 
 @login_required

@@ -26,6 +26,8 @@ class StandaloneHostMiddlewareTests(TestCase):
         self.member.user_permissions.add(Permission.objects.get(codename="basic_access", content_type__app_label="shipyard"))
         self.repro = get_user_model().objects.create_user("hamu", password="x")
         self.repro.user_permissions.add(Permission.objects.get(codename="reprocessing_access", content_type__app_label="shipyard"))
+        self.dash = get_user_model().objects.create_user("dash", password="x")
+        self.dash.user_permissions.add(Permission.objects.get(codename="dashboard_access", content_type__app_label="shipyard"))
 
     def _request(self, path, host, user=None):
         request = self.rf.get(path, HTTP_HOST=host)
@@ -64,6 +66,12 @@ class StandaloneHostMiddlewareTests(TestCase):
         self.assertTrue(request.shipyard_standalone)
         # a full member is not redirected
         self.assertEqual(self.mw(self._request("/shipyard/fuel/", HOST, self.member)).status_code, 200)
+        # dashboard-only: the dashboard, ship pages and settings pass, the rest lands on the dashboard
+        for path in ("/shipyard/", "/shipyard/ship/621/", "/shipyard/settings/"):
+            self.assertEqual(self.mw(self._request(path, HOST, self.dash)).status_code, 200, path)
+        for path in ("/shipyard/reprocessing/", "/shipyard/scrapmetal/", "/shipyard/fuel/"):
+            response = self.mw(self._request(path, HOST, self.dash))
+            self.assertEqual((response.status_code, response["Location"]), (302, "/shipyard/"), path)
 
     def test_sso_and_static_paths_pass_untouched(self):
         for path in ("/sso/callback/?code=1", "/static/x.css", "/account/logout/"):

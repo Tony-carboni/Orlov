@@ -15,32 +15,40 @@
 {% block content %}
 <div class="shipyard-root" data-bs-theme="dark">
     <nav class="nav nav-pills mb-3 shipyard-nav">
-        {% if full_access %}
+        {% if 'index' in tabs %}
         <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'shipyard:index' %}">
             <i class="fas fa-table-list fa-fw"></i> Dashboard
         </a>
+        {% endif %}
+        {% if 'fuel' in tabs %}
         <a class="nav-link {% if request.resolver_match.url_name == 'fuel' %}active{% endif %}" href="{% url 'shipyard:fuel' %}">
             <i class="fas fa-gas-pump fa-fw"></i> Fuel blocks
         </a>
         {% endif %}
+        {% if 'reprocessing' in tabs %}
         <a class="nav-link {% if request.resolver_match.url_name == 'reprocessing' %}active{% endif %}" href="{% url 'shipyard:reprocessing' %}">
             <i class="fas fa-recycle fa-fw"></i> Reprocessing
         </a>
-        {% if full_access %}
+        {% endif %}
+        {% if 'scrapmetal' in tabs %}
         <a class="nav-link {% if request.resolver_match.url_name == 'scrapmetal' %}active{% endif %}" href="{% url 'shipyard:scrapmetal' %}">
             <i class="fas fa-screwdriver-wrench fa-fw"></i> Scrapmetal
         </a>
+        {% endif %}
+        {% if 'industry' in tabs %}
         <a class="nav-link {% if request.resolver_match.url_name == 'industry' %}active{% endif %}" href="{% url 'shipyard:industry' %}">
             <i class="fas fa-gears fa-fw"></i> My industry
         </a>
+        {% endif %}
+        {% if 'settings' in tabs %}
         <a class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" href="{% url 'shipyard:settings' %}">
             <i class="fas fa-sliders fa-fw"></i> My settings
         </a>
-        {% if perms.shipyard.manage_shipyard %}
+        {% endif %}
+        {% if perms.shipyard.manage_shipyard and full_access %}
         <a class="nav-link {% if request.resolver_match.url_name == 'blueprints' %}active{% endif %}" href="{% url 'shipyard:blueprints' %}">
             <i class="fas fa-scroll fa-fw"></i> Blueprints &amp; LP
         </a>
-        {% endif %}
         {% endif %}
     </nav>
     {% if data_notice %}

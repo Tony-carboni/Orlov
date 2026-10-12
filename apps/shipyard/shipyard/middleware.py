@@ -12,6 +12,7 @@ Without the setting nothing changes. docs/research/06-shipyards-frontend.md
 
 from django.conf import settings
 from django.shortcuts import redirect, render
+from django.urls import Resolver404, resolve
 
 from . import access, app_settings
 
@@ -46,9 +47,16 @@ class StandaloneHostMiddleware:
                         {"frame": "shipyard/frame_standalone.html", "standalone": True},
                         status=403,
                     )
-                if not access.has_full_access(user) and path != access.REPROCESSING_PATH:
-                    # reprocessing-only members: every other page is the Reprocessing tab
-                    return redirect(access.REPROCESSING_PATH)
+                names = access.allowed_url_names(user)
+                if names is not None:
+                    # limited members: every page outside their permission is their first tab
+                    try:
+                        match = resolve(path)
+                        allowed = match.url_name in names
+                    except Resolver404:
+                        allowed = False
+                    if not allowed:
+                        return redirect(access.landing(user))
         elif path.startswith("/shipyard/") and path != BOUNCE_PATH:
             return redirect(f"https://{host}{request.get_full_path()}")
         return self.get_response(request)

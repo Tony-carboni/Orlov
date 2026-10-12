@@ -1,8 +1,10 @@
-"""Who may enter the Shipyard.
+"""Who may enter the Shipyard, and which pages.
 
-`basic_access` opens every page. `reprocessing_access` (owner, 2026-10-12, first for Hamu)
-opens the Reprocessing tab alone: the front door lets such a member in, lands them on that
-tab, and the navigation shows nothing else.
+`basic_access` opens every page. The limited permissions (owner, 2026-10-12, first for Hamu)
+open a few named pages each: `reprocessing_access` the Reprocessing tab, `dashboard_access`
+the ship dashboard with its ship pages and My settings (the character picker). A member
+with limited access is sent from any other Shipyard page to their first tab, and the
+navigation shows only what they may open.
 """
 
 from functools import wraps
@@ -10,26 +12,65 @@ from functools import wraps
 from django.core.exceptions import PermissionDenied
 
 FULL = "shipyard.basic_access"
-REPROCESSING = "shipyard.reprocessing_access"
-REPROCESSING_PATH = "/shipyard/reprocessing/"
+LIMITED = {
+    "shipyard.dashboard_access": {"index", "ship_detail", "api_simulate", "settings", "use_character", "set_facility", "set_bpc_price", "go"},
+    "shipyard.reprocessing_access": {"reprocessing", "reprocessing_skills", "use_character", "go"},
+}
+# the tab a limited member lands on, in order of preference
+LANDING = [("shipyard.dashboard_access", "/shipyard/"), ("shipyard.reprocessing_access", "/shipyard/reprocessing/")]
+ALL_TABS = ("index", "fuel", "reprocessing", "scrapmetal", "industry", "settings")
 
 
 def has_full_access(user) -> bool:
     return bool(user and user.is_authenticated and user.has_perm(FULL))
 
 
+def allowed_url_names(user):
+    """None for full access (everything), else the set of url names the member may open."""
+    if has_full_access(user):
+        return None
+    names = set()
+    for perm, urls in LIMITED.items():
+        if user.has_perm(perm):
+            names |= urls
+    return names
+
+
 def may_enter(user) -> bool:
-    """Any Shipyard page at all: full access or the reprocessing-only permission."""
-    return bool(user and user.is_authenticated and (user.has_perm(FULL) or user.has_perm(REPROCESSING)))
+    """Any Shipyard page at all: full access or one of the limited permissions."""
+    return bool(user and user.is_authenticated and (has_full_access(user) or any(user.has_perm(p) for p in LIMITED)))
 
 
-def reprocessing_allowed(view):
-    """View decorator: full access or the reprocessing-only permission."""
+def landing(user) -> str:
+    for perm, path in LANDING:
+        if user.has_perm(perm):
+            return path
+    return "/shipyard/"
 
-    @wraps(view)
-    def wrapped(request, *args, **kwargs):
-        if not may_enter(request.user):
-            raise PermissionDenied
-        return view(request, *args, **kwargs)
 
-    return wrapped
+def tabs(user) -> set:
+    """Navigation entries this member sees."""
+    if has_full_access(user):
+        return set(ALL_TABS)
+    names = allowed_url_names(user) or set()
+    return {t for t in ALL_TABS if t in names}
+
+
+def allows(url_name: str):
+    """View decorator: full access, or a limited permission that covers this url name."""
+
+    def decorator(view):
+        @wraps(view)
+        def wrapped(request, *args, **kwargs):
+            names = allowed_url_names(request.user)
+            if not request.user.is_authenticated or (names is not None and url_name not in names):
+                raise PermissionDenied
+            return view(request, *args, **kwargs)
+
+        return wrapped
+
+    return decorator
+
+
+# kept for callers of 0.9.7
+reprocessing_allowed = allows("reprocessing")

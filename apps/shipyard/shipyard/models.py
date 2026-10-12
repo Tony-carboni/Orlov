@@ -14,6 +14,7 @@ class General(models.Model):
         permissions = (
             ("basic_access", "Can access the Shipyard dashboard"),
             ("reprocessing_access", "Can use the Reprocessing tab only (no other Shipyard pages)"),
+            ("dashboard_access", "Can use the ship dashboard and My settings only (no other Shipyard pages)"),
             ("manage_shipyard", "Can edit blueprint prices, LP prices and facilities"),
             ("view_corp_industry", "Can see the industry of everyone in their corporation"),
             ("view_alliance_industry", "Can see the industry of everyone in the alliance"),

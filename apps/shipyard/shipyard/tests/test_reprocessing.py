@@ -50,8 +50,10 @@ class MemberSkillTests(TestCase):
         from allianceauth.tests.auth_utils import AuthUtils
         from ..models import UserSettings
         MarketLocation.objects.create(name="Jita", station_id=60003760, is_default=True)
+        from allianceauth.authentication.models import CharacterOwnership
         user = get_user_model().objects.create_user("hamu2", password="x")
         AuthUtils.add_main_character_2(user, "Hamu Two", 9102, corp_id=9002, corp_name="Corp", alliance_id=None, alliance_name="")
+        CharacterOwnership.objects.create(user=user, character=user.profile.main_character, owner_hash="hash-9102")
         user.user_permissions.add(Permission.objects.get(codename="reprocessing_access", content_type__app_label="shipyard"))
         client = Client()
         client.force_login(user)
@@ -134,6 +136,30 @@ class AccessTests(TestCase):
             # the other pages stay closed (auth turns the 403 into a redirect)
             self.assertIn(client.get(reverse("shipyard:index")).status_code, (302, 403))
             self.assertIn(client.get(reverse("shipyard:scrapmetal")).status_code, (302, 403))
+        # dashboard-only: the ship dashboard and My settings open, the rest stays closed
+        other = get_user_model().objects.create_user("hamu3", password="x")
+        AuthUtils.add_main_character_2(other, "Hamu Three", 9103, corp_id=9002, corp_name="Corp", alliance_id=None, alliance_name="")
+        other.user_permissions.add(Permission.objects.get(codename="dashboard_access", content_type__app_label="shipyard"))
+        client = Client()
+        client.force_login(other)
+        with override_settings(SHIPYARD_STANDALONE_HOST=""):
+            r = client.get(reverse("shipyard:index"))
+            self.assertEqual(r.status_code, 200)
+            html = r.content.decode()
+            self.assertIn(reverse("shipyard:settings"), html)
+            self.assertNotIn(reverse("shipyard:reprocessing"), html)
+            self.assertNotIn(reverse("shipyard:fuel"), html)
+            self.assertEqual(client.get(reverse("shipyard:settings")).status_code, 200)
+            self.assertIn(client.get(reverse("shipyard:reprocessing")).status_code, (302, 403))
+            self.assertIn(client.get(reverse("shipyard:scrapmetal")).status_code, (302, 403))
+        # both limited permissions together: both tabs
+        other.user_permissions.add(Permission.objects.get(codename="reprocessing_access", content_type__app_label="shipyard"))
+        other = get_user_model().objects.get(pk=other.pk)
+        client.force_login(other)
+        with override_settings(SHIPYARD_STANDALONE_HOST=""):
+            html = client.get(reverse("shipyard:index")).content.decode()
+            self.assertIn(reverse("shipyard:reprocessing"), html)
+            self.assertNotIn(reverse("shipyard:scrapmetal"), html)
 
 
 class RowTests(TestCase):

@@ -61,7 +61,7 @@
                 <input type="hidden" name="next" value="reprocessing">
                 <button class="btn btn-outline-secondary btn-sm" title="Read the skills again from EVE now"><i class="fas fa-rotate fa-fw"></i> Refresh from EVE</button>
             </form>
-            {% if full_access %}<a class="btn btn-outline-secondary btn-sm" href="{% url 'shipyard:settings' %}"><i class="fas fa-user fa-fw"></i> Another character</a>{% endif %}
+            {% if 'settings' in tabs %}<a class="btn btn-outline-secondary btn-sm" href="{% url 'shipyard:settings' %}"><i class="fas fa-user fa-fw"></i> Another character</a>{% endif %}
         </div>
     </div>
 </div>
