@@ -52,7 +52,10 @@ class AverageTests(SimpleTestCase):
         self.assertGreater(avg, 2e9)
 
 
-def make_snapshot(contract_rows, item_rows, scrape_end="2026-10-08T08:31:04Z"):
+SCRAPE_END = (timezone.now() - timedelta(minutes=5)).replace(microsecond=0)  # fresh at test time, not a fixed date
+
+
+def make_snapshot(contract_rows, item_rows, scrape_end=None):
     """A tiny EVE Ref-style archive in a temporary file; returns its path."""
     fd, path = tempfile.mkstemp(suffix=".tar.bz2")
     os.close(fd)
@@ -74,7 +77,8 @@ def make_snapshot(contract_rows, item_rows, scrape_end="2026-10-08T08:31:04Z"):
     cfields = ["contract_id", "type", "price", "region_id", "station_id", "date_expired", "title", "issuer_id"]
     ifields = ["contract_id", "type_id", "quantity", "is_included", "is_blueprint_copy", "runs", "material_efficiency", "time_efficiency"]
     with tarfile.open(path, "w:bz2") as tar:
-        add(tar, "meta.json", json.dumps({"datasource": "tranquility", "scrape_end": scrape_end}))
+        stamp = scrape_end or SCRAPE_END.strftime("%Y-%m-%dT%H:%M:%SZ")
+        add(tar, "meta.json", json.dumps({"datasource": "tranquility", "scrape_end": stamp}))
         add(tar, "contracts.csv", csv_text(cfields, contract_rows))
         add(tar, "contract_items.csv", csv_text(ifields, item_rows))
     return path
@@ -112,7 +116,7 @@ class SnapshotTests(TestCase):
 
     def test_parse_and_refresh(self):
         quotes, snapshot_at = contracts.parse_snapshot(self.path, [17741, 17931])
-        self.assertEqual(snapshot_at.isoformat(), "2026-10-08T08:31:04+00:00")
+        self.assertEqual(snapshot_at, SCRAPE_END)
         per_run = sorted(o.per_run for o in quotes[17741].offers)
         self.assertEqual(per_run, [15e6, 15e6, 15e6, 18e6, 18e6, 20e6])
         self.assertEqual(quotes[17931].offers, [])
