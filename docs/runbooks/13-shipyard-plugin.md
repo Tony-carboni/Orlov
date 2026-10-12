@@ -101,8 +101,11 @@ New commits to `apps/shipyard` don't reach the server by themselves. Update = ch
 
 *Release 0.9.6, 2026-10-09 (commit `5c804b6` pinned, desktop session): the size-based ISK filter (`isk_auto`) shows millions with three decimals so the thousands stay visible (2.850 M, owner's rule); the Scrapmetal Sell, Buy and price-point columns use that filter instead of whole millions. No migration. Tests 72.*
 
+*Release 0.9.7, 2026-10-12 (commit `357eec4` pinned): permission **`shipyard.reprocessing_access`** opens the Reprocessing tab alone (migration 0013, backup `aa-db-2026-10-12-1903.sql.gz` first). `access.py` holds the checks: `may_enter` (either permission) for the front door, `has_full_access` for everything else; the middleware sends a reprocessing-only member from any other Shipyard page to `/shipyard/reprocessing/`, the navigation shows only that tab, the other views keep `basic_access`, the auth side-menu entry stays `basic_access`-only. Granted to user **Hamu** as a user permission (owner's request; his link: https://shipyards.orlovfamily.space/shipyard/reprocessing/, or just the front door). Tests 74 (the contracts test's snapshot time is now relative to the test run).*
+
 ## D. Releasing to members (later, your call)
 
+*2026-10-12: one member, Hamu, has the Reprocessing tab only (`reprocessing_access` on his user). For more members with that scope, grant the same permission; for the whole Shipyard, `basic_access`.*
 *2026-10-08: closed again on the owner's wish. Only the user `tony` holds `shipyard.basic_access` (user permission); the states Family Member and Family Friend lost it. Reopening = the state grant below, done by the local session on request.*
 
 Admin → Groups → `Family Member` → add `shipyard | general | Can access the Shipyard dashboard`. Managers (`Alliance Director`) also get `Can edit blueprint prices…`. Until then only superusers see it. To let one tester in before release: admin → Users → the user → User permissions → add the basic access permission.
