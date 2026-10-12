@@ -44,6 +44,31 @@ class FamilyTests(SimpleTestCase):
         self.assertEqual(reprocessing.variant_label("+100"), "+100 %")
 
 
+class AccessTests(TestCase):
+    def test_reprocessing_only_permission_opens_only_that_view(self):
+        from django.contrib.auth import get_user_model
+        from django.contrib.auth.models import Permission
+        from django.test import Client, override_settings
+        from django.urls import reverse
+        from allianceauth.tests.auth_utils import AuthUtils
+        MarketLocation.objects.create(name="Jita", station_id=60003760, is_default=True)
+        user = get_user_model().objects.create_user("hamu", password="x")
+        AuthUtils.add_main_character_2(user, "Hamu", 9101, corp_id=9002, corp_name="Corp", alliance_id=None, alliance_name="")
+        user.user_permissions.add(Permission.objects.get(codename="reprocessing_access", content_type__app_label="shipyard"))
+        client = Client()
+        client.force_login(user)
+        with override_settings(SHIPYARD_STANDALONE_HOST=""):
+            r = client.get(reverse("shipyard:reprocessing"))
+            self.assertEqual(r.status_code, 200)
+            html = r.content.decode()
+            self.assertIn("Reprocessing", html)
+            self.assertNotIn(reverse("shipyard:scrapmetal"), html)   # no other tabs in the navigation
+            self.assertNotIn(reverse("shipyard:fuel"), html)
+            # the other pages stay closed (auth turns the 403 into a redirect)
+            self.assertIn(client.get(reverse("shipyard:index")).status_code, (302, 403))
+            self.assertIn(client.get(reverse("shipyard:scrapmetal")).status_code, (302, 403))
+
+
 class RowTests(TestCase):
     def setUp(self):
         self.market = MarketLocation.objects.create(name="Jita", station_id=60003760, is_default=True)

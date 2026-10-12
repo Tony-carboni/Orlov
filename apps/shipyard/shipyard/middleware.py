@@ -13,7 +13,7 @@ Without the setting nothing changes. docs/research/06-shipyards-frontend.md
 from django.conf import settings
 from django.shortcuts import redirect, render
 
-from . import app_settings
+from . import access, app_settings
 
 PASS_PREFIXES = ("/shipyard/", "/sso/", "/static/", "/account/", "/media/", "/favicon")
 BOUNCE_PATH = "/shipyard/go/"
@@ -39,13 +39,16 @@ class StandaloneHostMiddleware:
                 if user is None or not user.is_authenticated:
                     login = f"{settings.SITE_URL.rstrip('/')}/sso/login?next={BOUNCE_PATH}"
                     return redirect(login)
-                if not user.has_perm("shipyard.basic_access"):
+                if not access.may_enter(user):
                     return render(
                         request,
                         "shipyard/no_access.html",
                         {"frame": "shipyard/frame_standalone.html", "standalone": True},
                         status=403,
                     )
+                if not access.has_full_access(user) and path != access.REPROCESSING_PATH:
+                    # reprocessing-only members: every other page is the Reprocessing tab
+                    return redirect(access.REPROCESSING_PATH)
         elif path.startswith("/shipyard/") and path != BOUNCE_PATH:
             return redirect(f"https://{host}{request.get_full_path()}")
         return self.get_response(request)

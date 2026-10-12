@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 from esi.models import Token
 from esi.views import sso_redirect
 
-from . import app_settings, constants
+from . import access, app_settings, constants
 from .models import (
     Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, Ship, ShipConfig,
 )
@@ -31,6 +31,7 @@ def _context(request, **extra):
     context = {
         "frame": "shipyard/frame_standalone.html" if standalone else "shipyard/frame_auth.html",
         "standalone": standalone,
+        "full_access": access.has_full_access(request.user),
     }
     context.update(extra)
     return context
@@ -352,7 +353,7 @@ def use_character(request, character_id):
 
 
 @login_required
-@permission_required("shipyard.basic_access")
+@access.reprocessing_allowed
 def reprocessing_view(request):
     """Reprocessing tab: compressed ore and ice worth buying at Jita to reprocess."""
     settings = board.get_user_settings(request.user)

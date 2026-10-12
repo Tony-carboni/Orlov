@@ -24,6 +24,8 @@ class StandaloneHostMiddlewareTests(TestCase):
         self.user = get_user_model().objects.create_user("tony", password="x")
         self.member = get_user_model().objects.create_user("member", password="x")
         self.member.user_permissions.add(Permission.objects.get(codename="basic_access", content_type__app_label="shipyard"))
+        self.repro = get_user_model().objects.create_user("hamu", password="x")
+        self.repro.user_permissions.add(Permission.objects.get(codename="reprocessing_access", content_type__app_label="shipyard"))
 
     def _request(self, path, host, user=None):
         request = self.rf.get(path, HTTP_HOST=host)
@@ -51,6 +53,17 @@ class StandaloneHostMiddlewareTests(TestCase):
             response = self.mw(self._request("/shipyard/", HOST, self.user))
         self.assertEqual(response.status_code, 403)
         self.assertEqual(render.call_args[0][1], "shipyard/no_access.html")
+
+    def test_reprocessing_only_member_lands_on_the_reprocessing_tab(self):
+        # the front door lets them in, but every other page becomes the Reprocessing tab
+        for path in ("/shipyard/", "/shipyard/fuel/", "/shipyard/scrapmetal/", "/shipyard/settings/"):
+            response = self.mw(self._request(path, HOST, self.repro))
+            self.assertEqual((response.status_code, response["Location"]), (302, "/shipyard/reprocessing/"), path)
+        request = self._request("/shipyard/reprocessing/", HOST, self.repro)
+        self.assertEqual(self.mw(request).status_code, 200)
+        self.assertTrue(request.shipyard_standalone)
+        # a full member is not redirected
+        self.assertEqual(self.mw(self._request("/shipyard/fuel/", HOST, self.member)).status_code, 200)
 
     def test_sso_and_static_paths_pass_untouched(self):
         for path in ("/sso/callback/?code=1", "/static/x.css", "/account/logout/"):
