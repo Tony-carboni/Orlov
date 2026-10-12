@@ -41,7 +41,8 @@ class MemberSkillTests(TestCase):
         self.assertEqual(summary["implant_pct"], 0)
         self.assertEqual(dict((sid, lvl) for sid, _, lvl in summary["general"]), {3385: 4, 3389: 3})
 
-    def test_skills_form(self):
+    def test_tab_needs_a_character_and_implant_is_set_by_hand(self):
+        from unittest import mock
         from django.contrib.auth import get_user_model
         from django.contrib.auth.models import Permission
         from django.test import Client, override_settings
@@ -55,15 +56,31 @@ class MemberSkillTests(TestCase):
         client = Client()
         client.force_login(user)
         with override_settings(SHIPYARD_STANDALONE_HOST=""):
+            # no character chosen: the tab is the picker, with the way back to the tab
+            r = client.get(reverse("shipyard:reprocessing"))
+            self.assertEqual(r.status_code, 200)
+            html = r.content.decode()
+            self.assertIn("choose your character first", html)
+            self.assertIn('name="next" value="reprocessing"', html)
+            self.assertNotIn("<tr data-kind=", html)
+            # with a character (token mocked): the table, the skills card and the implant form
+            s = UserSettings.objects.get(user=user)
+            s.skills_character_id, s.skills_character_name = 9102, "Hamu Two"
+            s.repro_skills = {"3385": 4}
+            s.save()
+            with mock.patch("shipyard.views.characters.token_for", return_value=object()), \
+                 mock.patch("shipyard.views.characters.ensure_fresh", return_value=None):
+                r = client.get(reverse("shipyard:reprocessing"))
+                self.assertEqual(r.status_code, 200)
+                html = r.content.decode()
+                self.assertIn('id="repro-skills"', html)
+                self.assertIn("Hamu Two", html)
+                self.assertNotIn('name="skill_', html)  # levels are not typed any more
             url = reverse("shipyard:reprocessing_skills")
-            r = client.post(url, {"action": "save", "skill_3385": "3", "skill_60377": "1", "implant": "2"})
+            r = client.post(url, {"implant": "2"})
             self.assertEqual((r.status_code, r["Location"]), (302, reverse("shipyard:reprocessing")))
             s = UserSettings.objects.get(user=user)
-            self.assertEqual((s.repro_skills["3385"], s.repro_skills["60377"], s.repro_skills["60380"], s.repro_implant, s.repro_source), (3, 1, 5, 2, "manual"))
-            self.assertEqual(client.get(reverse("shipyard:reprocessing")).status_code, 200)
-            client.post(url, {"action": "reset"})
-            s = UserSettings.objects.get(user=user)
-            self.assertEqual((s.repro_skills, s.repro_implant, s.repro_source), ({}, 4, "default"))
+            self.assertEqual((s.repro_implant, s.repro_skills), (2, {"3385": 4}))  # the levels stay the character's
             self.assertEqual(client.get(url).status_code, 405)
 
 

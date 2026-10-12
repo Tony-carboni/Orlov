@@ -23,6 +23,7 @@ from .services.pricing import tax_rates
 logger = logging.getLogger(__name__)
 
 SSO_PENDING_KEY = "shipyard_sso_pending"  # session: character the member is granting access for
+SSO_NEXT_KEY = "shipyard_sso_next"  # session: the tab the picker was used from ("settings" or "reprocessing")
 
 
 def _context(request, **extra):
@@ -315,7 +316,10 @@ def use_character(request, character_id):
     eve_character = ownership.character
     token = characters.token_for(request.user, character_id)
     pending = request.session.pop(SSO_PENDING_KEY, None)
+    back = request.POST.get("next") or request.session.pop(SSO_NEXT_KEY, None) or "settings"
+    back_url = "shipyard:reprocessing" if back == "reprocessing" else "shipyard:settings"
     if token is None and pending == character_id:
+        request.session.pop(SSO_NEXT_KEY, None)
         # back from EVE's login without the token we asked for: maybe another of the
         # member's characters was used; then that one is just as good
         recent = (
@@ -333,11 +337,12 @@ def use_character(request, character_id):
             f"EVE's login did not give full access for {eve_character.character_name}. "
             "Log in with that character and accept all scopes, then try again.",
         )
-        return redirect("shipyard:settings")
+        return redirect(back_url)
     if token is None:
         if request.method != "POST":
-            return redirect("shipyard:settings")
+            return redirect(back_url)
         request.session[SSO_PENDING_KEY] = character_id
+        request.session[SSO_NEXT_KEY] = back
         return sso_redirect(request, scopes=characters.full_scopes())
     settings = board.get_user_settings(request.user)
     try:
@@ -345,10 +350,12 @@ def use_character(request, character_id):
     except Exception as exc:  # noqa: BLE001
         logger.warning("character load failed for %s: %s", eve_character.character_name, exc)
         messages.error(request, f"EVE did not answer when reading {eve_character.character_name}. Try again in a minute.")
-        return redirect("shipyard:settings")
+        return redirect(back_url)
     added = characters.register_in_memberaudit(eve_character)
     note = " The character was also registered in Member Audit." if added else ""
     messages.success(request, f"Using {eve_character.character_name}: skills and standings loaded from EVE.{note}")
+    if back == "reprocessing":
+        return redirect("shipyard:reprocessing")
     return redirect("shipyard:index")
 
 
@@ -358,36 +365,10 @@ def use_character(request, character_id):
 def reprocessing_skills(request):
     """The skills card on the Reprocessing tab: save typed levels, read them from EVE, or go back to V."""
     settings = board.get_user_settings(request.user)
-    action = request.POST.get("action", "save")
-    if action == "reset":
-        settings.repro_skills, settings.repro_implant, settings.repro_source = {}, 4, "default"
-        settings.repro_character_name, settings.repro_fetched_at = "", None
-        settings.save()
-        messages.info(request, "Reprocessing skills back to the default: everything at V with the RX-804.")
-    elif action == "esi":
-        token = characters.token_for(request.user, settings.skills_character_id) if settings.skills_character_id else None
-        if token is None:
-            messages.warning(request, "No character with skills access on this account yet; pick one on My settings, or type the levels here.")
-        else:
-            try:
-                n = reprocessing.load_skills_from_esi(settings, token)
-                messages.success(request, f"Reprocessing skills read from {token.character_name} ({n} skills found; the implant stays as set here).")
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("reprocessing skills from ESI failed for %s: %s", request.user, exc)
-                messages.error(request, "EVE did not answer; try again in a minute or type the levels.")
-    else:
-        levels = {}
-        for sid in list(constants.REPRO_GENERAL_SKILLS) + list(constants.REPRO_ORE_SKILLS):
-            levels[str(sid)] = _int(request.POST.get(f"skill_{sid}"), 5, 0, 5)
-        settings.repro_skills = levels
-        settings.repro_implant = _int(request.POST.get("implant"), 4, 0, 4)
-        if settings.repro_implant == 3:
-            settings.repro_implant = 2
-        settings.repro_source = "manual"
-        settings.repro_character_name = ""
-        settings.repro_fetched_at = None
-        settings.save()
-        messages.success(request, "Reprocessing skills saved; the table uses them now.")
+    implant = _int(request.POST.get("implant"), 4, 0, 4)
+    settings.repro_implant = 2 if implant == 3 else implant
+    settings.save(update_fields=["repro_implant"])
+    messages.success(request, "Implant saved; the table uses it now.")
     return redirect("shipyard:reprocessing")
 
 
@@ -396,13 +377,22 @@ def reprocessing_skills(request):
 def reprocessing_view(request):
     """Reprocessing tab: compressed ore and ice worth buying at Jita to reprocess."""
     settings = board.get_user_settings(request.user)
+    # the tab only works with a chosen character: its skills are what the table is about
+    token = characters.token_for(request.user, settings.skills_character_id) if settings.skills_character_id else None
+    if token is None:
+        return render(request, "shipyard/reprocessing_pick.html", _context(
+            request, settings=settings, characters=characters.choices(request.user, settings),
+            scope_count=len(characters.full_scopes()), can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+        ))
+    data_notice = characters.ensure_fresh(settings, request.user)
+    settings = board.get_user_settings(request.user)
     rows = reprocessing.dashboard_rows(settings.market, settings)
     context = _context(
         request,
         rows=rows,
         settings=settings,
         setup=reprocessing.setup_summary(settings),
-        skills_token=bool(settings.skills_character_id and characters.token_for(request.user, settings.skills_character_id)),
+        data_notice=data_notice,
         kinds=[(k, reprocessing.KIND_LABELS[k]) for k in reprocessing.KINDS],
         families=reprocessing.families_by_kind(),
         variants=reprocessing.variants_present(),

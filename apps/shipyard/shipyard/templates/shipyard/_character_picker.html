@@ -1,0 +1,30 @@
+{# one card per character on the member's auth account; `characters` from characters.choices(), `picker_next` = where to go afterwards #}
+<div class="row g-2 mb-4">
+    {% for row in characters %}
+    <div class="col-md-4 col-lg-3">
+        <div class="card h-100 {% if row.in_use %}is-selected{% endif %}">
+            <div class="card-body py-2 d-flex align-items-center">
+                <img src="https://images.evetech.net/characters/{{ row.character.character_id }}/portrait?size=64" width="40" height="40" class="rounded me-2" alt="">
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">{{ row.character.character_name }}</div>
+                    <div class="small text-muted">[{{ row.character.corporation_ticker }}]
+                        {% if row.in_use %}<span class="badge bg-primary ms-1">in use</span>{% endif %}
+                        {% if row.full_access %}<span class="badge bg-success-subtle text-success-emphasis ms-1" title="A token with all scopes exists">full access</span>{% else %}<span class="badge bg-secondary-subtle text-secondary-emphasis ms-1" title="Choosing this character opens EVE's login once">needs login</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer py-1 text-end">
+                <form method="post" action="{% url 'shipyard:use_character' row.character.character_id %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ picker_next|default:'settings' }}">
+                    <button class="btn btn-sm {% if row.in_use %}btn-outline-secondary{% else %}btn-outline-primary{% endif %}">
+                        {% if row.in_use %}<i class="fas fa-rotate fa-fw"></i> Refresh now{% else %}<i class="fas fa-user-check fa-fw"></i> Use this character{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col"><div class="alert alert-warning">No characters on your auth account yet. Add one on <a href="{{ SITE_URL }}">auth</a> first.</div></div>
+    {% endfor %}
+</div>

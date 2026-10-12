@@ -20,7 +20,7 @@
                 </div>
                 <div class="small mt-2 d-flex align-items-center flex-wrap gap-2">
                     <button class="btn btn-outline-secondary btn-sm py-0" type="button" data-bs-toggle="collapse" data-bs-target="#repro-skills" aria-expanded="false" aria-controls="repro-skills"><i class="fas fa-graduation-cap fa-fw"></i> Your skills</button>
-                    <span class="shipyard-k">{% if setup.source == 'esi' %}from {{ setup.character }}{% elif setup.source == 'manual' %}set by hand{% else %}default: everything at V, RX-804{% endif %}</span>
+                    <span class="shipyard-k">{{ settings.skills_character_name }}{% if data_notice %} · {{ data_notice }}{% endif %}</span>
                 </div>
             </div>
         </div>
@@ -37,39 +37,33 @@
     </div>
 </div>
 
-{# the member's own reprocessing skills and implant #}
+{# the member's reprocessing skills (from the chosen character) and implant (by hand) #}
 <div class="collapse mb-3" id="repro-skills">
-    <form method="post" action="{% url 'shipyard:reprocessing_skills' %}" class="card card-body py-2">
-        {% csrf_token %}
-        <div class="row g-2 align-items-end">
-            {% for sid, name, level in setup.general %}
-            <div class="col-6 col-md-3 col-xl-2">
-                <label class="form-label small mb-0" for="skill-{{ sid }}">{{ name }}</label>
-                <select class="form-select form-select-sm" id="skill-{{ sid }}" name="skill_{{ sid }}">{% for l in "012345" %}<option value="{{ l }}" {% if l|add:0 == level %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
-            </div>
-            {% endfor %}
-            <div class="col-12 col-md-6 col-xl-4">
-                <label class="form-label small mb-0" for="implant">Implant</label>
-                <select class="form-select form-select-sm" id="implant" name="implant">{% for v, label in setup.implant_choices %}<option value="{{ v }}" {% if v == setup.implant_pct %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
-            </div>
+    <div class="card card-body py-2">
+        <div class="small shipyard-k mb-1">Skills of <strong>{{ settings.skills_character_name }}</strong>, read from EVE {{ settings.repro_fetched_at|date:"Y-m-d H:i" }} EVE time and refreshed daily. Reprocessing gives +3 % per level, every other skill +2 %; the ore skills apply to the ores of their group, moon ore by rarity, Mercoxit and abyssal ore on their own. The structure, rigs and tax are the corp's.</div>
+        <div class="d-flex flex-wrap gap-3 small mb-2">
+            {% for sid, name, level in setup.general %}<span><span class="shipyard-k">{{ name }}</span> <strong>{{ level }}</strong></span>{% endfor %}
         </div>
-        <div class="row g-2 align-items-end mt-1">
-            {% for sid, name, level in setup.ore_skills %}
-            <div class="col-6 col-md-3 col-xl-2">
-                <label class="form-label small mb-0" for="skill-{{ sid }}">{{ name }}</label>
-                <select class="form-select form-select-sm" id="skill-{{ sid }}" name="skill_{{ sid }}">{% for l in "012345" %}<option value="{{ l }}" {% if l|add:0 == level %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
-            </div>
-            {% endfor %}
+        <div class="d-flex flex-wrap gap-3 small mb-2">
+            {% for sid, name, level in setup.ore_skills %}<span><span class="shipyard-k">{{ name }}</span> <strong>{{ level }}</strong></span>{% endfor %}
         </div>
-        <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
-            <button class="btn btn-primary btn-sm" name="action" value="save"><i class="fas fa-save fa-fw"></i> Save</button>
-            {% if skills_token %}
-            <button class="btn btn-outline-secondary btn-sm" name="action" value="esi" title="Read the levels from your character {{ settings.skills_character_name }}"><i class="fas fa-cloud-arrow-down fa-fw"></i> Read from {{ settings.skills_character_name }}</button>
-            {% endif %}
-            <button class="btn btn-outline-secondary btn-sm" name="action" value="reset"><i class="fas fa-rotate-left fa-fw"></i> Back to V + RX-804</button>
-            <span class="small shipyard-k">Reprocessing +3 % per level, every other skill +2 %; the ore skills apply to the ores of their group, moon ore by rarity, Mercoxit and abyssal ore on their own. The structure, rigs and tax are the corp's.</span>
+        <div class="d-flex flex-wrap align-items-end gap-2">
+            <form method="post" action="{% url 'shipyard:reprocessing_skills' %}" class="d-flex align-items-end gap-2">
+                {% csrf_token %}
+                <div>
+                    <label class="form-label small mb-0" for="implant">Implant (EVE does not tell us; set it yourself)</label>
+                    <select class="form-select form-select-sm" id="implant" name="implant">{% for v, label in setup.implant_choices %}<option value="{{ v }}" {% if v == setup.implant_pct %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+                </div>
+                <button class="btn btn-primary btn-sm"><i class="fas fa-save fa-fw"></i> Save implant</button>
+            </form>
+            <form method="post" action="{% url 'shipyard:use_character' settings.skills_character_id %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="reprocessing">
+                <button class="btn btn-outline-secondary btn-sm" title="Read the skills again from EVE now"><i class="fas fa-rotate fa-fw"></i> Refresh from EVE</button>
+            </form>
+            {% if full_access %}<a class="btn btn-outline-secondary btn-sm" href="{% url 'shipyard:settings' %}"><i class="fas fa-user fa-fw"></i> Another character</a>{% endif %}
         </div>
-    </form>
+    </div>
 </div>
 
 <div class="row g-2 mb-2 align-items-center">

@@ -1,0 +1,13 @@
+{% extends "shipyard/base.html" %}
+{% load shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · Reprocessing{% endblock %}
+
+{% block shipyard_content %}
+<h5><i class="fas fa-recycle fa-fw text-info"></i> Reprocessing: choose your character first</h5>
+<p class="small text-muted">
+    The table works out every ore with <strong>your</strong> reprocessing skills, read from EVE for one of your characters and refreshed every day.
+    Choosing a character the first time opens EVE's login once for access to its skills ({{ scope_count }} scopes, the same set the rest of the Shipyard and Member Audit use).
+</p>
+{% include "shipyard/_character_picker.html" with picker_next="reprocessing" %}
+{% endblock %}

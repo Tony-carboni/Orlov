@@ -73,9 +73,15 @@ def register_in_memberaudit(eve_character) -> bool:
 def load_character(settings: UserSettings, token) -> None:
     """Read skills and standings of the token's character into the member's settings."""
     access_token = token.valid_access_token()
-    levels = esi.character_skills(token.character_id, access_token)
+    repro_ids = list(constants.REPRO_GENERAL_SKILLS) + list(constants.REPRO_ORE_SKILLS)
+    levels = esi.character_skill_levels(token.character_id, access_token, list(constants.RELEVANT_SKILLS) + repro_ids)
     for skill_id, (field, _, _) in constants.RELEVANT_SKILLS.items():
         setattr(settings, field, levels.get(skill_id, 0))
+    # the Reprocessing tab: the same character's reprocessing skills (implant stays as the member set it)
+    settings.repro_skills = {str(sid): int(levels.get(sid, 0)) for sid in repro_ids}
+    settings.repro_source = "esi"
+    settings.repro_character_name = token.character_name
+    settings.repro_fetched_at = timezone.now()
     settings.skills_source = UserSettings.SKILLS_ESI
     settings.skills_character_id = token.character_id
     settings.skills_character_name = token.character_name
