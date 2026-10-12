@@ -16,7 +16,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Also (desktop, 2026-10-12):** Sabbard added to the auth group `FC` (Discord role pushed, True). Research doc 08 written: ESI has corporation project routes (scope `esi-corporations.read_projects.v1`, compatibility-date header required); a weekly/monthly report is buildable, nobody holds the scope yet; owner to decide shape and channel.
 
-**Also (desktop, 2026-10-12 19:10 UTC):** Shipyard 0.9.7 released: new permission `reprocessing_access` = the Reprocessing tab only through the front door; granted to Hamu (he sees nothing else, lands on /shipyard/reprocessing/). Server pinned at `357eec4`, migration 0013, 74 tests.
+**Also (desktop, 2026-10-12 19:10 UTC):** Shipyard 0.9.7 released: new permission `reprocessing_access` = the Reprocessing tab only through the front door; granted to Hamu (he sees nothing else, lands on /shipyard/reprocessing/). Then 0.10.0: members set their own reprocessing skills and implant on the Reprocessing tab (card "Your skills", by hand or from EVE; default stays V + RX-804). Server pinned at `db939b6`, migrations through 0014, 76 tests.
 
 **Owner has to do by hand:** nothing.
 
