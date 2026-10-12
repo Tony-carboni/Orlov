@@ -244,6 +244,44 @@ RELEVANT_SKILLS = {
     SKILL_SCRAPMETAL: ("scrapmetal_processing", "Scrapmetal Processing", "+2 % module reprocessing yield per level (Scrapmetal tab)"),
 }
 
+# --- Reprocessing tab: skills a member can set for themselves (2026-10-12) --------------
+# EVE type ids checked against ESI universe/ids on 2026-10-12. Each gives +3 % (Reprocessing)
+# or +2 % per level to the yield (services/reprocessing.py).
+SKILL_REPROCESSING = 3385
+SKILL_REPROCESSING_EFFICIENCY = 3389
+REPRO_GENERAL_SKILLS = {
+    SKILL_REPROCESSING: ("reprocessing", "Reprocessing", 0.03),
+    SKILL_REPROCESSING_EFFICIENCY: ("efficiency", "Reprocessing Efficiency", 0.02),
+}
+REPRO_ORE_SKILLS = {  # id: (key, name); +2 % per level for the ores of that skill
+    60377: ("simple", "Simple Ore Processing"),
+    60378: ("coherent", "Coherent Ore Processing"),
+    60379: ("variegated", "Variegated Ore Processing"),
+    60380: ("complex", "Complex Ore Processing"),
+    12189: ("mercoxit", "Mercoxit Ore Processing"),
+    60381: ("abyssal", "Abyssal Ore Processing"),
+    18025: ("ice", "Ice Processing"),
+    46152: ("moon_r4", "Ubiquitous Moon Ore Processing"),
+    46153: ("moon_r8", "Common Moon Ore Processing"),
+    46154: ("moon_r16", "Uncommon Moon Ore Processing"),
+    46155: ("moon_r32", "Rare Moon Ore Processing"),
+    46156: ("moon_r64", "Exceptional Moon Ore Processing"),
+}
+REPRO_IMPLANTS = [(0, "none"), (1, "Zainou 'Beancounter' Reprocessing RX-801 (+1 %)"),
+                  (2, "RX-802 (+2 %)"), (4, "RX-804 (+4 %)")]
+# ore family → ore-processing skill (EVE University's grouping; the four X-Grade crystal ores are
+# treated as complex ore until EVE says otherwise)
+REPRO_FAMILY_SKILL = {
+    **{f: 60377 for f in ("Veldspar", "Scordite", "Pyroxeres", "Plagioclase", "Mordunium")},
+    **{f: 60378 for f in ("Omber", "Kernite", "Jaspet", "Hemorphite", "Hedbergite", "Ytirium", "Griemeer", "Nocxite")},
+    **{f: 60379 for f in ("Dark Ochre", "Gneiss", "Crokite", "Kylixium")},
+    **{f: 60380 for f in ("Bistot", "Arkonor", "Spodumain", "Eifyrium", "Ducinium", "Hezorime", "Ueganite",
+                          "Kangite", "Moissanite", "Polycrase", "Raspite")},
+    "Mercoxit": 12189,
+    **{f: 60381 for f in ("Bezdnacine", "Rakovene", "Talassonite")},
+}
+REPRO_MOON_SKILL = {"R4": 46152, "R8": 46153, "R16": 46154, "R32": 46155, "R64": 46156}
+
 # --- Scrapmetal tab: the modules the owner buys to reprocess (2026-10-08) --------------
 # (group label, exact in-game names). Order = the owner's in-game folder order (alphabetical by his folder
 # names: 100mn, 1600, 500mn, 800mm, clutch, EM hard, EXP hard, grapple, hull, kin hard, large guns, mega electron,

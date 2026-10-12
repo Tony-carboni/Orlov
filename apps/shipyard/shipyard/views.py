@@ -354,15 +354,55 @@ def use_character(request, character_id):
 
 @login_required
 @access.reprocessing_allowed
+@require_POST
+def reprocessing_skills(request):
+    """The skills card on the Reprocessing tab: save typed levels, read them from EVE, or go back to V."""
+    settings = board.get_user_settings(request.user)
+    action = request.POST.get("action", "save")
+    if action == "reset":
+        settings.repro_skills, settings.repro_implant, settings.repro_source = {}, 4, "default"
+        settings.repro_character_name, settings.repro_fetched_at = "", None
+        settings.save()
+        messages.info(request, "Reprocessing skills back to the default: everything at V with the RX-804.")
+    elif action == "esi":
+        token = characters.token_for(request.user, settings.skills_character_id) if settings.skills_character_id else None
+        if token is None:
+            messages.warning(request, "No character with skills access on this account yet; pick one on My settings, or type the levels here.")
+        else:
+            try:
+                n = reprocessing.load_skills_from_esi(settings, token)
+                messages.success(request, f"Reprocessing skills read from {token.character_name} ({n} skills found; the implant stays as set here).")
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("reprocessing skills from ESI failed for %s: %s", request.user, exc)
+                messages.error(request, "EVE did not answer; try again in a minute or type the levels.")
+    else:
+        levels = {}
+        for sid in list(constants.REPRO_GENERAL_SKILLS) + list(constants.REPRO_ORE_SKILLS):
+            levels[str(sid)] = _int(request.POST.get(f"skill_{sid}"), 5, 0, 5)
+        settings.repro_skills = levels
+        settings.repro_implant = _int(request.POST.get("implant"), 4, 0, 4)
+        if settings.repro_implant == 3:
+            settings.repro_implant = 2
+        settings.repro_source = "manual"
+        settings.repro_character_name = ""
+        settings.repro_fetched_at = None
+        settings.save()
+        messages.success(request, "Reprocessing skills saved; the table uses them now.")
+    return redirect("shipyard:reprocessing")
+
+
+@login_required
+@access.reprocessing_allowed
 def reprocessing_view(request):
     """Reprocessing tab: compressed ore and ice worth buying at Jita to reprocess."""
     settings = board.get_user_settings(request.user)
-    rows = reprocessing.dashboard_rows(settings.market)
+    rows = reprocessing.dashboard_rows(settings.market, settings)
     context = _context(
         request,
         rows=rows,
         settings=settings,
-        setup=reprocessing.setup_summary(),
+        setup=reprocessing.setup_summary(settings),
+        skills_token=bool(settings.skills_character_id and characters.token_for(request.user, settings.skills_character_id)),
         kinds=[(k, reprocessing.KIND_LABELS[k]) for k in reprocessing.KINDS],
         families=reprocessing.families_by_kind(),
         variants=reprocessing.variants_present(),

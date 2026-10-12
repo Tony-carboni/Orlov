@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 
 from django.utils import timezone
 
-from .. import app_settings
+from .. import app_settings, constants
 from ..models import MaterialType, Ore, OreMarketStats, PriceSnapshot
 from . import everef
 
@@ -45,30 +45,91 @@ STRUCTURE_BONUS = {"tatara": 0.055, "athanor": 0.02, "other": 0.0}
 
 # --- yield ---------------------------------------------------------------------------
 
-def yield_fraction(kind: str) -> float:
-    """Reprocessing yield for this kind of ore under the configured setup (0.809 = 80.9 %)."""
+DEFAULT_LEVEL = 5  # a member who set nothing is taken at V (the owner's setup)
+
+
+def member_skills(settings=None) -> dict:
+    """{skill type id: level} for every reprocessing skill, the member's own where set, else V."""
+    own = {}
+    if settings is not None:
+        own = {int(k): int(v) for k, v in (settings.repro_skills or {}).items()}
+    ids = list(constants.REPRO_GENERAL_SKILLS) + list(constants.REPRO_ORE_SKILLS)
+    return {sid: max(0, min(5, own.get(sid, DEFAULT_LEVEL))) for sid in ids}
+
+
+def member_implant(settings=None) -> float:
+    """Implant bonus as a fraction (0.04 for the RX-804)."""
+    if settings is None:
+        return float(app_settings.SHIPYARD_REPRO_IMPLANT)
+    return int(settings.repro_implant or 0) / 100.0
+
+
+def ore_skill_id(ore) -> int:
+    """The ore-processing skill that applies to this ore."""
+    if ore.kind == "ice":
+        return 18025
+    if ore.kind == "moon":
+        return constants.REPRO_MOON_SKILL.get(ore.rarity, 46152)
+    if ore.kind == "abyssal":
+        return 60381
+    return constants.REPRO_FAMILY_SKILL.get(ore.family, 60380)
+
+
+def yield_fraction(kind: str, settings=None, skill_id: int | None = None) -> float:
+    """Reprocessing yield for this kind of ore (0.809 = 80.9 % with everything at V and the RX-804).
+
+    `settings` brings the member's own levels and implant; `skill_id` picks the ore skill
+    (the kind's usual one when not given).
+    """
     rig = float(app_settings.SHIPYARD_REPRO_RIG.get(kind, app_settings.SHIPYARD_REPRO_RIG.get("ore", 0)))
     structure = STRUCTURE_BONUS.get(str(app_settings.SHIPYARD_REPRO_STRUCTURE).lower(), 0.0)
-    skills = app_settings.SHIPYARD_REPRO_SKILLS
+    levels = member_skills(settings)
+    if skill_id is None:
+        skill_id = {"ice": 18025, "moon": 46152, "abyssal": 60381}.get(kind, 60377)
     y = (50.0 + rig) / 100.0
     y *= 1.0 + float(app_settings.SHIPYARD_REPRO_SECURITY) if rig else 1.0
     y *= 1.0 + structure
-    y *= 1.0 + 0.03 * int(skills.get("reprocessing", 5))
-    y *= 1.0 + 0.02 * int(skills.get("efficiency", 5))
-    y *= 1.0 + 0.02 * int(skills.get("ore", 5))
-    y *= 1.0 + float(app_settings.SHIPYARD_REPRO_IMPLANT)
+    y *= 1.0 + 0.03 * levels[constants.SKILL_REPROCESSING]
+    y *= 1.0 + 0.02 * levels[constants.SKILL_REPROCESSING_EFFICIENCY]
+    y *= 1.0 + 0.02 * levels.get(skill_id, DEFAULT_LEVEL)
+    y *= 1.0 + member_implant(settings)
     return y
 
 
-def setup_summary() -> dict:
+def yield_for(ore, settings=None) -> float:
+    return yield_fraction(ore.kind, settings, ore_skill_id(ore))
+
+
+def setup_summary(settings=None) -> dict:
+    levels = member_skills(settings)
     return {
         "location": app_settings.SHIPYARD_REPRO_LOCATION,
         "structure": app_settings.SHIPYARD_REPRO_STRUCTURE,
         "tax": float(app_settings.SHIPYARD_REPRO_TAX),
-        "implant": float(app_settings.SHIPYARD_REPRO_IMPLANT),
-        "yields": {k: yield_fraction(k) for k in KINDS},
+        "implant": member_implant(settings),
+        "yields": {k: yield_fraction(k, settings) for k in KINDS},
         "price_points": list(app_settings.SHIPYARD_REPRO_PRICE_POINTS),
+        "source": getattr(settings, "repro_source", "default") if settings is not None else "default",
+        "character": getattr(settings, "repro_character_name", "") if settings is not None else "",
+        "general": [(sid, name, levels[sid]) for sid, (_, name, _) in constants.REPRO_GENERAL_SKILLS.items()],
+        "ore_skills": [(sid, name, levels[sid]) for sid, (_, name) in constants.REPRO_ORE_SKILLS.items()],
+        "implant_choices": constants.REPRO_IMPLANTS,
+        "implant_pct": int(settings.repro_implant) if settings is not None else int(round(float(app_settings.SHIPYARD_REPRO_IMPLANT) * 100)),
+        "all_max": all(v == 5 for v in levels.values()) and member_implant(settings) >= 0.04,
     }
+
+
+def load_skills_from_esi(settings, token) -> int:
+    """Read the member's reprocessing skills from the token's character; returns how many were found."""
+    from . import esi
+    ids = list(constants.REPRO_GENERAL_SKILLS) + list(constants.REPRO_ORE_SKILLS)
+    levels = esi.character_skill_levels(token.character_id, token.valid_access_token(), ids)
+    settings.repro_skills = {str(sid): int(levels.get(sid, 0)) for sid in ids}
+    settings.repro_source = "esi"
+    settings.repro_character_name = token.character_name
+    settings.repro_fetched_at = timezone.now()
+    settings.save()
+    return len(levels)
 
 
 # --- catalog import (EVE Ref) ----------------------------------------------------------
@@ -213,7 +274,7 @@ class OreRow:
         return (self.net_value - self.sell_price) / self.ore.volume
 
 
-def dashboard_rows(market) -> list[OreRow]:
+def dashboard_rows(market, settings=None) -> list[OreRow]:
     ores = sorted(Ore.objects.filter(is_active=True),
                   key=lambda o: (o.kind, o.family, VARIANT_ORDER.index(o.variant) if o.variant in VARIANT_ORDER else 99))
     mat_ids = {int(k) for o in ores for k in o.materials}
@@ -226,7 +287,7 @@ def dashboard_rows(market) -> list[OreRow]:
     tax = float(app_settings.SHIPYARD_REPRO_TAX)
     rows = []
     for ore in ores:
-        y = yield_fraction(ore.kind)
+        y = yield_for(ore, settings)
         outputs, gross, missing = [], 0.0, 0
         for k, qty in ore.materials.items():
             tid = int(k)

@@ -17,6 +17,56 @@ class YieldTests(SimpleTestCase):
         self.assertAlmostEqual(s["tax"], 0.02)
 
 
+class MemberSkillTests(TestCase):
+    def test_own_levels_change_the_yield(self):
+        from ..models import UserSettings
+        from django.contrib.auth import get_user_model
+        user = get_user_model().objects.create_user("lowskill", password="x")
+        s = UserSettings.objects.create(user=user)
+        self.assertAlmostEqual(yield_fraction("ore", s), 0.8092, places=4)          # nothing set = V + RX-804
+        s.repro_skills = {"3385": 4, "3389": 3, "60377": 2, "60380": 5}
+        s.repro_implant = 0
+        s.save()
+        # (50+3) % × 1.055 × 1.12 × 1.06 × 1.04 (simple ore at II) × 1.00
+        self.assertAlmostEqual(yield_fraction("ore", s, 60377), 0.53 * 1.055 * 1.12 * 1.06 * 1.04, places=6)
+        veld = Ore(type_id=1, name="Compressed Veldspar", kind="ore", family="Veldspar", variant="base", group_name="Veldspar")
+        gneiss = Ore(type_id=2, name="Compressed Gneiss", kind="ore", family="Gneiss", variant="base", group_name="Gneiss")
+        ice = Ore(type_id=3, name="Compressed Blue Ice", kind="ice", family="Blue Ice", variant="base", group_name="Ice")
+        moon = Ore(type_id=4, name="Compressed Monazite", kind="moon", family="Monazite", variant="base", group_name="Exceptional Moon Asteroids")
+        self.assertEqual((reprocessing.ore_skill_id(veld), reprocessing.ore_skill_id(gneiss), reprocessing.ore_skill_id(ice), reprocessing.ore_skill_id(moon)),
+                         (60377, 60379, 18025, 46156))
+        self.assertLess(reprocessing.yield_for(veld, s), reprocessing.yield_for(gneiss, s))  # Variegated still at V
+        summary = reprocessing.setup_summary(s)
+        self.assertFalse(summary["all_max"])
+        self.assertEqual(summary["implant_pct"], 0)
+        self.assertEqual(dict((sid, lvl) for sid, _, lvl in summary["general"]), {3385: 4, 3389: 3})
+
+    def test_skills_form(self):
+        from django.contrib.auth import get_user_model
+        from django.contrib.auth.models import Permission
+        from django.test import Client, override_settings
+        from django.urls import reverse
+        from allianceauth.tests.auth_utils import AuthUtils
+        from ..models import UserSettings
+        MarketLocation.objects.create(name="Jita", station_id=60003760, is_default=True)
+        user = get_user_model().objects.create_user("hamu2", password="x")
+        AuthUtils.add_main_character_2(user, "Hamu Two", 9102, corp_id=9002, corp_name="Corp", alliance_id=None, alliance_name="")
+        user.user_permissions.add(Permission.objects.get(codename="reprocessing_access", content_type__app_label="shipyard"))
+        client = Client()
+        client.force_login(user)
+        with override_settings(SHIPYARD_STANDALONE_HOST=""):
+            url = reverse("shipyard:reprocessing_skills")
+            r = client.post(url, {"action": "save", "skill_3385": "3", "skill_60377": "1", "implant": "2"})
+            self.assertEqual((r.status_code, r["Location"]), (302, reverse("shipyard:reprocessing")))
+            s = UserSettings.objects.get(user=user)
+            self.assertEqual((s.repro_skills["3385"], s.repro_skills["60377"], s.repro_skills["60380"], s.repro_implant, s.repro_source), (3, 1, 5, 2, "manual"))
+            self.assertEqual(client.get(reverse("shipyard:reprocessing")).status_code, 200)
+            client.post(url, {"action": "reset"})
+            s = UserSettings.objects.get(user=user)
+            self.assertEqual((s.repro_skills, s.repro_implant, s.repro_source), ({}, 4, "default"))
+            self.assertEqual(client.get(url).status_code, 405)
+
+
 class FamilyTests(SimpleTestCase):
     def test_families_and_variants_from_names(self):
         cases = {

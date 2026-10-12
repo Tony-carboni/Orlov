@@ -383,6 +383,14 @@ class UserSettings(models.Model):
     adv_industrial_ship = models.PositiveSmallIntegerField(default=0)
     scrapmetal_processing = models.PositiveSmallIntegerField(default=0)
 
+    # Reprocessing tab (0.10.0): the member's own levels, {skill type id: level}; missing = V.
+    # Implant in percent (0, 1, 2, 4). Source tells where the levels came from.
+    repro_skills = models.JSONField(default=dict, blank=True)
+    repro_implant = models.PositiveSmallIntegerField(default=4)
+    repro_source = models.CharField(max_length=10, default="default", help_text="default | manual | esi")
+    repro_character_name = models.CharField(max_length=100, blank=True)
+    repro_fetched_at = models.DateTimeField(null=True, blank=True)
+
     bpc_markup = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Blueprint markup for this member in % (blank = the corp's default). Managers only; 0 for people who build from their own stash.")
     manual_sales_tax = models.DecimalField(max_digits=5, decimal_places=3, null=True, blank=True, help_text="Override sales tax % (from the in-game market window)")
     manual_broker_fee = models.DecimalField(max_digits=5, decimal_places=3, null=True, blank=True, help_text="Override broker fee %")
