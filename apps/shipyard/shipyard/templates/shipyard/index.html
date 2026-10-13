@@ -145,7 +145,7 @@
             {% elif r.econ.bpc_source == 'manual' and not r.econ.bpc_cost %}
             <td class="text-end small text-muted shipyard-bpc" data-order="0" title="No price known for this copy yet. Right-click to enter what it costs you.">Price not known</td>
             {% else %}
-            <td class="text-end shipyard-bpc" data-order="{{ r.econ.bpc_cost }}" title="{% if r.econ.bpc_source == 'lp' %}LP store offer{% if r.econ.bpc_markup %} plus the corp's {{ r.econ.bpc_markup|pct:0 }} markup{% endif %}{% else %}entered price{% endif %}. Right-click to type your own price instead.">{{ r.econ.bpc_cost|isk }}</td>
+            <td class="text-end shipyard-bpc" data-order="{{ r.econ.blueprint_total }}" title="{% if r.econ.bpc_source == 'lp' %}LP store offer: {{ r.econ.bpc_cost|isk }} in LP{% if r.econ.tag_cost %} + {{ r.econ.tag_cost|isk }} tag at Jita lowest sell{% endif %}{% if r.econ.bpc_markup %}, incl. the corp's {{ r.econ.bpc_markup|pct:0 }} markup{% endif %}{% else %}entered price{% if r.econ.tag_cost %} + {{ r.econ.tag_cost|isk }} tags / extras{% endif %}{% endif %}. Right-click to type your own price instead.">{{ r.econ.blueprint_total|isk }}</td>
             {% endif %}
             {% if r.contract %}
             {% with o=r.contract.offers.0 %}

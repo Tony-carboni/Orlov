@@ -94,6 +94,11 @@ class ShipEconomics:
         return self.sales_tax + self.broker_fee
 
     @property
+    def blueprint_total(self) -> float:
+        """What the copy costs all in: the blueprint price plus the tags the offer needs (cruiser crystal tags)."""
+        return self.bpc_cost + self.tag_cost
+
+    @property
     def total_cost(self) -> float:
         return self.material_cost + self.job_cost + self.bpc_cost + self.tag_cost + self.sales_tax + self.broker_fee
 
