@@ -12,6 +12,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Also (11:30 UTC):** Shipyard 0.12.0, the **Corp projects** tab (runbook 13 C, research 08): OARMI projects snapshotted hourly, payouts per period, contributors; migration 0017, beat entry, 81 tests, 12 containers up. **Owner:** on https://shipyards.orlovfamily.space/shipyard/projects/ press *Connect the projects* and log in to EVE with Catherine Frey, accept the scope; then *Read the projects now*. 0.12.1 fixed the DataTables column-count warning on the empty projects page.
 
+**Naming (owner, 2026-10-14):** the site at alliance.orlovfamily.space is called **the alliance website** from now on. The first post, "State of the Union, October 2026" (full version, written with the owner), is built and copied to the server; the owner writes the in-game mail summary himself and links to https://alliance.orlovfamily.space/2026-10-14-state-of-the-union-october-2026.html.
+
 **Owner does by hand:** runbook 15 A (Porkbun A record `alliance` to 167.99.207.145) and C (Nginx Proxy Manager proxy host `alliance.orlovfamily.space` to http://alliance_site:80 with a Let's Encrypt certificate). Then write the real post in `site/alliance/posts/` and say "publish the alliance news" to a local session (15 D).
 
 **Also since the last entry:** Republic Fleet LP value 725 ISK/LP (2026-10-13); Shipyard 0.10.3 (Blueprint column includes the cruiser tag); guide `docs/guides/corp-roles.md`.

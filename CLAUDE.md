@@ -10,7 +10,7 @@ Documentation and deployment config for **The Orlov Family** (EVE Online allianc
 - `docs/handoff.md` — shared notebook between the cloud and local session (see "Session handoff")
 - `apps/shipyard/` — the **Shipyard** Alliance Auth plugin (Python/Django, pip-installable from the repo archive); its README documents it
 - `deploy/` — what differs from the upstream `aa-docker` stack on the server (sanitized; no secrets)
-- `site/alliance/` — the alliance news site (Markdown posts in `posts/`, `build.py` renders `dist/`, served by the `alliance_site` nginx container; runbook 15)
+- `site/alliance/` — **the alliance website** (owner's name for alliance.orlovfamily.space; Markdown posts in `posts/`, `build.py` renders `dist/`, served by the `alliance_site` nginx container; runbook 15)
 
 The owner is new to servers/Docker/Linux: write runbooks as copy-paste blocks, say which machine each command runs on (PC `PS C:\` vs server `tony@ubuntu…:~$`), and give an "✅ done when" check per section.
 
