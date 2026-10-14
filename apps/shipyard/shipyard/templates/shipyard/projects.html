@@ -1,0 +1,149 @@
+{% extends "shipyard/base.html" %}
+{% load static shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · Corp projects{% endblock %}
+
+{% block shipyard_content %}
+<div class="row g-3 mb-3 align-items-stretch">
+    <div class="col-lg-5 col-xl-4">
+        <div class="card shipyard-facility h-100">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-diagram-project fa-2x text-info"></i>
+                    <div>
+                        <div class="fw-semibold">Corporation projects</div>
+                        <div class="small shipyard-k">corporation {{ corp_id }} · {% if token %}read with {{ token.character_name }}{% else %}no projects token yet{% endif %}</div>
+                    </div>
+                </div>
+                {% if token %}
+                <div class="small mt-2 d-flex align-items-center flex-wrap gap-2">
+                    <form method="post" action="{% url 'shipyard:projects_refresh' %}" class="d-inline">{% csrf_token %}<button class="btn btn-outline-light btn-sm py-0"><i class="fas fa-rotate fa-fw"></i> Read the projects now</button></form>
+                    <span class="shipyard-k">{% if last_run %}last read {{ last_run.started_at|date:"Y-m-d H:i" }} EVE{% if not last_run.ok %}, <span class="text-danger">failed: {{ last_run.message|truncatechars:80 }}</span>{% endif %}{% else %}never read yet{% endif %} · hourly</span>
+                </div>
+                {% else %}
+                <div class="small mt-2">
+                    <a class="btn btn-primary btn-sm" href="{% url 'shipyard:projects_connect' %}"><i class="fas fa-key fa-fw"></i> Connect the projects</a>
+                    <div class="shipyard-k mt-1">EVE's login once with a character of the corporation (Catherine Frey). Scope: corporation projects (read).</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7 col-xl-8">
+        <div class="shipyard-infobar h-100">
+            <div class="d-flex flex-wrap gap-4">
+                <div><span class="shipyard-k">Active projects</span><br><strong class="fs-5">{{ active|length }}</strong></div>
+                <div><span class="shipyard-k">Pool still to pay</span><br><strong class="fs-5">{{ pool_remaining|isk }}</strong></div>
+                <div><span class="shipyard-k">Paid out, {% if days %}last {{ days }} days{% else %}all{% endif %}</span><br><strong class="fs-5">{{ paid_range|isk }}</strong></div>
+                <div><span class="shipyard-k">Paid out, all projects ever seen</span><br><strong class="fs-5">{{ paid_all|isk }}</strong></div>
+            </div>
+            <div class="shipyard-k">EVE reports totals, not a history: the per-period figures come from hourly snapshots and start at the first read. "Paid out" is the reward pool going down; units are the project's own (items delivered, ore mined, ships destroyed…).</div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-center">
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Period">
+            {% for p in periods %}<a class="btn btn-outline-secondary {% if p == period %}active{% endif %}" href="?period={{ p }}&days={{ days }}">{{ p|capfirst }}</a>{% endfor %}
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Range">
+            <a class="btn btn-outline-secondary {% if days == 30 %}active{% endif %}" href="?period={{ period }}&days=30">30 days</a>
+            <a class="btn btn-outline-secondary {% if days == 90 %}active{% endif %}" href="?period={{ period }}&days=90">90 days</a>
+            <a class="btn btn-outline-secondary {% if days == 365 %}active{% endif %}" href="?period={{ period }}&days=365">1 year</a>
+            <a class="btn btn-outline-secondary {% if not days %}active{% endif %}" href="?period={{ period }}&days=0">All</a>
+        </div>
+    </div>
+</form>
+
+<h5>Projects</h5>
+<div class="table-responsive mb-4">
+<table id="projects-table" class="table table-sm table-hover table-striped align-middle w-100">
+    <thead><tr>
+        <th>Project</th><th>State</th><th>Kind</th>
+        <th class="text-end" title="Units done of the goal">Progress</th><th class="text-end">%</th>
+        <th class="text-end" title="Reward pool at the start">Pool</th><th class="text-end">Remaining</th><th class="text-end" title="Pool minus remaining">Paid out</th>
+        <th class="text-end" title="ISK per unit contributed">Per unit</th>
+        <th>Created</th><th>Expires</th><th>Finished</th><th>By</th>
+    </tr></thead>
+    <tbody>
+    {% for p in projects %}
+        <tr class="{% if p.missing %}text-muted{% endif %}">
+            <td class="text-nowrap" title="{{ p.description }}">{{ p.name }}{% if p.missing %} <span class="badge text-bg-secondary">gone</span>{% endif %}</td>
+            <td><span class="badge {% if p.state == 'Active' %}text-bg-success{% elif p.state == 'Completed' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">{{ p.state|default:"?" }}</span></td>
+            <td class="text-nowrap">{{ p.kind }}</td>
+            <td class="text-end text-nowrap" data-order="{{ p.progress_current }}">{{ p.progress_current|num:0 }} / {{ p.progress_desired|num:0 }}</td>
+            <td class="text-end" data-order="{{ p.progress_pct }}">{{ p.progress_pct|floatformat:0 }} %</td>
+            <td class="text-end" data-order="{{ p.reward_initial }}">{{ p.reward_initial|isk }}</td>
+            <td class="text-end" data-order="{{ p.reward_remaining }}">{{ p.reward_remaining|isk }}</td>
+            <td class="text-end fw-semibold" data-order="{{ p.paid_out }}">{{ p.paid_out|isk }}</td>
+            <td class="text-end" data-order="{{ p.reward_per_contribution }}">{{ p.reward_per_contribution|isk:2 }}</td>
+            <td class="text-nowrap" data-order="{{ p.created|date:'U' }}">{{ p.created|date:"Y-m-d" }}</td>
+            <td class="text-nowrap" data-order="{{ p.expires|date:'U' }}">{{ p.expires|date:"Y-m-d" }}</td>
+            <td class="text-nowrap" data-order="{{ p.finished|date:'U' }}">{{ p.finished|date:"Y-m-d" }}</td>
+            <td class="text-nowrap">{{ p.creator_name }}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="13" class="shipyard-k">No projects yet{% if not token %}: connect the projects first{% endif %}.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<h5>Paid out per {{ period }}, by project</h5>
+<div class="table-responsive mb-4">
+<table class="table table-sm table-striped align-middle w-auto">
+    <thead><tr><th>Project</th>{% for c in pivot.columns %}<th class="text-end text-nowrap">{{ c }}</th>{% endfor %}<th class="text-end">Total</th></tr></thead>
+    <tbody>
+    {% for name, cells, units, total in pivot.rows %}
+        <tr><td class="text-nowrap">{{ name }}</td>{% for c in pivot.columns %}<td class="text-end" title="{{ units|get_item:c|default:0 }} units">{{ cells|get_item:c|isk }}</td>{% endfor %}<td class="text-end fw-semibold">{{ total|isk }}</td></tr>
+    {% empty %}
+        <tr><td colspan="{{ pivot.columns|length|add:2 }}" class="shipyard-k">Nothing paid out in the range yet (or no snapshot has seen a change yet).</td></tr>
+    {% endfor %}
+    </tbody>
+    {% if pivot.rows %}<tfoot><tr><th>Total</th>{% for c in pivot.columns %}<th class="text-end">{{ pivot.totals|get_item:c|isk }}</th>{% endfor %}<th class="text-end">{{ paid_range|isk }}</th></tr></tfoot>{% endif %}
+</table>
+</div>
+
+<h5>Who contributed <span class="small shipyard-k">(growth of each member's contribution between reads; ISK = units × reward per unit)</span></h5>
+<div class="table-responsive">
+<table id="contributors-table" class="table table-sm table-hover table-striped align-middle w-100">
+    <thead><tr><th>Character</th><th class="text-end">Units</th><th class="text-end">ISK earned</th><th>Last</th><th>By project</th>{% for c in pivot.columns|slice:":8" %}<th class="text-end text-nowrap">{{ c }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for r in contributors %}
+        <tr>
+            <td class="text-nowrap"><img src="https://images.evetech.net/characters/{{ r.id }}/portrait?size=32" width="22" height="22" class="rounded me-1" alt="">{{ r.name }}</td>
+            <td class="text-end" data-order="{{ r.units }}">{{ r.units|num:0 }}</td>
+            <td class="text-end fw-semibold" data-order="{{ r.isk }}">{{ r.isk|isk }}</td>
+            <td class="text-nowrap" data-order="{{ r.last|date:'U' }}">{{ r.last|date:"Y-m-d" }}</td>
+            <td class="small">{% for name, units in r.projects %}<span class="text-nowrap me-2">{{ name }} <span class="shipyard-k">{{ units|num:0 }}</span></span>{% endfor %}</td>
+            {% for c in pivot.columns|slice:":8" %}<td class="text-end" data-order="{{ r.periods|get_item:c|default:0 }}">{{ r.periods|get_item:c|isk }}</td>{% endfor %}
+        </tr>
+    {% empty %}
+        <tr><td colspan="{{ pivot.columns|slice:":8"|length|add:5 }}" class="shipyard-k">No contribution changes seen in the range yet.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}
+
+{% block shipyard_js %}
+<script src="{% static 'shipyard/columns.js' %}"></script>
+<script>
+(function ($) {
+    "use strict";
+    $(function () {
+        if (document.getElementById("projects-table")) {
+            var t = $("#projects-table").DataTable({ order: [[1, "asc"], [9, "desc"]], paging: false, info: false, dom: "rt", stateSave: true,
+                columnDefs: [{ targets: [3, 4, 5, 6, 7, 8], type: "num" }] });
+            window.shipyardColumnResizer(t, document.getElementById("projects-table"), { storageKey: "shipyard.projects.widths" });
+        }
+        if (document.getElementById("contributors-table")) {
+            $("#contributors-table").DataTable({ order: [[2, "desc"]], paging: false, info: false, dom: "rt", stateSave: true });
+        }
+    });
+})(jQuery);
+</script>
+{% endblock %}

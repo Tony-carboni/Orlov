@@ -337,6 +337,66 @@ class WalletJournalEntry(models.Model):
         return f"{self.date:%Y-%m-%d} {self.ref_type} {self.amount:,.0f}"
 
 
+class CorpProject(models.Model):
+    """A corporation project as last seen (services/projects.py); history in the snapshots."""
+
+    project_id = models.CharField(max_length=40, primary_key=True)
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    name = models.CharField(max_length=200)
+    state = models.CharField(max_length=20, blank=True)
+    kind = models.CharField(max_length=40, blank=True, help_text="deliver_item, mine_material, manufacture_item, destroy_ship, manual, …")
+    career = models.CharField(max_length=30, blank=True)
+    description = models.CharField(max_length=1000, blank=True)
+    creator_id = models.BigIntegerField(default=0)
+    creator_name = models.CharField(max_length=100, blank=True)
+    created = models.DateTimeField(null=True, blank=True)
+    expires = models.DateTimeField(null=True, blank=True)
+    finished = models.DateTimeField(null=True, blank=True)
+    progress_current = models.BigIntegerField(default=0)
+    progress_desired = models.BigIntegerField(default=0)
+    reward_initial = models.FloatField(default=0)
+    reward_remaining = models.FloatField(default=0)
+    reward_per_contribution = models.FloatField(default=0)
+    details = models.JSONField(default=dict, blank=True)
+    last_modified = models.DateTimeField(null=True, blank=True)
+    last_seen = models.DateTimeField(default=timezone.now)
+    missing = models.BooleanField(default=False, help_text="No longer returned by ESI")
+
+    class Meta:
+        ordering = ["-created"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def paid_out(self) -> float:
+        return max(0.0, self.reward_initial - self.reward_remaining)
+
+    @property
+    def progress_pct(self) -> float:
+        return 100.0 * self.progress_current / self.progress_desired if self.progress_desired else 0.0
+
+
+class ProjectSnapshot(models.Model):
+    """Progress and pool of a project at a moment something had changed."""
+
+    project = models.ForeignKey(CorpProject, on_delete=models.CASCADE, related_name="snapshots")
+    taken_at = models.DateTimeField(db_index=True)
+    state = models.CharField(max_length=20, blank=True)
+    progress_current = models.BigIntegerField(default=0)
+    reward_remaining = models.FloatField(default=0)
+
+
+class ProjectContribution(models.Model):
+    """A contributor's total on a project at a moment it had changed."""
+
+    project = models.ForeignKey(CorpProject, on_delete=models.CASCADE, related_name="contributions")
+    taken_at = models.DateTimeField(db_index=True)
+    character_id = models.BigIntegerField(db_index=True)
+    character_name = models.CharField(max_length=100, blank=True)
+    contributed = models.BigIntegerField(default=0)
+
+
 class MaterialType(models.Model):
     """Name cache for material type IDs."""
 

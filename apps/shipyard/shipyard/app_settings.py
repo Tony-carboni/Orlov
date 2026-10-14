@@ -91,6 +91,10 @@ SHIPYARD_INCOME_REF_TYPES = getattr(settings, "SHIPYARD_INCOME_REF_TYPES", [
     "jump_clone_installation_fee", "structure_gate_jump", "docking_fee", "planetary_import_tax", "planetary_export_tax",
 ])
 
+# --- Corp projects tab (owner, 2026-10-14): the executor corp's projects, snapshotted hourly ------
+SHIPYARD_PROJECTS_CORP_ID = getattr(settings, "SHIPYARD_PROJECTS_CORP_ID", 98843356)  # Orlov Arms International (OARMI)
+SHIPYARD_PROJECTS_SCOPES = getattr(settings, "SHIPYARD_PROJECTS_SCOPES", ["esi-corporations.read_projects.v1"])
+
 # Where each ore family is mined (not in EVE's data): overrides for the table in services/reprocessing.py,
 # {"Family": "highsec" | "lowsec" | "nullsec" | "anomaly"}.
 SHIPYARD_ORE_AREAS = getattr(settings, "SHIPYARD_ORE_AREAS", {})

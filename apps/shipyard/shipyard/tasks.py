@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun,
     ScrapItem, Ship, ShipConfig, ShipMarketStats,
 )
-from .services import contracts, esi, everef, fuzzwork, industry, nearbuy, reprocessing, scrapmetal, wallet
+from .services import contracts, esi, everef, fuzzwork, industry, nearbuy, projects, reprocessing, scrapmetal, wallet
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -213,6 +213,20 @@ def refresh_scrap_catalog():
     if result["errors"]:
         note += "; errors: " + "; ".join(result["errors"][:10])
     _done(run, not result["errors"] and not result["unresolved"], result["items"], note)
+
+
+@shared_task
+def refresh_corp_projects():
+    """The executor corp's projects into our snapshots (beat entry shipyard_refresh_corp_projects, hourly)."""
+    run = _run("projects")
+    try:
+        result = projects.refresh()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("corp projects refresh failed: %s", exc)
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, True, result["projects"],
+          f"{result['projects']} projects, {result['snapshots']} new snapshots, {result['contributions']} contribution rows, {result['missing']} gone")
 
 
 @shared_task

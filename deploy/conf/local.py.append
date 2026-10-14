@@ -184,3 +184,9 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_scrap_catalog"] = {
     "task": "shipyard.tasks.refresh_scrap_catalog",
     "schedule": crontab(minute="30", hour="4", day_of_week="sunday"),
 }
+
+# Shipyard: the executor corp's projects into the Corp projects snapshots (hourly)
+CELERYBEAT_SCHEDULE["shipyard_refresh_corp_projects"] = {
+    "task": "shipyard.tasks.refresh_corp_projects",
+    "schedule": crontab(minute="25"),
+}

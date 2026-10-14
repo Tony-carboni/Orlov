@@ -49,6 +49,9 @@
         <a class="nav-link {% if request.resolver_match.url_name == 'wallet' %}active{% endif %}" href="{% url 'shipyard:wallet' %}">
             <i class="fas fa-coins fa-fw"></i> Structure income
         </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'projects' %}active{% endif %}" href="{% url 'shipyard:projects' %}">
+            <i class="fas fa-diagram-project fa-fw"></i> Corp projects
+        </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'blueprints' %}active{% endif %}" href="{% url 'shipyard:blueprints' %}">
             <i class="fas fa-scroll fa-fw"></i> Blueprints &amp; LP
         </a>

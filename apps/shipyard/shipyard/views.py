@@ -16,10 +16,10 @@ from esi.views import sso_redirect
 
 from . import access, app_settings, constants
 from .models import (
-    Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, RefreshRun, Ship, ShipConfig,
-    WalletDivision, WalletJournalEntry,
+    CorpProject, Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, RefreshRun, Ship,
+    ShipConfig, WalletDivision, WalletJournalEntry,
 )
-from .services import board, characters, industry, reprocessing, scrapmetal, wallet
+from .services import board, characters, industry, projects, reprocessing, scrapmetal, wallet
 from .services.pricing import tax_rates
 
 logger = logging.getLogger(__name__)
@@ -459,6 +459,68 @@ def go(request):
 
 
 WALLET_SSO_KEY = "shipyard_wallet_sso"  # session: we sent the member to EVE's login for the wallet scopes
+PROJECTS_SSO_KEY = "shipyard_projects_sso"
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+def projects_view(request):
+    """Corp projects: what runs, what was paid out per period, who contributed."""
+    period = request.GET.get("period", "week")
+    if period not in projects.PERIODS:
+        period = "week"
+    days = _int(request.GET.get("days"), 90, 0, 3650)
+    since = timezone.now() - dt.timedelta(days=days) if days else None
+    rows = list(CorpProject.objects.filter(corporation_id=projects.corp_id()).order_by("missing", "-created"))
+    deltas = projects.payout_deltas(since)
+    cdeltas = projects.contributor_deltas(since)
+    active = [p for p in rows if p.state == "Active" and not p.missing]
+    context = _context(
+        request,
+        settings=board.get_user_settings(request.user),
+        period=period,
+        periods=projects.PERIODS,
+        days=days,
+        token=projects.token(),
+        corp_id=projects.corp_id(),
+        projects=rows,
+        active=active,
+        pool_remaining=sum(p.reward_remaining for p in active),
+        paid_all=sum(p.paid_out for p in rows),
+        paid_range=sum(d["paid"] for d in deltas),
+        pivot=projects.pivot(deltas, period),
+        contributors=projects.contributors(cdeltas, period),
+        last_run=RefreshRun.objects.filter(step="projects").order_by("-started_at").first(),
+        can_manage=True,
+    )
+    return render(request, "shipyard/projects.html", context)
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+def projects_connect(request):
+    if projects.token() is not None:
+        messages.info(request, "A projects token exists already; the hourly refresh uses it.")
+        return redirect("shipyard:projects")
+    if request.session.pop(PROJECTS_SSO_KEY, None):
+        messages.error(request, "EVE's login did not give the projects scope for a character of the corporation. Log in with a character of Orlov Arms International and accept the scope.")
+        return redirect("shipyard:projects")
+    request.session[PROJECTS_SSO_KEY] = True
+    return sso_redirect(request, scopes=projects.scopes())
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+@require_POST
+def projects_refresh(request):
+    try:
+        result = projects.refresh()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("projects refresh by %s failed: %s", request.user, exc)
+        messages.error(request, f"The projects could not be read: {exc}")
+        return redirect("shipyard:projects")
+    messages.success(request, f"Projects read: {result['projects']} projects, {result['snapshots']} new snapshots, {result['contributions']} contribution rows.")
+    return redirect("shipyard:projects")
 
 
 @login_required
