@@ -79,6 +79,18 @@ SHIPYARD_SCRAP_PRICE_POINTS = getattr(settings, "SHIPYARD_SCRAP_PRICE_POINTS", [
 SHIPYARD_NEAR_BUY_SYSTEMS = getattr(settings, "SHIPYARD_NEAR_BUY_SYSTEMS", {30000142: 0, 30000144: 1})  # Jita, Perimeter
 SHIPYARD_NEAR_BUY_STATION = getattr(settings, "SHIPYARD_NEAR_BUY_STATION", 60003760)  # Jita 4-4
 
+# --- Structure income tab (owner, 2026-10-14): the structure corp's wallet journal ---------
+SHIPYARD_STRUCTURE_CORP_ID = getattr(settings, "SHIPYARD_STRUCTURE_CORP_ID", 98635713)  # Gewoon voor structures (GWON)
+SHIPYARD_WALLET_SCOPES = getattr(settings, "SHIPYARD_WALLET_SCOPES", [
+    "esi-wallet.read_corporation_wallets.v1",
+    "esi-corporations.read_divisions.v1",
+])
+# Journal ref types that count as structure income (positive amounts); empty list = every positive entry.
+SHIPYARD_INCOME_REF_TYPES = getattr(settings, "SHIPYARD_INCOME_REF_TYPES", [
+    "industry_job_tax", "reprocessing_tax", "brokers_fee", "office_rental_fee",
+    "jump_clone_installation_fee", "structure_gate_jump", "docking_fee", "planetary_import_tax", "planetary_export_tax",
+])
+
 # Where each ore family is mined (not in EVE's data): overrides for the table in services/reprocessing.py,
 # {"Family": "highsec" | "lowsec" | "nullsec" | "anomaly"}.
 SHIPYARD_ORE_AREAS = getattr(settings, "SHIPYARD_ORE_AREAS", {})

@@ -294,6 +294,49 @@ class OreMarketStats(models.Model):
     fetched_at = models.DateTimeField(default=timezone.now)
 
 
+class WalletDivision(models.Model):
+    """A wallet division of the structure corp: name and last balance (services/wallet.py)."""
+
+    corporation_id = models.PositiveIntegerField()
+    division = models.PositiveSmallIntegerField()
+    name = models.CharField(max_length=100, blank=True)
+    balance = models.FloatField(default=0)
+    fetched_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = [("corporation_id", "division")]
+
+
+class WalletJournalEntry(models.Model):
+    """Our own copy of the structure corp's wallet journal (ESI only serves the recent part)."""
+
+    entry_id = models.BigIntegerField(primary_key=True)
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    division = models.PositiveSmallIntegerField()
+    date = models.DateTimeField(db_index=True)
+    ref_type = models.CharField(max_length=60, db_index=True)
+    amount = models.FloatField(default=0)
+    balance = models.FloatField(default=0)
+    first_party_id = models.BigIntegerField(default=0, db_index=True)
+    first_party_name = models.CharField(max_length=100, blank=True)
+    first_party_corp_id = models.BigIntegerField(default=0)
+    first_party_corp_name = models.CharField(max_length=100, blank=True)
+    second_party_id = models.BigIntegerField(default=0)
+    second_party_name = models.CharField(max_length=100, blank=True)
+    context_id = models.BigIntegerField(default=0)
+    context_id_type = models.CharField(max_length=40, blank=True)
+    description = models.CharField(max_length=500, blank=True)
+    reason = models.CharField(max_length=500, blank=True)
+    tax = models.FloatField(default=0)
+    tax_receiver_id = models.BigIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"{self.date:%Y-%m-%d} {self.ref_type} {self.amount:,.0f}"
+
+
 class MaterialType(models.Model):
     """Name cache for material type IDs."""
 

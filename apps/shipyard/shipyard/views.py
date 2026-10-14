@@ -1,3 +1,4 @@
+import datetime as dt
 import logging
 from decimal import Decimal, InvalidOperation
 
@@ -15,9 +16,10 @@ from esi.views import sso_redirect
 
 from . import access, app_settings, constants
 from .models import (
-    Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, Ship, ShipConfig,
+    Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, RefreshRun, Ship, ShipConfig,
+    WalletDivision, WalletJournalEntry,
 )
-from .services import board, characters, industry, reprocessing, scrapmetal
+from .services import board, characters, industry, reprocessing, scrapmetal, wallet
 from .services.pricing import tax_rates
 
 logger = logging.getLogger(__name__)
@@ -454,6 +456,75 @@ def go(request):
     if host:
         return redirect(f"https://{host}{path}")
     return redirect(path)
+
+
+WALLET_SSO_KEY = "shipyard_wallet_sso"  # session: we sent the member to EVE's login for the wallet scopes
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+def wallet_view(request):
+    """Structure income: the structure corp's wallet, as a ledger and as business intelligence."""
+    period = request.GET.get("period", "week")
+    if period not in wallet.PERIODS:
+        period = "week"
+    days = _int(request.GET.get("days"), 0, 0, 3650)
+    since = timezone.now() - dt.timedelta(days=days) if days else None
+    entries = list(wallet.income_entries(since))
+    all_entries = WalletJournalEntry.objects.filter(corporation_id=wallet.corp_id()).order_by("-date")[:2000]
+    last_run = RefreshRun.objects.filter(step="wallet").order_by("-started_at").first()
+    context = _context(
+        request,
+        period=period,
+        periods=wallet.PERIODS,
+        days=days,
+        token=wallet.token(),
+        corp_id=wallet.corp_id(),
+        divisions=WalletDivision.objects.filter(corporation_id=wallet.corp_id()).order_by("division"),
+        totals=wallet.totals(entries),
+        pivot=wallet.pivot(entries, period),
+        payers=wallet.payers(entries, period),
+        entries=all_entries,
+        ref_types=sorted({e.ref_type for e in all_entries}),
+        income_types=list(app_settings.SHIPYARD_INCOME_REF_TYPES),
+        last_run=last_run,
+        can_manage=True,
+    )
+    return render(request, "shipyard/wallet.html", context)
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+def wallet_connect(request):
+    """Grant the wallet scopes once with a character of the structure corp (EVE's login)."""
+    if wallet.token() is not None:
+        messages.info(request, "A wallet token exists already; the hourly refresh uses it.")
+        return redirect("shipyard:wallet")
+    if request.session.pop(WALLET_SSO_KEY, None):
+        # back from EVE's login without a usable token: wrong character or scopes declined
+        messages.error(
+            request,
+            "EVE's login did not give the wallet scopes for a character of the structure corp. "
+            "Log in with the structure corp's CEO or an accountant and accept both scopes.",
+        )
+        return redirect("shipyard:wallet")
+    request.session[WALLET_SSO_KEY] = True
+    return sso_redirect(request, scopes=wallet.scopes())
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+@require_POST
+def wallet_refresh(request):
+    from . import tasks
+    try:
+        result = wallet.refresh()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("wallet refresh by %s failed: %s", request.user, exc)
+        messages.error(request, f"The wallet could not be read: {exc}")
+        return redirect("shipyard:wallet")
+    messages.success(request, f"Wallet read: {result['added']} new entries, {result['total']} in the ledger.")
+    return redirect("shipyard:wallet")
 
 
 @login_required

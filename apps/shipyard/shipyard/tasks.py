@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun,
     ScrapItem, Ship, ShipConfig, ShipMarketStats,
 )
-from .services import contracts, esi, everef, fuzzwork, industry, nearbuy, reprocessing, scrapmetal
+from .services import contracts, esi, everef, fuzzwork, industry, nearbuy, reprocessing, scrapmetal, wallet
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -213,6 +213,19 @@ def refresh_scrap_catalog():
     if result["errors"]:
         note += "; errors: " + "; ".join(result["errors"][:10])
     _done(run, not result["errors"] and not result["unresolved"], result["items"], note)
+
+
+@shared_task
+def refresh_corp_wallet():
+    """The structure corp's wallet journal into our ledger (beat entry shipyard_refresh_corp_wallet, hourly)."""
+    run = _run("wallet")
+    try:
+        result = wallet.refresh()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("corp wallet refresh failed: %s", exc)
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, True, result["added"], f"{result['added']} new entries, {result['total']} in the ledger, {result['divisions']} divisions")
 
 
 @shared_task

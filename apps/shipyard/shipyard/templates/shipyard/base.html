@@ -46,6 +46,9 @@
         </a>
         {% endif %}
         {% if perms.shipyard.manage_shipyard and full_access %}
+        <a class="nav-link {% if request.resolver_match.url_name == 'wallet' %}active{% endif %}" href="{% url 'shipyard:wallet' %}">
+            <i class="fas fa-coins fa-fw"></i> Structure income
+        </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'blueprints' %}active{% endif %}" href="{% url 'shipyard:blueprints' %}">
             <i class="fas fa-scroll fa-fw"></i> Blueprints &amp; LP
         </a>
