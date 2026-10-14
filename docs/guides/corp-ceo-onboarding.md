@@ -11,12 +11,12 @@
 ## Corp CEO
 
 1. Do the **member guide** steps 1–4 yourself (log in, add characters, Discord, Member Audit).
-2. **Corp Stats token** — once per corp, any member can do it but the CEO should: https://auth.orlovfamily.space/corpstats/add/ → Authorize with a character *in your corp*. This gives leadership the registered/unregistered member list.
+2. **Corp roster token** — once per corp, by the CEO or a director: follow `docs/runbooks/15-corp-roster-token.md` (https://auth.orlovfamily.space/corpstats/add/ → Authorize with a character *in your corp*). This gives leadership the registered/unregistered member list. It needs the `Corp Director` group, so the executor's step below comes first.
 3. Tell the executor you're done.
 
 ## Executor, after the CEO reports back
 
-1. Admin → Group Management → Groups → **Corp Director** → add the CEO under *Chosen Users* → Save. (Their `Corp Director` Discord role appears within a minute.)
+1. Admin → Group Management → Groups → **Corp Director** → add the CEO under *Chosen Users* → Save. (Their `Corp Director` Discord role appears within a minute; the group carries the Corp Stats permissions since 2026-10-14, so the CEO can add the roster token right away.)
 2. Check **Corporation Stats** → *Corporations ▾* lists the new corp.
 3. Check Discord: the CEO has `Family Member`, `corp_<TICKER>`, `Corp Director`.
 4. Ask the CEO to post the member guide in their corp channels and give members a week; then review Corp Stats → *unregistered* and nudge.

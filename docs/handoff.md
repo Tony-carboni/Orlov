@@ -4,6 +4,26 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-14 (07:30 UTC) — desktop session → any session
+
+**Runbook / topic:** alliance roster coverage and **runbook 15** (corp roster token for CEOs and directors), on the owner's request.
+
+**Findings.** EVE: 43 characters in 3 corps (OARMI 30 → 31 during the day, GB44 11, 1E3 2). Auth: 38 registered on 22 accounts, all Family Member. Missing by name (read through Catherine Frey's and Masterxxx's membership-scope tokens): OARMI Goedweer2, Goedweer3, Goedweer4, Goedweer5 (alts of Goedweer1, surely) and Miguel Stevens; GB44 complete; 1E3 one of two, unnamed because Eemar's token has only the basic scope. Hamu (asked about on 2026-10-11) is user `Hamu`, character Hamu 978861931, CAS at the time, OARMI since; Family Friend then, Family Member now; Discord roles were already right.
+
+**Done**
+- Permissions: `Corp Director` += corputils *add_corpstats*, *view_corp_corpstats*; `Alliance Director` += those and *view_alliance_corpstats*. Nobody but the superuser had them, so the old CEO guide's "any member can add the Corp Stats token" was wrong in practice.
+- `docs/runbooks/15-corp-roster-token.md`: for CEOs/directors, browser only (add page `/corpstats/add/`, one scope, where the lists show, Update button, troubleshooting) and the executor's section (Corp Director group). CEO onboarding guide points to it; CLAUDE.md lists it; membership design change log updated.
+- Corp Stats exists for OARMI only (token Catherine Frey, refreshed hourly at :00).
+
+**Owner has to do by hand**
+- Send Eemar (and Masterxxx for GB44 if you want their roster in auth too) runbook 15; Eemar is in `Corp Director` already.
+- Nudge Goedweer1 to add Goedweer2–5 to their account, and Miguel Stevens to auth.
+
+### Next — any session
+Nothing queued. Shipyard 0.9.6 (commit `5c804b6`), kill feed with live R2Z2 feed, structure board without fuel pings (2026-10-11).
+
+---
+
 ## 2026-10-11 (06:05 UTC) — desktop session → any session
 
 **Runbook / topic:** runbooks 09 and 10: the moon board showed no extraction and the structure board showed Orlov Mining Facility II as ABANDONED while, in game, it was online, fuelled and extracting. Plus the owner's rule: **no more fuel pings**.
@@ -80,24 +100,5 @@ Nothing queued. Shipyard is at 0.9.6 on the server (commit `5c804b6` pinned, rel
 
 ### Next — any session
 Nothing queued. The Shipyard is at 0.9.5 on the server (commit `e4e3477` pinned). Open for the owner from earlier entries: the ore-area table and the Scrapmetal group names.
-
----
-
-
-## 2026-10-09 (13:30 UTC) — desktop session → laptop session (owner continues there)
-
-**State of play.** Shipyard is at **0.9.3** on the server (commit `0d5d678` pinned, 72 tests, 11 containers up, migrations applied through 0012, backups `aa-db-2026-10-09-1159` and `-1207`). Access is still the owner only (`shipyard.basic_access` on user `tony`). Everything below is in runbook 13 C; this entry is the map.
-
-**Done today (desktop), newest first**
-- 0.9.3 base hulls and fuel blocks priced at the corp's researched **ME 10 / TE 20** (`constants.RESEARCHED_ME_TE`, `Ship.default_me_te`; `refresh_builds` stores snapshots at the ship's default ME; 475 ME 10 snapshots computed by hand; ME 0 rows for base hulls remain in the table unused).
-- 0.9.2 **All / None** on the ore-type lines and the scrap-group panel; **saved filter presets** (Presets dropdown) on Dashboard, Reprocessing and Scrapmetal (`shipyardSelectAll`, `shipyardFilterPresets` in `columns.js`, per browser).
-- 0.9.1 **nearby buy orders**: `services/nearbuy.py` reads ESI regional buy orders per ore and scrap item inside the hourly `refresh_prices`, stores the highest order that reaches Jita 4-4 in `PriceSnapshot.buy_max_near` (station, anywhere in Jita above "station" range, Perimeter with range ≥ 1 jump, region-wide); the reprocessing and scrapmetal tabs use it for Buy and Buy %. 254 types, 93 had a better order outside the station on the first run.
-- 0.9.0 **Fuel blocks tab** (`/shipyard/fuel/`, category `Fuel`, group 1136, `Ship.units_per_run` 40, figures per run; ship dashboard excludes Fuel; `catalog.iter_fuel()`; blueprint cell "own BPO").
-- 0.8.9 draggable column widths on all three tables (shared helper); 0.8.8 Refresh button on every tab (returns to the same tab) and the Value column next to Buy % on the reprocessing table; 0.8.4 Metal scraps group; 0.8.3 Scrapmetal without Sell %.
-- Checked for the owner: Hurricane profit sheet 7.92 M vs app 9.67 M = mineral and hull prices moving between 7 Oct and today; the sheet's 4.81 % is sales tax plus broker fee combined and the app's 3.37 % + 1.46 % matches it. No change needed.
-
-**Owner does by hand:** nothing pending. Open for the owner when he gets to it: correct the ore-area table if any family sits in the wrong area (`DEFAULT_AREAS` in `services/reprocessing.py`, overrides via `SHIPYARD_ORE_AREAS` in `conf/local.py`); the Scrapmetal group names from the 08:55 entry.
-
-**Next — laptop session.** No open step from this session; continue with the owner's next request. Procedure reminders: release per runbook 13 C (pin sha → build → check → migrate --plan → tests via the stdin script with SQLite → migrate → up -d → restart nginx → collectstatic → verify → docs); backup before any migration; tests count 72; the catalog of fuel blocks is loaded by `shipyard_load_ships` (now includes `iter_fuel()`), the ME 10 snapshots by the hourly/6-hourly `refresh_builds`. Patch scripts in the desktop's scratchpad are not in the repo; everything that matters is in the code and runbook 13.
 
 ---
