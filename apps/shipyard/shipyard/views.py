@@ -475,6 +475,7 @@ def wallet_view(request):
     last_run = RefreshRun.objects.filter(step="wallet").order_by("-started_at").first()
     context = _context(
         request,
+        settings=board.get_user_settings(request.user),
         period=period,
         periods=wallet.PERIODS,
         days=days,

@@ -148,9 +148,15 @@ def resolve_parties(limit: int = 500) -> int:
         names = {i: resolver.to_name(i) or "" for i in ids}
     except Exception as exc:  # noqa: BLE001
         logger.info("party names not resolved: %s", exc)
-    # the payer's corporation (characters only; ids in the character range)
-    chars = [i for i in ids if 90_000_000 <= i < 3_000_000_000]
-    corp_of = {}
+    # the payer's corporation: characters through ESI's affiliation list, corporations are their own
+    categories = {}
+    try:
+        from eveuniverse.models import EveEntity
+        categories = dict(EveEntity.objects.filter(id__in=ids).values_list("id", "category"))
+    except Exception as exc:  # noqa: BLE001
+        logger.info("entity categories not read: %s", exc)
+    chars = [i for i in ids if categories.get(i) == "character" or (i not in categories and 90_000_000 <= i < 3_000_000_000)]
+    corp_of = {i: i for i in ids if categories.get(i) == "corporation"}
     for i in range(0, len(chars), 1000):
         try:
             r = session().post("https://esi.evetech.net/latest/characters/affiliation/", json=chars[i:i + 1000], timeout=30)
@@ -159,13 +165,13 @@ def resolve_parties(limit: int = 500) -> int:
                 corp_of[int(a["character_id"])] = int(a.get("corporation_id") or 0)
         except Exception as exc:  # noqa: BLE001
             logger.info("affiliations not read: %s", exc)
-    corp_names = {}
-    corp_ids = {c for c in corp_of.values() if c}
+    corp_names = {i: names.get(i, "") for i in corp_of.values() if i in names}
+    corp_ids = {c for c in corp_of.values() if c and c not in corp_names}
     if corp_ids:
         try:
             from eveuniverse.models import EveEntity
             resolver = EveEntity.objects.bulk_resolve_names(corp_ids)
-            corp_names = {i: resolver.to_name(i) or "" for i in corp_ids}
+            corp_names.update({i: resolver.to_name(i) or "" for i in corp_ids})
         except Exception as exc:  # noqa: BLE001
             logger.info("corporation names not resolved: %s", exc)
     n = 0
