@@ -8,6 +8,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Done (desktop).** Public page for State-of-the-Union style reports: `site/alliance/` in the repo (Markdown posts, `build.py`, dark template), served by a new `alliance_site` nginx container on the server (`~/aa-docker/alliance-site/`, service appended to `docker-compose.yml`, backup `docker-compose.yml.pre-alliance-site`; 12 containers up). First draft post built and copied; `curl http://alliance_site/` from the proxy container answers 200. Runbook 15 written.
 
+**Also (11:10 UTC):** Shipyard 0.11.0, the **Structure income** tab (runbook 13 C): GWON wallet ledger, income per period and per payer, hourly task; migration 0016 applied, beat entry added, 79 tests, 12 containers up. **Owner:** on https://shipyards.orlovfamily.space/shipyard/income/ press *Connect the wallet* and log in to EVE with Vieze Jonge Pass (GWON's CEO), accept both scopes; then *Read the wallet now*.
+
 **Owner does by hand:** runbook 15 A (Porkbun A record `alliance` to 167.99.207.145) and C (Nginx Proxy Manager proxy host `alliance.orlovfamily.space` to http://alliance_site:80 with a Let's Encrypt certificate). Then write the real post in `site/alliance/posts/` and say "publish the alliance news" to a local session (15 D).
 
 **Also since the last entry:** Republic Fleet LP value 725 ISK/LP (2026-10-13); Shipyard 0.10.3 (Blueprint column includes the cruiser tag); guide `docs/guides/corp-roles.md`.
