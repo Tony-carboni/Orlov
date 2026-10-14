@@ -102,3 +102,9 @@ SHIPYARD_BROKER_FACTION_STANDING_PER_POINT = getattr(
 SHIPYARD_BROKER_CORP_STANDING_PER_POINT = getattr(
     settings, "SHIPYARD_BROKER_CORP_STANDING_PER_POINT", 0.0002
 )
+
+# --- Scopes asked of a character at the front door (owner, 2026-10-14) --------------------
+# True: every scope EVE offers (constants.ALL_ESI_SCOPES) plus the Shipyard's own set, so no
+# later app or scope change needs another login. False: only the Shipyard's set (Member Audit's 33).
+SHIPYARD_REQUEST_ALL_SCOPES = getattr(settings, "SHIPYARD_REQUEST_ALL_SCOPES", True)
+SHIPYARD_EXTRA_SCOPES = list(getattr(settings, "SHIPYARD_EXTRA_SCOPES", []))  # more scopes to ask for, on top

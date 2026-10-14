@@ -217,7 +217,7 @@ def settings_view(request):
         facilities=Facility.objects.filter(is_active=True),
         markets=MarketLocation.objects.filter(is_active=True),
         characters=characters.choices(request.user, settings),
-        scope_count=len(characters.full_scopes()),
+        scope_count=len(characters.requested_scopes()),
         rates=tax_rates(settings.market, settings),
         standings=_market_standings(settings),
         next=request.GET.get("next", ""),
@@ -344,7 +344,7 @@ def use_character(request, character_id):
             return redirect(back_url)
         request.session[SSO_PENDING_KEY] = character_id
         request.session[SSO_NEXT_KEY] = back
-        return sso_redirect(request, scopes=characters.full_scopes())
+        return sso_redirect(request, scopes=characters.requested_scopes())
     settings = board.get_user_settings(request.user)
     try:
         characters.load_character(settings, token)
@@ -383,7 +383,7 @@ def reprocessing_view(request):
     if token is None:
         return render(request, "shipyard/reprocessing_pick.html", _context(
             request, settings=settings, characters=characters.choices(request.user, settings),
-            scope_count=len(characters.full_scopes()), can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+            scope_count=len(characters.requested_scopes()), can_manage=request.user.has_perm("shipyard.manage_shipyard"),
         ))
     data_notice = characters.ensure_fresh(settings, request.user)
     settings = board.get_user_settings(request.user)

@@ -99,6 +99,15 @@ class StandaloneHostMiddlewareTests(TestCase):
 
 
 class CharacterServiceTests(TestCase):
+    def test_requested_scopes_cover_everything(self):
+        requested = characters.requested_scopes()
+        self.assertTrue(set(characters.full_scopes()) <= set(requested))  # a superset of what the Shipyard needs
+        self.assertIn("publicData", requested)
+        self.assertIn("esi-corporations.read_corporation_membership.v1", requested)  # Corp Stats reuses the token
+        self.assertIn("esi-mail.send_mail.v1", requested)  # really everything, write scopes included
+        self.assertGreaterEqual(len(requested), 73)
+        self.assertEqual(requested, sorted(set(requested)))
+
     def test_full_scopes_fall_back_to_our_copy(self):
         with mock.patch.dict("sys.modules", {"memberaudit": None, "memberaudit.models": None}):
             scopes = characters.full_scopes()

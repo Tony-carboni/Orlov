@@ -33,6 +33,17 @@ def full_scopes() -> list[str]:
     return list(constants.FULL_SCOPES)
 
 
+def requested_scopes() -> list[str]:
+    """What EVE's login is asked for when a character logs in at the front door: the Shipyard's
+    own set, plus every scope EVE offers when SHIPYARD_REQUEST_ALL_SCOPES is on, plus
+    SHIPYARD_EXTRA_SCOPES. Tokens are still looked up with full_scopes(), so a token from
+    before this (33 scopes) keeps working; the wider set is simply what a new login grants."""
+    scopes = set(full_scopes()) | set(app_settings.SHIPYARD_EXTRA_SCOPES)
+    if app_settings.SHIPYARD_REQUEST_ALL_SCOPES:
+        scopes |= set(constants.ALL_ESI_SCOPES)
+    return sorted(scopes)
+
+
 def token_for(user, character_id: int):
     """A valid token of this user for this character with the full scope set, or None."""
     return (

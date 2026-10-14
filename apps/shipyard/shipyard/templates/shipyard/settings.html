@@ -7,7 +7,7 @@
 <h5>Your character</h5>
 <p class="small text-muted">
     The numbers use the skills and standings of one character, read from EVE and refreshed every day. Choosing a character the first time
-    asks EVE's login once for full access ({{ scope_count }} scopes, the same set Member Audit uses); that also registers the character in Member Audit.
+    asks EVE's login once for every scope EVE offers ({{ scope_count }} scopes), so no later app or scope change needs another login; that also registers the character in Member Audit.
 </p>
 {% include "shipyard/_character_picker.html" with picker_next="settings" %}
 {% if settings.skills_character_id %}
