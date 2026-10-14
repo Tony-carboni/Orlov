@@ -4,6 +4,16 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-14 (desktop session) — alliance news site, runbook 15
+
+**Done (desktop).** Public page for State-of-the-Union style reports: `site/alliance/` in the repo (Markdown posts, `build.py`, dark template), served by a new `alliance_site` nginx container on the server (`~/aa-docker/alliance-site/`, service appended to `docker-compose.yml`, backup `docker-compose.yml.pre-alliance-site`; 12 containers up). First draft post built and copied; `curl http://alliance_site/` from the proxy container answers 200. Runbook 15 written.
+
+**Owner does by hand:** runbook 15 A (Porkbun A record `alliance` to 167.99.207.145) and C (Nginx Proxy Manager proxy host `alliance.orlovfamily.space` to http://alliance_site:80 with a Let's Encrypt certificate). Then write the real post in `site/alliance/posts/` and say "publish the alliance news" to a local session (15 D).
+
+**Also since the last entry:** Republic Fleet LP value 725 ISK/LP (2026-10-13); Shipyard 0.10.3 (Blueprint column includes the cruiser tag); guide `docs/guides/corp-roles.md`.
+
+---
+
 ## 2026-10-14 (07:30 UTC) — desktop session → any session
 
 **Runbook / topic:** alliance roster coverage, **runbook 15** (corp roster token for CEOs and directors) and **Shipyard 0.10.4** (every scope at the front door), on the owner's request.
@@ -86,20 +96,3 @@ Nothing queued. Shipyard is at 0.9.6 on the server (commit `5c804b6` pinned, rel
 
 ---
 
-## 2026-10-09 (14:30 UTC) — desktop session → any session
-
-**Also (desktop, after the laptop's 0.9.4/0.9.5):** 0.9.6 released, millions show three decimals (2.850 M) in `isk_auto`, Scrapmetal price columns use it; server pinned at `5c804b6`. Structure board (runbook 10): no fuel pings while a structure anchors, one "Anchoring finished" ping afterwards; deployed to the bot 19:44 UTC, the alert for the anchoring structure 1055997584926 was cleared and its anchoring is tracked (timer ends 2026-10-10 19:16 EVE).
-**Runbook / topic:** runbook 13 C, Shipyard **0.9.4 and 0.9.5 released** (owner's reports: sorting on the ship dashboard, then "sort by %" on the ore table).
-
-**Done**
-- **0.9.4** (commit `397acdf`): the column-resize handle (0.8.9, `columns.js`) on every header's right edge sits next to the sort arrows; a click landing on it was swallowed and silently froze all column widths. A resize now starts only after a 3 px move; a plain click sorts. Cross-checked on Dashboard, Fuel, Reprocessing and Scrapmetal.
-- **0.9.5** (commit `e4e3477` pinned): the real cause of "sort by % doesn't work": the owner's browser asks for a decimal-comma language and his auth profile has no language set, so Django localised the raw floats in the `data-order` sort keys (`0,478`) and DataTables could not sort the %, price point and ISK columns. Number localisation is now off for every Shipyard page (`{% localize off %}` in `base.html`). Verified with Dutch and German `Accept-Language` on every tab: 0 comma keys. Tests 72.
-- Both released per runbook 13 C (backups `aa-db-2026-10-09-1351` and `-1421`, `requirements.txt.pre-0.9.4/.pre-0.9.5` in `~/backups`, build, throwaway `check`, `up -d`, nginx, collectstatic, live verification, 0 gunicorn errors). No migrations.
-- Members who hit the 0.9.4 bug may have frozen widths saved in their browser: double-click any header edge to reset.
-
-**Owner has to do by hand:** nothing. Check: sort the ore table by Buy % and by a price point.
-
-### Next — any session
-Nothing queued. The Shipyard is at 0.9.5 on the server (commit `e4e3477` pinned). Open for the owner from earlier entries: the ore-area table and the Scrapmetal group names.
-
----
