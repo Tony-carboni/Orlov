@@ -85,8 +85,6 @@
             <td class="text-nowrap" data-order="{{ p.finished|date:'U' }}">{{ p.finished|date:"Y-m-d" }}</td>
             <td class="text-nowrap">{{ p.creator_name }}</td>
         </tr>
-    {% empty %}
-        <tr><td colspan="13" class="shipyard-k">No projects yet{% if not token %}: connect the projects first{% endif %}.</td></tr>
     {% endfor %}
     </tbody>
 </table>
@@ -121,8 +119,6 @@
             <td class="small">{% for name, units in r.projects %}<span class="text-nowrap me-2">{{ name }} <span class="shipyard-k">{{ units|num:0 }}</span></span>{% endfor %}</td>
             {% for c in pivot.columns|slice:":8" %}<td class="text-end" data-order="{{ r.periods|get_item:c|default:0 }}">{{ r.periods|get_item:c|isk }}</td>{% endfor %}
         </tr>
-    {% empty %}
-        <tr><td colspan="{{ pivot.columns|slice:":8"|length|add:5 }}" class="shipyard-k">No contribution changes seen in the range yet.</td></tr>
     {% endfor %}
     </tbody>
 </table>
