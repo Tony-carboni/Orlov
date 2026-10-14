@@ -19,7 +19,7 @@ from .models import (
     CorpProject, Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, RefreshRun, Ship,
     ShipConfig, WalletDivision, WalletJournalEntry,
 )
-from .services import board, characters, industry, projects, reprocessing, scrapmetal, wallet
+from .services import board, business, characters, industry, projects, reprocessing, scrapmetal, wallet
 from .services.pricing import tax_rates
 
 logger = logging.getLogger(__name__)
@@ -460,6 +460,7 @@ def go(request):
 
 WALLET_SSO_KEY = "shipyard_wallet_sso"  # session: we sent the member to EVE's login for the wallet scopes
 PROJECTS_SSO_KEY = "shipyard_projects_sso"
+BUSINESS_SSO_KEY = "shipyard_business_sso"
 
 
 @login_required
@@ -588,6 +589,88 @@ def wallet_refresh(request):
         return redirect("shipyard:wallet")
     messages.success(request, f"Wallet read: {result['added']} new entries, {result['total']} in the ledger.")
     return redirect("shipyard:wallet")
+
+
+@login_required
+@access.allows("business")
+def business_view(request):
+    """My business: the member's chosen character's wallet and ship sales (Member Audit), the production corp's jobs."""
+    period = request.GET.get("period", "week")
+    if period not in business.PERIODS:
+        period = "week"
+    days = _int(request.GET.get("days"), 90, 0, 3650)
+    since = timezone.now() - dt.timedelta(days=days) if days else None
+    can_manage = request.user.has_perm("shipyard.manage_shipyard")
+    who = request.GET.get("who", "me") if can_manage else "me"
+    settings = board.get_user_settings(request.user)
+    character_id = settings.skills_character_id
+    ma = business.ma_character(character_id)
+    journal = business.journal_rows(ma, since) if ma else []
+    sales_rows = business.sales_rows(ma, since) if ma else []
+    installer = None if who == "corp" else (character_id or -1)
+    production_rows = business.production_rows(installer_id=installer, since=since)
+    sales = business.sales_summary(sales_rows, period)
+    production = business.production_summary(production_rows, period)
+    wallet_summary = business.wallet_summary(journal, period)
+    ma_since = None
+    if ma:
+        try:
+            from memberaudit.models import CharacterWalletTransaction
+            first = CharacterWalletTransaction.objects.filter(character=ma).order_by("date").values_list("date", flat=True).first()
+            ma_since = first
+        except Exception:  # noqa: BLE001
+            ma_since = None
+    context = _context(
+        request,
+        settings=settings,
+        character_id=character_id,
+        character_name=settings.skills_character_name,
+        ma_character=ma,
+        ma_since=ma_since,
+        freshness=business.ma_freshness(ma),
+        balance=business.wallet_balance(ma) if ma else None,
+        period=period, periods=business.PERIODS, days=days, who=who, installer_only=who != "corp",
+        corp_id=business.corp_id(), token=business.token(),
+        last_run=RefreshRun.objects.filter(step="corp_jobs").order_by("-started_at").first(),
+        sales=sales, production=production, wallet=wallet_summary,
+        comparison=business.compare(sales, production),
+        charts={
+            "sold_category": business.chart(sales["by_category"]),
+            "sold_hull": business.chart(sales["by_hull"]),
+            "produced_category": business.chart(production["by_category"]),
+            "wallet": business.wallet_chart(wallet_summary),
+        },
+        can_manage=can_manage,
+    )
+    return render(request, "shipyard/business.html", context)
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+def business_connect(request):
+    """Grant the corporation jobs scope once with a character of the production corp (EVE's login)."""
+    if business.token() is not None:
+        messages.info(request, "A jobs token exists already; the hourly refresh uses it.")
+        return redirect("shipyard:business")
+    if request.session.pop(BUSINESS_SSO_KEY, None):
+        messages.error(request, "EVE's login did not give the corporation jobs scope for a character of the production corp. Log in with a character of Orlov Arms International that holds the Factory Manager role and accept the scope.")
+        return redirect("shipyard:business")
+    request.session[BUSINESS_SSO_KEY] = True
+    return sso_redirect(request, scopes=business.scopes())
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+@require_POST
+def business_refresh(request):
+    try:
+        result = business.refresh()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("corp jobs refresh by %s failed: %s", request.user, exc)
+        messages.error(request, f"The jobs could not be read: {exc}")
+        return redirect("shipyard:business")
+    messages.success(request, f"Jobs read: {result['added']} new, {result['updated']} updated, {result['total']} kept.")
+    return redirect("shipyard:business")
 
 
 @login_required

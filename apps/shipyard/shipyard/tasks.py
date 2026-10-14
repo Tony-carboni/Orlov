@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun,
     ScrapItem, Ship, ShipConfig, ShipMarketStats,
 )
-from .services import contracts, esi, everef, fuzzwork, industry, nearbuy, projects, reprocessing, scrapmetal, wallet
+from .services import business, contracts, esi, everef, fuzzwork, industry, nearbuy, projects, reprocessing, scrapmetal, wallet
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -227,6 +227,19 @@ def refresh_corp_projects():
         return
     _done(run, True, result["projects"],
           f"{result['projects']} projects, {result['snapshots']} new snapshots, {result['contributions']} contribution rows, {result['missing']} gone")
+
+
+@shared_task
+def refresh_corp_industry_jobs():
+    """The production corp's industry jobs into CorpIndustryJob (beat entry shipyard_refresh_corp_industry_jobs, hourly)."""
+    run = _run("corp_jobs")
+    try:
+        result = business.refresh()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("corp industry jobs refresh failed: %s", exc)
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, True, result["added"], f"{result['added']} new jobs, {result['updated']} updated, {result['total']} kept")
 
 
 @shared_task

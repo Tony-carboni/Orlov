@@ -1,0 +1,188 @@
+{% extends "shipyard/base.html" %}
+{% load static shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · My business{% endblock %}
+
+{% block shipyard_content %}
+<div class="row g-3 mb-3 align-items-stretch">
+    <div class="col-lg-5 col-xl-4">
+        <div class="card shipyard-facility h-100">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2">
+                    {% if character_id %}<img src="https://images.evetech.net/characters/{{ character_id }}/portrait?size=64" width="40" height="40" class="rounded" alt="">{% else %}<i class="fas fa-chart-line fa-2x text-info"></i>{% endif %}
+                    <div>
+                        <div class="fw-semibold">{% if character_name %}{{ character_name }}{% else %}No character chosen{% endif %}</div>
+                        <div class="small shipyard-k">
+                            {% if not character_id %}choose one under <a href="{% url 'shipyard:settings' %}">My settings</a>
+                            {% elif not ma_character %}not registered in Member Audit yet: log in once at <a href="{% url 'shipyard:settings' %}">My settings</a> (choose the character) or in Member Audit
+                            {% else %}wallet from Member Audit{% with f=freshness.wallet_transactions %}{% if f %}, read {{ f.at|date:"Y-m-d H:i" }} EVE{% if not f.ok %} <span class="text-danger">(failed)</span>{% endif %}{% endif %}{% endwith %}, hourly{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% if ma_character %}
+                <div class="small mt-2"><span class="shipyard-k">Wallet</span> <strong class="fs-6">{{ balance|isk:2 }}</strong></div>
+                {% endif %}
+                <div class="small mt-2 d-flex align-items-center flex-wrap gap-2">
+                    <span class="shipyard-k">Production: corporation {{ corp_id }}{% if token %}, jobs read with {{ token.character_name }}{% if last_run %}, last {{ last_run.started_at|date:"Y-m-d H:i" }} EVE{% if not last_run.ok %} <span class="text-danger">failed</span>{% endif %}{% endif %}, hourly{% else %}, no jobs token yet{% endif %}</span>
+                    {% if can_manage %}
+                        {% if token %}
+                        <form method="post" action="{% url 'shipyard:business_refresh' %}" class="d-inline">{% csrf_token %}<button class="btn btn-outline-light btn-sm py-0"><i class="fas fa-rotate fa-fw"></i> Read the jobs now</button></form>
+                        {% else %}
+                        <a class="btn btn-primary btn-sm py-0" href="{% url 'shipyard:business_connect' %}"><i class="fas fa-key fa-fw"></i> Connect the jobs</a>
+                        <span class="shipyard-k">EVE's login once with a character of the production corp that holds the Factory Manager role (the CEO does). Scope: corporation industry jobs.</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7 col-xl-8">
+        <div class="shipyard-infobar h-100">
+            <div class="d-flex flex-wrap gap-4">
+                <div><span class="shipyard-k">Ships sold{% if days %}, {{ days }} days{% else %}, all{% endif %}</span><br><strong class="fs-5">{{ sales.units|num:0 }}</strong> <span class="shipyard-k">for {{ sales.isk|isk }}</span></div>
+                <div><span class="shipyard-k">Ships produced</span><br><strong class="fs-5">{{ production.units|num:0 }}</strong> <span class="shipyard-k">in {{ production.jobs }} jobs, {{ production.cost|isk }} job cost</span></div>
+                <div><span class="shipyard-k">Pace</span><br><strong class="fs-5">{{ production.per_week.units|num:0 }}</strong> <span class="shipyard-k">ships / week, {{ production.per_week.jobs|num:1 }} jobs / week</span></div>
+                <div><span class="shipyard-k">Jobs running</span><br><strong class="fs-5">{{ production.active }}</strong></div>
+                <div><span class="shipyard-k">Fuel blocks</span><br><strong class="fs-5">{{ sales.fuel_units|num:0 }}</strong> <span class="shipyard-k">sold ({{ sales.fuel_isk|isk }}), {{ production.fuel_units|num:0 }} produced</span></div>
+                <div><span class="shipyard-k">Wallet{% if days %}, {{ days }} days{% endif %}</span><br><strong class="fs-5 {% if wallet.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ wallet.net|isk }}</strong> <span class="shipyard-k">net: {{ wallet.income|isk }} in, {{ wallet.expenses|isk }} out</span></div>
+            </div>
+            <div class="shipyard-k">Sales = market sales of catalog ships by this character (Member Audit's transactions, since {{ ma_since|date:"Y-m-d"|default:"the first read" }}). Production = manufacturing jobs of the production corp{% if installer_only %} installed by this character{% endif %}, grouped as on the dashboard. Fuel blocks are counted apart from ships.</div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-center">
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Period">
+            {% for p in periods %}<a class="btn btn-outline-secondary {% if p == period %}active{% endif %}" href="?period={{ p }}&days={{ days }}&who={{ who }}">{{ p|capfirst }}</a>{% endfor %}
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Range">
+            <a class="btn btn-outline-secondary {% if days == 30 %}active{% endif %}" href="?period={{ period }}&days=30&who={{ who }}">30 days</a>
+            <a class="btn btn-outline-secondary {% if days == 90 %}active{% endif %}" href="?period={{ period }}&days=90&who={{ who }}">90 days</a>
+            <a class="btn btn-outline-secondary {% if days == 365 %}active{% endif %}" href="?period={{ period }}&days=365&who={{ who }}">1 year</a>
+            <a class="btn btn-outline-secondary {% if not days %}active{% endif %}" href="?period={{ period }}&days=0&who={{ who }}">All</a>
+        </div>
+    </div>
+    {% if can_manage %}
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Whose jobs">
+            <a class="btn btn-outline-secondary {% if who == 'me' %}active{% endif %}" href="?period={{ period }}&days={{ days }}&who=me" title="Jobs installed by the chosen character">My jobs</a>
+            <a class="btn btn-outline-secondary {% if who == 'corp' %}active{% endif %}" href="?period={{ period }}&days={{ days }}&who=corp" title="Every manufacturing job of the production corp">Whole corp</a>
+        </div>
+    </div>
+    {% endif %}
+</form>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body py-2">
+            <div class="fw-semibold mb-1">Ships sold per {{ period }}, by type</div>
+            <canvas id="chart-sold-category" height="140"></canvas>
+        </div></div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body py-2">
+            <div class="fw-semibold mb-1">Ships sold per {{ period }}, by class</div>
+            <canvas id="chart-sold-hull" height="140"></canvas>
+        </div></div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body py-2">
+            <div class="fw-semibold mb-1">Ships produced per {{ period }}, by type</div>
+            <canvas id="chart-produced-category" height="140"></canvas>
+        </div></div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body py-2">
+            <div class="fw-semibold mb-1">Wallet per {{ period }}: in, out and net</div>
+            <canvas id="chart-wallet" height="140"></canvas>
+        </div></div>
+    </div>
+</div>
+
+<h5>Produced and sold, by type</h5>
+<div class="table-responsive mb-4">
+<table class="table table-sm table-striped align-middle w-auto">
+    <thead><tr><th>Type</th><th class="text-end">Produced</th><th class="text-end">Sold</th><th class="text-end" title="Produced minus sold in the range: positive = stock grew, negative = sold from stock">Difference</th></tr></thead>
+    <tbody>
+    {% for c in comparison %}<tr><td>{{ c.category }}</td><td class="text-end">{{ c.produced|num:0 }}</td><td class="text-end">{{ c.sold|num:0 }}</td><td class="text-end {% if c.difference > 0 %}text-warning{% elif c.difference < 0 %}text-success{% endif %}">{{ c.difference|num:0 }}</td></tr>
+    {% empty %}<tr><td colspan="4" class="shipyard-k">Nothing in this range.</td></tr>{% endfor %}
+    </tbody>
+</table>
+</div>
+
+<h5>Ships sold, by ship <span class="small shipyard-k">({{ sales.lines }} sales)</span></h5>
+<div class="row g-2 mb-2 align-items-center">
+    <div class="col-auto"><input type="search" id="sold-text" class="form-control form-control-sm" placeholder="Search ship, type, class…" autocomplete="off" style="width: 16rem"></div>
+    <div class="col-auto" id="sold-columns" title="Choose which columns to show; remembered in this browser"></div>
+</div>
+<div class="table-responsive mb-4">
+<table id="sold-table" class="table table-sm table-hover table-striped align-middle w-100">
+    <thead><tr>
+        <th data-key="ship">Ship</th><th data-key="type">Type</th><th data-key="class">Class</th>
+        <th data-key="units" class="text-end">Units</th><th data-key="isk" class="text-end">ISK</th><th data-key="avg" class="text-end" title="ISK per unit, averaged over the range">Average</th>
+        <th data-key="sales" class="text-end">Sales</th><th data-key="first">First</th><th data-key="last">Last</th>
+    </tr></thead>
+    <tbody>
+    {% for t in sales.types %}
+        <tr>
+            <td class="text-nowrap"><img src="https://images.evetech.net/types/{{ t.type_id }}/icon?size=32" width="22" height="22" class="rounded me-1" alt=""><a href="{% url 'shipyard:ship_detail' t.type_id %}">{{ t.name }}</a></td>
+            <td><span class="badge shipyard-cat shipyard-cat-{{ t.category|lower }}">{{ t.category }}</span></td><td>{{ t.hull }}</td>
+            <td class="text-end fw-semibold" data-order="{{ t.units }}">{{ t.units|num:0 }}</td>
+            <td class="text-end" data-order="{{ t.isk }}">{{ t.isk|isk }}</td>
+            <td class="text-end" data-order="{{ t.average }}">{{ t.average|isk }}</td>
+            <td class="text-end" data-order="{{ t.lines }}">{{ t.lines }}</td>
+            <td class="text-nowrap" data-order="{{ t.first|date:'U' }}">{{ t.first|date:"Y-m-d" }}</td>
+            <td class="text-nowrap" data-order="{{ t.last|date:'U' }}">{{ t.last|date:"Y-m-d" }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<h5>Produced, by ship <span class="small shipyard-k">({{ production.jobs }} jobs{% if not token %}: connect the jobs first{% endif %})</span></h5>
+<div class="table-responsive mb-4">
+<table id="produced-table" class="table table-sm table-hover table-striped align-middle w-100">
+    <thead><tr>
+        <th>Ship</th><th>Type</th><th>Class</th>
+        <th class="text-end">Units</th><th class="text-end">Jobs</th><th class="text-end" title="Job cost (system cost, facility tax, SCC surcharge), all jobs of this ship in the range">Job cost</th><th class="text-end" title="Job cost per unit">Per unit</th>
+        <th>First</th><th>Last</th>
+    </tr></thead>
+    <tbody>
+    {% for t in production.types %}
+        <tr>
+            <td class="text-nowrap"><img src="https://images.evetech.net/types/{{ t.type_id }}/icon?size=32" width="22" height="22" class="rounded me-1" alt=""><a href="{% url 'shipyard:ship_detail' t.type_id %}">{{ t.name }}</a></td>
+            <td><span class="badge shipyard-cat shipyard-cat-{{ t.category|lower }}">{{ t.category }}</span></td><td>{{ t.hull }}</td>
+            <td class="text-end fw-semibold" data-order="{{ t.units }}">{{ t.units|num:0 }}</td>
+            <td class="text-end" data-order="{{ t.lines }}">{{ t.lines }}</td>
+            <td class="text-end" data-order="{{ t.isk }}">{{ t.isk|isk }}</td>
+            <td class="text-end" data-order="{{ t.average }}">{{ t.average|isk }}</td>
+            <td class="text-nowrap" data-order="{{ t.first|date:'U' }}">{{ t.first|date:"Y-m-d" }}</td>
+            <td class="text-nowrap" data-order="{{ t.last|date:'U' }}">{{ t.last|date:"Y-m-d" }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<h5>Wallet, by journal type <span class="small shipyard-k">({{ wallet.count }} entries{% if days %}, {{ days }} days{% endif %}; market sales {{ wallet.market.sales|isk }}, purchases {{ wallet.market.purchases|isk }}, broker fees and tax {{ wallet.market.fees|isk }})</span></h5>
+<div class="table-responsive mb-4">
+<table class="table table-sm table-striped align-middle w-auto">
+    <thead><tr><th>Type</th><th class="text-end">Entries</th><th class="text-end">Total</th></tr></thead>
+    <tbody>
+    {% for name, count, total in wallet.types %}<tr><td class="text-nowrap">{{ name }}</td><td class="text-end">{{ count }}</td><td class="text-end {% if total >= 0 %}text-success{% else %}text-danger{% endif %}">{{ total|isk }}</td></tr>
+    {% empty %}<tr><td colspan="3" class="shipyard-k">No journal entries{% if not ma_character %}: the character is not registered in Member Audit{% endif %}.</td></tr>{% endfor %}
+    </tbody>
+</table>
+</div>
+
+{{ charts|json_script:"business-charts" }}
+{% endblock %}
+
+{% block shipyard_js %}
+{% include "bundles/chart-js.html" %}
+<script src="{% static 'shipyard/columns.js' %}"></script>
+<script src="{% static 'shipyard/business.js' %}"></script>
+{% endblock %}

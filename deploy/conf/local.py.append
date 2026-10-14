@@ -173,6 +173,12 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_corp_wallet"] = {
     "schedule": crontab(minute="15"),
 }
 
+# Shipyard: the production corp's industry jobs for the My business tab (hourly)
+CELERYBEAT_SCHEDULE["shipyard_refresh_corp_industry_jobs"] = {
+    "task": "shipyard.tasks.refresh_corp_industry_jobs",
+    "schedule": crontab(minute="20"),
+}
+
 # Shipyard: compressed ore and ice catalog for the Reprocessing tab (EVE Ref, weekly)
 CELERYBEAT_SCHEDULE["shipyard_refresh_ore_catalog"] = {
     "task": "shipyard.tasks.refresh_ore_catalog",

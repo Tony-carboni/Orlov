@@ -95,6 +95,10 @@ SHIPYARD_INCOME_REF_TYPES = getattr(settings, "SHIPYARD_INCOME_REF_TYPES", [
 SHIPYARD_PROJECTS_CORP_ID = getattr(settings, "SHIPYARD_PROJECTS_CORP_ID", 98843356)  # Orlov Arms International (OARMI)
 SHIPYARD_PROJECTS_SCOPES = getattr(settings, "SHIPYARD_PROJECTS_SCOPES", ["esi-corporations.read_projects.v1"])
 
+# --- My business tab (owner, 2026-10-14): production = the production corp's industry jobs ----
+SHIPYARD_PRODUCTION_CORP_ID = getattr(settings, "SHIPYARD_PRODUCTION_CORP_ID", 98843356)  # Orlov Arms International (OARMI)
+SHIPYARD_PRODUCTION_SCOPES = getattr(settings, "SHIPYARD_PRODUCTION_SCOPES", ["esi-industry.read_corporation_jobs.v1"])
+
 # Where each ore family is mined (not in EVE's data): overrides for the table in services/reprocessing.py,
 # {"Family": "highsec" | "lowsec" | "nullsec" | "anomaly"}.
 SHIPYARD_ORE_AREAS = getattr(settings, "SHIPYARD_ORE_AREAS", {})

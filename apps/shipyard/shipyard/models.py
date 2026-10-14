@@ -563,6 +563,33 @@ class IndustryJob(models.Model):
         return f"Job {self.job_id}"
 
 
+class CorpIndustryJob(models.Model):
+    """An industry job of the production corp (services/business.py): copied hourly from ESI and kept,
+    because ESI only serves the last 90 days. The owner's jobs run in the corp's name."""
+
+    job_id = models.BigIntegerField(primary_key=True)
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    installer_id = models.BigIntegerField(default=0, db_index=True)
+    installer_name = models.CharField(max_length=100, blank=True)
+    activity_id = models.PositiveSmallIntegerField(default=0)
+    blueprint_type_id = models.PositiveIntegerField(default=0)
+    product_type_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
+    runs = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=20)
+    start_date = models.DateTimeField(null=True, blank=True, db_index=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+    completed_date = models.DateTimeField(null=True, blank=True)
+    location_id = models.BigIntegerField(default=0)
+    cost = models.FloatField(default=0)
+    fetched_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-start_date"]
+
+    def __str__(self):
+        return f"Corp job {self.job_id}"
+
+
 class CharacterBlueprint(models.Model):
     """A blueprint one of the member's characters owns."""
 
