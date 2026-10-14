@@ -1,0 +1,13 @@
+# Appended to the `services:` section of ~/aa-docker/docker-compose.yml on the server (runbook 15 B).
+# A plain nginx that serves the static alliance news site from the bind-mounted folder;
+# Nginx Proxy Manager forwards alliance.orlovfamily.space to it (hostname alliance_site, port 80).
+  alliance_site:
+    image: nginx:stable
+    restart: always
+    volumes:
+      - ./alliance-site:/usr/share/nginx/html:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10Mb"
+        max-file: "5"
