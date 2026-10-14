@@ -20,6 +20,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Also (15:35 UTC):** Shipyard **0.13.0, the My business tab** (runbook 13 C): the chosen character's wallet, ships sold per dashboard category and hull class with four Chart.js charts, production metrics from OARMI's industry jobs (hourly copy, migration 0018, beat entry at :20), produced-versus-sold per category. Live: 1,204 ships sold for 94.5 B since 2026-09-26, wallet 96.95 B. **Owner:** on https://shipyards.orlovfamily.space/shipyard/business/ press *Connect the jobs* and log in to EVE with Catherine Frey (OARMI's CEO, so Factory Manager), accept the scope; then *Read the jobs now*; the production charts fill from the last 90 days of corp jobs. Tests 85.
 
+**Also (afternoon):** 0.13.1, 7 and 14 day ranges on My business (the range applied to the by-ship table all along; the data is younger than 30 days). Server pinned at `5dcf4f1`, 85 tests.
+
 **Owner does by hand:** runbook 15 A (Porkbun A record `alliance` to 167.99.207.145) and C (Nginx Proxy Manager proxy host `alliance.orlovfamily.space` to http://alliance_site:80 with a Let's Encrypt certificate). Then write the real post in `site/alliance/posts/` and say "publish the alliance news" to a local session (15 D).
 
 **Also since the last entry:** Republic Fleet LP value 725 ISK/LP (2026-10-13); Shipyard 0.10.3 (Blueprint column includes the cruiser tag); guide `docs/guides/corp-roles.md`.
