@@ -59,6 +59,8 @@
     </div>
     <div class="col-auto">
         <div class="btn-group btn-group-sm" role="group" aria-label="Range">
+            <a class="btn btn-outline-secondary {% if days == 7 %}active{% endif %}" href="?period={{ period }}&days=7&who={{ who }}">7 days</a>
+            <a class="btn btn-outline-secondary {% if days == 14 %}active{% endif %}" href="?period={{ period }}&days=14&who={{ who }}">14 days</a>
             <a class="btn btn-outline-secondary {% if days == 30 %}active{% endif %}" href="?period={{ period }}&days=30&who={{ who }}">30 days</a>
             <a class="btn btn-outline-secondary {% if days == 90 %}active{% endif %}" href="?period={{ period }}&days=90&who={{ who }}">90 days</a>
             <a class="btn btn-outline-secondary {% if days == 365 %}active{% endif %}" href="?period={{ period }}&days=365&who={{ who }}">1 year</a>
