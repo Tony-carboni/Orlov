@@ -16,7 +16,7 @@ How it works (short): it is the same Django application as auth, answering under
 | Proxy | Nginx Proxy Manager on the server, admin UI at `127.0.0.1:81` (reach it with `ssh -L 8181:127.0.0.1:81 …`, Day 1); forward to the same target as `auth.orlovfamily.space` |
 | Settings | block "Shipyards front door" at the end of `deploy/conf/local.py.append`: `SHIPYARD_STANDALONE_HOST`, the middleware, cookie domains, `CSRF_TRUSTED_ORIGINS` |
 | Access | permission `shipyard \| general \| Can access the Shipyard dashboard` on the **states** `Family Member` and `Family Friend` |
-| Scopes a character grants | the 33 Member Audit scopes (`characters.full_scopes()`); the token also registers the character in Member Audit |
+| Scopes a character grants | since 0.10.4 (2026-10-14): **every scope EVE offers**, 73 in all (`characters.requested_scopes()` = Member Audit's 33 + the 72 of ESI's OpenAPI document, write scopes included, + `publicData`; `SHIPYARD_REQUEST_ALL_SCOPES = False` in `conf/local.py` goes back to the 33, `SHIPYARD_EXTRA_SCOPES` adds more). The Shipyard itself still only needs the 33 (`full_scopes()`), so tokens from before keep working. The token also registers the character in Member Audit |
 | Switch off | `SHIPYARD_STANDALONE_HOST = ""` in `conf/local.py`, restart; the Shipyard is back inside auth only |
 
 ---

@@ -53,6 +53,8 @@ This is the step that grants more detailed access to your character data. Leader
 2. Click **Register** (or **Add character**).
 3. EVE's login page opens with a *long* list of permissions (assets, skills, wallet, location, …). That list is what "detailed access" means. Pick the character, click **Authorize**.
 4. Back in Member Audit, the character appears as a card. The first data pull takes a few minutes.
+
+*Shortcut since 2026-10-14:* registering the character at **https://shipyards.orlovfamily.space** (My settings → choose the character, accept everything in EVE's login) does the same and asks for every scope EVE offers in one go, so no later tool needs another login. Either way is fine.
 5. Do it at least for your **main**. Alts are optional but appreciated.
 
 ✅ Done when your main's card shows and, after a few minutes, opening it shows a *Last login* date.

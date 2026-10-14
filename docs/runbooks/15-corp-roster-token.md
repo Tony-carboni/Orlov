@@ -12,7 +12,7 @@ How it works: EVE lets any member of a corporation read that corporation's membe
 |---|---|
 | Who may do it | members of the `Corp Director` group (the executor adds the CEO after the corp joins; the CEO can ask for more directors) |
 | Where | https://auth.orlovfamily.space/corpstats/add/ |
-| Scope asked for in the EVE login window | one scope, "read corporation membership" (`esi-corporations.read_corporation_membership.v1`) |
+| Scope needed | "read corporation membership" (`esi-corporations.read_corporation_membership.v1`). A character registered through the Shipyard front door (every scope EVE offers, since 2026-10-14) or Member Audit (33 scopes) already has it; the add page then only asks which token to use |
 | Where the result shows | **Corporation Stats** in the left menu of auth → your corp |
 | Refresh | every hour; also when you click **Update** on the corp's page |
 | Done already | OARMI (token: Catherine Frey) |
@@ -21,9 +21,11 @@ How it works: EVE lets any member of a corporation read that corporation's membe
 
 ## A. Add the token (CEO or director, browser)
 
+**Do this first, once per character: register it with every scope.** Open **https://shipyards.orlovfamily.space**, log in with EVE, go to **My settings** and choose the character that is in your corp. EVE's login opens once and asks for every scope EVE offers (73); accept all. That one login covers Corp Stats, Member Audit and whatever auth gets later, so you never do this again for that character. (Already done it? Then skip to step 1.)
+
 1. Log in to **https://auth.orlovfamily.space** with the EVE SSO button, using any character that is already on your auth account.
-2. Open **https://auth.orlovfamily.space/corpstats/add/**. An EVE login window opens.
-3. In that window choose a character **that is in your corp** (if you have several, pick the main). The window lists the single permission "read corporation membership". Click **Authorize**.
+2. Open **https://auth.orlovfamily.space/corpstats/add/**.
+3. Auth lists the tokens of yours that can read a corp's members. Pick the character **that is in your corp**. (No EVE login appears when the character was registered as above; otherwise EVE's window opens for the single scope "read corporation membership": click **Authorize**.)
 4. You land on **Corporation Stats** with your corp selected. The page shows the member count, how many have registered, and two lists: *registered* and *unregistered*.
 
 ✅ Done when Corporation Stats shows your corp with a member count that matches the corp window in game.
