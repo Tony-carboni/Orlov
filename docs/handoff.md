@@ -16,6 +16,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Also:** Tavaga (Discord flambo2018) added to the auth group `FC` on 2026-10-14, Discord roles pushed (True).
 
+**Discord (2026-10-14, through the auth bot's token):** `#pings` under Member channels is now read-only for Family Member (view, history, reactions; no posting, threads or mentions) and FC, Corp Director and Alliance Director may post and use @everyone/@here. A second, stray `#pings` outside any category exists; the owner deletes it by hand if unwanted.
+
 **Owner does by hand:** runbook 15 A (Porkbun A record `alliance` to 167.99.207.145) and C (Nginx Proxy Manager proxy host `alliance.orlovfamily.space` to http://alliance_site:80 with a Let's Encrypt certificate). Then write the real post in `site/alliance/posts/` and say "publish the alliance news" to a local session (15 D).
 
 **Also since the last entry:** Republic Fleet LP value 725 ISK/LP (2026-10-13); Shipyard 0.10.3 (Blueprint column includes the cruiser tag); guide `docs/guides/corp-roles.md`.
