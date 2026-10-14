@@ -117,6 +117,8 @@ New commits to `apps/shipyard` don't reach the server by themselves. Update = ch
 
 *Release 0.12.0, 2026-10-14 (commit `93969cf` pinned): **Corp projects tab** (managers only): the executor corp's projects (`SHIPYARD_PROJECTS_CORP_ID` 98843356, OARMI) read hourly through ESI's project routes (compatibility-date header, scope `esi-corporations.read_projects.v1`; research doc 08) into `CorpProject` with a `ProjectSnapshot` and `ProjectContribution` rows whenever something changed (migration 0017, backup `aa-db-2026-10-14-1124.sql.gz`; task `refresh_corp_projects`, beat entry `shipyard_refresh_corp_projects` at :25 in `conf/local.py` and `deploy/conf/local.py.append`). Page: active projects, pool still to pay, paid out in the range and ever; the projects table (state, kind, progress, pool, remaining, paid out, ISK per unit, dates, creator); **paid out per day/week/month/quarter by project** (pool going down between snapshots, units on hover); **who contributed** (growth of each member's contribution, ISK = units × reward per unit, per project and per period). Needs the owner's one-time **Connect the projects** (EVE login with Catherine Frey). History starts at the first read. Tests 81 (`tests/test_projects.py`).*
 
+*Release 0.12.1, 2026-10-14 (commit `d8f332d` pinned): the two DataTables on the Corp projects page no longer carry a colspan placeholder row (DataTables raised "incorrect column count" on the empty page); DataTables shows its own empty line. Tests 81.*
+
 ## D. Releasing to members (later, your call)
 
 *2026-10-12: one member, Hamu, has the Reprocessing tab only (`reprocessing_access` on his user). For more members with that scope, grant the same permission; for the whole Shipyard, `basic_access`.*
