@@ -17,7 +17,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - **Shipyard 0.10.4 released** (commit `184182b` pinned, backup `aa-db-2026-10-14-0945.sql.gz`): owner's rule "scopes as wide as can be": the front door now asks a character for every scope EVE offers (73 = Member Audit's 33 + ESI's 72 + publicData, write scopes included; `SHIPYARD_REQUEST_ALL_SCOPES`, `SHIPYARD_EXTRA_SCOPES`). Tokens are still looked up with the 33, so nobody has to log in again now; the wider set comes with the next login. Member Audit's own Add-character button still asks for its 33 and cannot be widened. Runbook 15 therefore starts with "register the character at the front door"; runbook 14 known values and the member guide (shortcut) updated. Tests 77. Details in runbook 13 C.
 
 **Owner has to do by hand**
-- Send Eemar (and Masterxxx for GB44 if you want their roster in auth too) runbook 15; Eemar is in `Corp Director` already. Eemar registering at the front door gives the token for 1E3's roster in one go.
+- Send Eemar (and Masterxxx for GB44 if you want their roster in auth too) **`docs/guides/corp-ceo-roster-token.md`**, the CEO-facing version via the auth portal (Member Audit registration, 33 scopes, then the Corp Stats add page reuses the token); Eemar is in `Corp Director` already. Note: through auth a character gets Member Audit's 33 scopes, the 73-scope login exists only at the Shipyard front door (Member Audit's button cannot be widened); an auth-side "register with every scope" page is possible if the owner wants the wide set through auth too.
 - Nudge Goedweer1 to add Goedweer2–5 to their account, and Miguel Stevens to auth.
 
 ### Next — any session

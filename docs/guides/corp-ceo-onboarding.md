@@ -11,7 +11,7 @@
 ## Corp CEO
 
 1. Do the **member guide** steps 1–4 yourself (log in, add characters, Discord, Member Audit).
-2. **Corp roster token** — once per corp, by the CEO or a director: follow `docs/runbooks/15-corp-roster-token.md` (https://auth.orlovfamily.space/corpstats/add/ → Authorize with a character *in your corp*). This gives leadership the registered/unregistered member list. It needs the `Corp Director` group, so the executor's step below comes first.
+2. **Corp roster token** — once per corp, by the CEO or a director: follow `docs/guides/corp-ceo-roster-token.md` (the executor's view is `docs/runbooks/15-corp-roster-token.md`) (https://auth.orlovfamily.space/corpstats/add/ → Authorize with a character *in your corp*). This gives leadership the registered/unregistered member list. It needs the `Corp Director` group, so the executor's step below comes first.
 3. Tell the executor you're done.
 
 ## Executor, after the CEO reports back

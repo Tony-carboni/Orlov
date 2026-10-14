@@ -1,6 +1,6 @@
 # Runbook 15 — Corp roster token: let auth see who in your corp has registered
 
-*For corp CEOs and directors. Browser only, ~3 minutes, once per corp. The alliance executor does section C.*
+*For corp CEOs and directors. Browser only, ~3 minutes, once per corp. The alliance executor does section C. The version to hand a CEO, written to them and using auth only, is `docs/guides/corp-ceo-roster-token.md`.*
 
 **Goal:** auth can list the members of your corp and show which of them have registered on auth and which have not. Without this token auth only knows the characters that registered themselves; it cannot see the rest of your corp at all, so nobody can tell who still has to auth.
 
