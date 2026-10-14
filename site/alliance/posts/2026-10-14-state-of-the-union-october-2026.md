@@ -36,6 +36,8 @@ Forty-six members in the alliance, about 22 of them you will see week in week ou
 
 We are still in the start-up weeks, but the funnels are beginning to flow. Corp projects have paid out 368 M to members so far. The Raitaru brought in 41.8 M over the last 30 days, most of it from pilots outside the alliance using our services, which is exactly the idea: outsiders pay the bills, and the tax for alliance members stays at 0.1 % for now.
 
+The moons have started paying too. The first extraction at Orlov Mining Facility I was mined out on 10 October: 397,000 units of Zeolites and Coesite, close to 4 million m³ of rock, by eight of our pilots. Compressed and taken to Jita that is worth about 470 M at sell prices, or 430 M sold straight into buy orders. One extraction, one day. The second Athanor's first pull is next.
+
 ## What I am asking of you
 
 As we grow in size, we grow in responsibility, and the responsibility should not sit with the directors alone. The next phase is a transition: from directors organising content and members joining, to members organising their own content with the directors providing support and infrastructure. If you want to take an active role in any of the targets above, or in keeping what we have running, now is the time to step up. FC roles on Discord are there for anyone who wants to ping a fleet, and in-game roles follow where they are needed. Ask, and you will get what you need to make it happen.
