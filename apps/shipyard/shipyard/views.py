@@ -652,11 +652,15 @@ def business_view(request):
         last_run=RefreshRun.objects.filter(step="corp_jobs").order_by("-started_at").first(),
         sales=sales, production=production, wallet=wallet_summary,
         comparison=business.compare(sales, production),
+        fuel_table=business.fuel_table(sales, production),
         charts={
             "sold_category": business.chart(sales["by_category"]),
             "sold_hull": business.chart(sales["by_hull"]),
             "produced_category": business.chart(production["by_category"]),
             "wallet": business.wallet_chart(wallet_summary),
+            "fuel_sold": business.chart(sales["fuel_by_name"]),
+            "fuel_produced": business.chart(production["fuel_by_name"]),
+            "isk_category": business.chart(sales["isk_by_category"]),
         },
         can_manage=can_manage,
     )

@@ -102,9 +102,27 @@
             <canvas id="chart-wallet" height="140"></canvas>
         </div></div>
     </div>
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body py-2">
+            <div class="fw-semibold mb-1">Fuel blocks sold per {{ period }}, by block</div>
+            <canvas id="chart-fuel-sold" height="140"></canvas>
+        </div></div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body py-2">
+            <div class="fw-semibold mb-1">Fuel blocks produced per {{ period }}, by block</div>
+            <canvas id="chart-fuel-produced" height="140"></canvas>
+        </div></div>
+    </div>
+    <div class="col-lg-12">
+        <div class="card h-100"><div class="card-body py-2">
+            <div class="fw-semibold mb-1">Sales ISK per {{ period }}, by type (fuel blocks included)</div>
+            <canvas id="chart-isk-category" height="90"></canvas>
+        </div></div>
+    </div>
 </div>
 
-<h5>Produced and sold, by type</h5>
+<h5>Produced and sold, by type <span class="small shipyard-k">(fuel blocks as a type of their own)</span></h5>
 <div class="table-responsive mb-4">
 <table class="table table-sm table-striped align-middle w-auto">
     <thead><tr><th>Type</th><th class="text-end">Produced</th><th class="text-end">Sold</th><th class="text-end" title="Produced minus sold in the range: positive = stock grew, negative = sold from stock">Difference</th></tr></thead>
@@ -165,6 +183,31 @@
             <td class="text-nowrap" data-order="{{ t.last|date:'U' }}">{{ t.last|date:"Y-m-d" }}</td>
         </tr>
     {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<h5>Fuel blocks, by block <span class="small shipyard-k">(sold and produced in the range)</span></h5>
+<div class="table-responsive mb-4">
+<table id="fuel-table" class="table table-sm table-hover table-striped align-middle w-auto">
+    <thead><tr>
+        <th>Block</th>
+        <th class="text-end">Sold</th><th class="text-end">ISK</th><th class="text-end" title="ISK per block, averaged over the range">Average</th><th class="text-end">Sales</th>
+        <th class="text-end">Produced</th><th class="text-end">Jobs</th><th class="text-end" title="Job cost (system cost, facility tax, SCC surcharge) per block produced">Cost / block</th>
+    </tr></thead>
+    <tbody>
+    {% for f in fuel_table %}
+        <tr>
+            <td class="text-nowrap"><img src="https://images.evetech.net/types/{{ f.type_id }}/icon?size=32" width="22" height="22" class="rounded me-1" alt="">{{ f.name }}</td>
+            <td class="text-end fw-semibold" data-order="{{ f.sold }}">{{ f.sold|num:0 }}</td>
+            <td class="text-end" data-order="{{ f.isk }}">{{ f.isk|isk }}</td>
+            <td class="text-end" data-order="{{ f.average }}">{{ f.average|isk }}</td>
+            <td class="text-end" data-order="{{ f.sales }}">{{ f.sales }}</td>
+            <td class="text-end fw-semibold" data-order="{{ f.produced }}">{{ f.produced|num:0 }}</td>
+            <td class="text-end" data-order="{{ f.jobs }}">{{ f.jobs }}</td>
+            <td class="text-end" data-order="{{ f.cost_per_unit }}">{{ f.cost_per_unit|isk }}</td>
+        </tr>
+    {% empty %}<tr><td colspan="8" class="shipyard-k">No fuel blocks sold or produced in this range.</td></tr>{% endfor %}
     </tbody>
 </table>
 </div>

@@ -35,6 +35,9 @@ class PureTests(SimpleTestCase):
         self.assertEqual(s["types"][0]["units"], 5)
         self.assertAlmostEqual(s["types"][0]["average"], 5.2e6 / 5)
         self.assertEqual(s["fuel_types"][0]["units"], 400)
+        self.assertEqual([r[0] for r in s["by_category_all"]["rows"]], ["Base", "Navy", "Fuel"])  # fuel last, as its own type
+        self.assertEqual(s["fuel_by_name"]["rows"][0][0], "Nitrogen Fuel Block")
+        self.assertEqual([r[0] for r in s["isk_by_category"]["rows"]], ["Base", "Navy", "Fuel"])  # ISK counts the fuel too
 
     def test_wallet_summary(self):
         rows = [
@@ -65,7 +68,12 @@ class PureTests(SimpleTestCase):
         self.assertAlmostEqual(p["per_week"]["units"], 12 / 2.0)  # 14 days of jobs = 2 weeks
         self.assertEqual(p["status"], {"delivered": 2, "active": 1})
         c = business.compare(business.sales_summary(self.sales, "week"), p)
-        self.assertEqual([(x["category"], x["produced"], x["sold"], x["difference"]) for x in c], [("Base", 10, 5, 5), ("Navy", 2, 1, 1)])
+        self.assertEqual([(x["category"], x["produced"], x["sold"], x["difference"]) for x in c], [("Base", 10, 5, 5), ("Navy", 2, 1, 1), ("Fuel", 200, 400, -200)])
+        f = business.fuel_table(business.sales_summary(self.sales, "week"), p)
+        self.assertEqual(len(f), 1)
+        self.assertEqual((f[0]["name"], f[0]["sold"], f[0]["produced"], f[0]["jobs"]), ("Nitrogen Fuel Block", 400, 200, 1))
+        self.assertAlmostEqual(f[0]["average"], 2e4)
+        self.assertAlmostEqual(f[0]["cost_per_unit"], 1e5 / 200)
         chart = business.chart(p["by_category"])
         self.assertEqual(chart["labels"], ["2026-09-28 (wk 40)", "2026-10-05 (wk 41)"])
         self.assertEqual(chart["datasets"][0], {"label": "Base", "data": [10, 0]})

@@ -198,7 +198,9 @@ def sales_summary(rows: list[dict], period: str) -> dict:
         "fuel_units": sum(r["quantity"] for r in fuel), "fuel_isk": sum(r["total"] for r in fuel),
         "by_category": pivot(ships, period, "category", "quantity"),
         "by_hull": pivot(ships, period, "hull", "quantity"),
-        "isk_by_category": pivot(ships, period, "category", "total"),
+        "isk_by_category": pivot(rows, period, "category", "total"),  # ISK: fuel blocks included (owner, 2026-10-15)
+        "by_category_all": pivot(rows, period, "category", "quantity"),
+        "fuel_by_name": pivot(fuel, period, "name", "quantity"),
         "types": by_type(ships),
         "fuel_types": by_type(fuel),
     }
@@ -334,20 +336,38 @@ def production_summary(rows: list[dict], period: str, now=None) -> dict:
         "per_week": {"jobs": len(rows) / weeks, "units": sum(r["quantity"] for r in ships) / weeks},
         "by_category": pivot(ships, period, "category", "quantity"),
         "by_hull": pivot(ships, period, "hull", "quantity"),
+        "by_category_all": pivot(rows, period, "category", "quantity"),
+        "fuel_by_name": pivot(fuel, period, "name", "quantity"),
         "types": by_type(ships, count_key="quantity", money_key="total"),
         "fuel_types": by_type(fuel, count_key="quantity", money_key="total"),
     }
 
 
 def compare(sales: dict, production: dict) -> list[dict]:
-    """Per category: units produced and sold in the range, and the difference. Pure."""
-    produced = {label: total for label, _, total in production["by_category"]["rows"]}
-    sold = {label: total for label, _, total in sales["by_category"]["rows"]}
+    """Per category, fuel blocks included: units produced and sold in the range, and the difference. Pure."""
+    produced = {label: total for label, _, total in production.get("by_category_all", production["by_category"])["rows"]}
+    sold = {label: total for label, _, total in sales.get("by_category_all", sales["by_category"])["rows"]}
     out = []
     for label in _order(set(produced) | set(sold), CATEGORY_ORDER):
         out.append({"category": label, "produced": produced.get(label, 0), "sold": sold.get(label, 0),
                     "difference": produced.get(label, 0) - sold.get(label, 0)})
     return out
+
+
+def fuel_table(sales: dict, production: dict) -> list[dict]:
+    """One line per fuel block: sold units, ISK and average price next to produced units, jobs and job cost per unit. Pure."""
+    rows = {}
+    for t in sales["fuel_types"]:
+        rows[t["type_id"]] = {"type_id": t["type_id"], "name": t["name"], "sold": t["units"], "isk": t["isk"], "average": t["average"],
+                              "sales": t["lines"], "produced": 0, "jobs": 0, "cost": 0.0, "cost_per_unit": 0.0}
+    for t in production["fuel_types"]:
+        r = rows.setdefault(t["type_id"], {"type_id": t["type_id"], "name": t["name"], "sold": 0, "isk": 0.0, "average": 0.0, "sales": 0,
+                                           "produced": 0, "jobs": 0, "cost": 0.0, "cost_per_unit": 0.0})
+        r["produced"] = t["units"]
+        r["jobs"] = t["lines"]
+        r["cost"] = t["isk"]
+        r["cost_per_unit"] = t["isk"] / t["units"] if t["units"] else 0.0
+    return sorted(rows.values(), key=lambda r: -(r["sold"] + r["produced"]))
 
 
 # --- charts --------------------------------------------------------------------------------

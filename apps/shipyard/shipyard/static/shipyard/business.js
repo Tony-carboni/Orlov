@@ -56,6 +56,9 @@
             draw("chart-sold-hull", charts.sold_hull, false);
             draw("chart-produced-category", charts.produced_category, false);
             draw("chart-wallet", charts.wallet, true);
+            draw("chart-fuel-sold", charts.fuel_sold, false);
+            draw("chart-fuel-produced", charts.fuel_produced, false);
+            draw("chart-isk-category", charts.isk_category, true);
         }
         if (document.getElementById("sold-table")) {
             var sold = $("#sold-table").DataTable({ order: [[3, "desc"]], paging: false, info: false, dom: "rt", stateSave: true, autoWidth: false,
@@ -64,6 +67,10 @@
             if (window.shipyardColumnPicker) {
                 window.shipyardColumnPicker(sold, document.getElementById("sold-table"), { container: "#sold-columns", storageKey: "shipyard.business.sold.columns", hiddenByDefault: [] });
             }
+        }
+        if (document.getElementById("fuel-table")) {
+            $("#fuel-table").DataTable({ order: [[1, "desc"]], paging: false, info: false, dom: "rt", stateSave: true, autoWidth: false,
+                columnDefs: [{ targets: [1, 2, 3, 4, 5, 6, 7], type: "num" }] });
         }
         if (document.getElementById("produced-table")) {
             $("#produced-table").DataTable({ order: [[3, "desc"]], paging: false, info: false, dom: "rt", stateSave: true, autoWidth: false,
