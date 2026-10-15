@@ -4,6 +4,24 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-15 (15:40 UTC) — desktop session → any session
+
+**Runbook / topic:** runbook 13 C, Shipyard **0.13.2** (payers left out of the Structure income figures) and **0.13.3** (fuel blocks on My business), on the owner's requests of today.
+
+**Done**
+- 0.13.2 (commit `b59b0a3`, migration 0019, backup `aa-db-2026-10-15-1526.sql.gz`): a **Count** checkbox per payer in "Who pays" on the Structure income tab; unticked = that payer's tax is left out of every figure on the page, the ledger keeps the entries, the row stays dimmed with a "left out" badge and can be ticked again. Meant for the owner's own alts and OARMI's jobs, which pay the Raitaru tax to his own structure corp.
+- 0.13.3 (commit `695b655` pinned, backup `-1532`): fuel blocks as a product line on My business: charts of blocks sold and produced per period by block, sales ISK per period by type with fuel included, a fuel table by block, a Fuel row in produced-versus-sold. Live: 741,044 blocks sold for 13.6 B since 2026-09-26.
+- Both released per runbook 13 C (details there). Tests 86.
+
+**Owner has to do by hand**
+- Structure income: untick the payers that should not count (your own characters, OARMI if its job tax is your own money moving).
+- My business: still **Connect the jobs** with Catherine Frey (0.13.0) so the production charts and the produced columns fill; until then they read 0.
+
+### Next — any session
+Nothing queued. Shipyard 0.13.3 on the server (commit `695b655` pinned).
+
+---
+
 ## 2026-10-14 (desktop session) — alliance news site, runbook 15
 
 **Done (desktop).** Public page for State-of-the-Union style reports: `site/alliance/` in the repo (Markdown posts, `build.py`, dark template), served by a new `alliance_site` nginx container on the server (`~/aa-docker/alliance-site/`, service appended to `docker-compose.yml`, backup `docker-compose.yml.pre-alliance-site`; 12 containers up). First draft post built and copied; `curl http://alliance_site/` from the proxy container answers 200. Runbook 15 written.
@@ -88,25 +106,3 @@ Nothing queued. Shipyard is at 0.9.6 (commit `5c804b6` pinned). Kill feed with l
 Nothing queued. If the live feed misbehaves: `ORLOVBOT_KILLFEED_STREAM = False` in `conf/local.py` and restart the bot, or put back `~/backups/killfeed.py.pre-r2z2`. Shipyard is at 0.9.6 (commit `5c804b6` pinned). Cartographers [1E3] fully prepared (07:30 entry).
 
 ---
-
-
-## 2026-10-10 (07:30 UTC) — desktop session → any session
-
-**Runbook / topic:** new joining corp **Cartographers [1E3]** prepared in the role system (owner's request from the in-game corp window); design doc `docs/design/membership.md` updated. Also: the owner's Naga job cost confirmed (3,930,942 ISK = system cost 1.90 M + facility tax 50.9 k + SCC surcharge 2.04 M = 7.72 % of the 50.93 M EIV; the dashboard uses EVE Ref's total, SCC included).
-
-**Done**
-- Corp looked up on public ESI: Cartographers, ticker 1E3, corporation_id 98846240, founded 2026-10-09 17:55, 2 members, **no alliance**, CEO Eemar (character_id 2116146613).
-- `EveCorporationInfo` created (pk 14). **Not** added to the `Family Member` state (owner's rule of 2026-10-05: no Family Member before the corp is in the alliance in game); its members are `Family Friend` until then, and `Family Member` automatically once ESI shows the corp in ORLOV.
-- Auto-group `corp_1E3` created in advance with `AutogroupsConfig.create_corp_group()` (group pk 14, managed link pk 10, hidden/internal, 0 members).
-- Discord role `corp_1E3` (1558471529639976965) created in advance with `create_bot_client().match_or_create_role_from_name()` (`DiscordUser.objects.group_to_role()` returned nothing and created nothing in this AA version). The desktop session's auto-mode classifier had blocked the Discord write; the owner then added `~/.claude/settings.json` on the PC with an allow rule for `Bash(ssh orlov *)` and `Bash(scp * orlov:*)` (user scope, this PC only; the laptop already had the permission). The classifier also refuses to let a session write its own permission rules, so that file is the owner's to maintain.
-
-**Owner has to do by hand**
-- Nothing for the Discord role; it exists.
-- Eemar has authed and is in `Corp Director` (done 15:16 UTC, Discord role synced). Still to send them: `docs/guides/corp-ceo-onboarding.md` (Corp Stats / Member Audit token).
-- When the corp is accepted into the alliance: nothing; the state follows the alliance rule once ESI shows it (24 h join delay). Do not list 1E3 on the state.
-
-### Next — any session
-Nothing queued. Shipyard is at 0.9.6 on the server (commit `5c804b6` pinned, released by the other desktop session). Open for the owner from earlier entries: the ore-area table and the Scrapmetal group names.
-
----
-
