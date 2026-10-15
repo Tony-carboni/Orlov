@@ -20,7 +20,7 @@ from django.utils import timezone
 from esi.models import Token
 
 from .. import app_settings
-from ..models import WalletDivision, WalletJournalEntry
+from ..models import WalletDivision, WalletExcludedPayer, WalletJournalEntry
 from . import esi
 from .http import polite_pause, session
 
@@ -211,6 +211,30 @@ def income_entries(since=None):
     if since is not None:
         qs = qs.filter(date__gte=since)
     return qs.order_by("-date")
+
+
+def excluded_payers() -> dict:
+    """{party_id: WalletExcludedPayer} of the structure corp: payers left out of the income figures."""
+    return {x.party_id: x for x in WalletExcludedPayer.objects.filter(corporation_id=corp_id())}
+
+
+def without_excluded(entries, excluded) -> list:
+    """The entries whose payer is not on the exclusion list. Pure."""
+    return [e for e in entries if e.first_party_id not in excluded]
+
+
+def set_excluded(party_id: int, excluded: bool, by: str = "", name: str = "") -> bool:
+    """Put a payer on the exclusion list or take it off. Returns the new state."""
+    if excluded:
+        if not name:
+            e = WalletJournalEntry.objects.filter(corporation_id=corp_id(), first_party_id=party_id).exclude(first_party_name="").first()
+            name = e.first_party_name if e else ""
+        WalletExcludedPayer.objects.update_or_create(
+            corporation_id=corp_id(), party_id=int(party_id), defaults={"party_name": name[:100], "created_by": by[:150]}
+        )
+        return True
+    WalletExcludedPayer.objects.filter(corporation_id=corp_id(), party_id=int(party_id)).delete()
+    return False
 
 
 def pivot(entries, period: str) -> dict:

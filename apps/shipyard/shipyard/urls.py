@@ -20,6 +20,7 @@ urlpatterns = [
     path("income/", views.wallet_view, name="wallet"),
     path("income/connect/", views.wallet_connect, name="wallet_connect"),
     path("income/refresh/", views.wallet_refresh, name="wallet_refresh"),
+    path("income/payer/<int:party_id>/", views.wallet_toggle_payer, name="wallet_toggle_payer"),
     path("business/", views.business_view, name="business"),
     path("business/connect/", views.business_connect, name="business_connect"),
     path("business/refresh/", views.business_refresh, name="business_refresh"),

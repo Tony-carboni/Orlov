@@ -337,6 +337,25 @@ class WalletJournalEntry(models.Model):
         return f"{self.date:%Y-%m-%d} {self.ref_type} {self.amount:,.0f}"
 
 
+class WalletExcludedPayer(models.Model):
+    """A payer whose entries are left out of the Structure income figures (owner, 2026-10-15):
+    the tax is still charged in game, the ledger still holds the entries, only the totals, the
+    per-period tables and the charts skip them. Toggled with the checkbox in "Who pays"."""
+
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    party_id = models.BigIntegerField()
+    party_name = models.CharField(max_length=100, blank=True)
+    note = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=150, blank=True)
+
+    class Meta:
+        unique_together = [("corporation_id", "party_id")]
+
+    def __str__(self):
+        return f"{self.party_name or self.party_id} left out of income"
+
+
 class CorpProject(models.Model):
     """A corporation project as last seen (services/projects.py); history in the snapshots."""
 

@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.core.cache import cache
 from django.db import transaction
 from django.http import JsonResponse
+from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -533,7 +534,9 @@ def wallet_view(request):
         period = "week"
     days = _int(request.GET.get("days"), 0, 0, 3650)
     since = timezone.now() - dt.timedelta(days=days) if days else None
-    entries = list(wallet.income_entries(since))
+    excluded = wallet.excluded_payers()
+    all_income = list(wallet.income_entries(since))
+    entries = wallet.without_excluded(all_income, excluded)  # the figures leave the excluded payers out
     all_entries = WalletJournalEntry.objects.filter(corporation_id=wallet.corp_id()).order_by("-date")[:2000]
     last_run = RefreshRun.objects.filter(step="wallet").order_by("-started_at").first()
     context = _context(
@@ -547,7 +550,9 @@ def wallet_view(request):
         divisions=WalletDivision.objects.filter(corporation_id=wallet.corp_id()).order_by("division"),
         totals=wallet.totals(entries),
         pivot=wallet.pivot(entries, period),
-        payers=wallet.payers(entries, period),
+        payers=[{**p, "excluded": p["id"] in excluded} for p in wallet.payers(all_income, period)],
+        excluded=excluded,
+        excluded_names=sorted(x.party_name or f"#{x.party_id}" for x in excluded.values()),
         entries=all_entries,
         ref_types=sorted({e.ref_type for e in all_entries}),
         income_types=list(app_settings.SHIPYARD_INCOME_REF_TYPES),
@@ -574,6 +579,19 @@ def wallet_connect(request):
         return redirect("shipyard:wallet")
     request.session[WALLET_SSO_KEY] = True
     return sso_redirect(request, scopes=wallet.scopes())
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+@require_POST
+def wallet_toggle_payer(request, party_id):
+    """The checkbox in "Who pays": tick = counted in the income figures, untick = left out."""
+    include = request.POST.get("include") == "1"
+    name = (request.POST.get("name") or "")[:100]
+    state = wallet.set_excluded(int(party_id), excluded=not include, by=request.user.username, name=name)
+    messages.info(request, f"{name or party_id} is {'left out of' if state else 'counted in'} the income figures from now on.")
+    back = request.POST.get("next") or ""
+    return redirect(back if back.startswith("/") else reverse("shipyard:wallet"))
 
 
 @login_required

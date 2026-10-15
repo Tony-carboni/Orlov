@@ -4,7 +4,9 @@
 
     $(function () {
         if (document.getElementById("payers-table")) {
-            $("#payers-table").DataTable({ order: [[2, "desc"]], paging: false, info: false, dom: "rt", stateSave: true });
+            $("#payers-table").DataTable({ order: [[3, "desc"]], paging: false, info: false, dom: "rt", stateSave: true, columnDefs: [{ targets: 0, orderable: false }] });
+            // the Count box: a change posts the small form around it, the page comes back with the figures redone
+            $("#payers-table").on("change", ".payer-include", function () { this.form.submit(); });
         }
         var el = document.getElementById("journal-table");
         if (!el) { return; }

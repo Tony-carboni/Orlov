@@ -33,6 +33,19 @@ class LedgerTests(TestCase):
                                               first_party_id=fp, first_party_name=fpn, first_party_corp_id=corp, first_party_corp_name=corpn,
                                               second_party_id=cid, second_party_name="GWON")
 
+    def test_excluded_payers_leave_the_figures(self):
+        entries = list(wallet.income_entries())
+        self.assertEqual(wallet.excluded_payers(), {})
+        self.assertTrue(wallet.set_excluded(90001, True, by="tony"))  # Alice: entries 1 and 3
+        excluded = wallet.excluded_payers()
+        self.assertEqual(list(excluded), [90001])
+        self.assertEqual(excluded[90001].party_name, "Alice")  # name taken from the ledger
+        kept = wallet.without_excluded(entries, excluded)
+        self.assertEqual(sorted(e.entry_id for e in kept), [2])
+        self.assertAlmostEqual(wallet.totals(kept)["all"], 2_000_000)
+        self.assertFalse(wallet.set_excluded(90001, False))
+        self.assertEqual(wallet.excluded_payers(), {})
+
     def test_income_pivot_payers_totals(self):
         entries = list(wallet.income_entries())
         self.assertEqual(sorted(e.entry_id for e in entries), [1, 2, 3])  # donation and expense left out

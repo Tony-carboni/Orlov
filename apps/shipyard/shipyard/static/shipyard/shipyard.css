@@ -91,6 +91,9 @@
 #scrap-table tr.scrap-group-row td { background: rgba(255, 255, 255, 0.06); font-weight: 600; letter-spacing: .01em; padding-top: .45rem; padding-bottom: .3rem; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
 #scrap-table tr.scrap-grouped td.scrap-module { padding-left: 1.75rem; }
 #scrap-table tr.scrap-group-row .fa-folder-open { color: var(--sy-muted); }
+/* Structure income: payers left out of the figures */
+#payers-table tr.payer-excluded td { opacity: .55; }
+#payers-table tr.payer-excluded td:first-child { opacity: 1; }
 /* Gives column (Reprocessing and Scrapmetal tabs): mineral icons with their share of the value; minor minerals (after the top three) are icons only, dimmed */
 td.shipyard-gives img { vertical-align: -4px; border-radius: 3px; }
 td.shipyard-gives > span { margin-right: .45rem; }

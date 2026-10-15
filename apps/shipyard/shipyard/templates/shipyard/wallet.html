@@ -40,6 +40,7 @@
                 <div><span class="shipyard-k">90 days</span><br><strong class="fs-5">{{ totals.d90|isk }}</strong></div>
                 <div><span class="shipyard-k">{% if days %}selected range{% else %}all in the ledger{% endif %}</span><br><strong class="fs-5">{{ totals.all|isk }}</strong> <span class="shipyard-k">({{ totals.count }} entries{% if totals.first %}, since {{ totals.first|date:"Y-m-d" }}{% endif %})</span></div>
             </div>
+            {% if excluded_names %}<div class="shipyard-k"><i class="fas fa-user-slash fa-fw"></i> Left out of every figure on this page (untick in "Who pays"): <strong>{{ excluded_names|join:", " }}</strong>. Their entries stay in the ledger below.</div>{% endif %}
             <div class="shipyard-k">Income = positive journal entries of these types: {{ income_types|join:", " }}. ESI serves only the recent journal; the ledger keeps everything from the first read on, so the history starts {% if totals.first %}{{ totals.first|date:"Y-m-d" }}{% else %}at the first read{% endif %}.</div>
         </div>
     </div>
@@ -76,10 +77,11 @@
 </table>
 </div>
 
-<h5>Who pays</h5>
+<h5>Who pays <span class="small shipyard-k">(tick box: counted in the figures; untick to leave a payer out, for example your own alts)</span></h5>
 <div class="table-responsive mb-4">
 <table id="payers-table" class="table table-sm table-hover table-striped align-middle w-100">
     <thead><tr>
+        <th title="Ticked: this payer counts in the income figures. Untick to leave them out (the entries stay in the ledger)">Count</th>
         <th>Character</th><th>Corporation</th>
         <th class="text-end" title="Income from this character in the selected range">Total</th>
         <th class="text-end" title="Last 30 days">30 days</th>
@@ -90,8 +92,16 @@
     </tr></thead>
     <tbody>
     {% for p in payers %}
-        <tr>
-            <td class="text-nowrap"><img src="https://images.evetech.net/characters/{{ p.id }}/portrait?size=32" width="22" height="22" class="rounded me-1" alt="">{{ p.name }}</td>
+        <tr class="{% if p.excluded %}payer-excluded{% endif %}">
+            <td data-order="{% if p.excluded %}0{% else %}1{% endif %}">
+                <form method="post" action="{% url 'shipyard:wallet_toggle_payer' p.id %}" class="payer-form d-inline">{% csrf_token %}
+                    <input type="hidden" name="include" value="{% if p.excluded %}1{% else %}0{% endif %}">
+                    <input type="hidden" name="name" value="{{ p.name }}">
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <input type="checkbox" class="form-check-input payer-include" {% if not p.excluded %}checked{% endif %} title="{% if p.excluded %}Left out of the income figures; tick to count again{% else %}Counted; untick to leave out{% endif %}">
+                </form>
+            </td>
+            <td class="text-nowrap"><img src="https://images.evetech.net/characters/{{ p.id }}/portrait?size=32" width="22" height="22" class="rounded me-1" alt="">{{ p.name }}{% if p.excluded %} <span class="badge text-bg-secondary">left out</span>{% endif %}</td>
             <td class="text-nowrap">{% if p.corp_id %}<img src="https://images.evetech.net/corporations/{{ p.corp_id }}/logo?size=32" width="22" height="22" class="rounded me-1" alt="">{% endif %}{{ p.corp }}</td>
             <td class="text-end fw-semibold" data-order="{{ p.total }}">{{ p.total|isk }}</td>
             <td class="text-end" data-order="{{ p.recent }}">{{ p.recent|isk }}</td>
