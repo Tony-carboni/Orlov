@@ -13,6 +13,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - 0.13.3 (commit `695b655` pinned, backup `-1532`): fuel blocks as a product line on My business: charts of blocks sold and produced per period by block, sales ISK per period by type with fuel included, a fuel table by block, a Fuel row in produced-versus-sold. Live: 741,044 blocks sold for 13.6 B since 2026-09-26.
 - Both released per runbook 13 C (details there). Tests 86.
 
+**Also (2026-10-16):** `docs/guides/soe-epic-arc-runbook.md` (the other session's file of 2026-10-15, merged with this session's version: one guide now), the owner's in-game runbook for raising Caldari State standing with the Sisters of EVE epic arc (The Blood-Stained Stars, 51 missions, +0.875 of the distance to 10.0 with Social V, no derived changes, every 90 days), with his own numbers (Caldari State −0.27 → ≈ +0.63, broker fee 1.461 % → ≈ 1.434 %, about 130 M/month at the current 490 B of monthly orders) and Penumbra as the next step (needs 5.00 with Caldari State or Expert Distribution).
+
 **Owner has to do by hand**
 - Structure income: untick the payers that should not count (your own characters, OARMI if its job tax is your own money moving).
 - My business: still **Connect the jobs** with Catherine Frey (0.13.0) so the production charts and the produced columns fill; until then they read 0.
