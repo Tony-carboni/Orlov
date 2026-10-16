@@ -44,6 +44,8 @@ Nothing queued. Shipyard 0.13.3 on the server (commit `695b655` pinned).
 
 **Also (afternoon):** 0.13.1, 7 and 14 day ranges on My business (the range applied to the by-ship table all along; the data is younger than 30 days). Server pinned at `5dcf4f1`, 85 tests.
 
+**Moon board (2026-10-16):** restyled like the structure board and shows the auto-pop time (runbook 09); deployed to the bot, backup `moons.py.pre-autopop`.
+
 **Owner does by hand:** runbook 15 A (Porkbun A record `alliance` to 167.99.207.145) and C (Nginx Proxy Manager proxy host `alliance.orlovfamily.space` to http://alliance_site:80 with a Let's Encrypt certificate). Then write the real post in `site/alliance/posts/` and say "publish the alliance news" to a local session (15 D).
 
 **Also since the last entry:** Republic Fleet LP value 725 ISK/LP (2026-10-13); Shipyard 0.10.3 (Blueprint column includes the cruiser tag); guide `docs/guides/corp-roles.md`.

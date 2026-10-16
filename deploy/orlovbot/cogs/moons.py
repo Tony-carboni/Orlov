@@ -6,6 +6,7 @@ Two things live here:
   the bot keeps up to date, so nobody has to ask (docs/runbooks/09-moon-board.md).
 """
 
+import datetime as dt
 import logging
 
 from discord import Color, Embed
@@ -15,6 +16,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from orlovbot.board import CHECK_MINUTES, Board
+from orlovbot.cogs.structures import _block, _stamp, _until
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +27,12 @@ BOARD_TITLE = "Upcoming moon extractions"
 
 
 async def build_embed() -> Embed:
-    """The list of extractions that still have to pop or wait to be fractured."""
+    """The upcoming extractions, one block each in the structure board's style.
+
+    Code blocks have no live countdown, so "in 2d 3h" is worked out at every check
+    (the board refreshes every CHECK_MINUTES); the line under the block carries the
+    live Discord timestamps in each reader's own time zone.
+    """
     from moonmining.models import Extraction
 
     now = timezone.now()
@@ -36,32 +43,37 @@ async def build_embed() -> Embed:
         .order_by("chunk_arrival_at")
     )
     rows = [extraction async for extraction in extractions[:MAX_ROWS]]
-
-    embed = Embed(title=BOARD_TITLE, colour=Color.blue())
     if not rows:
+        embed = Embed(title=BOARD_TITLE, colour=Color.blue())
         embed.description = "No extraction is running at the moment."
         return embed
 
+    lines = []
+    ready = False
     for extraction in rows:
         refinery = extraction.refinery
         moon = refinery.moon.eve_moon.name if refinery.moon else "unknown moon"
         arrival = extraction.chunk_arrival_at
-        stamp = int(arrival.timestamp())
+        auto = extraction.auto_fracture_at
+        block = []
         if arrival <= now:
-            state = "Chunk has arrived, field can be fractured"
+            ready = True
+            block.append(("Chunk:", "ARRIVED, can be fractured", "green", f"since {arrival:%a %d %b %H:%M} EVE"))
         else:
-            # Discord renders <t:...:R> as a live countdown, no edit needed
-            state = f"Chunk arrives <t:{stamp}:R>"
-        embed.add_field(
-            name=f"{refinery.name} ({moon})",
-            value=(
-                f"{state}\n"
-                f"EVE time: {arrival:%a %d %b %H:%M}\n"
-                # Discord converts this to the time zone of each reader's own device
-                f"In your time zone: <t:{stamp}:F>"
-            ),
-            inline=False,
-        )
+            block.append(("Chunk:", f"arrives {_until(arrival, now)}", "blue", f"{arrival:%a %d %b %H:%M} EVE"))
+        if auto <= now:
+            block.append(("Auto-pop:", "passed", "orange", ""))
+        else:
+            soon = auto - now <= dt.timedelta(hours=1)
+            block.append(("Auto-pop:", f"{_until(auto, now)}", "orange" if soon else "blue", f"{auto:%a %d %b %H:%M} EVE"))
+        lines.append(f"### {refinery.name} ({moon})")
+        lines.append(_block(block))
+        # live timestamps: Discord shows these in the reader's own time zone
+        lines.append(f"Your time: arrives {_stamp(arrival, 'f')} · auto-pops {_stamp(auto, 'f')}")
+        lines.append("")
+
+    embed = Embed(title=BOARD_TITLE, colour=Color.green() if ready else Color.blue())
+    embed.description = "\n".join(lines).strip()[:4096]
     return embed
 
 

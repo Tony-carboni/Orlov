@@ -14,6 +14,9 @@ How it works:
 - It reads our own extractions only (the corps registered under Moon Mining → Add Owner). No public timers.
 - `/moons` from runbook 08 keeps working and shows the same list on request.
 
+
+*2026-10-16: the board took the structure board's look (owner's wish): a heading per refinery and an ansi block with aligned, coloured lines, "Chunk: arrives in 2d 3h (date EVE)" and the new "Auto-pop: in 2d 6h (date EVE)" (the chunk fractures by itself three hours after arrival if nobody fires it; orange within the last hour), plus a line of live Discord timestamps in the reader's time zone. The countdown text is recomputed at every check (every 10 minutes). Helpers are imported from `cogs/structures.py`.*
+
 ## Known values
 
 | Item | Value |
