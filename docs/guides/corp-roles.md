@@ -21,6 +21,19 @@ The role the owner asked about for bulletins. A Communications Officer can:
 
 They cannot see wallets or hangars, cannot accept applicants, cannot change standings, and cannot touch structures. It is the narrowest role that covers bulletins, which Directors and the CEO can also do anyway.
 
+## Worked example: the "Recruiter" title (owner, 2026-10-17)
+
+Wanted: send corporation invitations, handle applications, keep the bulletins and the corp chat MOTD. Not wanted: shares, wallets, hangars beyond what their other titles already give, sensitive corporation settings.
+
+| Give | Why |
+|---|---|
+| **Personnel Manager** (plain, not grantable) | Invitations and applications: accept or reject, invite characters, recruitment adverts (confirm the advert part in the role tooltip in game; the wiki only lists applications and decorations). Cannot kick. |
+| **Communications Officer** (plain) | Bulletins, corp chat MOTD, corporation calendar events. Nothing financial. |
+
+That is the whole title. Everything on the "keep away" list is covered by *not* giving the rest: shares are Director/CEO only; wallets need Accountant, Junior Accountant, Account Take, Trader, Contract Manager or Rent roles, none of which are in the title; hangars need Hangar Query/Take or Container Take, none given, so the member keeps exactly the hangar access of their other titles; settings, standings, structures and SKINs need Director, Diplomat, Station Manager, Config Equipment or Brand Manager. Do not tick *grantable* on either role, or the recruiter can hand them on. Build it as a title (Title Management → new title "Recruiter" with those two roles) so the next recruiter gets the same two clicks.
+
+Two things a Personnel Manager can do that are worth knowing: award decorations (medals, cosmetic, free) and see the member list in detail. Neither touches money or assets.
+
 ## General roles
 
 | Role | What it allows |
