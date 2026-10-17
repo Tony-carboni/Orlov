@@ -63,6 +63,8 @@ Set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy of
 
 *Doctrines 0.2.1 (2026-10-17): the SRP percent per doctrine (migration 0003); the explanatory paragraph above the ships table is gone, the column headers carry it on hover. AB Armor frigs set to 50 %.*
 
+*Doctrines 0.2.2 (2026-10-17): the fitting wheel in an opened fit, the `shipfit` web component (MIT, 396 KB, self-hosted; the one the owner remembered from other alliances' doctrine pages: hull render in the middle, modules around it by slot). Alternatives looked at and not taken: EVEShip.fit's React components (need React and self-hosted data files), quiescens' eve-ui (a list, jQuery, unmaintained). Item data in the component dates from 2021: a module newer than that is missing from the wheel but still listed beside it. No migration; collectstatic before `up -d` for the new file.*
+
 ## E. Check (you, browser)
 
 1. Private window → https://doctrines.orlovfamily.space → auth's EVE login → the landing page under the new address, without auth's menu.

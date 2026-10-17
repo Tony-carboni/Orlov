@@ -76,8 +76,8 @@
                 {% for r in g.variants %}
                 <div class="doctrines-pane{% if g.multi %} doctrines-tab-panel{% endif %}" id="pane-{{ r.ship.pk }}" data-group="fit-{{ g.key }}" {% if not forloop.first %}hidden{% endif %}>
                 <div class="row g-3">
-                    <div class="col-md-4 col-xl-3">
-                        <div class="doctrines-render" style="background-image: url('https://images.evetech.net/types/{{ r.ship.ship_type_id }}/render?size=512')"></div>
+                    <div class="col-md-5 col-xl-4">
+                        <div class="doctrines-wheel" title="The fitting as the game's fitting window: high slots at the top, mids right, lows left, rigs below"><ship-fit hide-copy>{{ r.text }}</ship-fit></div>
                         <div class="fw-semibold mt-2">{{ r.ship.name }}</div>
                         {% if r.ship.notes %}<div class="small doctrines-k">{{ r.ship.notes }}</div>{% endif %}
                         <div class="small doctrines-k">Cost {{ r.cost.total|isk }}{% if doctrine.srp_percent %} · SRP {{ r.srp|isk }}{% endif %} · loss {{ r.loss|isk }}{% if r.ship.srp_level %} · <span class="badge text-bg-{{ r.ship.srp_level.colour }}" title="{{ r.ship.srp_level.description }}">{{ r.ship.srp_level.name }}</span>{% endif %}</div>
@@ -88,7 +88,7 @@
                         <div class="small doctrines-k mt-2">In game: fitting window → <strong>Import from clipboard</strong>.</div>
                         <textarea id="copy-{{ r.ship.pk }}" class="doctrines-hidden-text" readonly aria-hidden="true">{{ r.text }}</textarea>
                     </div>
-                    <div class="col-md-8 col-xl-9">
+                    <div class="col-md-7 col-xl-8">
                         <div class="row g-3">
                         {% for grp in r.groups %}
                             <div class="col-sm-6 col-xl-4">

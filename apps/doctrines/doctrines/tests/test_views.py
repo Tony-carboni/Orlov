@@ -69,6 +69,8 @@ class PageTests(TestCase):
         self.assertIn("Full", html)
         self.assertIn("Copy fit to clipboard", html)
         self.assertIn("[Harpy, Rail Harpy v3]", html)
+        self.assertIn("<ship-fit hide-copy>", html)  # the fitting wheel
+        self.assertIn("vendor/shipfit.umd.min.js", html)
 
     def test_fit_text(self):
         self.client.force_login(self.user)

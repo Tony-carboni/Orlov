@@ -75,3 +75,6 @@
 .doctrines-role-row > td i { color: var(--dc-accent); }
 .doctrines-ship-cell { padding-left: 1.75rem !important; }
 .doctrines-ship-row + .doctrines-fit-row > td { padding-left: 1.75rem; }
+/* the fitting wheel (shipfit web component): it sizes itself to its box, 500 px at most */
+.doctrines-wheel { width: 100%; max-width: 440px; margin: 0 auto; }
+.doctrines-wheel ship-fit { display: block; width: 100%; }

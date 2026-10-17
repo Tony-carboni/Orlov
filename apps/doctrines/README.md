@@ -16,6 +16,9 @@ An Alliance Auth plugin that serves the alliance's fleet doctrines under their o
   Clicking a ship opens its fitting: the hull's render, the modules by slot with icons, drones and
   cargo, and a **Copy fit to clipboard** button (the game's fitting window → Import from clipboard);
   "Open as text" is the fallback when a browser blocks the clipboard.
+- **Fitting wheel (0.2.2):** an opened fit draws the game's fitting window (the hull in the middle, the
+  modules around it by slot) with the `shipfit` web component (MIT, self-hosted in `static/doctrines/vendor/`,
+  item data bundled, images from EVE's image server); the slot list with names stays beside it.
 - **SRP tag (0.2.1):** a doctrine's *SRP percent* (say 50) shows as a tag on the tile and the page, the
   ships table gets an SRP column with that share of each fit's cost, and *loss if lost* is cost minus net
   insurance minus SRP. With 0 the table shows the per-ship SRP level badges instead.
