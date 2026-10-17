@@ -17,6 +17,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Also (2026-10-16):** user `Gizzimo` showed as `[.WAR.]` because their main was the character Gizzimo (Warforged Militants, NC.); their alt BadOmens joined OARMI on 2026-10-15 20:09. On the owner's instruction the main was set to BadOmens from the shell (`profile.main_character`, `assign_state()`); state Family Member, group `corp_OARMI`, Discord nickname `[OARMI] BadOmens` with roles Family Member and `corp_OARMI` (the first Discord push hit auth's rate limiter, the retry a minute later went through, as with Braadslee). Crimson Harvest 2026 (6 Oct–3 Nov): only shooting the Triglavian wormhole guards costs Triglavian standing; the event sites do not.
 
+**Also (2026-10-17):** "update user tommicus" per runbook 04 E: Tommicus Aurilen SWA → OARMI in auth, Family Friend → Family Member, `corp_OARMI`, Discord `[OARMI] Tommicus Aurilen` with Family Member and `corp_OARMI` (verified on the server). The owner first said "atlas": no user, character or Discord member by that name exists in auth.
+
 **Owner has to do by hand**
 - Structure income: untick the payers that should not count (your own characters, OARMI if its job tax is your own money moving).
 - My business: still **Connect the jobs** with Catherine Frey (0.13.0) so the production charts and the produced columns fill; until then they read 0.
