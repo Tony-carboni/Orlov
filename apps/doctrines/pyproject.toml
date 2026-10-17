@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orlov-doctrines"
+dynamic = ["version"]
+description = "Doctrines: The Orlov Family's fleet doctrines behind auth, under their own hostname (Alliance Auth plugin)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "allianceauth>=4.0",
+    "requests>=2.31",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "doctrines.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["doctrines*"]
+
+[tool.setuptools.package-data]
+doctrines = ["templates/**/*", "static/**/*"]

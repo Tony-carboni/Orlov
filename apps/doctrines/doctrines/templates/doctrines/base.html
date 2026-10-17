@@ -1,0 +1,18 @@
+{% extends frame|default:"doctrines/frame_auth.html" %}
+{% load static %}
+
+{% block page_title %}{% block doctrines_title %}Doctrines{% endblock %}{% endblock page_title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'doctrines/doctrines.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="doctrines-root" data-bs-theme="dark">
+    {% block doctrines_content %}{% endblock %}
+</div>
+{% endblock content %}
+
+{% block extra_javascript %}
+    <script src="{% static 'doctrines/doctrines.js' %}"></script>
+{% endblock %}

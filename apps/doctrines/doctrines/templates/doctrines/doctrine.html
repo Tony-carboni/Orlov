@@ -1,0 +1,117 @@
+{% extends "doctrines/base.html" %}
+{% load static doctrines_tags %}
+
+{% block doctrines_title %}{{ doctrine.name }}{% endblock %}
+
+{% block doctrines_content %}
+<nav aria-label="breadcrumb" class="mb-2"><ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'doctrines:index' %}">All doctrines</a></li>
+    <li class="breadcrumb-item doctrines-k">{{ doctrine.category.name }}</li>
+    <li class="breadcrumb-item active" aria-current="page">{{ doctrine.name }}</li>
+</ol></nav>
+
+<div class="row g-3 mb-3 align-items-stretch">
+    <div class="col-lg-7">
+        <div class="doctrines-head h-100">
+            {% if doctrine.picture_type_id %}<div class="doctrines-head-art" style="background-image: url('https://images.evetech.net/types/{{ doctrine.picture_type_id }}/render?size=512')"></div>{% endif %}
+            <div class="doctrines-head-text">
+                <div class="doctrines-tile-gameplay"><i class="fas fa-crosshairs fa-fw"></i> {{ doctrine.gameplay }} · {{ doctrine.category.name }}</div>
+                <h1 class="doctrines-h1 mb-1">{{ doctrine.name }}</h1>
+                {% if doctrine.summary %}<p class="lead mb-2">{{ doctrine.summary }}</p>{% endif %}
+                {% if doctrine.description %}<div class="doctrines-prose">{{ doctrine.description|paragraphs }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="row g-3 h-100">
+            <div class="col-sm-6 col-lg-12">
+                <div class="card doctrines-card h-100"><div class="card-body py-2">
+                    <div class="fw-semibold text-success mb-1"><i class="fas fa-plus fa-fw"></i> Pros</div>
+                    <ul class="mb-0 ps-3">{% for p in doctrine.pros|lines %}<li>{{ p }}</li>{% empty %}<li class="doctrines-k">not written yet</li>{% endfor %}</ul>
+                </div></div>
+            </div>
+            <div class="col-sm-6 col-lg-12">
+                <div class="card doctrines-card h-100"><div class="card-body py-2">
+                    <div class="fw-semibold text-danger mb-1"><i class="fas fa-minus fa-fw"></i> Cons</div>
+                    <ul class="mb-0 ps-3">{% for c in doctrine.cons|lines %}<li>{{ c }}</li>{% empty %}<li class="doctrines-k">not written yet</li>{% endfor %}</ul>
+                </div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if doctrine.strategy %}
+<div class="card doctrines-card mb-3"><div class="card-body py-2">
+    <div class="fw-semibold mb-1"><i class="fas fa-chess fa-fw"></i> Strategy notes</div>
+    <div class="doctrines-prose">{{ doctrine.strategy|paragraphs }}</div>
+</div></div>
+{% endif %}
+
+<h2 class="doctrines-h2 mb-1">Ships</h2>
+<div class="doctrines-k small mb-2">
+    Cost = hull plus everything fitted and carried, at {{ market }} lowest sell{% if prices_at %}, prices read {{ prices_at|date:"Y-m-d H:i" }} EVE{% if prices_stale %} <span class="text-warning">(older than usual)</span>{% endif %}{% else %}, <span class="text-warning">no prices read yet</span>{% endif %}.
+    Insurance = {{ insurance_level }}: payout minus premium. Loss = cost minus that net payout, what dying costs you before SRP. Click a ship for the fitting.
+</div>
+
+<div class="table-responsive mb-3">
+<table class="table table-sm table-hover align-middle doctrines-ships">
+    <thead><tr>
+        <th>Ship</th><th>Role</th><th class="text-end" title="Hull + fit + drones + cargo">Cost</th><th class="text-end" title="{{ insurance_level }} payout minus premium">Net insurance</th><th class="text-end" title="Cost minus net insurance">Loss if lost</th><th>SRP</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for r in rows %}
+        <tr class="doctrines-ship-row" data-target="fit-{{ r.ship.pk }}" role="button" aria-expanded="false">
+            <td class="text-nowrap"><img src="https://images.evetech.net/types/{{ r.ship.ship_type_id }}/icon?size=64" width="32" height="32" class="rounded me-2" alt=""><span class="fw-semibold">{{ r.ship.name }}</span>{% if r.ship.notes %}<div class="small doctrines-k">{{ r.ship.notes }}</div>{% endif %}{% if r.ship.parse_error %}<div class="small text-warning"><i class="fas fa-triangle-exclamation fa-fw"></i> {{ r.ship.parse_error }}</div>{% endif %}</td>
+            <td>{{ r.ship.role }}</td>
+            <td class="text-end" title="hull {{ r.cost.hull|isk }}, fit {{ r.cost.fit|isk }}, drones {{ r.cost.drones|isk }}, cargo {{ r.cost.cargo|isk }}{% if r.cost.missing %}; {{ r.cost.missing|length }} item(s) without a price{% endif %}">{{ r.cost.total|isk }}{% if r.cost.missing %} <i class="fas fa-circle-question text-warning" title="{{ r.cost.missing|length }} item(s) have no price yet"></i>{% endif %}</td>
+            <td class="text-end" title="payout {{ r.insurance.payout|isk }} − premium {{ r.insurance.cost|isk }}">{{ r.insurance.net|isk }}</td>
+            <td class="text-end">{{ r.loss|isk }}</td>
+            <td>{% if r.ship.srp_level %}<span class="badge text-bg-{{ r.ship.srp_level.colour }}" title="{{ r.ship.srp_level.description }}">{{ r.ship.srp_level.name }}</span>{% else %}<span class="doctrines-k">–</span>{% endif %}</td>
+            <td class="text-end doctrines-k"><i class="fas fa-chevron-down doctrines-chevron"></i></td>
+        </tr>
+        <tr class="doctrines-fit-row" id="fit-{{ r.ship.pk }}" hidden>
+            <td colspan="7">
+                <div class="row g-3">
+                    <div class="col-md-4 col-xl-3">
+                        <div class="doctrines-render" style="background-image: url('https://images.evetech.net/types/{{ r.ship.ship_type_id }}/render?size=512')"></div>
+                        <div class="d-grid gap-2 mt-2">
+                            <button type="button" class="btn btn-primary doctrines-copy" data-copy="copy-{{ r.ship.pk }}"><i class="fas fa-clipboard fa-fw"></i> Copy fit to clipboard</button>
+                            <a class="btn btn-outline-secondary btn-sm" href="{% url 'doctrines:fit_text' r.ship.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-lines fa-fw"></i> Open as text</a>
+                        </div>
+                        <div class="small doctrines-k mt-2">In game: fitting window → <strong>Import from clipboard</strong>.</div>
+                        <textarea id="copy-{{ r.ship.pk }}" class="doctrines-hidden-text" readonly aria-hidden="true">{{ r.text }}</textarea>
+                    </div>
+                    <div class="col-md-8 col-xl-9">
+                        <div class="row g-3">
+                        {% for g in r.groups %}
+                            <div class="col-sm-6 col-xl-4">
+                                <div class="doctrines-slot-group">
+                                    <div class="doctrines-slot-title">{{ g.label }}</div>
+                                    {% for m in g.rows %}
+                                    <div class="doctrines-module">
+                                        <img src="https://images.evetech.net/types/{{ m.type_id }}/icon?size=32" width="24" height="24" alt="">
+                                        <span>{% if m.quantity > 1 %}<span class="doctrines-k">{{ m.quantity }} ×</span> {% endif %}{{ m.name }}{% if m.charge %}<span class="doctrines-k"> · {{ m.charge.name }}</span>{% endif %}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col-12 doctrines-k">No modules parsed{% if r.ship.parse_error %}: {{ r.ship.parse_error }}{% endif %}.</div>
+                        {% endfor %}
+                        </div>
+                        {% if r.layout.unknown %}<div class="small text-warning mt-2"><i class="fas fa-triangle-exclamation fa-fw"></i> Not recognised by EVE's item list: {{ r.layout.unknown|join:", " }}</div>{% endif %}
+                    </div>
+                </div>
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="7" class="doctrines-k">No ships in this doctrine yet.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% if others %}
+<div class="doctrines-k small">Other doctrines: {% for o in others %}<a href="{% url 'doctrines:doctrine' o.slug %}">{{ o.name }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</div>
+{% endif %}
+{% endblock %}

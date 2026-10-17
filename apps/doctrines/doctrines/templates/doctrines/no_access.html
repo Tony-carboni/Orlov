@@ -1,0 +1,11 @@
+{% extends "doctrines/base.html" %}
+
+{% block doctrines_title %}Not for you{% endblock %}
+
+{% block doctrines_content %}
+<div class="alert alert-warning mt-3">
+    <h4 class="alert-heading"><i class="fas fa-lock fa-fw"></i> The doctrines are for members of The Orlov Family</h4>
+    <p class="mb-1">You are logged in, but your main character is not in a member corporation of the alliance, so this page stays closed.</p>
+    <p class="mb-0">If your corporation has just joined, auth catches up within the hour; if your main character is wrong, change it in <a href="{{ SITE_URL }}">auth</a> under Dashboard → Change Main Character.</p>
+</div>
+{% endblock %}

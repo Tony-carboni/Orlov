@@ -196,3 +196,17 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_corp_projects"] = {
     "task": "shipyard.tasks.refresh_corp_projects",
     "schedule": crontab(minute="25"),
 }
+
+# --- Doctrines: fleet doctrines behind auth at doctrines.orlovfamily.space (runbook 16) ----
+INSTALLED_APPS += ["doctrines"]
+DOCTRINES_HOST = ""                                  # "doctrines.orlovfamily.space" once DNS and the proxy host exist (runbook 16 C); "" = auth's host only
+MIDDLEWARE += ["doctrines.middleware.DoctrinesHostMiddleware"]
+CSRF_TRUSTED_ORIGINS += ["https://doctrines.orlovfamily.space"]
+CELERYBEAT_SCHEDULE["doctrines_refresh_prices"] = {
+    "task": "doctrines.tasks.refresh_prices",
+    "schedule": crontab(minute="35"),
+}
+CELERYBEAT_SCHEDULE["doctrines_refresh_insurance"] = {
+    "task": "doctrines.tasks.refresh_insurance",
+    "schedule": crontab(minute="40", hour="5"),
+}

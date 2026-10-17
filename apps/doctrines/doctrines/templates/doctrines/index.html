@@ -1,0 +1,39 @@
+{% extends "doctrines/base.html" %}
+{% load static doctrines_tags %}
+
+{% block doctrines_title %}Fleet doctrines{% endblock %}
+
+{% block doctrines_content %}
+<div class="doctrines-hero mb-4">
+    <h1 class="doctrines-h1">{% if text %}{{ text.title }}{% else %}How we fly{% endif %}</h1>
+    <div class="doctrines-philosophy">
+        {% if text and text.body %}{{ text.body|paragraphs }}{% else %}<p class="doctrines-k">The landing text is not written yet. A manager writes it in auth's admin under Doctrines → Landing page text.</p>{% endif %}
+    </div>
+</div>
+
+{% for block in categories %}
+<section class="doctrines-category mb-4">
+    <div class="d-flex align-items-baseline gap-3 mb-2">
+        <h2 class="doctrines-h2 mb-0">{{ block.category.name }}</h2>
+        {% if block.category.blurb %}<span class="doctrines-k">{{ block.category.blurb }}</span>{% endif %}
+    </div>
+    <div class="row g-3">
+        {% for d in block.doctrines %}
+        <div class="col-sm-6 col-lg-4 col-xxl-3">
+            <a class="doctrines-tile" href="{% url 'doctrines:doctrine' d.slug %}">
+                <div class="doctrines-tile-art" {% if d.picture_type_id %}style="background-image: url('https://images.evetech.net/types/{{ d.picture_type_id }}/render?size=512')"{% endif %}></div>
+                <div class="doctrines-tile-body">
+                    <div class="doctrines-tile-gameplay"><i class="fas fa-crosshairs fa-fw"></i> {{ d.gameplay }}</div>
+                    <div class="doctrines-tile-name">{{ d.name }}</div>
+                    {% if d.summary %}<div class="doctrines-tile-summary">{{ d.summary }}</div>{% endif %}
+                    <div class="doctrines-tile-foot doctrines-k">{{ d.ships.count }} ship{{ d.ships.count|pluralize }}</div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% empty %}
+<div class="alert alert-info">No doctrine is published yet.{% if can_manage %} Add one in auth's admin: Doctrines → Doctrines → Add.{% endif %}</div>
+{% endfor %}
+{% endblock %}

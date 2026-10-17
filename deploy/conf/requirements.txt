@@ -7,3 +7,5 @@ aa-structuretimers==3.2.0
 allianceauth-discordbot==5.0.1
 # Shipyard plugin from this repo (apps/shipyard); replace <commit-sha> with the pinned commit, change it to update
 orlov-shipyard @ https://github.com/Tony-carboni/Orlov/archive/<commit-sha>.tar.gz#subdirectory=apps/shipyard
+# Doctrines plugin from this repo (apps/doctrines), same archive, pinned to the same commit as the Shipyard (runbook 16)
+orlov-doctrines @ https://github.com/Tony-carboni/Orlov/archive/<commit-sha>.tar.gz#subdirectory=apps/doctrines

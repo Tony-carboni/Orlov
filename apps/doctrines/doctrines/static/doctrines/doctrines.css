@@ -1,0 +1,58 @@
+/* Doctrines: the same dark navy look as the Shipyard, with tiles and a fitting layout. */
+.doctrines-body, .doctrines-root {
+    --dc-bg: #0b1628; --dc-panel: #11213a; --dc-panel-2: #172b4a; --dc-line: #233a5e;
+    --dc-text: #d7dfea; --dc-muted: #8da2c0; --dc-accent: #4cc3ff;
+    --bs-body-bg: var(--dc-bg); --bs-body-color: var(--dc-text); --bs-secondary-color: var(--dc-muted);
+    --bs-tertiary-bg: var(--dc-panel-2); --bs-secondary-bg: var(--dc-panel); --bs-border-color: var(--dc-line);
+    --bs-link-color: var(--dc-accent); --bs-link-hover-color: #8adaff; --bs-emphasis-color: #ffffff;
+    color: var(--dc-text);
+}
+.doctrines-body { background: radial-gradient(1200px 600px at 20% -10%, #15305a 0%, var(--dc-bg) 55%) fixed; min-height: 100vh; }
+.doctrines-root { background: var(--dc-bg); border-radius: .5rem; padding: 1rem; }
+.doctrines-topbar { background: #0f1f3d; border-bottom: 1px solid var(--dc-line); }
+.doctrines-topbar .navbar-brand { font-weight: 600; letter-spacing: .02em; color: #fff; }
+.doctrines-k { color: var(--dc-muted); }
+.doctrines-h1 { font-weight: 700; letter-spacing: .01em; color: #fff; }
+.doctrines-h2 { font-weight: 600; font-size: 1.25rem; color: #fff; }
+.doctrines-root .card, .doctrines-body .card { --bs-card-bg: var(--dc-panel); --bs-card-border-color: var(--dc-line); }
+.doctrines-root .table, .doctrines-body .table {
+    --bs-table-bg: transparent; --bs-table-color: var(--dc-text); --bs-table-hover-bg: rgba(76,195,255,.10); --bs-table-hover-color: #fff;
+    --bs-table-border-color: var(--dc-line);
+}
+.doctrines-root thead th { background: var(--dc-panel); color: var(--dc-muted); font-weight: 600; }
+.doctrines-root .text-muted { color: var(--dc-muted) !important; }
+.doctrines-root .breadcrumb-item + .breadcrumb-item::before { color: var(--dc-muted); }
+
+/* landing page */
+.doctrines-hero { padding: 1.25rem 1.5rem; border: 1px solid var(--dc-line); border-radius: .75rem;
+    background: linear-gradient(135deg, #15305a 0%, var(--dc-panel) 60%); }
+.doctrines-philosophy { max-width: 60rem; font-size: 1.05rem; }
+.doctrines-philosophy p:last-child { margin-bottom: 0; }
+.doctrines-tile { display: block; height: 100%; border: 1px solid var(--dc-line); border-radius: .6rem; overflow: hidden;
+    background: var(--dc-panel); color: var(--dc-text); text-decoration: none; transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+.doctrines-tile:hover { transform: translateY(-2px); border-color: var(--dc-accent); box-shadow: 0 .5rem 1.25rem rgba(0,0,0,.45); color: #fff; }
+.doctrines-tile-art { height: 150px; background-color: #0a1324; background-size: cover; background-position: center 40%; position: relative; }
+.doctrines-tile-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,19,36,.05) 0%, rgba(17,33,58,.95) 100%); }
+.doctrines-tile-body { padding: .75rem 1rem 1rem; }
+.doctrines-tile-gameplay { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--dc-accent); }
+.doctrines-tile-name { font-size: 1.15rem; font-weight: 700; color: #fff; }
+.doctrines-tile-summary { font-size: .92rem; margin-top: .25rem; }
+.doctrines-tile-foot { font-size: .8rem; margin-top: .5rem; }
+
+/* doctrine page */
+.doctrines-head { position: relative; border: 1px solid var(--dc-line); border-radius: .75rem; overflow: hidden; background: var(--dc-panel); min-height: 220px; }
+.doctrines-head-art { position: absolute; inset: 0; background-size: cover; background-position: center 35%; opacity: .35; }
+.doctrines-head-text { position: relative; padding: 1.25rem 1.5rem; }
+.doctrines-card { border: 1px solid var(--dc-line); }
+.doctrines-prose p:last-child, .doctrines-prose ul:last-child { margin-bottom: 0; }
+.doctrines-ships tr.doctrines-ship-row { cursor: pointer; }
+.doctrines-ships tr.doctrines-ship-row[aria-expanded="true"] .doctrines-chevron { transform: rotate(180deg); }
+.doctrines-chevron { transition: transform .15s ease; }
+.doctrines-fit-row > td { background: rgba(255,255,255,.03); border-bottom: 1px solid var(--dc-line); padding: 1rem; }
+.doctrines-render { aspect-ratio: 1 / 1; max-height: 260px; border-radius: .6rem; background-color: #0a1324; background-size: cover; background-position: center; border: 1px solid var(--dc-line); }
+.doctrines-slot-group { border: 1px solid var(--dc-line); border-radius: .5rem; padding: .5rem .6rem; background: var(--dc-panel); height: 100%; }
+.doctrines-slot-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--dc-muted); margin-bottom: .35rem; }
+.doctrines-module { display: flex; align-items: center; gap: .5rem; padding: .15rem 0; font-size: .92rem; }
+.doctrines-module img { border-radius: 4px; flex: 0 0 auto; }
+.doctrines-hidden-text { position: absolute; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; }
+.doctrines-copy.is-done { background: #198754; border-color: #198754; }
