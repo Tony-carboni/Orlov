@@ -70,7 +70,7 @@ class PageTests(TestCase):
         self.assertIn("Copy fit to clipboard", html)
         self.assertIn("[Harpy, Rail Harpy v3]", html)
         self.assertIn("<ship-fit hide-copy>", html)  # the fitting wheel
-        self.assertIn("vendor/shipfit.umd.min.js", html)
+        self.assertIn("vendor/shipfit.umd.min", html)  # the live settings hash static names
 
     def test_fit_text(self):
         self.client.force_login(self.user)
