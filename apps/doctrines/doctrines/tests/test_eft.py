@@ -2,6 +2,7 @@
 from django.test import SimpleTestCase
 
 from ..services import eft, types
+from ..templatetags.doctrines_tags import keyed
 
 HARPY = """[Harpy, Rail Harpy v3]
 Magnetic Field Stabilizer II
@@ -120,3 +121,12 @@ class SlotTests(SimpleTestCase):
         self.assertEqual(types.slot_of({"category_id": 7, "dogma_effects": [{"effect_id": 2663}]}), "rig")
         self.assertEqual(types.slot_of({"category_id": 32, "dogma_effects": [{"effect_id": 3772}]}), "subsystem")
         self.assertEqual(types.slot_of({"category_id": 4}), "cargo")
+
+
+class KeyedTests(SimpleTestCase):
+    def test_keyword_and_description_per_line(self):
+        text = "King of the hill - Can hold a point\n- Sturdy – takes a beating\nShortsighted: struggles at range\nplain line\n\n"
+        self.assertEqual(keyed(text), [
+            ("King of the hill", "Can hold a point"), ("Sturdy", "takes a beating"),
+            ("Shortsighted", "struggles at range"), ("", "plain line"),
+        ])

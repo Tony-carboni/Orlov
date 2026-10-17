@@ -9,12 +9,17 @@ An Alliance Auth plugin that serves the alliance's fleet doctrines under their o
 - **Landing page:** the alliance's philosophy (editable text) and the doctrines as clickable tiles in four
   rows: Light & cheap, Bread and butter, Support, APEX. A tile shows the doctrine's name, its gameplay
   (home defense, faction warfare, wormhole, nullsec roam, ...), a summary and the ship pictured.
-- **Doctrine page:** description, pros, cons, strategy notes, and the ships: role, **cost** (hull plus
+- **Doctrine page:** description, strengths and weaknesses (one per line as `Keyword - description`;
+  the keyword is shown bold), strategy notes, and the ships: role, **cost** (hull plus
   everything fitted and carried, at Jita IV-4 lowest sell), **net insurance** (Platinum payout minus
   premium, from EVE's insurance table), **loss if lost** (cost minus net insurance), the **SRP level**.
   Clicking a ship opens its fitting: the hull's render, the modules by slot with icons, drones and
   cargo, and a **Copy fit to clipboard** button (the game's fitting window → Import from clipboard);
   "Open as text" is the fallback when a browser blocks the clipboard.
+- **Variants (0.2.0):** a hull with several fits of the same role, for example a T1 fit for lower
+  skills and a T2 fit for full skills, is one row in the ships table (hull, role, the cost and loss
+  of each variant) and opens to T1 / T2 buttons that switch the fitting shown. Set the *variant*
+  field on each ship (`T1`, `T2`, ...); ships without a variant are rows of their own.
 
 ## How it is edited
 

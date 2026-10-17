@@ -1,7 +1,7 @@
 """The pages: permission gate, landing tiles per category, a doctrine page with cost, insurance and SRP, the fit text."""
 from allianceauth.tests.auth_utils import AuthUtils
 from django.contrib.auth.models import Permission
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from ..models import Category, Doctrine, DoctrineShip, Insurance, ItemType, SiteText, SrpLevel, TypePrice
@@ -10,6 +10,7 @@ from ..services import fittings
 FIT = "[Harpy, Rail Harpy v3]\nDamage Control II\n150mm Railgun II, Spike S\nHobgoblin II x2\nSpike S x500\n"
 
 
+@override_settings(DOCTRINES_HOST="")  # the pages on auth's host; the live settings may carry the real hostname
 class PageTests(TestCase):
     def setUp(self):
         self.user = AuthUtils.create_user("reader")
@@ -75,6 +76,38 @@ class PageTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.content.decode().startswith("[Harpy, Rail Harpy v3]"))
         self.assertIn("Hobgoblin II x2", r.content.decode())
+
+    def test_variants_group_under_one_hull(self):
+        """Two fits of the same hull and role (T1 for low skills, T2 for full skills) make one row with two panes."""
+        t1 = DoctrineShip(doctrine=self.doc, name="Harpy T1", role="DPS", variant="T1", order=1, fitting_text=FIT.replace("Damage Control II", "Damage Control I"))
+        ItemType.objects.create(type_id=2046, name="Damage Control I", slot="low")
+        TypePrice.objects.create(type_id=2046, sell_min=0.1e6)
+        fittings.store(t1)
+        t1.save()
+        self.ship.variant = "T2"
+        self.ship.order = 2
+        self.ship.save()
+        self.client.force_login(self.user)
+        r = self.client.get(reverse("doctrines:doctrine", args=[self.doc.slug]))
+        self.assertEqual(r.status_code, 200)
+        groups = r.context["groups"]
+        self.assertEqual(len(groups), 1)
+        self.assertEqual((groups[0]["hull"], groups[0]["role"], groups[0]["multi"]), ("Harpy", "DPS", True))
+        self.assertEqual([v["label"] for v in groups[0]["variants"]], ["T1", "T2"])
+        self.assertLess(groups[0]["variants"][0]["cost"]["total"], groups[0]["variants"][1]["cost"]["total"])
+        html = r.content.decode()
+        self.assertEqual(html.count("doctrines-ship-row"), 1)
+        self.assertEqual(html.count("Copy fit to clipboard"), 2)
+        self.assertIn('class="doctrines-variant"', html.replace("btn btn-sm btn-primary doctrines-variant", "doctrines-variant").replace("btn btn-sm btn-outline-secondary doctrines-variant", "doctrines-variant"))
+
+    def test_strengths_show_keyword_and_description(self):
+        self.doc.pros = "King of the hill - holds a point\nCheap: easy on the wallet\nJust a line"
+        self.doc.save()
+        self.client.force_login(self.user)
+        html = self.client.get(reverse("doctrines:doctrine", args=[self.doc.slug])).content.decode()
+        self.assertIn("<strong>King of the hill</strong>", html)
+        self.assertIn("<strong>Cheap</strong>", html)
+        self.assertIn("<li>Just a line</li>", html)
 
     def test_inactive_doctrine_is_hidden(self):
         self.doc.is_active = False

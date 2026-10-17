@@ -21,4 +21,5 @@ DOCTRINES_BRAND = getattr(settings, "DOCTRINES_BRAND", "Orlov Doctrines")
 
 
 def host() -> str:
-    return (DOCTRINES_HOST or "").strip().lower()
+    """Read at call time (not import time), so tests can override the setting."""
+    return (getattr(settings, "DOCTRINES_HOST", "") or "").strip().lower()

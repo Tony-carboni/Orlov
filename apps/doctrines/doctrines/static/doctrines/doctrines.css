@@ -56,3 +56,6 @@
 .doctrines-module img { border-radius: 4px; flex: 0 0 auto; }
 .doctrines-hidden-text { position: absolute; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; }
 .doctrines-copy.is-done { background: #198754; border-color: #198754; }
+.doctrines-variants { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem; }
+.doctrines-variant { min-width: 3.5rem; font-weight: 600; }
+.doctrines-keyed li { margin-bottom: .15rem; }

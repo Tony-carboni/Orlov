@@ -73,5 +73,38 @@ def page_data(ships) -> list[dict]:
     return out
 
 
+def grouped(rows: list[dict]) -> list[dict]:
+    """The doctrine page's overview: one entry per hull and role, its fits (T1, T2, ...) as variants in
+    the order of the ships. A ship without a variant is a group of one. The hull is named by EVE
+    (ship_type_name) and falls back to the fit's name when the fitting did not parse."""
+    groups = []
+    index = {}
+    for r in rows:
+        s = r["ship"]
+        key = (s.ship_type_id or s.name.lower(), s.role.strip().lower())
+        g = index.get(key)
+        if g is None:
+            g = {
+                "key": f"{s.ship_type_id or 0}-{len(groups)}", "ship": s, "type_id": s.ship_type_id,
+                "hull": s.ship_type_name or s.name, "role": s.role, "variants": [],
+            }
+            index[key] = g
+            groups.append(g)
+        r["label"] = s.variant or (s.name if len(g["variants"]) else "")
+        g["variants"].append(r)
+    for g in groups:
+        if len(g["variants"]) > 1 and not g["variants"][0]["label"]:
+            g["variants"][0]["label"] = g["variants"][0]["ship"].name
+        g["multi"] = len(g["variants"]) > 1
+        g["srp_levels"] = []
+        for r in g["variants"]:
+            lvl = r["ship"].srp_level
+            if lvl and lvl not in g["srp_levels"]:
+                g["srp_levels"].append(lvl)
+        g["notes"] = [r["ship"].notes for r in g["variants"] if r["ship"].notes]
+        g["errors"] = [r["ship"].parse_error for r in g["variants"] if r["ship"].parse_error]
+    return groups
+
+
 def market_name() -> str:
     return app_settings.DOCTRINES_MARKET_NAME

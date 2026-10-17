@@ -72,6 +72,22 @@ def lines(text):
 
 
 @register.filter
+def keyed(text):
+    """Pros and cons as (keyword, description) per line: 'King of the hill - holds a point' → ('King of the hill',
+    'holds a point'). A line without a separator (' - ', ' – ', ' — ' or ': ') is all description."""
+    out = []
+    for ln in lines(text):
+        for sep in (" - ", " – ", " — ", ": "):
+            if sep in ln:
+                key, desc = ln.split(sep, 1)
+                out.append((key.strip(), desc.strip()))
+                break
+        else:
+            out.append(("", ln))
+    return out
+
+
+@register.filter
 def logout_url(_):
     from django.urls import NoReverseMatch, reverse
 

@@ -34,7 +34,21 @@
         } catch (e) { done(false); }
     }
 
+    function pick(tab) {
+        var group = tab.dataset.group;
+        document.querySelectorAll('.doctrines-variant[data-group="' + group + '"]').forEach(function (b) {
+            var on = b === tab;
+            b.classList.toggle("btn-primary", on); b.classList.toggle("btn-outline-secondary", !on);
+            b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        document.querySelectorAll('.doctrines-pane[data-group="' + group + '"]').forEach(function (p) {
+            if (p.id === tab.dataset.pane) { p.removeAttribute("hidden"); } else { p.setAttribute("hidden", ""); }
+        });
+    }
+
     document.addEventListener("click", function (e) {
+        var tab = e.target.closest(".doctrines-variant");
+        if (tab) { e.preventDefault(); e.stopPropagation(); pick(tab); return; }
         var button = e.target.closest(".doctrines-copy");
         if (button) { e.preventDefault(); e.stopPropagation(); copy(button); return; }
         var row = e.target.closest("tr.doctrines-ship-row");

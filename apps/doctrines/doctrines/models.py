@@ -118,6 +118,7 @@ class DoctrineShip(models.Model):
     order = models.PositiveSmallIntegerField(default=0)
     name = models.CharField(max_length=100, help_text="The fit's name, e.g. 'Harpy, Rail Harpy v3'")
     role = models.CharField(max_length=60, help_text="Role in the fleet: DPS, Logistics, Tackle, EWAR, Boosts, Scout, FC, ...")
+    variant = models.CharField(max_length=12, blank=True, help_text="T1, T2, ... when the same hull and role has several fits (lower-skill and full-skill versions); the page lists the hull once and shows the variants on click. Blank = the only fit")
     srp_level = models.ForeignKey(SrpLevel, on_delete=models.SET_NULL, null=True, blank=True, related_name="ships")
     notes = models.CharField(max_length=300, blank=True, help_text="Short line under the ship: skills, implants, how many wanted")
     fitting_text = models.TextField(help_text="Paste the fitting as the game exports it: fitting window → Export → To clipboard (EFT format). First line [Hull, Fit name], then the modules, one per line, drones as 'Hobgoblin II x5'.")
