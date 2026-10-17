@@ -24,6 +24,26 @@ More doctrines: the owner hands over a text file in the same shape (name, type, 
 
 ---
 
+## 2026-10-17 (14:35 UTC) — desktop session → any session
+
+**Runbook / topic:** **Doctrines 0.2.1 → 0.2.3** on the owner's requests while he reviewed the first doctrine page; all released per runbook 13 C (backups `aa-db-2026-10-17-1414`, `-1424`, `-1428`; `requirements.txt.pre-doctrines-0.2.x` in `~/backups`; build of all services each time; migration 0003 in 0.2.1; collectstatic before `up -d`). Live now: commit `f795751` pinned, gunicorn, workers and beat on 0.2.3, 0 errors, 18 tests.
+
+**Done**
+- 0.2.1: **SRP percent** per doctrine (`srp_percent`, migration 0003) shown as a yellow tag on the tile and the page card and taken off the final cost; **role headers** in the ships table (DPS, Logi, Tackle, Support, with an icon and the hull count) with the hulls indented under them, the Role column gone; the T1 / T2 choice as **Bootstrap tabs** (label, "lower skills" / "full skills", the fit's cost) joined to the panel; the explanatory paragraph above the table removed (the column headers carry it on hover).
+- 0.2.2: the **fitting wheel**: an opened fit draws the game's fitting window with the `shipfit` web component (npm `shipfit` 1.0.0, MIT, 396 KB, self-hosted in `static/doctrines/vendor/` with a licence file; item data bundled from 2021, only EVE's image server at runtime; its GitHub repository is gone, the npm package remains). This is what the owner remembered from other alliances' doctrine pages. Looked at and not taken: EVEShip.fit's React components (React plus self-hosted data files behind CORS) and quiescens' eve-ui (a list, jQuery, unmaintained).
+- 0.2.3: the table reads **Cost, SRP, Net insurance, Final cost** (cost minus SRP minus net insurance) with the Shipyard reprocessing rounding (`isk_auto`: millions with three decimals, 100 k and up whole).
+- Content of **AB Armor frigs** set from the owner's texts (summary, strengths, weaknesses, strategy notes), the description cleared (the card shows the name and the summary only), SRP 50 %.
+
+**Owner has to do by hand**
+- Look at https://doctrines.orlovfamily.space/doctrines/ab-armor-frigs/ (open a hull: the tabs and the wheel). Next doctrines: hand over a text file in the same shape plus the fitting export (re-export it; the current `fittings.xml` is cut off at the end).
+- Landing text; delete or hide "Example: Rail Harpies"; runbook 16 E.
+- Still open: My business "Connect the jobs" with Catherine Frey; Structure income untick your own payers; send Eemar the CEO roster guide.
+
+### Next — any session
+A management command `doctrines_import` (text file + fitting export → doctrine with T1/T2 ships) would replace the session-scratchpad converter used for the first doctrine. The table shows two lines per hull (T1 and T2); if the owner wants one line, show the T2 figures in the row and keep T1 in the tabs.
+
+---
+
 ## 2026-10-17 (10:35 UTC) — desktop session → any session
 
 **Runbook / topic:** **runbook 16 A and C, the doctrines site is live** at https://doctrines.orlovfamily.space.
@@ -77,29 +97,3 @@ Runbook 16 C once A is done: set `DOCTRINES_HOST = "doctrines.orlovfamily.space"
 
 ### Next — any session
 Nothing queued. Shipyard 0.13.3 on the server (commit `695b655` pinned).
-
----
-
-## 2026-10-14 (desktop session) — alliance news site, runbook 15
-
-**Done (desktop).** Public page for State-of-the-Union style reports: `site/alliance/` in the repo (Markdown posts, `build.py`, dark template), served by a new `alliance_site` nginx container on the server (`~/aa-docker/alliance-site/`, service appended to `docker-compose.yml`, backup `docker-compose.yml.pre-alliance-site`; 12 containers up). First draft post built and copied; `curl http://alliance_site/` from the proxy container answers 200. Runbook 15 written.
-
-**Also (11:10 UTC):** Shipyard 0.11.0, the **Structure income** tab (runbook 13 C): GWON wallet ledger, income per period and per payer, hourly task; migration 0016 applied, beat entry added, 79 tests, 12 containers up. **Owner:** on https://shipyards.orlovfamily.space/shipyard/income/ press *Connect the wallet* and log in to EVE with Vieze Jonge Pass (GWON's CEO), accept both scopes; then *Read the wallet now*. Done by the owner at 11:15; 0.11.1 fixed the payer corporations and the header badge; ledger 1,122 entries since 2026-09-14, 74 M income in the last 30 days (OARMI 40 M, Ceken 22 M, Max Caulfield 10 M).
-
-**Also (11:30 UTC):** Shipyard 0.12.0, the **Corp projects** tab (runbook 13 C, research 08): OARMI projects snapshotted hourly, payouts per period, contributors; migration 0017, beat entry, 81 tests, 12 containers up. **Owner:** on https://shipyards.orlovfamily.space/shipyard/projects/ press *Connect the projects* and log in to EVE with Catherine Frey, accept the scope; then *Read the projects now*. 0.12.1 fixed the DataTables column-count warning on the empty projects page.
-
-**Naming (owner, 2026-10-14):** the site at alliance.orlovfamily.space is called **the alliance website** from now on. The first post, "State of the Union, October 2026" (full version, written with the owner), is built and copied to the server; the owner writes the in-game mail summary himself and links to https://alliance.orlovfamily.space/2026-10-14-state-of-the-union-october-2026.html.
-
-**Also:** Tavaga (Discord flambo2018) added to the auth group `FC` on 2026-10-14, Discord roles pushed (True).
-
-**Discord (2026-10-14, through the auth bot's token):** `#pings` under Member channels is now read-only for Family Member (view, history, reactions; no posting, threads or mentions) and FC, Corp Director and Alliance Director may post and use @everyone/@here. A second, stray `#pings` outside any category exists; the owner deletes it by hand if unwanted. The owner's new **FCs** category (fc-discussions, fittings, voice4) is hidden from @everyone and Family Member; FC, Corp Director and Alliance Director hold a liberal set there (post, mentions, attachments, threads, manage messages, voice incl. stream, soundboard, move/mute).
-
-**Also (15:35 UTC):** Shipyard **0.13.0, the My business tab** (runbook 13 C): the chosen character's wallet, ships sold per dashboard category and hull class with four Chart.js charts, production metrics from OARMI's industry jobs (hourly copy, migration 0018, beat entry at :20), produced-versus-sold per category. Live: 1,204 ships sold for 94.5 B since 2026-09-26, wallet 96.95 B. **Owner:** on https://shipyards.orlovfamily.space/shipyard/business/ press *Connect the jobs* and log in to EVE with Catherine Frey (OARMI's CEO, so Factory Manager), accept the scope; then *Read the jobs now*; the production charts fill from the last 90 days of corp jobs. Tests 85.
-
-**Also (afternoon):** 0.13.1, 7 and 14 day ranges on My business (the range applied to the by-ship table all along; the data is younger than 30 days). Server pinned at `5dcf4f1`, 85 tests.
-
-**Moon board (2026-10-16):** restyled like the structure board and shows the auto-pop time (runbook 09); deployed to the bot, backup `moons.py.pre-autopop`.
-
-**Owner does by hand:** runbook 15 A (Porkbun A record `alliance` to 167.99.207.145) and C (Nginx Proxy Manager proxy host `alliance.orlovfamily.space` to http://alliance_site:80 with a Let's Encrypt certificate). Then write the real post in `site/alliance/posts/` and say "publish the alliance news" to a local session (15 D).
-
-**Also since the last entry:** Republic Fleet LP value 725 ISK/LP (2026-10-13); Shipyard 0.10.3 (Blueprint column includes the cruiser tag); guide `docs/guides/corp-roles.md`.
