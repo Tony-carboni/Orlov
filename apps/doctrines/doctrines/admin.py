@@ -49,14 +49,14 @@ class DoctrineShipInline(admin.StackedInline):
 
 @admin.register(Doctrine)
 class DoctrineAdmin(admin.ModelAdmin):
-    list_display = ("name", "category", "gameplay", "ship_count", "is_active", "order", "updated_at", "updated_by")
+    list_display = ("name", "category", "gameplay", "srp_percent", "ship_count", "is_active", "order", "updated_at", "updated_by")
     list_filter = ("category", "is_active")
     list_editable = ("order", "is_active")
     search_fields = ("name", "gameplay", "summary")
     prepopulated_fields = {"slug": ("name",)}
     inlines = [DoctrineShipInline]
     fieldsets = (
-        (None, {"fields": ("category", "name", "slug", "gameplay", "summary", "tile_type_id", "order", "is_active")}),
+        (None, {"fields": ("category", "name", "slug", "gameplay", "summary", "srp_percent", "tile_type_id", "order", "is_active")}),
         ("The page", {"fields": ("description", "pros", "cons", "strategy")}),
     )
 

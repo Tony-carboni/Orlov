@@ -49,8 +49,9 @@ def type_ids_of(ship: DoctrineShip) -> set[int]:
     return ids
 
 
-def page_data(ships) -> list[dict]:
-    """For the doctrine page: one dict per ship with the layout, cost, insurance and SRP."""
+def page_data(ships, srp_percent: int = 0) -> list[dict]:
+    """For the doctrine page: one dict per ship with the layout, cost, insurance and SRP.
+    srp_percent: the doctrine's ship replacement as a share of the cost; it comes off the loss."""
     ships = list(ships)
     ids = set()
     for s in ships:
@@ -63,11 +64,13 @@ def page_data(ships) -> list[dict]:
         layout = {"hull": fj.get("hull"), "slots": fj.get("slots") or {k: [] for k in eft.SLOT_ORDER}, "unknown": fj.get("unknown") or []}
         c = eft.cost(layout, price) if fj else {"hull": 0, "fit": 0, "drones": 0, "cargo": 0, "total": 0, "missing": []}
         cost_, payout, net = ins.get(s.ship_type_id, (None, None, None))
+        srp = c["total"] * srp_percent / 100.0 if (srp_percent and c["total"]) else 0.0
         groups = [{"slot": slot, "label": eft.SLOT_LABELS[slot], "rows": layout["slots"].get(slot, [])} for slot in eft.SLOT_ORDER if layout["slots"].get(slot)]
         out.append({
             "ship": s, "layout": layout, "groups": groups, "cost": c,
             "insurance": {"cost": cost_, "payout": payout, "net": net},
-            "loss": (c["total"] - net) if (net is not None and c["total"]) else None,
+            "srp": srp,
+            "loss": (c["total"] - net - srp) if (net is not None and c["total"]) else None,
             "text": fj.get("text") or s.fitting_text,
         })
     return out
@@ -104,6 +107,28 @@ def grouped(rows: list[dict]) -> list[dict]:
         g["notes"] = [r["ship"].notes for r in g["variants"] if r["ship"].notes]
         g["errors"] = [r["ship"].parse_error for r in g["variants"] if r["ship"].parse_error]
     return groups
+
+
+ROLE_ICONS = {
+    "dps": "fa-crosshairs", "logi": "fa-kit-medical", "logistics": "fa-kit-medical", "tackle": "fa-link",
+    "support": "fa-satellite-dish", "ewar": "fa-satellite-dish", "boosts": "fa-wave-square", "scout": "fa-eye",
+    "fc": "fa-flag", "command": "fa-flag",
+}
+
+
+def by_role(groups: list[dict]) -> list[dict]:
+    """The hull groups under role headers (DPS, Logi, Tackle, ...), in the order the roles first appear."""
+    out = []
+    index = {}
+    for g in groups:
+        key = g["role"].strip().lower()
+        block = index.get(key)
+        if block is None:
+            block = {"role": g["role"].strip(), "icon": ROLE_ICONS.get(key, "fa-user-group"), "hulls": []}
+            index[key] = block
+            out.append(block)
+        block["hulls"].append(g)
+    return out
 
 
 def market_name() -> str:

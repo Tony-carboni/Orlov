@@ -38,7 +38,7 @@
         var group = tab.dataset.group;
         document.querySelectorAll('.doctrines-variant[data-group="' + group + '"]').forEach(function (b) {
             var on = b === tab;
-            b.classList.toggle("btn-primary", on); b.classList.toggle("btn-outline-secondary", !on);
+            b.classList.toggle("active", on);
             b.setAttribute("aria-selected", on ? "true" : "false");
         });
         document.querySelectorAll('.doctrines-pane[data-group="' + group + '"]').forEach(function (p) {

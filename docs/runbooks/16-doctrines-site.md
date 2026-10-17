@@ -53,13 +53,15 @@ Set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy of
 
 1. **Landing text:** admin → Doctrines → *Landing page text* → the one row → write the philosophy. Plain text; a blank line starts a paragraph, a line beginning with `- ` is a bullet.
 2. **Categories and SRP levels** are seeded; rename, reorder or add under *Categories* and *SRP levels* (an SRP level has a colour for its badge and a one-line description shown on hover).
-3. **A doctrine:** *Doctrines → Add*: category, name, gameplay (short: Home defense, Faction warfare, Wormhole, Nullsec roam, ...), summary (the tile's line), description, strengths and weaknesses (one per line, written as `Keyword - description`, e.g. `King of the hill - Takes a point and holds it`; the keyword comes out bold), strategy notes. Leave *tile type id* empty to picture the first ship, or put a type id to picture another hull.
+3. **A doctrine:** *Doctrines → Add*: category, name, gameplay (short: Home defense, Faction warfare, Wormhole, Nullsec roam, ...), summary (the tile's line), description, strengths and weaknesses (one per line, written as `Keyword - description`, e.g. `King of the hill - Takes a point and holds it`; the keyword comes out bold), strategy notes, **SRP percent** (e.g. 50: shown as a tag on the tile and the page, taken off the loss column). Leave *tile type id* empty to picture the first ship, or put a type id to picture another hull.
 4. **Its ships**, in the inline block under the doctrine: order, fit name, role (DPS, Logi, Tackle, Support, EWAR, Boosts, Scout, FC), **variant** (`T1` or `T2` when the same hull and role has a lower-skill and a full-skill fit; the page then shows the hull once and the two fits behind T1 / T2 buttons; leave blank for a single fit), SRP level, a notes line, and the **fitting pasted from the game**: fitting window → **Export** (the arrow icon) → **To clipboard** → paste. Save. The *ship type name* column fills in; a *parse error* means EVE did not know a line (a typo, or a module renamed by a patch): fix the text and save again. New items are priced on save. Give the two variants of a hull the same *order* number so they stay together.
 5. Untick *is active* on a doctrine to hide it while you work on it.
 
 ✅ Done when the landing page shows the tiles and a doctrine page shows cost, insurance and the fitting on click.
 
 *Doctrines 0.2.0 (2026-10-17, desktop session): the variant field and the T1 / T2 buttons, strengths and weaknesses as keyword plus description, released per runbook 13 C (migration 0002, collectstatic before `up -d`). The first doctrine, **AB Armor frigs** (Light & cheap, 8 hulls, 15 fits from the owner's fitting export), was loaded from the shell with the owner's strengths and weaknesses paraphrased; the owner reviews the texts in the admin.*
+
+*Doctrines 0.2.1 (2026-10-17): the SRP percent per doctrine (migration 0003); the explanatory paragraph above the ships table is gone, the column headers carry it on hover. AB Armor frigs set to 50 %.*
 
 ## E. Check (you, browser)
 

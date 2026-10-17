@@ -95,10 +95,26 @@ class PageTests(TestCase):
         self.assertEqual((groups[0]["hull"], groups[0]["role"], groups[0]["multi"]), ("Harpy", "DPS", True))
         self.assertEqual([v["label"] for v in groups[0]["variants"]], ["T1", "T2"])
         self.assertLess(groups[0]["variants"][0]["cost"]["total"], groups[0]["variants"][1]["cost"]["total"])
+        self.assertEqual([(b["role"], len(b["hulls"])) for b in r.context["roles"]], [("DPS", 1)])
         html = r.content.decode()
+        self.assertEqual(html.count("doctrines-role-row"), 1)
         self.assertEqual(html.count("doctrines-ship-row"), 1)
         self.assertEqual(html.count("Copy fit to clipboard"), 2)
-        self.assertIn('class="doctrines-variant"', html.replace("btn btn-sm btn-primary doctrines-variant", "doctrines-variant").replace("btn btn-sm btn-outline-secondary doctrines-variant", "doctrines-variant"))
+        self.assertEqual(html.count('class="nav-link doctrines-variant'), 2)
+        self.assertIn("lower skills", html)
+        self.assertIn("full skills", html)
+
+    def test_srp_percent_tag_and_loss(self):
+        self.doc.srp_percent = 50
+        self.doc.save()
+        self.client.force_login(self.user)
+        r = self.client.get(reverse("doctrines:doctrine", args=[self.doc.slug]))
+        row = r.context["rows"][0]
+        self.assertAlmostEqual(row["srp"], row["cost"]["total"] / 2)
+        self.assertAlmostEqual(row["loss"], row["cost"]["total"] / 2 - 7e6)
+        html = r.content.decode()
+        self.assertIn("50 % SRP", html)
+        self.assertIn("50 % SRP", self.client.get(reverse("doctrines:index")).content.decode())
 
     def test_strengths_show_keyword_and_description(self):
         self.doc.pros = "King of the hill - holds a point\nCheap: easy on the wallet\nJust a line"

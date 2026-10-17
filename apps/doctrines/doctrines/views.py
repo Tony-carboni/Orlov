@@ -41,11 +41,12 @@ def index(request):
 def doctrine(request, slug):
     d = get_object_or_404(Doctrine.objects.select_related("category"), slug=slug, is_active=True)
     ships = d.ships.filter(is_active=True).select_related("srp_level").order_by("order", "id")
-    rows = fittings.page_data(ships)
+    rows = fittings.page_data(ships, d.srp_percent)
     groups = fittings.grouped(rows)
+    roles = fittings.by_role(groups)
     last_prices = RefreshRun.objects.filter(step="prices", ok=True).order_by("-started_at").first()
     return render(request, "doctrines/doctrine.html", _context(
-        request, doctrine=d, rows=rows, groups=groups, market=fittings.market_name(),
+        request, doctrine=d, rows=rows, groups=groups, roles=roles, market=fittings.market_name(),
         prices_at=prices.freshness(), prices_stale=prices.is_stale(), last_prices=last_prices,
         insurance_level=app_settings.DOCTRINES_INSURANCE_LEVEL,
         others=Doctrine.objects.filter(is_active=True).exclude(pk=d.pk).select_related("category"),

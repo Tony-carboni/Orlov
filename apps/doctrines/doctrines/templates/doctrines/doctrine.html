@@ -15,7 +15,7 @@
         <div class="doctrines-head h-100">
             {% if doctrine.picture_type_id %}<div class="doctrines-head-art" style="background-image: url('https://images.evetech.net/types/{{ doctrine.picture_type_id }}/render?size=512')"></div>{% endif %}
             <div class="doctrines-head-text">
-                <div class="doctrines-tile-gameplay"><i class="fas fa-crosshairs fa-fw"></i> {{ doctrine.gameplay }} · {{ doctrine.category.name }}</div>
+                <div class="doctrines-tile-gameplay"><i class="fas fa-crosshairs fa-fw"></i> {{ doctrine.gameplay }} · {{ doctrine.category.name }}{% if doctrine.srp_percent %} <span class="doctrines-srp-tag" title="Ship replacement: {{ doctrine.srp_percent }} % of a lost ship's cost is paid back"><i class="fas fa-shield-halved fa-fw"></i> {{ doctrine.srp_percent }} % SRP</span>{% endif %}</div>
                 <h1 class="doctrines-h1 mb-1">{{ doctrine.name }}</h1>
                 {% if doctrine.summary %}<p class="lead mb-2">{{ doctrine.summary }}</p>{% endif %}
                 {% if doctrine.description %}<div class="doctrines-prose">{{ doctrine.description|paragraphs }}</div>{% endif %}
@@ -47,44 +47,40 @@
 </div></div>
 {% endif %}
 
-<h2 class="doctrines-h2 mb-1">Ships</h2>
-<div class="doctrines-k small mb-2">
-    Cost = hull plus everything fitted and carried, at {{ market }} lowest sell{% if prices_at %}, prices read {{ prices_at|date:"Y-m-d H:i" }} EVE{% if prices_stale %} <span class="text-warning">(older than usual)</span>{% endif %}{% else %}, <span class="text-warning">no prices read yet</span>{% endif %}.
-    Insurance = {{ insurance_level }}: payout minus premium. Loss = cost minus that net payout, what dying costs you before SRP. Click a ship for the fitting; a hull with several fits (T1 for lower skills, T2 for full skills) shows them side by side.
-</div>
+<h2 class="doctrines-h2 mb-2">Ships{% if prices_stale or not prices_at %} <span class="text-warning small fw-normal" title="{% if prices_at %}prices read {{ prices_at|date:"Y-m-d H:i" }} EVE{% else %}no prices read yet{% endif %}"><i class="fas fa-triangle-exclamation fa-fw"></i> prices {% if prices_at %}older than usual{% else %}not read yet{% endif %}</span>{% endif %}</h2>
 
 <div class="table-responsive mb-3">
 <table class="table table-sm table-hover align-middle doctrines-ships">
     <thead><tr>
-        <th>Ship</th><th>Role</th><th class="text-end" title="Hull + fit + drones + cargo">Cost</th><th class="text-end" title="{{ insurance_level }} payout minus premium">Net insurance</th><th class="text-end" title="Cost minus net insurance">Loss if lost</th><th>SRP</th><th></th>
+        <th title="Click a ship for the fitting; T1 = lower skills, T2 = full skills">Ship</th><th class="text-end" title="Hull + fit + drones + cargo at {{ market }} lowest sell{% if prices_at %}, read {{ prices_at|date:"Y-m-d H:i" }} EVE{% endif %}">Cost</th><th class="text-end" title="{{ insurance_level }} insurance: payout minus premium">Net insurance</th>{% if doctrine.srp_percent %}<th class="text-end" title="{{ doctrine.srp_percent }} % of the cost, paid back on a loss">SRP</th>{% else %}<th title="Ship replacement level">SRP</th>{% endif %}<th class="text-end" title="Cost minus net insurance{% if doctrine.srp_percent %} minus SRP{% endif %}: what a loss costs you">Loss if lost</th><th></th>
     </tr></thead>
     <tbody>
-    {% for g in groups %}
+    {% for block in roles %}
+        <tr class="doctrines-role-row"><td colspan="6"><i class="fas {{ block.icon }} fa-fw"></i> {{ block.role }} <span class="doctrines-k fw-normal">· {{ block.hulls|length }} hull{{ block.hulls|length|pluralize }}</span></td></tr>
+        {% for g in block.hulls %}
         <tr class="doctrines-ship-row" data-target="fit-{{ g.key }}" role="button" aria-expanded="false">
-            <td class="text-nowrap"><img src="https://images.evetech.net/types/{{ g.type_id }}/icon?size=64" width="32" height="32" class="rounded me-2" alt=""><span class="fw-semibold">{{ g.hull }}</span>{% if g.multi %} <span class="doctrines-k small">{% for v in g.variants %}{{ v.label }}{% if not forloop.last %} · {% endif %}{% endfor %}</span>{% endif %}{% for n in g.notes %}<div class="small doctrines-k">{{ n }}</div>{% endfor %}{% for e in g.errors %}<div class="small text-warning"><i class="fas fa-triangle-exclamation fa-fw"></i> {{ e }}</div>{% endfor %}</td>
-            <td>{{ g.role }}</td>
+            <td class="text-nowrap doctrines-ship-cell"><img src="https://images.evetech.net/types/{{ g.type_id }}/icon?size=64" width="32" height="32" class="rounded me-2" alt=""><span class="fw-semibold">{{ g.hull }}</span>{% if g.multi %} <span class="doctrines-k small">{% for v in g.variants %}{{ v.label }}{% if not forloop.last %} · {% endif %}{% endfor %}</span>{% endif %}{% for n in g.notes %}<div class="small doctrines-k">{{ n }}</div>{% endfor %}{% for e in g.errors %}<div class="small text-warning"><i class="fas fa-triangle-exclamation fa-fw"></i> {{ e }}</div>{% endfor %}</td>
             <td class="text-end text-nowrap">{% for v in g.variants %}<div title="hull {{ v.cost.hull|isk }}, fit {{ v.cost.fit|isk }}, drones {{ v.cost.drones|isk }}, cargo {{ v.cost.cargo|isk }}{% if v.cost.missing %}; {{ v.cost.missing|length }} item(s) without a price{% endif %}">{% if g.multi %}<span class="doctrines-k small">{{ v.label }}</span> {% endif %}{{ v.cost.total|isk }}{% if v.cost.missing %} <i class="fas fa-circle-question text-warning" title="{{ v.cost.missing|length }} item(s) have no price yet"></i>{% endif %}</div>{% endfor %}</td>
             <td class="text-end" title="payout {{ g.variants.0.insurance.payout|isk }} − premium {{ g.variants.0.insurance.cost|isk }}">{{ g.variants.0.insurance.net|isk }}</td>
+            {% if doctrine.srp_percent %}<td class="text-end text-nowrap">{% for v in g.variants %}<div>{% if g.multi %}<span class="doctrines-k small">{{ v.label }}</span> {% endif %}{{ v.srp|isk }}</div>{% endfor %}</td>{% else %}<td>{% for lvl in g.srp_levels %}<span class="badge text-bg-{{ lvl.colour }}" title="{{ lvl.description }}">{{ lvl.name }}</span> {% empty %}<span class="doctrines-k">–</span>{% endfor %}</td>{% endif %}
             <td class="text-end text-nowrap">{% for v in g.variants %}<div>{% if g.multi %}<span class="doctrines-k small">{{ v.label }}</span> {% endif %}{{ v.loss|isk }}</div>{% endfor %}</td>
-            <td>{% for lvl in g.srp_levels %}<span class="badge text-bg-{{ lvl.colour }}" title="{{ lvl.description }}">{{ lvl.name }}</span> {% empty %}<span class="doctrines-k">–</span>{% endfor %}</td>
             <td class="text-end doctrines-k"><i class="fas fa-chevron-down doctrines-chevron"></i></td>
         </tr>
         <tr class="doctrines-fit-row" id="fit-{{ g.key }}" hidden>
-            <td colspan="7">
+            <td colspan="6">
                 {% if g.multi %}
-                <div class="doctrines-variants mb-3" role="tablist">
-                    {% for v in g.variants %}<button type="button" class="btn btn-sm {% if forloop.first %}btn-primary{% else %}btn-outline-secondary{% endif %} doctrines-variant" data-pane="pane-{{ v.ship.pk }}" data-group="fit-{{ g.key }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">{{ v.label }}</button>{% endfor %}
-                    <span class="doctrines-k small ms-2">{{ g.variants|length }} fits for this hull: pick the one your skills fly</span>
-                </div>
+                <ul class="nav nav-tabs doctrines-tabs" role="tablist">
+                    {% for v in g.variants %}<li class="nav-item" role="presentation"><button type="button" class="nav-link doctrines-variant{% if forloop.first %} active{% endif %}" data-pane="pane-{{ v.ship.pk }}" data-group="fit-{{ g.key }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"><span class="doctrines-tab-name">{{ v.label }}</span><span class="doctrines-tab-sub">{% if v.label == "T1" %}lower skills{% elif v.label == "T2" %}full skills{% else %}{{ v.ship.name }}{% endif %} · {{ v.cost.total|isk }}</span></button></li>{% endfor %}
+                </ul>
                 {% endif %}
                 {% for r in g.variants %}
-                <div class="doctrines-pane" id="pane-{{ r.ship.pk }}" data-group="fit-{{ g.key }}" {% if not forloop.first %}hidden{% endif %}>
+                <div class="doctrines-pane{% if g.multi %} doctrines-tab-panel{% endif %}" id="pane-{{ r.ship.pk }}" data-group="fit-{{ g.key }}" {% if not forloop.first %}hidden{% endif %}>
                 <div class="row g-3">
                     <div class="col-md-4 col-xl-3">
                         <div class="doctrines-render" style="background-image: url('https://images.evetech.net/types/{{ r.ship.ship_type_id }}/render?size=512')"></div>
                         <div class="fw-semibold mt-2">{{ r.ship.name }}</div>
                         {% if r.ship.notes %}<div class="small doctrines-k">{{ r.ship.notes }}</div>{% endif %}
-                        <div class="small doctrines-k">Cost {{ r.cost.total|isk }} · loss {{ r.loss|isk }}{% if r.ship.srp_level %} · SRP <span class="badge text-bg-{{ r.ship.srp_level.colour }}" title="{{ r.ship.srp_level.description }}">{{ r.ship.srp_level.name }}</span>{% endif %}</div>
+                        <div class="small doctrines-k">Cost {{ r.cost.total|isk }}{% if doctrine.srp_percent %} · SRP {{ r.srp|isk }}{% endif %} · loss {{ r.loss|isk }}{% if r.ship.srp_level %} · <span class="badge text-bg-{{ r.ship.srp_level.colour }}" title="{{ r.ship.srp_level.description }}">{{ r.ship.srp_level.name }}</span>{% endif %}</div>
                         <div class="d-grid gap-2 mt-2">
                             <button type="button" class="btn btn-primary doctrines-copy" data-copy="copy-{{ r.ship.pk }}"><i class="fas fa-clipboard fa-fw"></i> Copy fit to clipboard</button>
                             <a class="btn btn-outline-secondary btn-sm" href="{% url 'doctrines:fit_text' r.ship.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-lines fa-fw"></i> Open as text</a>
@@ -117,8 +113,9 @@
                 {% endfor %}
             </td>
         </tr>
+        {% endfor %}
     {% empty %}
-        <tr><td colspan="7" class="doctrines-k">No ships in this doctrine yet.</td></tr>
+        <tr><td colspan="6" class="doctrines-k">No ships in this doctrine yet.</td></tr>
     {% endfor %}
     </tbody>
 </table>

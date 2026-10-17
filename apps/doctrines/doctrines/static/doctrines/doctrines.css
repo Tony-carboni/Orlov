@@ -56,6 +56,22 @@
 .doctrines-module img { border-radius: 4px; flex: 0 0 auto; }
 .doctrines-hidden-text { position: absolute; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; }
 .doctrines-copy.is-done { background: #198754; border-color: #198754; }
-.doctrines-variants { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem; }
-.doctrines-variant { min-width: 3.5rem; font-weight: 600; }
+/* the T1 / T2 tabs in an opened ship: the active tab joins the panel under it */
+.doctrines-tabs { --bs-nav-tabs-border-color: var(--dc-line); --bs-nav-tabs-link-hover-border-color: var(--dc-line) var(--dc-line) var(--dc-line);
+    --bs-nav-tabs-link-active-color: #fff; --bs-nav-tabs-link-active-bg: var(--dc-panel); --bs-nav-tabs-link-active-border-color: var(--dc-accent) var(--dc-line) var(--dc-panel);
+    --bs-nav-link-color: var(--dc-muted); --bs-nav-link-hover-color: #fff; gap: .25rem; }
+.doctrines-tabs .nav-link { display: flex; flex-direction: column; align-items: flex-start; min-width: 9rem; padding: .45rem .9rem .4rem; line-height: 1.15;
+    background: rgba(255,255,255,.03); border-top-width: 3px; }
+.doctrines-tabs .nav-link.active { background: var(--dc-panel); }
+.doctrines-tab-name { font-size: 1rem; font-weight: 700; letter-spacing: .04em; }
+.doctrines-tab-sub { font-size: .76rem; color: var(--dc-muted); }
+.doctrines-tabs .nav-link.active .doctrines-tab-sub { color: var(--dc-text); }
+.doctrines-tab-panel { border: 1px solid var(--dc-line); border-top: 0; border-radius: 0 .5rem .5rem .5rem; padding: 1rem; background: var(--dc-panel); }
 .doctrines-keyed li { margin-bottom: .15rem; }
+.doctrines-srp-tag { display: inline-block; margin-left: .5rem; padding: .1rem .5rem; border-radius: 1rem; font-size: .78rem; font-weight: 600; letter-spacing: .02em;
+    color: #0b1628; background: #ffc107; text-transform: none; vertical-align: middle; }
+.doctrines-role-row > td { background: var(--dc-panel-2); color: #fff; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: .8rem;
+    border-top: 1px solid var(--dc-line); border-bottom: 1px solid var(--dc-line); padding: .4rem .6rem; }
+.doctrines-role-row > td i { color: var(--dc-accent); }
+.doctrines-ship-cell { padding-left: 1.75rem !important; }
+.doctrines-ship-row + .doctrines-fit-row > td { padding-left: 1.75rem; }

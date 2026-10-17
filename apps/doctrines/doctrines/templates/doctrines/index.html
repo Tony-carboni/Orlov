@@ -26,7 +26,7 @@
                     <div class="doctrines-tile-gameplay"><i class="fas fa-crosshairs fa-fw"></i> {{ d.gameplay }}</div>
                     <div class="doctrines-tile-name">{{ d.name }}</div>
                     {% if d.summary %}<div class="doctrines-tile-summary">{{ d.summary }}</div>{% endif %}
-                    <div class="doctrines-tile-foot doctrines-k">{{ d.ships.count }} ship{{ d.ships.count|pluralize }}</div>
+                    <div class="doctrines-tile-foot doctrines-k">{{ d.ships.count }} ship{{ d.ships.count|pluralize }}{% if d.srp_percent %} · <span class="doctrines-srp-tag"><i class="fas fa-shield-halved fa-fw"></i> {{ d.srp_percent }} % SRP</span>{% endif %}</div>
                 </div>
             </a>
         </div>

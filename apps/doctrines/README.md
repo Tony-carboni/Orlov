@@ -16,6 +16,9 @@ An Alliance Auth plugin that serves the alliance's fleet doctrines under their o
   Clicking a ship opens its fitting: the hull's render, the modules by slot with icons, drones and
   cargo, and a **Copy fit to clipboard** button (the game's fitting window → Import from clipboard);
   "Open as text" is the fallback when a browser blocks the clipboard.
+- **SRP tag (0.2.1):** a doctrine's *SRP percent* (say 50) shows as a tag on the tile and the page, the
+  ships table gets an SRP column with that share of each fit's cost, and *loss if lost* is cost minus net
+  insurance minus SRP. With 0 the table shows the per-ship SRP level badges instead.
 - **Variants (0.2.0):** a hull with several fits of the same role, for example a T1 fit for lower
   skills and a T2 fit for full skills, is one row in the ships table (hull, role, the cost and loss
   of each variant) and opens to T1 / T2 buttons that switch the fitting shown. Set the *variant*
