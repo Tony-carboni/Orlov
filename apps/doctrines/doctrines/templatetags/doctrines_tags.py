@@ -152,6 +152,19 @@ def ratios(text):
 
 
 @register.filter
+def ratio_total(parts):
+    """The pilots in one unit of the composition: the sum of the numbers from ratios()."""
+    return sum(n for _, n, _, _ in parts)
+
+
+@register.filter
+def ratio_words(parts):
+    """'6 DPS, 2 Logistics, 1 Tackle and 1 Support' for the hover text."""
+    words = [f"{n} {role}" for role, n, _, _ in parts]
+    return ", ".join(words[:-1]) + " and " + words[-1] if len(words) > 1 else "".join(words)
+
+
+@register.filter
 def logout_url(_):
     from django.urls import NoReverseMatch, reverse
 

@@ -1,4 +1,4 @@
 """Doctrines — The Orlov Family's fleet doctrines behind auth, under doctrines.orlovfamily.space."""
 
-__version__ = "0.2.6"
+__version__ = "0.2.7"
 __title__ = "Doctrines"

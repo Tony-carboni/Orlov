@@ -19,10 +19,13 @@
                 <h1 class="doctrines-h1 mb-1">{{ doctrine.name }}</h1>
                 {% if doctrine.summary %}<p class="lead mb-2">{{ doctrine.summary }}</p>{% endif %}
                 {% with parts=doctrine.composition|ratios %}{% if parts %}
-                <div class="doctrines-ratio" title="Target ratio of the roles in a fleet">
-                    <span class="doctrines-ratio-label">Fleet</span>
+                {% with total=parts|ratio_total %}
+                <div class="doctrines-ratio" title="What the FC wants the fleet to look like: for every {{ total }} pilots, {{ parts|ratio_words }}. Scale it with the number of pilots; fill the roles in this order when short.">
+                    <span class="doctrines-ratio-label">Target composition <span class="doctrines-ratio-total">· per {{ total }} pilots</span></span>
                     {% for role, n, icon, key in parts %}<span class="doctrines-ratio-chip" data-role="{{ key }}"><i class="fas {{ icon }} fa-fw"></i> {{ role }} <strong>{{ n }}</strong></span>{% endfor %}
+                    <span class="doctrines-ratio-hint"><i class="fas fa-circle-info"></i></span>
                 </div>
+                {% endwith %}
                 {% endif %}{% endwith %}
                 {% if doctrine.description %}<div class="doctrines-prose">{{ doctrine.description|paragraphs }}</div>{% endif %}
             </div>

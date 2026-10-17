@@ -134,6 +134,9 @@ class PageTests(TestCase):
         self.assertEqual(html.count("doctrines-ratio-chip"), 4)
         self.assertIn("Logistics <strong>3</strong>", html)
         self.assertIn('<span class="doctrines-ratio-chip" data-role="logi">', html)
+        self.assertIn("Target composition", html)
+        self.assertIn("· per 10 pilots", html)
+        self.assertIn("for every 10 pilots, 5 DPS, 3 Logistics, 1 Tackle and 1 Support", html)
         self.assertIn("fa-kit-medical", html)
 
     def test_landing_bullets_with_a_keyword_become_tags(self):

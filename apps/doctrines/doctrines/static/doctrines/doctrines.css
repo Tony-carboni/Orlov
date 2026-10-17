@@ -97,6 +97,8 @@
 .doctrines-srp-pct.is-full { color: #4ade80; }
 .doctrines-ratio { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .5rem; }
 .doctrines-ratio-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--dc-muted); margin-right: .2rem; }
+.doctrines-ratio-total { text-transform: none; letter-spacing: 0; font-size: .8rem; }
+.doctrines-ratio-hint { color: var(--dc-muted); font-size: .85rem; cursor: help; }
 .doctrines-ratio-chip { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .6rem; border-radius: 1rem; border: 1px solid var(--dc-line);
     background: rgba(255,255,255,.06); font-size: .9rem; color: var(--dc-text); }
 .doctrines-ratio-chip i { color: var(--tag, var(--dc-accent)); }

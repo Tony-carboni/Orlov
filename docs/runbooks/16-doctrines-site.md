@@ -73,6 +73,8 @@ Set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy of
 
 *Doctrines 0.2.6 (2026-10-17): the landing text explains the roles (DPS, Logistics, Tackle, Support, FC) instead of the fleet types, and a list line written as `Keyword: explanation` shows the keyword as an uppercase tag with the role's icon and colour, the explanation in plain text beside it (tag column left, text right, stacked on a phone). The same five colours mark the ratio chips on the card and the role headers of the ships table, so a role looks the same on every page. Design rules followed: one colour per category used everywhere, never colour alone (each tag also carries its icon and name), light tints on the dark navy for at least 4.5:1 contrast, the explanation kept in the body colour so the tag is what the eye lands on. No migration; collectstatic before `up -d` for the stylesheet.*
 
+*Doctrines 0.2.7 (2026-10-17): the ratio chips on the card are labelled **Target composition · per N pilots** (N = the sum of the numbers) with an info mark, and the hover text spells it out ("for every 10 pilots, 6 DPS, 2 Logistics, 1 Tackle and 1 Support; scale it with the number of pilots, fill the roles in this order when short"). No migration; collectstatic for the stylesheet.*
+
 ## E. Check (you, browser)
 
 1. Private window → https://doctrines.orlovfamily.space → auth's EVE login → the landing page under the new address, without auth's menu.
