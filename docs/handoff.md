@@ -4,6 +4,26 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-17 (14:10 UTC) — desktop session → any session
+
+**Runbook / topic:** **Doctrines 0.2.0 and the first doctrine** (runbook 16 D), on the owner's doctrine text file and his fitting export.
+
+**Done.**
+- Doctrines 0.2.0 (commit `14ecacc` pinned): a **variant** field on a ship (T1, T2); the doctrine page lists a hull once per role with the cost and loss of each variant, and the opened row has T1 / T2 buttons that switch the fitting shown. Strengths and weaknesses are written one per line as `Keyword - description` and the keyword comes out bold. `DOCTRINES_HOST` is read at call time so tests can override it. 16 tests. Released per runbook 13 C: backup `aa-db-2026-10-17-1353.sql.gz`, `requirements.txt.pre-doctrines-0.2.0` in `~/backups`, build of **all** services (the workers and beat build their own image from the same Dockerfile; building only gunicorn leaves them on the old version), throwaway `check` and `migrate --plan`, migration 0002, collectstatic before `up -d`, `up -d` (the Discord bot is recreated with the rest and came back), nginx. Verified: gunicorn, workers and beat on 0.2.0, 0 errors.
+- The doctrine **AB Armor frigs** (category Light & cheap, gameplay Faction warfare) loaded from the shell: 8 hulls, 15 fits converted from the owner's `fittings.xml` (the "Doctrine 1 - <ship> T1/T2 - checked" entries; the export file is cut off at the end but those fits are intact), named "<Hull> T1" / "<Hull> T2", roles DPS (Punisher, Rifter, Incursus), Logi (Inquisitor, Navitas), Tackle (Executioner, Atron), Support (Crucifier, T2 only). All 15 parsed, 75 types resolved, prices read; T1 fits 2.3 to 3.4 M, T2 4.0 to 8.4 M. The strengths and weaknesses are the owner's four and three, paraphrased; description, summary and strategy notes are drafts by the session. No SRP level set. The owner's file says "Easy & Cheap"; the seeded category "Light & cheap" was used.
+- Page rendered as the owner (200) and the layout checked in the browser pane.
+
+**Owner has to do by hand**
+- Read https://doctrines.orlovfamily.space/doctrines/ab-armor-frigs/ and edit the texts in the admin (https://auth.orlovfamily.space/admin/doctrines/doctrine/): the strategy notes and description are drafts; set SRP levels per ship if wanted; rename the category to "Easy & Cheap" under Categories if preferred.
+- Write the landing text (Landing page text) and delete or hide the sample "Example: Rail Harpies".
+- Runbook 16 E (browser checks, copy a fit into the game).
+- Still open: My business "Connect the jobs" with Catherine Frey; Structure income untick your own payers; send Eemar the CEO roster guide.
+
+### Next — any session
+More doctrines: the owner hands over a text file in the same shape (name, type, strengths, weaknesses, roles with ships) plus the fitting export; the converter and loader of this session live in the session scratchpad only, so a new session rewrites them from `apps/doctrines` (store a ship with `fittings.store`, then `prices.refresh`). A management command for that import would save the rewrite.
+
+---
+
 ## 2026-10-17 (10:35 UTC) — desktop session → any session
 
 **Runbook / topic:** **runbook 16 A and C, the doctrines site is live** at https://doctrines.orlovfamily.space.
@@ -83,24 +103,3 @@ Nothing queued. Shipyard 0.13.3 on the server (commit `695b655` pinned).
 **Owner does by hand:** runbook 15 A (Porkbun A record `alliance` to 167.99.207.145) and C (Nginx Proxy Manager proxy host `alliance.orlovfamily.space` to http://alliance_site:80 with a Let's Encrypt certificate). Then write the real post in `site/alliance/posts/` and say "publish the alliance news" to a local session (15 D).
 
 **Also since the last entry:** Republic Fleet LP value 725 ISK/LP (2026-10-13); Shipyard 0.10.3 (Blueprint column includes the cruiser tag); guide `docs/guides/corp-roles.md`.
-
----
-
-## 2026-10-14 (07:30 UTC) — desktop session → any session
-
-**Runbook / topic:** alliance roster coverage, **runbook 15** (corp roster token for CEOs and directors) and **Shipyard 0.10.4** (every scope at the front door), on the owner's request.
-
-**Findings.** EVE: 43 characters in 3 corps (OARMI 30 → 31 during the day, GB44 11, 1E3 2). Auth: 38 registered on 22 accounts, all Family Member. Missing by name (read through Catherine Frey's and Masterxxx's membership-scope tokens): OARMI Goedweer2, Goedweer3, Goedweer4, Goedweer5 (alts of Goedweer1, surely) and Miguel Stevens; GB44 complete; 1E3 one of two, unnamed because Eemar's token has only the basic scope. Hamu (asked about on 2026-10-11) is user `Hamu`, character Hamu 978861931, CAS at the time, OARMI since; Family Friend then, Family Member now; Discord roles were already right.
-
-**Done**
-- Permissions: `Corp Director` += corputils *add_corpstats*, *view_corp_corpstats*; `Alliance Director` += those and *view_alliance_corpstats*. Nobody but the superuser had them, so the old CEO guide's "any member can add the Corp Stats token" was wrong in practice.
-- `docs/runbooks/15-corp-roster-token.md`: for CEOs/directors, browser only (add page `/corpstats/add/`, one scope, where the lists show, Update button, troubleshooting) and the executor's section (Corp Director group). CEO onboarding guide points to it; CLAUDE.md lists it; membership design change log updated.
-- Corp Stats exists for OARMI only (token Catherine Frey, refreshed hourly at :00).
-- **Shipyard 0.10.4 released** (commit `184182b` pinned, backup `aa-db-2026-10-14-0945.sql.gz`): owner's rule "scopes as wide as can be": the front door now asks a character for every scope EVE offers (73 = Member Audit's 33 + ESI's 72 + publicData, write scopes included; `SHIPYARD_REQUEST_ALL_SCOPES`, `SHIPYARD_EXTRA_SCOPES`). Tokens are still looked up with the 33, so nobody has to log in again now; the wider set comes with the next login. Member Audit's own Add-character button still asks for its 33 and cannot be widened. Runbook 15 therefore starts with "register the character at the front door"; runbook 14 known values and the member guide (shortcut) updated. Tests 77. Details in runbook 13 C.
-
-**Owner has to do by hand**
-- Send Eemar (and Masterxxx for GB44 if you want their roster in auth too) **`docs/guides/corp-ceo-roster-token.md`**, the CEO-facing version via the auth portal (Member Audit registration, 33 scopes, then the Corp Stats add page reuses the token); Eemar is in `Corp Director` already. Note: through auth a character gets Member Audit's 33 scopes, the 73-scope login exists only at the Shipyard front door (Member Audit's button cannot be widened); an auth-side "register with every scope" page is possible if the owner wants the wide set through auth too.
-- Nudge Goedweer1 to add Goedweer2–5 to their account, and Miguel Stevens to auth.
-
-### Next — any session
-Nothing queued. Shipyard 0.10.4 (commit `184182b` pinned), kill feed with live R2Z2 feed, structure board without fuel pings (2026-10-11).
