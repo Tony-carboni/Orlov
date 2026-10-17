@@ -16,6 +16,9 @@ An Alliance Auth plugin that serves the alliance's fleet doctrines under their o
   Clicking a ship opens its fitting: the hull's render, the modules by slot with icons, drones and
   cargo, and a **Copy fit to clipboard** button (the game's fitting window → Import from clipboard);
   "Open as text" is the fallback when a browser blocks the clipboard.
+- **Choice cards (0.3.1):** a hull with several fits shows "2 fits" in the ships table and, once
+  opened, two cards with a radio mark (T1 lower skills, T2 full skills, each with its cost, a line
+  from the ship's notes and the skills verdict); clicking a card shows that fit.
 - **Skills check (0.3.0):** a member picks one of their auth characters (the switch above the ships
   table; a character without the skills scope `esi-skills.read_skills.v1` logs in at EVE once, the
   33-scope tokens from the Shipyard or Member Audit already carry it). The ships table gets a Skills

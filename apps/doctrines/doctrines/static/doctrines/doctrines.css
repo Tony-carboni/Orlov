@@ -73,17 +73,25 @@
 .doctrines-module img { border-radius: 4px; flex: 0 0 auto; }
 .doctrines-hidden-text { position: absolute; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; }
 .doctrines-copy.is-done { background: #198754; border-color: #198754; }
-/* the T1 / T2 tabs in an opened ship: the active tab joins the panel under it */
-.doctrines-tabs { --bs-nav-tabs-border-color: var(--dc-line); --bs-nav-tabs-link-hover-border-color: var(--dc-line) var(--dc-line) var(--dc-line);
-    --bs-nav-tabs-link-active-color: #fff; --bs-nav-tabs-link-active-bg: var(--dc-panel); --bs-nav-tabs-link-active-border-color: var(--dc-accent) var(--dc-line) var(--dc-panel);
-    --bs-nav-link-color: var(--dc-muted); --bs-nav-link-hover-color: #fff; gap: .25rem; }
-.doctrines-tabs .nav-link { display: flex; flex-direction: column; align-items: flex-start; min-width: 9rem; padding: .45rem .9rem .4rem; line-height: 1.15;
-    background: rgba(255,255,255,.03); border-top-width: 3px; }
-.doctrines-tabs .nav-link.active { background: var(--dc-panel); }
-.doctrines-tab-name { font-size: 1rem; font-weight: 700; letter-spacing: .04em; }
-.doctrines-tab-sub { font-size: .76rem; color: var(--dc-muted); }
-.doctrines-tabs .nav-link.active .doctrines-tab-sub { color: var(--dc-text); }
-.doctrines-tab-panel { border: 1px solid var(--dc-line); border-top: 0; border-radius: 0 .5rem .5rem .5rem; padding: 1rem; background: var(--dc-panel); }
+/* the T1 / T2 choice (0.3.1, owner's option C): two cards with a radio mark, the chosen one ringed in the accent */
+.doctrines-fits-badge { display: inline-block; margin-left: .4rem; padding: .05rem .5rem; border-radius: 1rem; font-size: .72rem; font-weight: 700; letter-spacing: .04em;
+    color: var(--dc-accent); background: rgba(76,195,255,.14); border: 1px solid var(--dc-accent); vertical-align: middle; }
+.doctrines-choice-label { font-weight: 700; color: #fff; margin-bottom: .4rem; }
+.doctrines-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: .6rem; margin-bottom: .9rem; }
+.doctrines-choice .doctrines-variant { display: grid; grid-template-columns: 22px 1fr auto; gap: .2rem .7rem; align-items: center; text-align: left;
+    border: 1px solid var(--dc-line); border-radius: .6rem; background: var(--dc-panel); color: var(--dc-text); padding: .7rem .85rem; cursor: pointer; }
+.doctrines-choice .doctrines-variant:hover { border-color: var(--dc-accent); }
+.doctrines-choice .doctrines-variant.active { border-color: var(--dc-accent); background: var(--dc-panel-2); box-shadow: 0 0 0 2px rgba(76,195,255,.18), inset 0 0 0 1px var(--dc-accent); }
+.doctrines-choice-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--dc-muted); display: grid; place-items: center; }
+.doctrines-choice-radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: transparent; }
+.doctrines-variant.active .doctrines-choice-radio { border-color: var(--dc-accent); }
+.doctrines-variant.active .doctrines-choice-radio::after { background: var(--dc-accent); }
+.doctrines-choice-title { font-weight: 900; color: #fff; font-size: 1.05rem; }
+.doctrines-choice-lvl { font-size: .7rem; letter-spacing: .04em; text-transform: uppercase; padding: .1rem .5rem; border-radius: 1rem; background: rgba(76,195,255,.14); color: var(--dc-accent); vertical-align: middle; font-weight: 700; }
+.doctrines-choice-lvl.is-t2 { background: rgba(255,193,7,.14); color: #ffc107; }
+.doctrines-choice-price { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.doctrines-choice-line { grid-column: 2 / 4; color: var(--dc-muted); font-size: .85rem; }
+.doctrines-tab-panel { padding: 0; }
 .doctrines-keyed li { margin-bottom: .15rem; }
 .doctrines-srp-tag { display: inline-block; margin-left: .5rem; padding: .1rem .5rem; border-radius: 1rem; font-size: .78rem; font-weight: 600; letter-spacing: .02em;
     color: #0b1628; background: #ffc107; text-transform: none; vertical-align: middle; }

@@ -39,7 +39,7 @@
         document.querySelectorAll('.doctrines-variant[data-group="' + group + '"]').forEach(function (b) {
             var on = b === tab;
             b.classList.toggle("active", on);
-            b.setAttribute("aria-selected", on ? "true" : "false");
+            b.setAttribute(b.getAttribute("role") === "radio" ? "aria-checked" : "aria-selected", on ? "true" : "false");
         });
         document.querySelectorAll('.doctrines-pane[data-group="' + group + '"]').forEach(function (p) {
             if (p.id === tab.dataset.pane) { p.removeAttribute("hidden"); } else { p.setAttribute("hidden", ""); }

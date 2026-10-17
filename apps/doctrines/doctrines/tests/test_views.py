@@ -102,7 +102,9 @@ class PageTests(TestCase):
         self.assertEqual(html.count("doctrines-role-row"), 1)
         self.assertEqual(html.count("doctrines-ship-row"), 1)
         self.assertEqual(html.count("Copy fit to clipboard"), 2)
-        self.assertEqual(html.count('class="nav-link doctrines-variant'), 2)
+        self.assertEqual(html.count('class="doctrines-variant'), 2)  # the two choice cards
+        self.assertIn('role="radio" aria-checked="true"', html)
+        self.assertIn(">2 fits</span>", html)
         self.assertIn("lower skills", html)
         self.assertIn("full skills", html)
 

@@ -77,6 +77,8 @@ Set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy of
 
 *Doctrines 0.3.0 (2026-10-17): the **skills check**. A member chooses one of their characters above the ships table (switch with every character on the auth account; a character without a token carrying `esi-skills.read_skills.v1` goes through EVE's login once); the table shows per fit "ready" or "n skills", and an opened fit shows, next to the wheel and the now smaller slot tiles, the skills still missing: have → need, highest gap first, with what each one is for. Requirements come from the dogma attributes of every type in the fit and their prerequisites (migration 0006: `ItemType.required_skills`, `MemberCharacter`); after the migration run `doctrines_backfill_skills` once in a throwaway container to read them for the types already in the table. The character's skills are kept 12 hours and refreshed with the Refresh button. Release: backup, migrate, backfill, collectstatic, `up -d`.*
 
+*Doctrines 0.3.1 (2026-10-17): the T1 / T2 switch as **choice cards** (the owner picked option C of four mockups after feedback that members missed the tabs): a "2 fits" badge in the ships row, and in the opened ship two cards with a radio mark, the level pill, the cost, a line from the ship's notes (or a default) and the skills verdict; the chosen card is ringed in the accent. No migration; collectstatic.*
+
 ## E. Check (you, browser)
 
 1. Private window → https://doctrines.orlovfamily.space → auth's EVE login → the landing page under the new address, without auth's menu.
