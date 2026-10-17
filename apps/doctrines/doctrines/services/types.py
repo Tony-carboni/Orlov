@@ -18,6 +18,20 @@ CATEGORY_CHARGE = 8
 CATEGORY_DRONE = 18
 CATEGORY_IMPLANT = 20
 CATEGORY_FIGHTER = 87
+CATEGORY_SKILL = 16
+# dogma attributes: requiredSkill1..6 and requiredSkill1Level..6Level
+SKILL_ATTRS = ((182, 277), (183, 278), (184, 279), (1285, 1286), (1289, 1287), (1290, 1288))
+
+
+def required_skills_of(type_info: dict) -> list:
+    """[[skill type id, level], ...] from a type's dogma attributes. Pure."""
+    attrs = {int(a.get("attribute_id") or 0): float(a.get("value") or 0) for a in type_info.get("dogma_attributes") or []}
+    out = []
+    for skill_attr, level_attr in SKILL_ATTRS:
+        skill_id = int(attrs.get(skill_attr) or 0)
+        if skill_id:
+            out.append([skill_id, max(1, int(attrs.get(level_attr) or 1))])
+    return out
 
 
 def slot_of(type_info: dict) -> str:
@@ -31,6 +45,8 @@ def slot_of(type_info: dict) -> str:
         return "charge"
     if category == CATEGORY_IMPLANT:
         return "implant"
+    if category == CATEGORY_SKILL:
+        return "skill"
     for e in type_info.get("dogma_effects") or []:
         slot = SLOT_EFFECTS.get(int(e.get("effect_id") or 0))
         if slot:
@@ -78,7 +94,7 @@ def fetch_type(type_id: int, name: str = "") -> ItemType | None:
         defaults={
             "name": info.get("name") or name, "group_id": group_id, "category_id": category_id,
             "slot": slot_of(info), "volume": float(info.get("packaged_volume") or info.get("volume") or 0),
-            "fetched_at": timezone.now(),
+            "fetched_at": timezone.now(), "required_skills": required_skills_of(info), "skills_fetched_at": timezone.now(),
         },
     )
     return t

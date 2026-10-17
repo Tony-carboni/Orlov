@@ -75,6 +75,8 @@ Set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy of
 
 *Doctrines 0.2.7 (2026-10-17): the ratio chips on the card are labelled **Target composition · per N pilots** (N = the sum of the numbers) with an info mark, and the hover text spells it out ("for every 10 pilots, 6 DPS, 2 Logistics, 1 Tackle and 1 Support; scale it with the number of pilots, fill the roles in this order when short"). No migration; collectstatic for the stylesheet.*
 
+*Doctrines 0.3.0 (2026-10-17): the **skills check**. A member chooses one of their characters above the ships table (switch with every character on the auth account; a character without a token carrying `esi-skills.read_skills.v1` goes through EVE's login once); the table shows per fit "ready" or "n skills", and an opened fit shows, next to the wheel and the now smaller slot tiles, the skills still missing: have → need, highest gap first, with what each one is for. Requirements come from the dogma attributes of every type in the fit and their prerequisites (migration 0006: `ItemType.required_skills`, `MemberCharacter`); after the migration run `doctrines_backfill_skills` once in a throwaway container to read them for the types already in the table. The character's skills are kept 12 hours and refreshed with the Refresh button. Release: backup, migrate, backfill, collectstatic, `up -d`.*
+
 ## E. Check (you, browser)
 
 1. Private window → https://doctrines.orlovfamily.space → auth's EVE login → the landing page under the new address, without auth's menu.

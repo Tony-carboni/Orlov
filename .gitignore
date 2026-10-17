@@ -1,2 +1,3 @@
 # built alliance news pages (rebuilt by site/alliance/build.py, copied to the server)
 site/alliance/dist/
+__pycache__/

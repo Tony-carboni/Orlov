@@ -149,9 +149,29 @@ class ItemType(models.Model):
     slot = models.CharField(max_length=12, blank=True, help_text="high, mid, low, rig, subsystem, drone, charge, implant, ship, cargo")
     volume = models.FloatField(default=0)
     fetched_at = models.DateTimeField(default=timezone.now)
+    required_skills = models.JSONField(default=list, blank=True, help_text="[[skill type id, level], ...] straight from the type's dogma attributes")
+    skills_fetched_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.name
+
+
+class MemberCharacter(models.Model):
+    """The character a member runs the skills check with: its skills as ESI last reported them."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="doctrines_character")
+    character_id = models.PositiveIntegerField()
+    character_name = models.CharField(max_length=100)
+    skills = models.JSONField(default=dict, blank=True, help_text="{skill type id: active level} from ESI")
+    total_sp = models.BigIntegerField(default=0)
+    fetched_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "member's character"
+        verbose_name_plural = "members' characters"
+
+    def __str__(self):
+        return f"{self.user}: {self.character_name}"
 
 
 class TypePrice(models.Model):

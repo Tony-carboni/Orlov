@@ -5,6 +5,7 @@ import time
 import requests
 
 USER_AGENT = "orlov-auth doctrines (Alliance Auth plugin, auth.orlovfamily.space)"
+ESI_BASE = "https://esi.evetech.net/latest"
 _session = None
 
 

@@ -16,6 +16,16 @@ An Alliance Auth plugin that serves the alliance's fleet doctrines under their o
   Clicking a ship opens its fitting: the hull's render, the modules by slot with icons, drones and
   cargo, and a **Copy fit to clipboard** button (the game's fitting window → Import from clipboard);
   "Open as text" is the fallback when a browser blocks the clipboard.
+- **Skills check (0.3.0):** a member picks one of their auth characters (the switch above the ships
+  table; a character without the skills scope `esi-skills.read_skills.v1` logs in at EVE once, the
+  33-scope tokens from the Shipyard or Member Audit already carry it). The ships table gets a Skills
+  column (ready, or "3 skills") and an opened fit shows the missing skills with the level the
+  character has and the level the fit needs, highest gap first, and what each one is for. Requirements
+  come from EVE's dogma attributes on every type of the fit (`requiredSkill1..6`), prerequisites of
+  those skills included, stored on `ItemType` when a type is first read (`doctrines_backfill_skills`
+  fills the table once after the upgrade). The character's skills are read from ESI into
+  `MemberCharacter` and refreshed after 12 hours or with the Refresh button. The slot tiles in an
+  opened fit are smaller, so the fit shows as wheel, slot list and skills side by side.
 - **Role tags (0.2.6):** a list line written as `Keyword: explanation` (in the landing text, a description or
   the strategy notes) shows the keyword as an uppercase tag; a fleet role (DPS, Logi or Logistics, Tackle,
   Support, EWAR, Boosts, Scout, FC) gets its icon and its colour, and the same colour marks the ratio chips on

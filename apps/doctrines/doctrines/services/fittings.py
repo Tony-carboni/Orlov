@@ -49,6 +49,17 @@ def type_ids_of(ship: DoctrineShip) -> set[int]:
     return ids
 
 
+def type_names_of(ship: DoctrineShip) -> dict[int, str]:
+    """{type id: name} for the hull and every item of the fit."""
+    out = {ship.ship_type_id: ship.ship_type_name} if ship.ship_type_id else {}
+    for rows in (ship.fitting_json or {}).get("slots", {}).values():
+        for r in rows:
+            out[int(r["type_id"])] = r.get("name") or ""
+            if r.get("charge"):
+                out[int(r["charge"]["type_id"])] = r["charge"].get("name") or ""
+    return out
+
+
 def page_data(ships, srp_percent: int = 0) -> list[dict]:
     """For the doctrine page: one dict per ship with the layout, cost, insurance and SRP.
     srp_percent: the doctrine's ship replacement as a share of the cost; it comes off the loss."""
