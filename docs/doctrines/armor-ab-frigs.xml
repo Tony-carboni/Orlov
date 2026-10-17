@@ -1,0 +1,282 @@
+<?xml version="1.0" ?>
+<fittings>
+	<fitting name="Armor AB Frigs - Punisher - T1">
+			<description value=""/>
+			<shipType value="Punisher"/>
+			<hardware qty="4" slot="cargo" type="Radio S"/>
+			<hardware qty="4" slot="cargo" type="Standard S"/>
+			<hardware qty="4" slot="cargo" type="Multifrequency S"/>
+			<hardware slot="low slot 2" type="Damage Control I"/>
+			<hardware slot="low slot 1" type="Heat Sink I"/>
+			<hardware slot="med slot 1" type="Initiated Compact Warp Scrambler"/>
+			<hardware slot="med slot 0" type="1MN Y-S8 Compact Afterburner"/>
+			<hardware slot="hi slot 0" type="Small Focused Anode Pulse Particle Stream I"/>
+			<hardware slot="hi slot 1" type="Small Focused Anode Pulse Particle Stream I"/>
+			<hardware slot="hi slot 2" type="Small Focused Anode Pulse Particle Stream I"/>
+			<hardware slot="hi slot 3" type="Small Focused Anode Pulse Particle Stream I"/>
+			<hardware slot="low slot 0" type="400mm Rolled Tungsten Compact Plates"/>
+			<hardware slot="low slot 3" type="Upgraded Multispectrum Coating I"/>
+			<hardware slot="low slot 4" type="Upgraded Multispectrum Coating I"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Punisher - T2">
+			<description value=""/>
+			<shipType value="Punisher"/>
+			<hardware slot="med slot 0" type="1MN Afterburner II"/>
+			<hardware slot="low slot 3" type="Multispectrum Coating II"/>
+			<hardware slot="low slot 4" type="Multispectrum Coating II"/>
+			<hardware slot="low slot 2" type="Damage Control II"/>
+			<hardware slot="low slot 1" type="Heat Sink II"/>
+			<hardware slot="hi slot 0" type="Small Focused Pulse Laser II"/>
+			<hardware slot="hi slot 1" type="Small Focused Pulse Laser II"/>
+			<hardware slot="hi slot 2" type="Small Focused Pulse Laser II"/>
+			<hardware slot="hi slot 3" type="Small Focused Pulse Laser II"/>
+			<hardware slot="med slot 1" type="J5b Enduring Warp Scrambler"/>
+			<hardware slot="low slot 0" type="400mm Rolled Tungsten Compact Plates"/>
+			<hardware qty="4" slot="cargo" type="Scorch S"/>
+			<hardware qty="4" slot="cargo" type="Conflagration S"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Rifter - T1">
+			<description value=""/>
+			<shipType value="Rifter"/>
+			<hardware qty="1000" slot="cargo" type="Fusion S"/>
+			<hardware qty="1000" slot="cargo" type="Phased Plasma S"/>
+			<hardware qty="1000" slot="cargo" type="EMP S"/>
+			<hardware slot="med slot 2" type="Fleeting Compact Stasis Webifier"/>
+			<hardware slot="med slot 1" type="Initiated Compact Warp Scrambler"/>
+			<hardware slot="low slot 1" type="Counterbalanced Compact Gyrostabilizer"/>
+			<hardware slot="med slot 0" type="1MN Y-S8 Compact Afterburner"/>
+			<hardware slot="hi slot 0" type="150mm Light Prototype Automatic Cannon"/>
+			<hardware slot="hi slot 1" type="150mm Light Prototype Automatic Cannon"/>
+			<hardware slot="hi slot 2" type="150mm Light Prototype Automatic Cannon"/>
+			<hardware slot="low slot 0" type="400mm Rolled Tungsten Compact Plates"/>
+			<hardware slot="low slot 3" type="Upgraded Multispectrum Coating I"/>
+			<hardware slot="low slot 2" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Rifter - T2">
+			<description value=""/>
+			<shipType value="Rifter"/>
+			<hardware slot="med slot 0" type="1MN Afterburner II"/>
+			<hardware slot="low slot 1" type="Gyrostabilizer II"/>
+			<hardware slot="low slot 3" type="Multispectrum Coating II"/>
+			<hardware slot="hi slot 0" type="150mm Light AutoCannon II"/>
+			<hardware slot="hi slot 1" type="150mm Light AutoCannon II"/>
+			<hardware slot="hi slot 2" type="150mm Light AutoCannon II"/>
+			<hardware slot="med slot 2" type="Fleeting Compact Stasis Webifier"/>
+			<hardware slot="med slot 1" type="Initiated Compact Warp Scrambler"/>
+			<hardware slot="low slot 2" type="Multispectrum Energized Membrane II"/>
+			<hardware slot="low slot 0" type="400mm Rolled Tungsten Compact Plates"/>
+			<hardware qty="1000" slot="cargo" type="Hail S"/>
+			<hardware qty="1000" slot="cargo" type="Barrage S"/>
+			<hardware qty="1000" slot="cargo" type="Republic Fleet EMP S"/>
+			<hardware qty="1000" slot="cargo" type="Republic Fleet Phased Plasma S"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Incursus - T1">
+			<description value=""/>
+			<shipType value="Incursus"/>
+			<hardware qty="1000" slot="cargo" type="Antimatter Charge S"/>
+			<hardware qty="1" slot="drone bay" type="Warrior I"/>
+			<hardware slot="med slot 1" type="Fleeting Compact Stasis Webifier"/>
+			<hardware slot="med slot 2" type="Initiated Compact Warp Scrambler"/>
+			<hardware slot="med slot 0" type="1MN Y-S8 Compact Afterburner"/>
+			<hardware slot="hi slot 0" type="Modal Light Ion Particle Accelerator I"/>
+			<hardware slot="hi slot 1" type="Modal Light Ion Particle Accelerator I"/>
+			<hardware slot="hi slot 2" type="Modal Light Ion Particle Accelerator I"/>
+			<hardware slot="low slot 1" type="Vortex Compact Magnetic Field Stabilizer"/>
+			<hardware slot="low slot 0" type="200mm Rolled Tungsten Compact Plates"/>
+			<hardware slot="low slot 3" type="Upgraded Multispectrum Coating I"/>
+			<hardware slot="low slot 2" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Incursus - T2">
+			<description value=""/>
+			<shipType value="Incursus"/>
+			<hardware slot="low slot 3" type="Multispectrum Coating II"/>
+			<hardware qty="1" slot="drone bay" type="Hobgoblin II"/>
+			<hardware slot="hi slot 0" type="Light Ion Blaster II"/>
+			<hardware slot="hi slot 1" type="Light Ion Blaster II"/>
+			<hardware slot="hi slot 2" type="Light Ion Blaster II"/>
+			<hardware slot="med slot 1" type="Fleeting Compact Stasis Webifier"/>
+			<hardware slot="med slot 2" type="Initiated Compact Warp Scrambler"/>
+			<hardware slot="med slot 0" type="1MN Y-S8 Compact Afterburner"/>
+			<hardware slot="low slot 1" type="Magnetic Field Stabilizer II"/>
+			<hardware slot="low slot 2" type="Multispectrum Energized Membrane II"/>
+			<hardware qty="1000" slot="cargo" type="Void S"/>
+			<hardware qty="1000" slot="cargo" type="Null S"/>
+			<hardware slot="low slot 0" type="200mm Steel Plates II"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Inquisitor - T1">
+			<description value=""/>
+			<shipType value="Inquisitor"/>
+			<hardware qty="1" slot="drone bay" type="Warrior I"/>
+			<hardware slot="med slot 1" type="Small F-RX Compact Capacitor Booster"/>
+			<hardware slot="med slot 0" type="1MN Y-S8 Compact Afterburner"/>
+			<hardware qty="20" slot="cargo" type="Cap Booster 200"/>
+			<hardware slot="low slot 0" type="400mm Rolled Tungsten Compact Plates"/>
+			<hardware slot="low slot 1" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="low slot 2" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="low slot 3" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="hi slot 0" type="Small Coaxial Compact Remote Armor Repairer"/>
+			<hardware slot="hi slot 1" type="Small Coaxial Compact Remote Armor Repairer"/>
+			<hardware slot="hi slot 2" type="Small Coaxial Compact Remote Armor Repairer"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Inquisitor - T2">
+			<description value=""/>
+			<shipType value="Inquisitor"/>
+			<hardware qty="1" slot="drone bay" type="Warrior II"/>
+			<hardware slot="med slot 1" type="Small F-RX Compact Capacitor Booster"/>
+			<hardware slot="med slot 0" type="1MN Y-S8 Compact Afterburner"/>
+			<hardware slot="low slot 1" type="Multispectrum Energized Membrane II"/>
+			<hardware slot="low slot 2" type="Multispectrum Energized Membrane II"/>
+			<hardware qty="21" slot="cargo" type="Cap Booster 200"/>
+			<hardware slot="low slot 0" type="400mm Rolled Tungsten Compact Plates"/>
+			<hardware slot="low slot 3" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="hi slot 0" type="Small Solace Scoped Remote Armor Repairer"/>
+			<hardware slot="hi slot 1" type="Small Solace Scoped Remote Armor Repairer"/>
+			<hardware slot="hi slot 2" type="Small Solace Scoped Remote Armor Repairer"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Navitas - T1">
+			<description value=""/>
+			<shipType value="Navitas"/>
+			<hardware qty="1" slot="drone bay" type="Warrior I"/>
+			<hardware slot="med slot 0" type="Small F-RX Compact Capacitor Booster"/>
+			<hardware slot="med slot 2" type="Balmer Series Compact Tracking Disruptor I"/>
+			<hardware slot="med slot 1" type="1MN Y-S8 Compact Afterburner"/>
+			<hardware qty="21" slot="cargo" type="Cap Booster 200"/>
+			<hardware slot="low slot 0" type="400mm Rolled Tungsten Compact Plates"/>
+			<hardware slot="low slot 1" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="low slot 2" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="hi slot 0" type="Small Coaxial Compact Remote Armor Repairer"/>
+			<hardware slot="hi slot 1" type="Small Coaxial Compact Remote Armor Repairer"/>
+			<hardware slot="hi slot 2" type="Small Coaxial Compact Remote Armor Repairer"/>
+			<hardware qty="1" slot="cargo" type="Optimal Range Disruption Script"/>
+			<hardware qty="1" slot="cargo" type="Tracking Speed Disruption Script"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Navitas - T2">
+			<description value=""/>
+			<shipType value="Navitas"/>
+			<hardware qty="1" slot="drone bay" type="Warrior II"/>
+			<hardware slot="med slot 0" type="Small F-RX Compact Capacitor Booster"/>
+			<hardware slot="med slot 2" type="DDO Scoped Tracking Disruptor I"/>
+			<hardware slot="med slot 1" type="1MN Y-S8 Compact Afterburner"/>
+			<hardware slot="low slot 1" type="Multispectrum Energized Membrane II"/>
+			<hardware slot="low slot 2" type="Multispectrum Energized Membrane II"/>
+			<hardware qty="21" slot="cargo" type="Cap Booster 200"/>
+			<hardware slot="low slot 0" type="400mm Rolled Tungsten Compact Plates"/>
+			<hardware slot="hi slot 0" type="Small Coaxial Compact Remote Armor Repairer"/>
+			<hardware slot="hi slot 1" type="Small Coaxial Compact Remote Armor Repairer"/>
+			<hardware slot="hi slot 2" type="Small Coaxial Compact Remote Armor Repairer"/>
+			<hardware qty="1" slot="cargo" type="Optimal Range Disruption Script"/>
+			<hardware qty="1" slot="cargo" type="Tracking Speed Disruption Script"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Executioner - T1">
+			<description value=""/>
+			<shipType value="Executioner"/>
+			<hardware qty="3" slot="cargo" type="Radio S"/>
+			<hardware qty="3" slot="cargo" type="Multifrequency S"/>
+			<hardware slot="hi slot 0" type="Gatling Anode Particle Stream I"/>
+			<hardware slot="hi slot 1" type="Gatling Anode Particle Stream I"/>
+			<hardware slot="hi slot 2" type="Gatling Anode Particle Stream I"/>
+			<hardware slot="med slot 2" type="Faint Scoped Warp Disruptor"/>
+			<hardware slot="med slot 1" type="Initiated Compact Warp Scrambler"/>
+			<hardware slot="low slot 0" type="200mm Crystalline Carbonide Restrained Plates"/>
+			<hardware slot="low slot 1" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="low slot 2" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+			<hardware slot="med slot 0" type="5MN Quad LiF Restrained Microwarpdrive"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Executioner - T2">
+			<description value=""/>
+			<shipType value="Executioner"/>
+			<hardware slot="med slot 2" type="Warp Disruptor II"/>
+			<hardware slot="hi slot 0" type="Small Ghoul Compact Energy Nosferatu"/>
+			<hardware slot="med slot 1" type="Faint Epsilon Scoped Warp Scrambler"/>
+			<hardware slot="low slot 0" type="200mm Crystalline Carbonide Restrained Plates"/>
+			<hardware slot="low slot 1" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="low slot 2" type="Compact Multispectrum Energized Membrane"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+			<hardware slot="med slot 0" type="5MN Quad LiF Restrained Microwarpdrive"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Atron - T1">
+			<description value=""/>
+			<shipType value="Atron"/>
+			<hardware slot="low slot 0" type="200mm Steel Plates II"/>
+			<hardware slot="med slot 2" type="Warp Disruptor II"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="med slot 0" type="5MN Y-T8 Compact Microwarpdrive"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+			<hardware slot="low slot 1" type="Multispectrum Energized Membrane II"/>
+			<hardware slot="med slot 1" type="J5b Enduring Warp Scrambler"/>
+			<hardware slot="low slot 2" type="Multispectrum Energized Membrane II"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Atron - T2">
+			<description value=""/>
+			<shipType value="Atron"/>
+			<hardware qty="1000" slot="cargo" type="Antimatter Charge S"/>
+			<hardware slot="med slot 2" type="Warp Disruptor II"/>
+			<hardware slot="med slot 1" type="J5b Enduring Warp Scrambler"/>
+			<hardware slot="med slot 0" type="5MN Y-T8 Compact Microwarpdrive"/>
+			<hardware slot="low slot 1" type="Multispectrum Energized Membrane II"/>
+			<hardware slot="low slot 2" type="Multispectrum Energized Membrane II"/>
+			<hardware slot="low slot 0" type="200mm Steel Plates II"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+		</fitting>
+	<fitting name="Armor AB Frigs - Crucifier - T2">
+			<description value=""/>
+			<shipType value="Crucifier"/>
+			<hardware slot="med slot 0" type="1MN Afterburner II"/>
+			<hardware slot="med slot 1" type="Tracking Disruptor II"/>
+			<hardware slot="med slot 2" type="Tracking Disruptor II"/>
+			<hardware qty="3" slot="drone bay" type="Acolyte II"/>
+			<hardware qty="3" slot="drone bay" type="Hobgoblin II"/>
+			<hardware qty="3" slot="drone bay" type="Warrior II"/>
+			<hardware slot="low slot 1" type="Multispectrum Energized Membrane II"/>
+			<hardware slot="low slot 2" type="Multispectrum Energized Membrane II"/>
+			<hardware slot="low slot 0" type="200mm Rolled Tungsten Compact Plates"/>
+			<hardware slot="hi slot 0" type="Drone Link Augmentor I"/>
+			<hardware qty="2" slot="cargo" type="Optimal Range Disruption Script"/>
+			<hardware qty="2" slot="cargo" type="Tracking Speed Disruption Script"/>
+			<hardware slot="rig slot 0" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 1" type="Small Trimark Armor Pump I"/>
+			<hardware slot="rig slot 2" type="Small Trimark Armor Pump I"/>
+			<hardware qty="1" slot="cargo" type="Guidance Disruptor II"/>
+			<hardware slot="med slot 3" type="Guidance Disruptor II"/>
+			<hardware qty="2" slot="cargo" type="Missile Range Disruption Script"/>
+			<hardware qty="2" slot="cargo" type="Missile Precision Disruption Script"/>
+		</fitting>
+</fittings>
