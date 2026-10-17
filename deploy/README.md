@@ -8,6 +8,7 @@ What differs from the upstream Alliance Auth Docker stack (`aa-docker`, download
 | `env.additions.example` | `~/aa-docker/.env` | real values appended on Day 2 |
 | `conf/requirements.txt` | `~/aa-docker/conf/requirements.txt` | extra packages for the custom image (Day 3); `docker-compose.yml` switched from `image:` to `build:` on Day 3 |
 | `docker-compose.alliance-site.append` | appended to `~/aa-docker/docker-compose.yml` (services) | the `alliance_site` nginx container serving `~/aa-docker/alliance-site/` for alliance.orlovfamily.space (runbook 15, 2026-10-14) |
+| `bin/aa-backup.sh` | `~/bin/aa-backup.sh` | the nightly backup (cron 03:30): database dump, config tarball (`.env`, `conf/`, compose file, `orlovbot/`, `alliance-site/`, `~/bin`, crontab) and the proxy manager's hosts and certificates from the two Docker volumes; 14 days in `~/backups` (runbook 04 A, extended 2026-10-17) |
 | `orlovbot/` | `~/aa-docker/orlovbot/` | our own Discord bot modules (`/moons`, moon board, structure board, kill feed, jump freighter watch), copied on Day 6 and bind-mounted into every Alliance Auth container; see runbook 08 for the compose and `celery.py` edits that go with it |
 
 Upstream `.env` changes made on Day 1: `PROXY_DASH_PORT=127.0.0.1:81` (proxy-manager admin bound to localhost; reach it via `ssh -L 8181:127.0.0.1:81`).

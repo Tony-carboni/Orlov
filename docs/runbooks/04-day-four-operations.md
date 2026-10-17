@@ -20,6 +20,8 @@
 
 ## A. Nightly backup script (server)
 
+*Updated 2026-10-17 (desktop session): the script below is the Day 4 original. The installed one is now `deploy/bin/aa-backup.sh` in the repo (source of truth; copy it to `~/bin/aa-backup.sh` with the CRLF stripped). On top of the database dump and the config tarball it keeps, per night: the Discord bot's code (`orlovbot/`), the alliance site (`alliance-site/`), `~/bin` and the crontab inside `aa-config-<stamp>.tgz`, and a third file `aa-proxy-<stamp>.tgz` with Nginx Proxy Manager's proxy hosts and the Let's Encrypt certificates read from the two Docker volumes `aa-docker_proxy-data` and `aa-docker_proxy-le`. Same 14-day retention. First run 18:15 UTC: dump 6.9 MB, config 34 KB (32 files), proxy 1.4 MB (7 certificates). An off-server copy of those three files is on the owner's PC in `C:\Users\Toon Budeners\OrlovBackups\2026-10-17\` (outside the repo; the config archive holds `.env`, keep the folder private). Section B stays the plan for the "server died" case: whether the weekly DigitalOcean backups (B1) are switched on can only be seen in the DigitalOcean panel.*
+
 ```bash
 ssh tony@167.99.207.145
 ```

@@ -4,6 +4,24 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-17 (18:20 UTC) — desktop session → any session
+
+**Runbook / topic:** **Doctrines 0.2.6, the landing page text, the backups** (runbooks 16 and 04 A).
+
+**Done.**
+- **Landing page text** (auth admin → Doctrines → Landing page text, one `SiteText` row, set from the shell): title "How we Fly", the owner's two paragraphs (wording as given, including "strenghts"), then a lead line and five bullets that explain the roles a pilot can fill (DPS, Logistics, Tackle, Support with EWAR, boosts and scouts, FC) instead of the four fleet-type bullets; each explanation starts with a capital letter (owner's request after seeing the tags).
+- **Doctrines 0.2.6** (commit `12fd77b` pinned): a list line written as `Keyword: explanation` renders the keyword as an uppercase tag with the role's icon and colour and the explanation beside it (tag column left, text right, stacked on a phone); the same five colours mark the ratio chips on the card and the role headers of the ships table (`ROLE_KEYS` / `role_key()` in `services/fittings.py`, `split_keyword` / `tag_html` in the template tags, `data-role` attributes, colour tokens `--dc-role-*` in the stylesheet). Design rules applied: one colour per role everywhere, icon and name next to the colour, light tints on the navy for at least 4.5:1 contrast, the explanation kept in the body colour. Released per runbook 13 C: backup `aa-db-2026-10-17-1801.sql.gz`, `requirements.txt.pre-doctrines-0.2.6` in `~/backups`, build of all services, `check`, no migration, 20 tests green on the image (one older test now accepts the hashed static name of the fitting-wheel script; it could never pass against the live settings), collectstatic, `up -d`, nginx. Verified as tony: five tags on the landing page, chips and role rows carry `data-role`, the stylesheet is served by nginx with the new rules, 0 gunicorn errors.
+- **Backup diagnostic** on the owner's request. Found: the nightly job (cron 03:30, `~/bin/aa-backup.sh`) runs every night and its dump is sound (gzip ok, 265 tables incl. the doctrines ones), 14 days kept; the config tarball held `.env`, `conf/` and the compose file. Gaps: Nginx Proxy Manager's proxy hosts and the seven Let's Encrypt certificates (Docker volumes, nowhere in a backup), the bot's code, the alliance site, the backup script and the crontab (all small, mostly in git), and above all no copy off the server. Done: the script now also archives those (`aa-proxy-<stamp>.tgz` and a fuller `aa-config-<stamp>.tgz`; old copy `~/backups/aa-backup.sh.pre-proxy-2026-10-17`; source of truth `deploy/bin/aa-backup.sh`), ran once (18:15 UTC, all three files verified), and the three files were copied to the PC at `C:\Users\Toon Budeners\OrlovBackups\2026-10-17\` (outside the repo; holds `.env`). Not covered on purpose: `grafana-data` (dashboards only), redis (cache), the static volume (rebuilt by collectstatic), `~/shipyard-dev` (scratch).
+
+**Owner still has to do by hand.**
+- Check in the DigitalOcean panel whether the weekly Droplet backups are enabled (runbook 04 B1); that is the "server died" layer and cannot be seen from the server. If not, enable them.
+- Repeat the copy to the PC now and then (runbook 04 B2), or ask the local session for it.
+- Still open from before: "Connect the projects" with Catherine Frey on the Shipyard projects tab; delete the stray top-level #pings; roster tokens for GB44 and 1E3.
+
+**Next.** Nothing queued. Any session: `git pull` and read this entry.
+
+---
+
 ## 2026-10-17 (14:10 UTC) — desktop session → any session
 
 **Runbook / topic:** **Doctrines 0.2.0 and the first doctrine** (runbook 16 D), on the owner's doctrine text file and his fitting export.
@@ -80,24 +98,3 @@ Runbook 16 C once A is done: set `DOCTRINES_HOST = "doctrines.orlovfamily.space"
 
 ---
 
-## 2026-10-15 (15:40 UTC) — desktop session → any session
-
-**Runbook / topic:** runbook 13 C, Shipyard **0.13.2** (payers left out of the Structure income figures) and **0.13.3** (fuel blocks on My business), on the owner's requests of today.
-
-**Done**
-- 0.13.2 (commit `b59b0a3`, migration 0019, backup `aa-db-2026-10-15-1526.sql.gz`): a **Count** checkbox per payer in "Who pays" on the Structure income tab; unticked = that payer's tax is left out of every figure on the page, the ledger keeps the entries, the row stays dimmed with a "left out" badge and can be ticked again. Meant for the owner's own alts and OARMI's jobs, which pay the Raitaru tax to his own structure corp.
-- 0.13.3 (commit `695b655` pinned, backup `-1532`): fuel blocks as a product line on My business: charts of blocks sold and produced per period by block, sales ISK per period by type with fuel included, a fuel table by block, a Fuel row in produced-versus-sold. Live: 741,044 blocks sold for 13.6 B since 2026-09-26.
-- Both released per runbook 13 C (details there). Tests 86.
-
-**Also (2026-10-16):** `docs/guides/soe-epic-arc-runbook.md` (the other session's file of 2026-10-15, merged with this session's version: one guide now), the owner's in-game runbook for raising Caldari State standing with the Sisters of EVE epic arc (The Blood-Stained Stars, 51 missions, +0.875 of the distance to 10.0 with Social V, no derived changes, every 90 days), with his own numbers (Caldari State −0.27 → ≈ +0.63, broker fee 1.461 % → ≈ 1.434 %, about 130 M/month at the current 490 B of monthly orders) and Penumbra as the next step (needs 5.00 with Caldari State or Expert Distribution).
-
-**Also (2026-10-16):** user `Gizzimo` showed as `[.WAR.]` because their main was the character Gizzimo (Warforged Militants, NC.); their alt BadOmens joined OARMI on 2026-10-15 20:09. On the owner's instruction the main was set to BadOmens from the shell (`profile.main_character`, `assign_state()`); state Family Member, group `corp_OARMI`, Discord nickname `[OARMI] BadOmens` with roles Family Member and `corp_OARMI` (the first Discord push hit auth's rate limiter, the retry a minute later went through, as with Braadslee). Crimson Harvest 2026 (6 Oct–3 Nov): only shooting the Triglavian wormhole guards costs Triglavian standing; the event sites do not.
-
-**Also (2026-10-17):** "update user tommicus" per runbook 04 E: Tommicus Aurilen SWA → OARMI in auth, Family Friend → Family Member, `corp_OARMI`, Discord `[OARMI] Tommicus Aurilen` with Family Member and `corp_OARMI` (verified on the server). The owner first said "atlas": no user, character or Discord member by that name exists in auth.
-
-**Owner has to do by hand**
-- Structure income: untick the payers that should not count (your own characters, OARMI if its job tax is your own money moving).
-- My business: still **Connect the jobs** with Catherine Frey (0.13.0) so the production charts and the produced columns fill; until then they read 0.
-
-### Next — any session
-Nothing queued. Shipyard 0.13.3 on the server (commit `695b655` pinned).
