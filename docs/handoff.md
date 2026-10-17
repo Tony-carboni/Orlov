@@ -36,7 +36,7 @@ More doctrines: the owner hands over a text file in the same shape (name, type, 
 - Content of **AB Armor frigs** set from the owner's texts (summary, strengths, weaknesses, strategy notes), the description cleared (the card shows the name and the summary only), SRP 50 %.
 
 **Owner has to do by hand**
-- Import the corporation fits: `Armor AB Frigs.xml` is in `Documents\EVEittings\` (copy in `docs/doctrines/`), fitting window → Import & Export → Import from file, then save each as a corporation fit. Next doctrines: hand over a text file in the same shape plus the fitting export (re-export it; the current `fittings.xml` is cut off at the end).
+- Import the corporation fits: `Armor AB Frigs.xml` is in `Documents/EVE/fittings/` (copy in `docs/doctrines/`), fitting window → Import & Export → Import from file, then save each as a corporation fit. Next doctrines: hand over a text file in the same shape plus the fitting export (re-export it; the current `fittings.xml` is cut off at the end).
 - Landing text; delete or hide "Example: Rail Harpies"; runbook 16 E.
 - Still open: My business "Connect the jobs" with Catherine Frey; Structure income untick your own payers; send Eemar the CEO roster guide.
 
