@@ -47,15 +47,50 @@ def isk_full(value):
         return "–"
 
 
+KEYWORD_SEPARATORS = (" - ", " – ", " — ", ": ")
+KEYWORD_MAX = 24  # a longer "keyword" is a sentence with a colon in it, not a label
+
+
+def split_keyword(line):
+    """'DPS: the damage dealers' -> ('DPS', 'the damage dealers'); a plain line -> ('', line)."""
+    for sep in KEYWORD_SEPARATORS:
+        if sep in line:
+            key, desc = line.split(sep, 1)
+            key, desc = key.strip(), desc.strip()
+            if key and desc and len(key) <= KEYWORD_MAX:
+                return key, desc
+            break
+    return "", line
+
+
+def tag_html(keyword):
+    """The keyword as a tag: a role gets its icon and colour (data-role), anything else the neutral look."""
+    from ..services.fittings import ROLE_ICONS, role_key
+
+    key = role_key(keyword)
+    icon = ROLE_ICONS.get(keyword.strip().lower(), "")
+    icon_html = f'<i class="fas {icon} fa-fw" aria-hidden="true"></i>' if icon else ""
+    return f'<span class="doctrines-tag" data-role="{key}">{icon_html}{escape(keyword)}</span>'
+
+
+def item_html(item):
+    key, desc = split_keyword(item)
+    if not key:
+        return f"<li>{escape(item)}</li>"
+    return f'<li class="doctrines-kv">{tag_html(key)}<span class="doctrines-kv-text">{escape(desc)}</span></li>'
+
+
 @register.filter
 def paragraphs(text):
-    """Plain text to HTML: a blank line starts a paragraph, lines starting with '- ' make a list."""
+    """Plain text to HTML: a blank line starts a paragraph, lines starting with '- ' make a list, and a list
+    line written as 'Keyword: explanation' shows the keyword as a tag (coloured when it is a fleet role)."""
     out, para, items = [], [], []
 
     def flush():
         nonlocal para, items
         if items:
-            out.append("<ul>" + "".join(f"<li>{escape(i)}</li>" for i in items) + "</ul>")
+            cls = ' class="doctrines-kv-list"' if any(split_keyword(i)[0] for i in items) else ""
+            out.append(f"<ul{cls}>" + "".join(item_html(i) for i in items) + "</ul>")
             items = []
         if para:
             out.append("<p>" + "<br>".join(escape(line) for line in para) + "</p>")
@@ -101,8 +136,8 @@ def keyed(text):
 
 @register.filter
 def ratios(text):
-    """The doctrine's composition as [(role, number, icon)] from 'Role: number' lines; a total is the sum."""
-    from ..services.fittings import ROLE_ICONS
+    """The doctrine's composition as [(role, number, icon, key)] from 'Role: number' lines."""
+    from ..services.fittings import ROLE_ICONS, role_key
 
     out = []
     for key, value in keyed(text):
@@ -112,7 +147,7 @@ def ratios(text):
             n = int(value.strip().rstrip("x× ").strip())
         except ValueError:
             continue
-        out.append((key, n, ROLE_ICONS.get(key.strip().lower(), "fa-user-group")))
+        out.append((key, n, ROLE_ICONS.get(key.strip().lower(), "fa-user-group"), role_key(key)))
     return out
 
 

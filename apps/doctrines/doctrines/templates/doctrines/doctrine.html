@@ -21,7 +21,7 @@
                 {% with parts=doctrine.composition|ratios %}{% if parts %}
                 <div class="doctrines-ratio" title="Target ratio of the roles in a fleet">
                     <span class="doctrines-ratio-label">Fleet</span>
-                    {% for role, n, icon in parts %}<span class="doctrines-ratio-chip"><i class="fas {{ icon }} fa-fw"></i> {{ role }} <strong>{{ n }}</strong></span>{% endfor %}
+                    {% for role, n, icon, key in parts %}<span class="doctrines-ratio-chip" data-role="{{ key }}"><i class="fas {{ icon }} fa-fw"></i> {{ role }} <strong>{{ n }}</strong></span>{% endfor %}
                 </div>
                 {% endif %}{% endwith %}
                 {% if doctrine.description %}<div class="doctrines-prose">{{ doctrine.description|paragraphs }}</div>{% endif %}
@@ -62,7 +62,7 @@
     </tr></thead>
     <tbody>
     {% for block in roles %}
-        <tr class="doctrines-role-row"><td colspan="4"><i class="fas {{ block.icon }} fa-fw"></i> {{ block.role }} <span class="doctrines-k fw-normal">· {{ block.hulls|length }} hull{{ block.hulls|length|pluralize }}</span></td></tr>
+        <tr class="doctrines-role-row" data-role="{{ block.key }}"><td colspan="4"><i class="fas {{ block.icon }} fa-fw"></i> {{ block.role }} <span class="doctrines-k fw-normal">· {{ block.hulls|length }} hull{{ block.hulls|length|pluralize }}</span></td></tr>
         {% for g in block.hulls %}
         <tr class="doctrines-ship-row" data-target="fit-{{ g.key }}" role="button" aria-expanded="false">
             <td class="text-nowrap doctrines-ship-cell"><img src="https://images.evetech.net/types/{{ g.type_id }}/icon?size=64" width="32" height="32" class="rounded me-2" alt=""><span class="fw-semibold">{{ g.hull }}</span>{% if g.multi %} <span class="doctrines-k small">{% for v in g.variants %}{{ v.label }}{% if not forloop.last %} · {% endif %}{% endfor %}</span>{% endif %}{% for n in g.notes %}<div class="small doctrines-k">{{ n }}</div>{% endfor %}{% for e in g.errors %}<div class="small text-warning"><i class="fas fa-triangle-exclamation fa-fw"></i> {{ e }}</div>{% endfor %}</td>

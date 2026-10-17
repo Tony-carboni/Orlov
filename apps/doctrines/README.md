@@ -16,6 +16,10 @@ An Alliance Auth plugin that serves the alliance's fleet doctrines under their o
   Clicking a ship opens its fitting: the hull's render, the modules by slot with icons, drones and
   cargo, and a **Copy fit to clipboard** button (the game's fitting window → Import from clipboard);
   "Open as text" is the fallback when a browser blocks the clipboard.
+- **Role tags (0.2.6):** a list line written as `Keyword: explanation` (in the landing text, a description or
+  the strategy notes) shows the keyword as an uppercase tag; a fleet role (DPS, Logi or Logistics, Tackle,
+  Support, EWAR, Boosts, Scout, FC) gets its icon and its colour, and the same colour marks the ratio chips on
+  the card and the role headers of the ships table. Red DPS, green logistics, amber tackle, violet support, blue FC.
 - **Composition (0.2.5):** the doctrine's *composition* lines (`DPS: 5`, `Logistics: 3`, ...) show as chips with
   the role icons on the card.
 - **Fitting wheel (0.2.2):** an opened fit draws the game's fitting window (the hull in the middle, the

@@ -133,7 +133,24 @@ class PageTests(TestCase):
         html = self.client.get(reverse("doctrines:doctrine", args=[self.doc.slug])).content.decode()
         self.assertEqual(html.count("doctrines-ratio-chip"), 4)
         self.assertIn("Logistics <strong>3</strong>", html)
+        self.assertIn('<span class="doctrines-ratio-chip" data-role="logi">', html)
         self.assertIn("fa-kit-medical", html)
+
+    def test_landing_bullets_with_a_keyword_become_tags(self):
+        from ..models import SiteText
+
+        SiteText.objects.update_or_create(defaults={"title": "How we Fly", "body": (
+            "Pick a role:\n\n- DPS: the damage dealers\n- Logistics: keep the DPS alive\n- Scout: eyes ahead\n"
+            "- Mind the rule: a sentence with a colon that is not a label at all\n- just a plain bullet")})
+        self.client.force_login(self.user)
+        html = self.client.get(reverse("doctrines:index")).content.decode()
+        self.assertIn('<span class="doctrines-tag" data-role="dps"><i class="fas fa-crosshairs fa-fw" aria-hidden="true"></i>DPS</span>', html)
+        self.assertIn('<span class="doctrines-tag" data-role="logi"><i class="fas fa-kit-medical fa-fw" aria-hidden="true"></i>Logistics</span>', html)
+        self.assertIn('<span class="doctrines-tag" data-role="support"><i class="fas fa-eye fa-fw" aria-hidden="true"></i>Scout</span>', html)
+        self.assertIn('<span class="doctrines-kv-text">keep the DPS alive</span>', html)
+        self.assertIn("<li>Mind the rule: a sentence with a colon that is not a label at all</li>", html)  # keyword too long
+        self.assertIn("<li>just a plain bullet</li>", html)
+        self.assertIn('<ul class="doctrines-kv-list">', html)
 
     def test_strengths_show_keyword_and_description(self):
         self.doc.pros = "King of the hill - holds a point\nCheap: easy on the wallet\nJust a line"

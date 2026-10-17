@@ -110,6 +110,22 @@ def grouped(rows: list[dict]) -> list[dict]:
     return groups
 
 
+# A role name as written in the admin ("Logi", "Logistics", "EWAR", ...) to its canonical key: the key
+# picks the icon and the colour, so the same role looks the same on the landing page, the cards and the table.
+ROLE_KEYS = {
+    "dps": "dps", "damage": "dps",
+    "logi": "logi", "logistics": "logi", "logistic": "logi",
+    "tackle": "tackle", "tackler": "tackle",
+    "support": "support", "ewar": "support", "boosts": "support", "boost": "support", "links": "support", "scout": "support",
+    "fc": "fc", "command": "fc", "fleet commander": "fc",
+}
+
+
+def role_key(name: str) -> str:
+    """'Logistics' -> 'logi'; an unknown role -> '' (neutral look)."""
+    return ROLE_KEYS.get((name or "").strip().lower(), "")
+
+
 ROLE_ICONS = {
     "dps": "fa-crosshairs", "logi": "fa-kit-medical", "logistics": "fa-kit-medical", "tackle": "fa-link",
     "support": "fa-satellite-dish", "ewar": "fa-satellite-dish", "boosts": "fa-wave-square", "scout": "fa-eye",
@@ -125,7 +141,7 @@ def by_role(groups: list[dict]) -> list[dict]:
         key = g["role"].strip().lower()
         block = index.get(key)
         if block is None:
-            block = {"role": g["role"].strip(), "icon": ROLE_ICONS.get(key, "fa-user-group"), "hulls": []}
+            block = {"role": g["role"].strip(), "key": role_key(key), "icon": ROLE_ICONS.get(key, "fa-user-group"), "hulls": []}
             index[key] = block
             out.append(block)
         block["hulls"].append(g)
