@@ -2,7 +2,7 @@
 from django.test import SimpleTestCase
 
 from ..services import eft, types
-from ..templatetags.doctrines_tags import keyed
+from ..templatetags.doctrines_tags import isk_auto, keyed
 
 HARPY = """[Harpy, Rail Harpy v3]
 Magnetic Field Stabilizer II
@@ -121,6 +121,15 @@ class SlotTests(SimpleTestCase):
         self.assertEqual(types.slot_of({"category_id": 7, "dogma_effects": [{"effect_id": 2663}]}), "rig")
         self.assertEqual(types.slot_of({"category_id": 32, "dogma_effects": [{"effect_id": 3772}]}), "subsystem")
         self.assertEqual(types.slot_of({"category_id": 4}), "cargo")
+
+
+class IskAutoTests(SimpleTestCase):
+    def test_decimals_by_size(self):
+        self.assertEqual(isk_auto(1234), "1.23 k")
+        self.assertEqual(isk_auto(12345), "12.3 k")
+        self.assertEqual(isk_auto(120700), "121 k")
+        self.assertEqual(isk_auto(2_512_300), "2.512 M")
+        self.assertEqual(isk_auto(None), "–")
 
 
 class KeyedTests(SimpleTestCase):

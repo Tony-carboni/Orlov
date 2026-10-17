@@ -26,6 +26,18 @@ def isk(value, digits=1):
 
 
 @register.filter
+def isk_auto(value):
+    """ISK with the decimals the size allows (the owner's rule, as on the Shipyard's reprocessing tab):
+    under 10 k two decimals ('1.23 k'), from 10 k one ('12.3 k'), from 100 k none ('154 k'),
+    millions three ('2.850 M'); None → '–'."""
+    try:
+        a = abs(float(value))
+    except (TypeError, ValueError):
+        return "–"
+    return isk(value, 3 if a >= 1e6 else 0 if a >= 1e5 else 1 if a >= 1e4 else 2)
+
+
+@register.filter
 def isk_full(value):
     if value is None:
         return "–"
