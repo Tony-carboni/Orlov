@@ -100,6 +100,23 @@ def keyed(text):
 
 
 @register.filter
+def ratios(text):
+    """The doctrine's composition as [(role, number, icon)] from 'Role: number' lines; a total is the sum."""
+    from ..services.fittings import ROLE_ICONS
+
+    out = []
+    for key, value in keyed(text):
+        if not key:
+            continue
+        try:
+            n = int(value.strip().rstrip("x× ").strip())
+        except ValueError:
+            continue
+        out.append((key, n, ROLE_ICONS.get(key.strip().lower(), "fa-user-group")))
+    return out
+
+
+@register.filter
 def logout_url(_):
     from django.urls import NoReverseMatch, reverse
 

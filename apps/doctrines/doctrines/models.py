@@ -85,6 +85,7 @@ class Doctrine(models.Model):
     pros = models.TextField(blank=True, help_text="One per line")
     cons = models.TextField(blank=True, help_text="One per line")
     strategy = models.TextField(blank=True, help_text="Strategy notes: engagement, ranges, logistics, retreat. Plain text as above.")
+    composition = models.TextField(blank=True, help_text="Target ratio of the roles, one per line as 'Role: number', e.g. 'DPS: 5', 'Logistics: 3', 'Tackle: 1', 'Support: 1'. Shown on the card.")
     srp_percent = models.PositiveSmallIntegerField(default=0, help_text="Ship replacement paid on a loss, as a percentage of the ship's cost (hull, fit, drones, cargo). Shown as a tag on the page and taken off the 'loss if lost' column. 0 = no SRP tag")
     order = models.PositiveSmallIntegerField(default=0)
     is_active = models.BooleanField(default=True, help_text="Unticked: hidden from members, still editable")

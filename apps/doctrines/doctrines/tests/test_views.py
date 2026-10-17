@@ -126,6 +126,15 @@ class PageTests(TestCase):
         self.assertEqual(r.context["rows"][0]["srp_percent"], 100)
         self.assertIn('<span class="doctrines-srp-pct is-full">100 %</span>', r.content.decode())
 
+    def test_composition_chips_on_the_card(self):
+        self.doc.composition = "DPS: 5\nLogistics: 3\nTackle: 1\nSupport: 1\nnot a number: x"
+        self.doc.save()
+        self.client.force_login(self.user)
+        html = self.client.get(reverse("doctrines:doctrine", args=[self.doc.slug])).content.decode()
+        self.assertEqual(html.count("doctrines-ratio-chip"), 4)
+        self.assertIn("Logistics <strong>3</strong>", html)
+        self.assertIn("fa-kit-medical", html)
+
     def test_strengths_show_keyword_and_description(self):
         self.doc.pros = "King of the hill - holds a point\nCheap: easy on the wallet\nJust a line"
         self.doc.save()

@@ -18,6 +18,12 @@
                 <div class="doctrines-tile-gameplay"><i class="fas fa-crosshairs fa-fw"></i> {{ doctrine.gameplay }} · {{ doctrine.category.name }}{% if doctrine.srp_percent %} <span class="doctrines-srp-tag" title="Ship replacement: {{ doctrine.srp_percent }} % of a lost ship's cost is paid back"><i class="fas fa-shield-halved fa-fw"></i> {{ doctrine.srp_percent }} % SRP</span>{% endif %}</div>
                 <h1 class="doctrines-h1 mb-1">{{ doctrine.name }}</h1>
                 {% if doctrine.summary %}<p class="lead mb-2">{{ doctrine.summary }}</p>{% endif %}
+                {% with parts=doctrine.composition|ratios %}{% if parts %}
+                <div class="doctrines-ratio" title="Target ratio of the roles in a fleet">
+                    <span class="doctrines-ratio-label">Fleet</span>
+                    {% for role, n, icon in parts %}<span class="doctrines-ratio-chip"><i class="fas {{ icon }} fa-fw"></i> {{ role }} <strong>{{ n }}</strong></span>{% endfor %}
+                </div>
+                {% endif %}{% endwith %}
                 {% if doctrine.description %}<div class="doctrines-prose">{{ doctrine.description|paragraphs }}</div>{% endif %}
             </div>
         </div>

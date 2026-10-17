@@ -53,7 +53,7 @@ Set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy of
 
 1. **Landing text:** admin → Doctrines → *Landing page text* → the one row → write the philosophy. Plain text; a blank line starts a paragraph, a line beginning with `- ` is a bullet.
 2. **Categories and SRP levels** are seeded; rename, reorder or add under *Categories* and *SRP levels* (an SRP level has a colour for its badge and a one-line description shown on hover).
-3. **A doctrine:** *Doctrines → Add*: category, name, gameplay (short: Home defense, Faction warfare, Wormhole, Nullsec roam, ...), summary (the tile's line), description, strengths and weaknesses (one per line, written as `Keyword - description`, e.g. `King of the hill - Takes a point and holds it`; the keyword comes out bold), strategy notes, **SRP percent** (e.g. 50: shown as a tag on the tile and the page, taken off the loss column). Leave *tile type id* empty to picture the first ship, or put a type id to picture another hull.
+3. **A doctrine:** *Doctrines → Add*: category, name, gameplay (short: Home defense, Faction warfare, Wormhole, Nullsec roam, ...), summary (the tile's line), composition (the target ratio of the roles, one per line as `DPS: 5`; chips on the card), description, strengths and weaknesses (one per line, written as `Keyword - description`, e.g. `King of the hill - Takes a point and holds it`; the keyword comes out bold), strategy notes, **SRP percent** (e.g. 50: shown as a tag on the tile and the page, taken off the loss column). Leave *tile type id* empty to picture the first ship, or put a type id to picture another hull.
 4. **Its ships**, in the inline block under the doctrine: order, fit name, role (DPS, Logi, Tackle, Support, EWAR, Boosts, Scout, FC), **variant** (`T1` or `T2` when the same hull and role has a lower-skill and a full-skill fit; the page then shows the hull once and the two fits behind T1 / T2 buttons; leave blank for a single fit), SRP level, a notes line, and the **fitting pasted from the game**: fitting window → **Export** (the arrow icon) → **To clipboard** → paste. Save. The *ship type name* column fills in; a *parse error* means EVE did not know a line (a typo, or a module renamed by a patch): fix the text and save again. New items are priced on save. Give the two variants of a hull the same *order* number so they stay together.
 5. Untick *is active* on a doctrine to hide it while you work on it.
 
@@ -68,6 +68,8 @@ Set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy of
 *Doctrines 0.2.3 (2026-10-17): the ships table reads Cost, SRP, Net insurance, Final cost (cost minus SRP minus insurance), rounded as the Shipyard's reprocessing tab rounds (millions with three decimals, 100 k and up whole). No migration, no new static files.*
 
 *Doctrines 0.2.4 (2026-10-17): the table is Cost (one decimal on millions) and SRP as a percentage; a ship's own *SRP percent* overrides the doctrine's (migration 0004; the two logi hulls of AB Armor frigs set to 100 %).*
+
+*Doctrines 0.2.5 (2026-10-17): the target ratio of the roles (`composition`, migration 0005) as chips on the card; AB Armor frigs set to DPS 6, Logistics 2, Tackle 1, Support 1.*
 
 ## E. Check (you, browser)
 

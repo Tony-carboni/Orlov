@@ -56,7 +56,7 @@ class DoctrineAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     inlines = [DoctrineShipInline]
     fieldsets = (
-        (None, {"fields": ("category", "name", "slug", "gameplay", "summary", "srp_percent", "tile_type_id", "order", "is_active")}),
+        (None, {"fields": ("category", "name", "slug", "gameplay", "summary", "composition", "srp_percent", "tile_type_id", "order", "is_active")}),
         ("The page", {"fields": ("description", "pros", "cons", "strategy")}),
     )
 
