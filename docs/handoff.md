@@ -4,6 +4,22 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-17 (09:25 UTC) — desktop session → any session
+
+**Runbook / topic:** **runbook 16, the doctrines site** (owner's request: doctrines.orlovfamily.space behind auth, landing page with philosophy and tiles in four categories, doctrine pages with ships, Jita cost, net Platinum insurance, SRP level, fitting view with copy-to-clipboard). Built as a new plugin `apps/doctrines/` (0.1.0, commit `6495158`), 13 tests, README in the app.
+
+**Done (server, runbook 16 B).** Backup `aa-db-2026-10-17-0902.sql.gz`; `orlov-doctrines` added to `conf/requirements.txt` pinned to `6495158` (Shipyard pin untouched); Doctrines block appended to `conf/local.py` with `DOCTRINES_HOST = ""` (the host is **switched off** until A and C); build, migration 0001, `doctrines_seed`, collectstatic, `up -d`, nginx; permission `doctrines.basic_access` on the state Family Member, `manage_doctrines` (and read) on the group Alliance Director; insurance table read (570 hulls). Verified on the live stack: anonymous → login, owner 200, Family Friend sent away, admin 200, beat entries `doctrines_refresh_prices` (:35) and `doctrines_refresh_insurance` (05:40) loaded, 0 errors. An inactive sample doctrine "Example: Rail Harpies" with a real fitting proved parsing, ESI type resolution and pricing (cost 37.5 M, net insurance 3.8 M). The address in the request was `.com`; built for `.space` (the alliance domain, where the login cookie works).
+
+**Owner has to do by hand**
+- Runbook 16 A: Porkbun A record `doctrines` → 167.99.207.145, and the Nginx Proxy Manager host `doctrines.orlovfamily.space` (copy the shipyards host, new Let's Encrypt certificate). Then say "switch the doctrines host on" to a local session (16 C).
+- Runbook 16 D: write the landing text and the doctrines in auth's admin (https://auth.orlovfamily.space/admin/doctrines/); fittings pasted from the game's Export → To clipboard. Until the host is on, the pages live at https://auth.orlovfamily.space/doctrines/.
+- Edit or delete the sample doctrine in the admin.
+
+### Next — any session
+Runbook 16 C once A is done: set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy first), restart gunicorn and the workers (`up -d` recreates), check from the server: visitor on the new host → 302 `/doctrines/` → 302 SSO login with `next=/doctrines/go/`; auth's `/doctrines/` → 302 to the new host. Shipyard stays at 0.13.3 (`695b655`).
+
+---
+
 ## 2026-10-15 (15:40 UTC) — desktop session → any session
 
 **Runbook / topic:** runbook 13 C, Shipyard **0.13.2** (payers left out of the Structure income figures) and **0.13.3** (fuel blocks on My business), on the owner's requests of today.
@@ -93,24 +109,5 @@ Nothing queued. Shipyard 0.10.4 (commit `184182b` pinned), kill feed with live R
 
 ### Next — any session
 Nothing queued. Shipyard is at 0.9.6 (commit `5c804b6` pinned). Kill feed with live R2Z2 feed since 2026-10-10. Cartographers [1E3] prepared, Eemar is Corp Director (token still to add by Eemar).
-
----
-
-## 2026-10-10 (14:00 UTC) — desktop session → any session
-
-**Runbook / topic:** runbook 11 (kill feed): **live feed from zKillboard's R2Z2 added** (owner's "go" on the real-time option after kill 139051327 and eleven more from a 13:23 fight did not show).
-
-**Why.** zKillboard's API list (`/api/allianceID/…`) is cached by Cloudflare for one hour (`max-age=3600`); the server's copy was from 13:19, so the 5-minute check could not see the fight before 14:19. The bot itself was healthy.
-
-**What was done**
-- RedisQ was the plan, but it was sunset on 2026-05-31 (archived repo) and `zkillredisq.stream` resolves to 127.0.0.1 everywhere. zKillboard's replacement is **R2Z2**: every killmail as `https://r2z2.zkillboard.com/ephemeral/<sequence>.json` (fields `killmail_id`, `hash`, `esi`, `zkb`, `uploaded_at`, `sequence_id`), pointer `sequence.json`, rules: 6 s wait after a 404, at most 15 requests/s, a User-Agent. The third-party relay `killmail.stream` also works (RedisQ-compatible, packages without the killmail body) but was not used.
-- `deploy/orlovbot/cogs/killfeed.py` (commit `e68e472`): second loop `stream` in the cog reads the files from the remembered position (cache key `orlovbot:killfeed:sequence`, started at the pointer), up to 50 per round at 0.1 s, 6 s pause on 404, `involves_us()` keeps killmails with our pilots on either side, `plan_stream()` applies the same 3-day window and the same seen-memory as the 5-minute check (which stays as fallback), `prepare_stream()` remembers then posts. Backlog over 3000 files after an outage → skip to the pointer with a warning. Failures: one warning, then one per 15 min, 60 s backoff. HTTP runs in a non-thread-sensitive thread so the long rounds never block the other cogs' database thread. Setting `ORLOVBOT_KILLFEED_STREAM` (default True; documented in `deploy/conf/local.py.append`, not added to the server's `local.py`, the default applies).
-- Dry run in a throwaway container: pointer, file, 404, a round of 14 files in 2.1 s, filter and memory rules on the known kill, embed. Deployed 13:50 UTC: old cog in `~/backups/killfeed.py.pre-r2z2`, file copied, bot restarted; log `live feed starts at sequence 99956887`; the position then kept within a few files of the pointer, no errors.
-- Runbook 11 rewritten where it matters (how it works, known values, changing things, troubleshooting, considered-and-not-used).
-
-**Owner has to do by hand:** nothing. The 8 kills of ours from the 13:23 fight (Mastodon, Capsule, 6 Kikimoras, all by Simon Aurio; the other 4 killmails in the alliance list were older or already posted) were posted at 14:03–14:04 UTC after the live feed's position was set back by hand to sequence 99956250 (just before the fight); the memory of posted kills kept the fallback from repeating them at 14:19. Anything new arrives within seconds through the live feed. Rewinding = `cache.set("orlovbot:killfeed:sequence", <sequence>, None)` from the gunicorn container; files stay on zKillboard for 24 h.
-
-### Next — any session
-Nothing queued. If the live feed misbehaves: `ORLOVBOT_KILLFEED_STREAM = False` in `conf/local.py` and restart the bot, or put back `~/backups/killfeed.py.pre-r2z2`. Shipyard is at 0.9.6 (commit `5c804b6` pinned). Cartographers [1E3] fully prepared (07:30 entry).
 
 ---
