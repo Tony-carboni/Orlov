@@ -4,6 +4,24 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-17 (20:20 UTC) — desktop session → any session
+
+**Runbook / topic:** **Doctrines 0.3.0 and 0.3.1: the skills check and the choice cards** (runbook 16).
+
+**Done.**
+- **0.3.0, the skills check** (commit `c4d8d64`, migration 0006, backup `aa-db-2026-10-17-2001.sql.gz` first). A member chooses one of their auth characters in the bar above the ships table (every character on the account; one without a token carrying `esi-skills.read_skills.v1` goes through EVE's login once, the 33-scope tokens from the Shipyard and Member Audit already carry it, 18 users have one). The table has a Skills column (ready, or "3 skills"), and an opened fit shows wheel, the now smaller slot tiles and a skills card side by side: the missing skills as have → need, highest gap first, with what each one is for. Requirements come from the dogma attributes of every type in the fit (`ItemType.required_skills`, prerequisites included); `doctrines_backfill_skills` read them once for the 84 types in the table plus 39 skills. The character's skills live in `MemberCharacter`, 12 h fresh, Refresh button. 29 tests. The owner's row was set to Catherine Frey from the shell to verify (329 skills, 144.9 M SP): T1 fits all ready, the T2 gun fits need Motion Prediction III and the turret skill V, the logi hulls Weapon Disruption.
+- **0.3.1, choice cards** (commit `5074303` pinned): the owner picked option C of four mockups (https://claude.ai/artifact/BW8chP9nrubMtFh3qVynry) after feedback that members did not notice the T1 / T2 tabs. A "2 fits" badge in the ships row; in the opened ship two cards with a radio mark, level pill, cost, a line from the ship's notes (or a default) and the skills verdict. No migration; collectstatic. Verified live: 7 badges, 14 cards, 0 gunicorn errors.
+- Earlier today, see the entries below: landing text and role tags (0.2.6), target composition label (0.2.7), the Punisher price, the fits file, the backups.
+
+**Owner still has to do by hand.**
+- Look at an opened ship on doctrines.orlovfamily.space (AB Armor frigs): the choice cards, the skills card, the character switch. Members choose their own character the first time.
+- The default lines on the T1 / T2 cards ("Meta modules. Flyable in the first weeks." / "Tech II modules. The fit the FC expects from veterans.") come from the ship's *notes* field when it is filled: write a line per fit in the admin if a better one is wanted.
+- Still open: the DigitalOcean weekly backups check (runbook 04 B1); "Connect the projects" with Catherine Frey on the Shipyard projects tab; the stray top-level #pings; roster tokens for GB44 and 1E3; the Heat Sink I in the Punisher T1 (swap for a Compact variant, or ask for the thin-market price guard).
+
+**Next.** Nothing queued. Any session: `git pull` and read this entry.
+
+---
+
 ## 2026-10-17 (18:20 UTC) — desktop session → any session
 
 **Runbook / topic:** **Doctrines 0.2.6, the landing page text, the backups** (runbooks 16 and 04 A).
@@ -81,22 +99,6 @@ A management command `doctrines_import` (text file + fitting export → doctrine
 
 ### Next — any session
 Nothing on the server until the owner has written doctrines. If a doctrine shows "EVE does not know" or a question mark for cost, see the troubleshooting table in runbook 16.
-
----
-
-## 2026-10-17 (09:25 UTC) — desktop session → any session
-
-**Runbook / topic:** **runbook 16, the doctrines site** (owner's request: doctrines.orlovfamily.space behind auth, landing page with philosophy and tiles in four categories, doctrine pages with ships, Jita cost, net Platinum insurance, SRP level, fitting view with copy-to-clipboard). Built as a new plugin `apps/doctrines/` (0.1.0, commit `6495158`), 13 tests, README in the app.
-
-**Done (server, runbook 16 B).** Backup `aa-db-2026-10-17-0902.sql.gz`; `orlov-doctrines` added to `conf/requirements.txt` pinned to `6495158` (Shipyard pin untouched); Doctrines block appended to `conf/local.py` with `DOCTRINES_HOST = ""` (the host is **switched off** until A and C); build, migration 0001, `doctrines_seed`, collectstatic, `up -d`, nginx; permission `doctrines.basic_access` on the state Family Member, `manage_doctrines` (and read) on the group Alliance Director; insurance table read (570 hulls). Verified on the live stack: anonymous → login, owner 200, Family Friend sent away, admin 200, beat entries `doctrines_refresh_prices` (:35) and `doctrines_refresh_insurance` (05:40) loaded, 0 errors. An inactive sample doctrine "Example: Rail Harpies" with a real fitting proved parsing, ESI type resolution and pricing (cost 37.5 M, net insurance 3.8 M). The address in the request was `.com`; built for `.space` (the alliance domain, where the login cookie works).
-
-**Owner has to do by hand**
-- Runbook 16 A: Porkbun A record `doctrines` → 167.99.207.145, and the Nginx Proxy Manager host `doctrines.orlovfamily.space` (copy the shipyards host, new Let's Encrypt certificate). Then say "switch the doctrines host on" to a local session (16 C).
-- Runbook 16 D: write the landing text and the doctrines in auth's admin (https://auth.orlovfamily.space/admin/doctrines/); fittings pasted from the game's Export → To clipboard. Until the host is on, the pages live at https://auth.orlovfamily.space/doctrines/.
-- Edit or delete the sample doctrine in the admin.
-
-### Next — any session
-Runbook 16 C once A is done: set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy first), restart gunicorn and the workers (`up -d` recreates), check from the server: visitor on the new host → 302 `/doctrines/` → 302 SSO login with `next=/doctrines/go/`; auth's `/doctrines/` → 302 to the new host. Shipyard stays at 0.13.3 (`695b655`).
 
 ---
 
