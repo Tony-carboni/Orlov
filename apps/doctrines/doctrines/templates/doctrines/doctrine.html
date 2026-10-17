@@ -52,25 +52,23 @@
 <div class="table-responsive mb-3">
 <table class="table table-sm table-hover align-middle doctrines-ships">
     <thead><tr>
-        <th title="Click a ship for the fitting; T1 = lower skills, T2 = full skills">Ship</th><th class="text-end" title="Hull + fit + drones + cargo at {{ market }} lowest sell{% if prices_at %}, read {{ prices_at|date:"Y-m-d H:i" }} EVE{% endif %}">Cost</th>{% if doctrine.srp_percent %}<th class="text-end" title="{{ doctrine.srp_percent }} % of the cost, paid back on a loss">SRP</th>{% else %}<th title="Ship replacement level">SRP</th>{% endif %}<th class="text-end" title="{{ insurance_level }} insurance: payout minus premium">Net insurance</th><th class="text-end" title="Cost minus SRP minus net insurance: what a loss costs you">Final cost</th><th></th>
+        <th title="Click a ship for the fitting; T1 = lower skills, T2 = full skills">Ship</th><th class="text-end" title="Hull + fit + drones + cargo at {{ market }} lowest sell{% if prices_at %}, read {{ prices_at|date:"Y-m-d H:i" }} EVE{% endif %}">Cost</th><th class="text-end" title="Ship replacement: the share of the cost paid back on a loss">SRP</th><th></th>
     </tr></thead>
     <tbody>
     {% for block in roles %}
-        <tr class="doctrines-role-row"><td colspan="6"><i class="fas {{ block.icon }} fa-fw"></i> {{ block.role }} <span class="doctrines-k fw-normal">· {{ block.hulls|length }} hull{{ block.hulls|length|pluralize }}</span></td></tr>
+        <tr class="doctrines-role-row"><td colspan="4"><i class="fas {{ block.icon }} fa-fw"></i> {{ block.role }} <span class="doctrines-k fw-normal">· {{ block.hulls|length }} hull{{ block.hulls|length|pluralize }}</span></td></tr>
         {% for g in block.hulls %}
         <tr class="doctrines-ship-row" data-target="fit-{{ g.key }}" role="button" aria-expanded="false">
             <td class="text-nowrap doctrines-ship-cell"><img src="https://images.evetech.net/types/{{ g.type_id }}/icon?size=64" width="32" height="32" class="rounded me-2" alt=""><span class="fw-semibold">{{ g.hull }}</span>{% if g.multi %} <span class="doctrines-k small">{% for v in g.variants %}{{ v.label }}{% if not forloop.last %} · {% endif %}{% endfor %}</span>{% endif %}{% for n in g.notes %}<div class="small doctrines-k">{{ n }}</div>{% endfor %}{% for e in g.errors %}<div class="small text-warning"><i class="fas fa-triangle-exclamation fa-fw"></i> {{ e }}</div>{% endfor %}</td>
-            <td class="text-end text-nowrap">{% for v in g.variants %}<div>{% if g.multi %}<span class="doctrines-k small">{{ v.label }}</span> {% endif %}{{ v.cost.total|isk_auto }}{% if v.cost.missing %} <i class="fas fa-circle-question text-warning" title="{{ v.cost.missing|length }} item(s) have no price yet"></i>{% endif %}</div>{% endfor %}</td>
-            {% if doctrine.srp_percent %}<td class="text-end text-nowrap">{% for v in g.variants %}<div>{% if g.multi %}<span class="doctrines-k small">{{ v.label }}</span> {% endif %}{{ v.srp|isk_auto }}</div>{% endfor %}</td>{% else %}<td>{% for lvl in g.srp_levels %}<span class="badge text-bg-{{ lvl.colour }}" title="{{ lvl.description }}">{{ lvl.name }}</span> {% empty %}<span class="doctrines-k">–</span>{% endfor %}</td>{% endif %}
-            <td class="text-end">{{ g.variants.0.insurance.net|isk_auto }}</td>
-            <td class="text-end text-nowrap fw-semibold">{% for v in g.variants %}<div>{% if g.multi %}<span class="doctrines-k small">{{ v.label }}</span> {% endif %}{{ v.loss|isk_auto }}</div>{% endfor %}</td>
+            <td class="text-end text-nowrap">{% for v in g.variants %}<div>{% if g.multi %}<span class="doctrines-k small">{{ v.label }}</span> {% endif %}{{ v.cost.total|isk }}{% if v.cost.missing %} <i class="fas fa-circle-question text-warning" title="{{ v.cost.missing|length }} item(s) have no price yet"></i>{% endif %}</div>{% endfor %}</td>
+            <td class="text-end text-nowrap">{% with pct=g.variants.0.srp_percent %}{% if pct %}<span class="doctrines-srp-pct{% if pct >= 100 %} is-full{% endif %}">{{ pct }} %</span>{% else %}{% for lvl in g.srp_levels %}<span class="badge text-bg-{{ lvl.colour }}" title="{{ lvl.description }}">{{ lvl.name }}</span> {% empty %}<span class="doctrines-k">–</span>{% endfor %}{% endif %}{% endwith %}</td>
             <td class="text-end doctrines-k"><i class="fas fa-chevron-down doctrines-chevron"></i></td>
         </tr>
         <tr class="doctrines-fit-row" id="fit-{{ g.key }}" hidden>
-            <td colspan="6">
+            <td colspan="4">
                 {% if g.multi %}
                 <ul class="nav nav-tabs doctrines-tabs" role="tablist">
-                    {% for v in g.variants %}<li class="nav-item" role="presentation"><button type="button" class="nav-link doctrines-variant{% if forloop.first %} active{% endif %}" data-pane="pane-{{ v.ship.pk }}" data-group="fit-{{ g.key }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"><span class="doctrines-tab-name">{{ v.label }}</span><span class="doctrines-tab-sub">{% if v.label == "T1" %}lower skills{% elif v.label == "T2" %}full skills{% else %}{{ v.ship.name }}{% endif %} · {{ v.cost.total|isk_auto }}</span></button></li>{% endfor %}
+                    {% for v in g.variants %}<li class="nav-item" role="presentation"><button type="button" class="nav-link doctrines-variant{% if forloop.first %} active{% endif %}" data-pane="pane-{{ v.ship.pk }}" data-group="fit-{{ g.key }}" role="tab" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"><span class="doctrines-tab-name">{{ v.label }}</span><span class="doctrines-tab-sub">{% if v.label == "T1" %}lower skills{% elif v.label == "T2" %}full skills{% else %}{{ v.ship.name }}{% endif %} · {{ v.cost.total|isk }}</span></button></li>{% endfor %}
                 </ul>
                 {% endif %}
                 {% for r in g.variants %}
@@ -80,7 +78,7 @@
                         <div class="doctrines-wheel" title="The fitting as the game's fitting window: high slots at the top, mids right, lows left, rigs below"><ship-fit hide-copy>{{ r.text }}</ship-fit></div>
                         <div class="fw-semibold mt-2">{{ r.ship.name }}</div>
                         {% if r.ship.notes %}<div class="small doctrines-k">{{ r.ship.notes }}</div>{% endif %}
-                        <div class="small doctrines-k">Cost {{ r.cost.total|isk_auto }}{% if doctrine.srp_percent %} · SRP {{ r.srp|isk_auto }}{% endif %} · insurance {{ r.insurance.net|isk_auto }} · final cost {{ r.loss|isk_auto }}{% if r.ship.srp_level %} · <span class="badge text-bg-{{ r.ship.srp_level.colour }}" title="{{ r.ship.srp_level.description }}">{{ r.ship.srp_level.name }}</span>{% endif %}</div>
+                        <div class="small doctrines-k">Cost {{ r.cost.total|isk }}{% if r.srp_percent %} · SRP {{ r.srp_percent }} %{% endif %}{% if r.ship.srp_level %} · <span class="badge text-bg-{{ r.ship.srp_level.colour }}" title="{{ r.ship.srp_level.description }}">{{ r.ship.srp_level.name }}</span>{% endif %}</div>
                         <div class="d-grid gap-2 mt-2">
                             <button type="button" class="btn btn-primary doctrines-copy" data-copy="copy-{{ r.ship.pk }}"><i class="fas fa-clipboard fa-fw"></i> Copy fit to clipboard</button>
                             <a class="btn btn-outline-secondary btn-sm" href="{% url 'doctrines:fit_text' r.ship.pk %}" target="_blank" rel="noopener"><i class="fas fa-file-lines fa-fw"></i> Open as text</a>
@@ -115,7 +113,7 @@
         </tr>
         {% endfor %}
     {% empty %}
-        <tr><td colspan="6" class="doctrines-k">No ships in this doctrine yet.</td></tr>
+        <tr><td colspan="4" class="doctrines-k">No ships in this doctrine yet.</td></tr>
     {% endfor %}
     </tbody>
 </table>

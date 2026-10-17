@@ -19,9 +19,10 @@ An Alliance Auth plugin that serves the alliance's fleet doctrines under their o
 - **Fitting wheel (0.2.2):** an opened fit draws the game's fitting window (the hull in the middle, the
   modules around it by slot) with the `shipfit` web component (MIT, self-hosted in `static/doctrines/vendor/`,
   item data bundled, images from EVE's image server); the slot list with names stays beside it.
-- **SRP tag (0.2.1):** a doctrine's *SRP percent* (say 50) shows as a tag on the tile and the page, the
-  ships table gets an SRP column with that share of each fit's cost, and *loss if lost* is cost minus net
-  insurance minus SRP. With 0 the table shows the per-ship SRP level badges instead.
+- **SRP (0.2.1, 0.2.4):** a doctrine's *SRP percent* (say 50) shows as a tag on the tile and the page and
+  in the ships table's SRP column; a ship's own *SRP percent* overrides it (logistics at 100 %). With no
+  percentage the column shows the per-ship SRP level badges. The table is Cost and SRP only (0.2.4); net
+  insurance and the loss are still computed and available to the template.
 - **Variants (0.2.0):** a hull with several fits of the same role, for example a T1 fit for lower
   skills and a T2 fit for full skills, is one row in the ships table (hull, role, the cost and loss
   of each variant) and opens to T1 / T2 buttons that switch the fitting shown. Set the *variant*

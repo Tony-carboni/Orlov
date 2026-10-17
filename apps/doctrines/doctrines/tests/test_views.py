@@ -106,17 +106,25 @@ class PageTests(TestCase):
         self.assertIn("lower skills", html)
         self.assertIn("full skills", html)
 
-    def test_srp_percent_tag_and_loss(self):
+    def test_srp_percent_tag_and_column(self):
         self.doc.srp_percent = 50
         self.doc.save()
         self.client.force_login(self.user)
         r = self.client.get(reverse("doctrines:doctrine", args=[self.doc.slug]))
         row = r.context["rows"][0]
+        self.assertEqual(row["srp_percent"], 50)
         self.assertAlmostEqual(row["srp"], row["cost"]["total"] / 2)
-        self.assertAlmostEqual(row["loss"], row["cost"]["total"] / 2 - 7e6)
         html = r.content.decode()
         self.assertIn("50 % SRP", html)
+        self.assertIn('<span class="doctrines-srp-pct">50 %</span>', html)
+        self.assertNotIn("Net insurance", html)
         self.assertIn("50 % SRP", self.client.get(reverse("doctrines:index")).content.decode())
+        # a ship's own percentage wins (logistics at 100 %)
+        self.ship.srp_percent = 100
+        self.ship.save()
+        r = self.client.get(reverse("doctrines:doctrine", args=[self.doc.slug]))
+        self.assertEqual(r.context["rows"][0]["srp_percent"], 100)
+        self.assertIn('<span class="doctrines-srp-pct is-full">100 %</span>', r.content.decode())
 
     def test_strengths_show_keyword_and_description(self):
         self.doc.pros = "King of the hill - holds a point\nCheap: easy on the wallet\nJust a line"

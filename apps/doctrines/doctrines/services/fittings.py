@@ -64,12 +64,13 @@ def page_data(ships, srp_percent: int = 0) -> list[dict]:
         layout = {"hull": fj.get("hull"), "slots": fj.get("slots") or {k: [] for k in eft.SLOT_ORDER}, "unknown": fj.get("unknown") or []}
         c = eft.cost(layout, price) if fj else {"hull": 0, "fit": 0, "drones": 0, "cargo": 0, "total": 0, "missing": []}
         cost_, payout, net = ins.get(s.ship_type_id, (None, None, None))
-        srp = c["total"] * srp_percent / 100.0 if (srp_percent and c["total"]) else 0.0
+        pct = s.srp_percent if s.srp_percent is not None else srp_percent
+        srp = c["total"] * pct / 100.0 if (pct and c["total"]) else 0.0
         groups = [{"slot": slot, "label": eft.SLOT_LABELS[slot], "rows": layout["slots"].get(slot, [])} for slot in eft.SLOT_ORDER if layout["slots"].get(slot)]
         out.append({
             "ship": s, "layout": layout, "groups": groups, "cost": c,
             "insurance": {"cost": cost_, "payout": payout, "net": net},
-            "srp": srp,
+            "srp": srp, "srp_percent": pct,
             "loss": (c["total"] - net - srp) if (net is not None and c["total"]) else None,
             "text": fj.get("text") or s.fitting_text,
         })

@@ -42,7 +42,7 @@ class DoctrineShipInline(admin.StackedInline):
     model = DoctrineShip
     form = DoctrineShipForm
     extra = 1
-    fields = ("order", "name", "role", "variant", "srp_level", "notes", "fitting_text", "is_active", "ship_type_name", "parse_error")
+    fields = ("order", "name", "role", "variant", "srp_percent", "srp_level", "notes", "fitting_text", "is_active", "ship_type_name", "parse_error")
     readonly_fields = ("ship_type_name", "parse_error")
     ordering = ("order", "id")
 
@@ -93,7 +93,7 @@ class DoctrineAdmin(admin.ModelAdmin):
 @admin.register(DoctrineShip)
 class DoctrineShipAdmin(admin.ModelAdmin):
     form = DoctrineShipForm
-    list_display = ("name", "doctrine", "role", "variant", "srp_level", "ship_type_name", "is_active", "parse_error")
+    list_display = ("name", "doctrine", "role", "variant", "srp_percent", "srp_level", "ship_type_name", "is_active", "parse_error")
     list_filter = ("doctrine", "srp_level", "is_active")
     search_fields = ("name", "ship_type_name", "role")
     readonly_fields = ("ship_type_name", "parse_error")

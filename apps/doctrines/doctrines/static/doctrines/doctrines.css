@@ -78,3 +78,5 @@
 /* the fitting wheel (shipfit web component): it sizes itself to its box, 500 px at most */
 .doctrines-wheel { width: 100%; max-width: 440px; margin: 0 auto; }
 .doctrines-wheel ship-fit { display: block; width: 100%; }
+.doctrines-srp-pct { font-weight: 600; color: #ffc107; }
+.doctrines-srp-pct.is-full { color: #4ade80; }

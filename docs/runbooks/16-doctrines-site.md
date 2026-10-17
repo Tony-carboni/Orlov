@@ -67,6 +67,8 @@ Set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy of
 
 *Doctrines 0.2.3 (2026-10-17): the ships table reads Cost, SRP, Net insurance, Final cost (cost minus SRP minus insurance), rounded as the Shipyard's reprocessing tab rounds (millions with three decimals, 100 k and up whole). No migration, no new static files.*
 
+*Doctrines 0.2.4 (2026-10-17): the table is Cost (one decimal on millions) and SRP as a percentage; a ship's own *SRP percent* overrides the doctrine's (migration 0004; the two logi hulls of AB Armor frigs set to 100 %).*
+
 ## E. Check (you, browser)
 
 1. Private window → https://doctrines.orlovfamily.space → auth's EVE login → the landing page under the new address, without auth's menu.
