@@ -71,7 +71,7 @@
     </div>
     {% endif %}
     <details class="doctrines-switch">
-        <summary class="btn btn-sm {% if member %}btn-outline-primary{% else %}btn-primary{% endif %}"><i class="fas fa-user-group fa-fw"></i> {% if member %}Change character{% else %}Choose character{% endif %}</summary>
+        <summary class="btn btn-sm {% if member %}btn-outline-secondary{% else %}btn-primary{% endif %} doctrines-switch-btn"><i class="fas fa-user-group fa-fw"></i> {% if member %}Change character{% else %}Choose character{% endif %}</summary>
         <div class="doctrines-switch-menu">
             {% for row in characters %}
             <form method="post" action="{% url 'doctrines:use_character' row.character.character_id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ doctrine.slug }}">
@@ -91,21 +91,20 @@
 <div class="table-responsive mb-3">
 <table class="table table-sm table-hover align-middle doctrines-ships">
     <thead><tr>
-        <th title="Click a ship for the fitting; T1 = lower skills, T2 = full skills">Ship</th><th class="text-end" title="Hull + fit + drones + cargo at {{ market }} lowest sell{% if prices_at %}, read {{ prices_at|date:"Y-m-d H:i" }} EVE{% endif %}">Cost</th><th class="text-end" title="Ship replacement: the share of the cost paid back on a loss">SRP</th><th class="text-end" title="{% if member %}Skills {{ member.character_name }} still needs for the fit{% else %}Choose a character above for the skills check{% endif %}">Skills</th><th></th>
+        <th title="Click a ship for the fitting; T1 = lower skills, T2 = full skills">Ship</th><th class="text-end" title="Hull + fit + drones + cargo at {{ market }} lowest sell{% if prices_at %}, read {{ prices_at|date:"Y-m-d H:i" }} EVE{% endif %}{% if member %}; the label says whether {{ member.character_name }} has the skills for the fit{% endif %}">Cost</th><th class="text-end" title="Ship replacement: the share of the cost paid back on a loss">SRP</th><th></th>
     </tr></thead>
     <tbody>
     {% for block in roles %}
-        <tr class="doctrines-role-row" data-role="{{ block.key }}"><td colspan="5"><i class="fas {{ block.icon }} fa-fw"></i> {{ block.role }} <span class="doctrines-k fw-normal">· {{ block.hulls|length }} hull{{ block.hulls|length|pluralize }}</span></td></tr>
+        <tr class="doctrines-role-row" data-role="{{ block.key }}"><td colspan="4"><i class="fas {{ block.icon }} fa-fw"></i> {{ block.role }} <span class="doctrines-k fw-normal">· {{ block.hulls|length }} hull{{ block.hulls|length|pluralize }}</span></td></tr>
         {% for g in block.hulls %}
         <tr class="doctrines-ship-row" data-target="fit-{{ g.key }}" role="button" aria-expanded="false">
             <td class="text-nowrap doctrines-ship-cell"><img src="https://images.evetech.net/types/{{ g.type_id }}/icon?size=64" width="32" height="32" class="rounded me-2" alt=""><span class="fw-semibold">{{ g.hull }}</span>{% if g.multi %} <span class="doctrines-fits-badge" title="{% for v in g.variants %}{{ v.label }}{% if not forloop.last %} and {% endif %}{% endfor %}: open the ship and pick one">{{ g.variants|length }} fits</span>{% endif %}{% for n in g.notes %}<div class="small doctrines-k">{{ n }}</div>{% endfor %}{% for e in g.errors %}<div class="small text-warning"><i class="fas fa-triangle-exclamation fa-fw"></i> {{ e }}</div>{% endfor %}</td>
-            <td class="text-end text-nowrap">{% for v in g.variants %}<div>{% if g.multi %}<span class="doctrines-k small">{{ v.label }}</span> {% endif %}{{ v.cost.total|isk }}{% if v.cost.missing %} <i class="fas fa-circle-question text-warning" title="{{ v.cost.missing|length }} item(s) have no price yet"></i>{% endif %}</div>{% endfor %}</td>
+            <td class="text-end text-nowrap">{% for v in g.variants %}<div>{% if g.multi %}<span class="doctrines-k small">{{ v.label }}</span> {% endif %}{{ v.cost.total|isk }}{% if v.cost.missing %} <i class="fas fa-circle-question text-warning" title="{{ v.cost.missing|length }} item(s) have no price yet"></i>{% endif %}{% if v.skills %}{% if v.skills.ok %} <span class="doctrines-skill-ok doctrines-skill-inline" title="Every skill for this fit is trained"><i class="fas fa-circle-check"></i> ready</span>{% else %} <span class="doctrines-skill-gap doctrines-skill-inline" title="{% for m in v.skills.missing %}{{ m.name }} {{ m.need_roman }}{% if not forloop.last %}, {% endif %}{% endfor %}"><i class="fas fa-graduation-cap"></i> {{ v.skills.count }} skill{{ v.skills.count|pluralize }}</span>{% endif %}{% endif %}</div>{% endfor %}</td>
             <td class="text-end text-nowrap">{% with pct=g.variants.0.srp_percent %}{% if pct %}<span class="doctrines-srp-pct{% if pct >= 100 %} is-full{% endif %}">{{ pct }} %</span>{% else %}{% for lvl in g.srp_levels %}<span class="badge text-bg-{{ lvl.colour }}" title="{{ lvl.description }}">{{ lvl.name }}</span> {% empty %}<span class="doctrines-k">–</span>{% endfor %}{% endif %}{% endwith %}</td>
-            <td class="text-end text-nowrap">{% for v in g.variants %}<div>{% if v.skills %}{% if v.skills.ok %}<span class="doctrines-skill-ok" title="Every skill for this fit is trained"><i class="fas fa-circle-check"></i> ready</span>{% else %}<span class="doctrines-skill-gap" title="{% for m in v.skills.missing %}{{ m.name }} {{ m.need_roman }}{% if not forloop.last %}, {% endif %}{% endfor %}"><i class="fas fa-graduation-cap"></i> {{ v.skills.count }} skill{{ v.skills.count|pluralize }}</span>{% endif %}{% else %}<span class="doctrines-k">–</span>{% endif %}</div>{% endfor %}</td>
             <td class="text-end doctrines-k"><i class="fas fa-chevron-down doctrines-chevron"></i></td>
         </tr>
         <tr class="doctrines-fit-row" id="fit-{{ g.key }}" hidden>
-            <td colspan="5">
+            <td colspan="4">
                 {% if g.multi %}
                 <div class="doctrines-choice-label">Which fit? <span class="doctrines-k">{{ g.variants|length }} versions of the {{ g.hull }}, pick the one your character can fly.</span></div>
                 <div class="doctrines-choice" role="radiogroup" aria-label="Fit version">
@@ -182,7 +181,7 @@
         </tr>
         {% endfor %}
     {% empty %}
-        <tr><td colspan="5" class="doctrines-k">No ships in this doctrine yet.</td></tr>
+        <tr><td colspan="4" class="doctrines-k">No ships in this doctrine yet.</td></tr>
     {% endfor %}
     </tbody>
 </table>

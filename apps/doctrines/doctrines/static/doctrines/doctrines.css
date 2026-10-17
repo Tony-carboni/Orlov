@@ -139,3 +139,6 @@
 .doctrines-skill-lvl { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .doctrines-skill-lvl strong { color: #ffc107; }
 .doctrines-skill-for { grid-column: 1 / 3; color: var(--dc-muted); font-size: .76rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doctrines-skill-inline { display: inline-block; min-width: 5.2rem; text-align: left; margin-left: .5rem; font-size: .8rem; }
+.doctrines-switch-btn { color: var(--dc-text); border-color: var(--dc-muted); }
+.doctrines-switch-btn:hover, .doctrines-switch[open] > .doctrines-switch-btn { color: #fff; border-color: var(--dc-accent); background: rgba(76,195,255,.12); }

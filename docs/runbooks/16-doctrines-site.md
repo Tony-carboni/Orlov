@@ -79,6 +79,8 @@ Set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy of
 
 *Doctrines 0.3.1 (2026-10-17): the T1 / T2 switch as **choice cards** (the owner picked option C of four mockups after feedback that members missed the tabs): a "2 fits" badge in the ships row, and in the opened ship two cards with a radio mark, the level pill, the cost, a line from the ship's notes (or a default) and the skills verdict; the chosen card is ringed in the accent. No migration; collectstatic.*
 
+*Doctrines 0.3.2 (2026-10-17): the skills verdict (ready / n skills) is a label right after the cost in the ships table instead of a column of its own; the Change character button drawn like Refresh. No migration; collectstatic.*
+
 ## E. Check (you, browser)
 
 1. Private window → https://doctrines.orlovfamily.space → auth's EVE login → the landing page under the new address, without auth's menu.
