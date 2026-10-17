@@ -26,7 +26,7 @@ How it works (short): the plugin `apps/doctrines/` is the same kind of thing as 
 Exactly as runbook 14 A, with the new name:
 
 1. **Porkbun → DNS records for `orlovfamily.space`** → add: type `A`, host `doctrines`, answer `167.99.207.145`, TTL default. ✅ `nslookup doctrines.orlovfamily.space` on the PC answers with the server's IP.
-2. **Nginx Proxy Manager** (tunnel as on Day 1, then http://localhost:8181): **Hosts → Proxy Hosts → Add Proxy Host**. Domain `doctrines.orlovfamily.space`; Scheme, Forward Hostname and Forward Port **exactly as the `shipyards.orlovfamily.space` host** (open it and copy); Block Common Exploits on; Websockets on. SSL tab: Request a new certificate, Force SSL, HTTP/2, agree. **Save**.
+2. **Nginx Proxy Manager** (tunnel from the PC with `ssh -L 8181:127.0.0.1:81 orlov`, the alias, not the plain `tony@` address; then http://localhost:8181): **Hosts → Proxy Hosts → Add Proxy Host**. Domain `doctrines.orlovfamily.space`; Scheme, Forward Hostname and Forward Port **exactly as the `shipyards.orlovfamily.space` host** (open it and copy); Block Common Exploits on; Websockets on. SSL tab: Request a new certificate, Force SSL, HTTP/2, agree. **Save**.
 3. ✅ Done when https://doctrines.orlovfamily.space shows auth's login page (the host is still switched off at this point, so you see plain auth; that is expected).
 
 ## B. Release with the host switched off (local session)
@@ -46,6 +46,8 @@ Same procedure as runbook 13 C for the Shipyard, plus the app's first install:
 ## C. Switch the host on (local session, after A)
 
 Set `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py` (copy of the file first), restart gunicorn and the workers, and check from the server: a visitor on the new host → 302 `/doctrines/` → 302 auth's SSO login with `next=/doctrines/go/`; `https://auth.orlovfamily.space/doctrines/` → 302 to the new host; auth itself 200.
+
+*Done 2026-10-17 10:30 UTC by the desktop session, right after A (the proxy host `doctrines.orlovfamily.space` → http://nginx:80 with a Let's Encrypt certificate, added by the owner through the tunnel `ssh -L 8181:127.0.0.1:81 orlov`; the plain `tony@…` form fails with "Permission denied (publickey)" because only the alias carries the key): copy `local.py.pre-doctrines-host` in `~/backups`, the setting changed, gunicorn, the workers and beat restarted. Checks: the new host → 302 `/doctrines/` → 302 `https://auth.orlovfamily.space/sso/login?next=/doctrines/go/`; auth's `/doctrines/` → 302 to the new host; auth's own login unchanged; 0 gunicorn errors. The site is live for members; D and E remain for the owner.*
 
 ## D. Write the doctrines (you, admin, at your pace)
 

@@ -4,6 +4,22 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-17 (10:35 UTC) — desktop session → any session
+
+**Runbook / topic:** **runbook 16 A and C, the doctrines site is live** at https://doctrines.orlovfamily.space.
+
+**Done.** The owner added the DNS record and the Nginx Proxy Manager host (A; the tunnel must use the `orlov` alias, noted in the runbook). The desktop session then did C: `local.py.pre-doctrines-host` in `~/backups`, `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py`, gunicorn, workers and beat restarted. Verified from the server: new host → 302 `/doctrines/` → 302 SSO login with `next=/doctrines/go/`; auth's `/doctrines/` → 302 to the new host; auth's login unchanged; 0 errors. Shipyard untouched at 0.13.3 (`695b655`), Doctrines 0.1.0 (`6495158`).
+
+**Owner has to do by hand**
+- Runbook 16 D: write the landing text and the doctrines in auth's admin (https://auth.orlovfamily.space/admin/doctrines/); fittings pasted from the game's Export → To clipboard. Edit or delete the sample doctrine "Example: Rail Harpies".
+- Runbook 16 E: the browser checks (private window → the new address → EVE login → landing page; copy a fit; a Family Friend sees "not for you").
+- Still open from earlier entries: My business "Connect the jobs" with Catherine Frey; Structure income untick your own payers; send Eemar the CEO roster guide.
+
+### Next — any session
+Nothing on the server until the owner has written doctrines. If a doctrine shows "EVE does not know" or a question mark for cost, see the troubleshooting table in runbook 16.
+
+---
+
 ## 2026-10-17 (09:25 UTC) — desktop session → any session
 
 **Runbook / topic:** **runbook 16, the doctrines site** (owner's request: doctrines.orlovfamily.space behind auth, landing page with philosophy and tiles in four categories, doctrine pages with ships, Jita cost, net Platinum insurance, SRP level, fitting view with copy-to-clipboard). Built as a new plugin `apps/doctrines/` (0.1.0, commit `6495158`), 13 tests, README in the app.
@@ -88,26 +104,3 @@ Nothing queued. Shipyard 0.13.3 on the server (commit `695b655` pinned).
 
 ### Next — any session
 Nothing queued. Shipyard 0.10.4 (commit `184182b` pinned), kill feed with live R2Z2 feed, structure board without fuel pings (2026-10-11).
-
----
-
-## 2026-10-11 (06:05 UTC) — desktop session → any session
-
-**Runbook / topic:** runbooks 09 and 10: the moon board showed no extraction and the structure board showed Orlov Mining Facility II as ABANDONED while, in game, it was online, fuelled and extracting. Plus the owner's rule: **no more fuel pings**.
-
-**Finding.** Nothing was broken. EVE's own API was behind: queried directly with the GWON owner token at 05:30 it still returned zero extractions (answer dated 05:10, cached until 05:40) and Facility II as "onlining, no services, no fuel" (dated 04:50, cached until 05:50). Auth's notifications show the real timeline: online 2026-10-10 19:17, fuelled (high power) and extraction started 05:23/05:24 on 2026-10-11, extraction on Facility I started 05:28. With no fuel and no online record the Structures app files a structure under power mode "Abandoned?", which the board prints as ABANDONED. Once the caches turned, the 05:50 Moon Mining run and the 05:51 forced refresh of both apps picked everything up: two refineries (Piekura I, Saatuban II), extractions arriving Sat 17 Oct 15:01 (II) and Fri 23 Oct 17:01 (I), Facility II shield vulnerable, full power, fuel to 2027-01-11, Moon Drilling online. Moon board updated 05:50, structure board 05:56 (after the restart below). Rendered from the bot container to confirm both rows. Runbook 10 troubleshooting has the interpretation (owner: once-only per structure, no UI change).
-
-**Done.** Fuel pings removed on the owner's instruction: `FUEL_PINGS = False` in `deploy/orlovbot/cogs/structures.py` (`structure_problems()` skips the fuel kind; services pings, war messages and the one "Anchoring finished" message stay; the anchoring message no longer carries a fuel line). Backup `~/backups/structures.py.pre-no-fuel-pings`, file copied, bot restarted 05:56 UTC, all four cogs loaded, boards found. Runbook 10 (alert table, changing things, anchoring row) updated.
-
-**Also (desktop, 2026-10-11):** "refresh user Ranos Zain" done per runbook 04 E: character record FNA → OARMI/ORLOV, state Family Member and `corp_OARMI` were already right, Discord roles and nickname pushed (both True).
-
-**Also (desktop, 2026-10-12):** Sabbard added to the auth group `FC` (Discord role pushed, True). Braadslee added to `FC` the same way (2026-10-12 evening, Discord role pushed, True). 2026-10-13: Republic Fleet LP value set to 750 ISK/LP (was 700) on the owner's instruction; all Minmatar fleet issue blueprint costs follow (e.g. Typhoon Fleet Issue 95 M, Hurricane Fleet Issue 40 M, Stabber Fleet Issue 13.5 M before markup). Then 0.10.3 (commit `99b7714`): the Blueprint column includes the cruiser tag (Stabber Fleet Issue 13.68 M all in). Later on 2026-10-13 the owner sealed a large LP batch: Republic Fleet set to 725 ISK/LP (Typhoon/Tempest Fleet Issue 92.5 M, Hurricane/Cyclone 39 M, Stabber/Scythe 13.23 M all in, before markup). Guide written: docs/guides/corp-roles.md (every corporation role and what it allows; Communications Officer = bulletins, MOTD, calendar, corp bookmarks). Research doc 08 written: ESI has corporation project routes (scope `esi-corporations.read_projects.v1`, compatibility-date header required); a weekly/monthly report is buildable, nobody holds the scope yet; owner to decide shape and channel.
-
-**Also (desktop, 2026-10-12 19:10 UTC):** Shipyard 0.9.7 released: new permission `reprocessing_access` = the Reprocessing tab only through the front door; granted to Hamu (he sees nothing else, lands on /shipyard/reprocessing/). Then 0.10.0: members set their own reprocessing skills and implant on the Reprocessing tab (card "Your skills", by hand or from EVE; default stays V + RX-804). Then 0.10.1/0.10.2: the Reprocessing tab requires a chosen character (skills from EVE, implant by hand) and access is per tab: Hamu holds `reprocessing_access` + `dashboard_access` (Dashboard, ship pages, My settings, Reprocessing; nothing else). Server pinned at `8ac5d89`, migrations through 0015, 76 tests.
-
-**Owner has to do by hand:** nothing.
-
-### Next — any session
-Nothing queued. Shipyard is at 0.9.6 (commit `5c804b6` pinned). Kill feed with live R2Z2 feed since 2026-10-10. Cartographers [1E3] prepared, Eemar is Corp Director (token still to add by Eemar).
-
----
