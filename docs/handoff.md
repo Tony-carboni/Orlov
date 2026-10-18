@@ -4,6 +4,48 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-18 (09:50 UTC) — desktop session → any session
+
+**Runbook / topic:** **SRP from the kill feed, runbook 17** (owner's story of 2026-10-18), **Doctrines 0.4.0** (commit `600b16f` pinned, migration 0007, backup `aa-db-2026-10-18-0933.sql.gz`; `requirements.txt.pre-doctrines-0.4.0`, `local.py.pre-srp`, `killfeed.py.pre-srp` in `~/backups`), 36 tests.
+
+**Done.**
+- `SrpRequest` in the Doctrines plugin, one per zKillboard kill id (unique). Created by the kill feed cog when a member **replies "SRP"** to one of the bot's loss posts in #zkillboard (`on_message` in `deploy/orlovbot/cogs/killfeed.py`, copied to `~/aa-docker/orlovbot/cogs/` and the bot restarted), or by an agent by hand on the page. The payout is the **doctrine's figure**: the matching doctrine fit's cost × the ship's SRP percentage (never the killmail's value). Standard fit = every module, rig and subsystem of the doctrine fit was on the lost ship; otherwise, or for a hull no doctrine carries, or a pilot outside the alliance, an **ad-hoc** request (status "to review") with the reason, for the agent to price and approve.
+- The page https://doctrines.orlovfamily.space/doctrines/srp/ (permission `doctrines.srp_agent`, given directly to the owner's user; the SRP link in the top bar): tabs Open / To review / Paid / Rejected / All; copy buttons for the pilot's name, the amount (digits) and the kill id; Approve (with payout), Paid, Reject, Reopen; Add by hand; Check the wallet.
+- The matcher `doctrines.tasks.srp_match_payments` (beat `doctrines_srp_match_payments`, hourly at :50; `DOCTRINES_SRP_WALLET_DIVISION = 2` in `conf/local.py`, both also in `deploy/conf/local.py.append`) reads the SRP wallet's journal (OARMI division 2) with the Shipyard's production-corp token and marks a request paid when an outgoing entry carries the kill id in its reason or description. **No token yet** (see the entry of 07:40 UTC: Catherine Frey needs the Accountant role and "Connect the jobs"); until then the page says so and agents mark paid by hand.
+- The handoff file's entries were out of order after a merge (two 2026-10-18 entries below 2026-10-17 ones); sorted newest first again.
+
+**Owner has to do by hand** (runbook 17 A)
+- #zkillboard: let members send messages (replies) in the channel.
+- Catherine Frey: Accountant role in OARMI, then My business → Connect the jobs (three scopes). Then the matcher works; say "check the SRP wallet" to a session, or press Check the wallet on the page.
+- Try it: reply `SRP` to a red loss post; the bot answers with the request; the page lists it.
+- Still open: import the corporation fits, the sample doctrine, the landing text, runbook 16 E, the items of the entries below.
+
+### Next — any session
+When the owner reports the token: run `doctrines.services.srp.match_payments()` once from the shell and confirm the journal reads (no 403). If the bot does not answer an SRP reply: `docker compose logs --since 10m allianceauth_discordbot | grep -i srp`.
+
+---
+
+---
+
+## 2026-10-18 (09:40 UTC) — desktop session → any session
+
+**Runbook / topic:** **Heavy Water sales in Piekura** (owner's rule for the books, 2026-10-18) and the Saatuban mining ledger, both read for the next alliance state message.
+
+**Heavy Water, the owner's rule.** Tommy McPhee (the owner's alt) sells Heavy Water for the Orcas at 120 ISK a unit at Piekura - Freeport Giant Mini-Mart. Everything sold up to and including 2026-10-17 was **donated stock**: book it as pure profit, and **the counter of sold Heavy Water stands at 0 as of 2026-10-18**. From today the corporation **buys** Heavy Water from the master wallet division and puts it back up for sale, so from today on a sale has a cost of goods. For the record, the donated period (first sale 2026-10-08, last 2026-10-17 19:32 EVE, Member Audit transactions of Tommy McPhee): 879,151 units for 105.5 M, of which 250,000 units / 30.0 M to the owner's own alt carbondnb (stock moved, not income) and 629,151 units / 75.5 M to twelve other pilots (100,000 of those to the member Sabbard). Jita at the time of reading: lowest sell 108.9, highest buy 99.99. **First purchase, 2026-10-18:** 2,000,000 units bought by **direct trade** (not a market order), paid from Tommy McPhee's wallet: **216 M ISK, 108 ISK a unit** (owner's figure; it appears in his wallet **journal** as a player trade debit of 2026-10-18, not in the market transactions). **Book this batch at a buy value of 108 ISK a unit.** Listed 2026-10-18 at **149.9 ISK a unit** (the sale price is still read from the transactions at month end, in case it changes). **Profit is recorded at the end of the month** (first time end of October 2026): units sold since 2026-10-18 × their sale price, minus the batches they came from at their buy value (this one 108), **minus the sales taxes**: both the broker fee charged when listing (journal ref type brokers_fee) and the transaction tax taken on each sale (ref type transaction_tax), from Tommy McPhee's wallet journal for the month. Rule from the owner: purchases by direct trade are the cost of goods for the units sold afterwards. Any future "how much Heavy Water did we sell" question counts from 2026-10-18 00:00 EVE and compares against the purchase price (market orders on the master wallet division, or direct trades in the journal); the source for the sales is Tommy McPhee's wallet transactions in Member Audit (the corp wallet feed in the Shipyard carries the structure tax journal only).
+
+**Saatuban ledger.** The Saatuban Athanor (Orlov Mining Facility II) reports miners per EVE day through aa-moonmining's ledger (refinery id 1055997584926; the Piekura one is 1055901489178). 2026-10-17: 18 characters, 362,791 units, 185 M at the module's Jita prices; Sabbard 53 M, Hamu 19.8 M, Tommy McPhee 19.4 M on top; one outsider, Velorra Lenoir of Tax Evasion Corp 81, mined 39,254 Bitumens (14.5 M). The same table is in auth under Moon Mining → the refinery → Mining ledger.
+
+**Also (06:55 UTC): Shipyard 0.13.5** (backup `aa-db-2026-10-18-0653.sql.gz`; 0.13.4 an hour earlier had it at 90 % of the Jita buy): the Reprocessing tab has a **BB** column in front of the price points, the alliance buyback price per unit = **85 % of the output value** (`SHIPYARD_BUYBACK_SHARE`, default 0.85). No migration; released per runbook 13 C.
+
+**Owner has to do by hand**
+- Buy the first Heavy Water stock from the master wallet division and relist it; from then on sales minus purchases is the profit.
+- Still open from the entries below: import the corporation fits, the landing text, delete the sample doctrine, runbook 16 E.
+
+### Next — any session
+Nothing on the server. If the owner asks for the Heavy Water figures again: sales since 2026-10-18 from Member Audit (character Tommy McPhee, type Heavy Water, location Piekura, is_buy false) against the corporation's purchases (the master wallet division's market transactions; the corp wallet scope is on the structure corp token).
+
+---
+
 ## 2026-10-17 (20:20 UTC) — desktop session → any session
 
 **Runbook / topic:** **Doctrines 0.3.0 and 0.3.1: the skills check and the choice cards** (runbook 16).
@@ -60,42 +102,3 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ### Next — any session
 More doctrines: the owner hands over a text file in the same shape (name, type, strengths, weaknesses, roles with ships) plus the fitting export; the converter and loader of this session live in the session scratchpad only, so a new session rewrites them from `apps/doctrines` (store a ship with `fittings.store`, then `prices.refresh`). A management command for that import would save the rewrite.
-
----
-
-**Also (2026-10-17, 18:00 UTC):** the doctrines landing page text (auth admin → Doctrines → Landing page text, the one `SiteText` row) was replaced from the shell on the owner's instruction: title "How we Fly", his two paragraphs (wording kept as given, including "strenghts"), and, instead of the four fleet-type bullets, five bullets explaining the roles a pilot can fill: DPS, Logistics, Tackle, Support (EWAR, boosts, scouts) and FC, matching the role names on the doctrine cards. Verified rendered at doctrines.orlovfamily.space as tony: three paragraphs, five bullets, old bullets gone. Nothing in the code changed; the text lives in the database only.
-
-## 2026-10-18 (07:40 UTC) — desktop session → any session
-
-**Runbook / topic:** **the corporation's books: the 5 B baseline** (owner's rule, 2026-10-18, first separation of corp money from the owner's own wallets).
-
-**The rule.** Until today the owner's wallets and the corporation's (Orlov Arms International, OARMI, corp id 98843356) were one pot. From 2026-10-18 the corporation has a **working budget of 5 B ISK**, made of, at the time of writing: **2,397 M liquid in the master wallet division**, **2,387 M of reward ISK still in the 26 active corp projects** (read from EVE at 07:24 EVE this morning, 49 projects in all), and **216 M of Heavy Water stock** (2,000,000 units at the buy value of 108, listed at 149.9 in Piekura). The 5 B is an **interest-free, perpetual loan from the owner** to the corporation, extractable one day when the corp is rich enough; until then it sits as buffer. **It counts as 0 ISK of corp money**: the corporation's result from now on is everything above or below that 5 B baseline (liquid master wallet + reward ISK still in projects + stock at buy value, minus 5 B).
-
-**Director division:** a completely separate financial part, never corp money; it is the owner's characters' shared wallet. Leave it out of every corp figure.
-
-**Sources for the figures:** the project rewards from the Shipyard's Corp projects snapshots (`shipyard.services.projects.refresh()` then `CorpProject` rows with state Active, field `reward_remaining`); the master wallet balance from the owner (the only token with the corporation wallet scope, Vieze Jonge Pass, gets a 403 on the corp wallets endpoint: no Accountant role, so the balance cannot be read by a session yet); Heavy Water per the entry below.
-
-**Owner has to do by hand**
-- Master wallet access for sessions (set up 2026-10-18 08:05 UTC): `SHIPYARD_PRODUCTION_SCOPES` in `conf/local.py` now lists jobs + corporation wallets + divisions (copy `local.py.pre-production-scopes` in `~/backups`; `deploy/conf/local.py.append` updated). The owner gives **Catherine Frey** the **Accountant** role in OARMI in game (Factory Manager for the jobs), then My business → **Connect the jobs** → EVE login as Catherine Frey → accept the three scopes. That one token serves the jobs refresh and the wallet reads (`business.token()`).
-
-### Next — any session
-Month-end (end of October 2026): the corporation's result = master wallet liquid + reward ISK in active projects + Heavy Water stock at buy value, minus 5 B; plus the Heavy Water profit per the entry below. Director division excluded.
-
----
-
-## 2026-10-18 (09:40 UTC) — desktop session → any session
-
-**Runbook / topic:** **Heavy Water sales in Piekura** (owner's rule for the books, 2026-10-18) and the Saatuban mining ledger, both read for the next alliance state message.
-
-**Heavy Water, the owner's rule.** Tommy McPhee (the owner's alt) sells Heavy Water for the Orcas at 120 ISK a unit at Piekura - Freeport Giant Mini-Mart. Everything sold up to and including 2026-10-17 was **donated stock**: book it as pure profit, and **the counter of sold Heavy Water stands at 0 as of 2026-10-18**. From today the corporation **buys** Heavy Water from the master wallet division and puts it back up for sale, so from today on a sale has a cost of goods. For the record, the donated period (first sale 2026-10-08, last 2026-10-17 19:32 EVE, Member Audit transactions of Tommy McPhee): 879,151 units for 105.5 M, of which 250,000 units / 30.0 M to the owner's own alt carbondnb (stock moved, not income) and 629,151 units / 75.5 M to twelve other pilots (100,000 of those to the member Sabbard). Jita at the time of reading: lowest sell 108.9, highest buy 99.99. **First purchase, 2026-10-18:** 2,000,000 units bought by **direct trade** (not a market order), paid from Tommy McPhee's wallet: **216 M ISK, 108 ISK a unit** (owner's figure; it appears in his wallet **journal** as a player trade debit of 2026-10-18, not in the market transactions). **Book this batch at a buy value of 108 ISK a unit.** Listed 2026-10-18 at **149.9 ISK a unit** (the sale price is still read from the transactions at month end, in case it changes). **Profit is recorded at the end of the month** (first time end of October 2026): units sold since 2026-10-18 × their sale price, minus the batches they came from at their buy value (this one 108), **minus the sales taxes**: both the broker fee charged when listing (journal ref type brokers_fee) and the transaction tax taken on each sale (ref type transaction_tax), from Tommy McPhee's wallet journal for the month. Rule from the owner: purchases by direct trade are the cost of goods for the units sold afterwards. Any future "how much Heavy Water did we sell" question counts from 2026-10-18 00:00 EVE and compares against the purchase price (market orders on the master wallet division, or direct trades in the journal); the source for the sales is Tommy McPhee's wallet transactions in Member Audit (the corp wallet feed in the Shipyard carries the structure tax journal only).
-
-**Saatuban ledger.** The Saatuban Athanor (Orlov Mining Facility II) reports miners per EVE day through aa-moonmining's ledger (refinery id 1055997584926; the Piekura one is 1055901489178). 2026-10-17: 18 characters, 362,791 units, 185 M at the module's Jita prices; Sabbard 53 M, Hamu 19.8 M, Tommy McPhee 19.4 M on top; one outsider, Velorra Lenoir of Tax Evasion Corp 81, mined 39,254 Bitumens (14.5 M). The same table is in auth under Moon Mining → the refinery → Mining ledger.
-
-**Also (06:55 UTC): Shipyard 0.13.5** (backup `aa-db-2026-10-18-0653.sql.gz`; 0.13.4 an hour earlier had it at 90 % of the Jita buy): the Reprocessing tab has a **BB** column in front of the price points, the alliance buyback price per unit = **85 % of the output value** (`SHIPYARD_BUYBACK_SHARE`, default 0.85). No migration; released per runbook 13 C.
-
-**Owner has to do by hand**
-- Buy the first Heavy Water stock from the master wallet division and relist it; from then on sales minus purchases is the profit.
-- Still open from the entries below: import the corporation fits, the landing text, delete the sample doctrine, runbook 16 E.
-
-### Next — any session
-Nothing on the server. If the owner asks for the Heavy Water figures again: sales since 2026-10-18 from Member Audit (character Tommy McPhee, type Heavy Water, location Piekura, is_buy false) against the corporation's purchases (the master wallet division's market transactions; the corp wallet scope is on the structure corp token).
