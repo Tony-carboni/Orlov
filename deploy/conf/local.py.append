@@ -173,6 +173,10 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_corp_wallet"] = {
     "schedule": crontab(minute="15"),
 }
 
+# My business: the jobs token also carries the corporation wallet scopes (owner, 2026-10-18), so the character
+# that connects the jobs (Catherine Frey, Factory Manager + Accountant in OARMI) lets sessions read the master wallet.
+SHIPYARD_PRODUCTION_SCOPES = ["esi-industry.read_corporation_jobs.v1", "esi-wallet.read_corporation_wallets.v1", "esi-corporations.read_divisions.v1"]
+
 # Shipyard: the production corp's industry jobs for the My business tab (hourly)
 CELERYBEAT_SCHEDULE["shipyard_refresh_corp_industry_jobs"] = {
     "task": "shipyard.tasks.refresh_corp_industry_jobs",

@@ -76,7 +76,7 @@ More doctrines: the owner hands over a text file in the same shape (name, type, 
 **Sources for the figures:** the project rewards from the Shipyard's Corp projects snapshots (`shipyard.services.projects.refresh()` then `CorpProject` rows with state Active, field `reward_remaining`); the master wallet balance from the owner (the only token with the corporation wallet scope, Vieze Jonge Pass, gets a 403 on the corp wallets endpoint: no Accountant role, so the balance cannot be read by a session yet); Heavy Water per the entry below.
 
 **Owner has to do by hand**
-- If a session should read the master wallet balance itself: give a character with the Accountant (or Junior Accountant) role in OARMI the corporation wallet scope (the structure-corp token of runbook 13/15 has it for the structure corp, not for OARMI).
+- Master wallet access for sessions (set up 2026-10-18 08:05 UTC): `SHIPYARD_PRODUCTION_SCOPES` in `conf/local.py` now lists jobs + corporation wallets + divisions (copy `local.py.pre-production-scopes` in `~/backups`; `deploy/conf/local.py.append` updated). The owner gives **Catherine Frey** the **Accountant** role in OARMI in game (Factory Manager for the jobs), then My business → **Connect the jobs** → EVE login as Catherine Frey → accept the three scopes. That one token serves the jobs refresh and the wallet reads (`business.token()`).
 
 ### Next — any session
 Month-end (end of October 2026): the corporation's result = master wallet liquid + reward ISK in active projects + Heavy Water stock at buy value, minus 5 B; plus the Heavy Water profit per the entry below. Director division excluded.
