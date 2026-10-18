@@ -65,6 +65,24 @@ More doctrines: the owner hands over a text file in the same shape (name, type, 
 
 **Also (2026-10-17, 18:00 UTC):** the doctrines landing page text (auth admin → Doctrines → Landing page text, the one `SiteText` row) was replaced from the shell on the owner's instruction: title "How we Fly", his two paragraphs (wording kept as given, including "strenghts"), and, instead of the four fleet-type bullets, five bullets explaining the roles a pilot can fill: DPS, Logistics, Tackle, Support (EWAR, boosts, scouts) and FC, matching the role names on the doctrine cards. Verified rendered at doctrines.orlovfamily.space as tony: three paragraphs, five bullets, old bullets gone. Nothing in the code changed; the text lives in the database only.
 
+## 2026-10-18 (07:40 UTC) — desktop session → any session
+
+**Runbook / topic:** **the corporation's books: the 5 B baseline** (owner's rule, 2026-10-18, first separation of corp money from the owner's own wallets).
+
+**The rule.** Until today the owner's wallets and the corporation's (Orlov Arms International, OARMI, corp id 98843356) were one pot. From 2026-10-18 the corporation has a **working budget of 5 B ISK**, made of, at the time of writing: **2,397 M liquid in the master wallet division**, **2,387 M of reward ISK still in the 26 active corp projects** (read from EVE at 07:24 EVE this morning, 49 projects in all), and **216 M of Heavy Water stock** (2,000,000 units at the buy value of 108, listed at 149.9 in Piekura). The 5 B is an **interest-free, perpetual loan from the owner** to the corporation, extractable one day when the corp is rich enough; until then it sits as buffer. **It counts as 0 ISK of corp money**: the corporation's result from now on is everything above or below that 5 B baseline (liquid master wallet + reward ISK still in projects + stock at buy value, minus 5 B).
+
+**Director division:** a completely separate financial part, never corp money; it is the owner's characters' shared wallet. Leave it out of every corp figure.
+
+**Sources for the figures:** the project rewards from the Shipyard's Corp projects snapshots (`shipyard.services.projects.refresh()` then `CorpProject` rows with state Active, field `reward_remaining`); the master wallet balance from the owner (the only token with the corporation wallet scope, Vieze Jonge Pass, gets a 403 on the corp wallets endpoint: no Accountant role, so the balance cannot be read by a session yet); Heavy Water per the entry below.
+
+**Owner has to do by hand**
+- If a session should read the master wallet balance itself: give a character with the Accountant (or Junior Accountant) role in OARMI the corporation wallet scope (the structure-corp token of runbook 13/15 has it for the structure corp, not for OARMI).
+
+### Next — any session
+Month-end (end of October 2026): the corporation's result = master wallet liquid + reward ISK in active projects + Heavy Water stock at buy value, minus 5 B; plus the Heavy Water profit per the entry below. Director division excluded.
+
+---
+
 ## 2026-10-18 (09:40 UTC) — desktop session → any session
 
 **Runbook / topic:** **Heavy Water sales in Piekura** (owner's rule for the books, 2026-10-18) and the Saatuban mining ledger, both read for the next alliance state message.
@@ -81,25 +99,3 @@ More doctrines: the owner hands over a text file in the same shape (name, type, 
 
 ### Next — any session
 Nothing on the server. If the owner asks for the Heavy Water figures again: sales since 2026-10-18 from Member Audit (character Tommy McPhee, type Heavy Water, location Piekura, is_buy false) against the corporation's purchases (the master wallet division's market transactions; the corp wallet scope is on the structure corp token).
-
----
-
-## 2026-10-17 (14:35 UTC) — desktop session → any session
-
-**Runbook / topic:** **Doctrines 0.2.1 → 0.2.5** on the owner's requests while he reviewed the first doctrine page; all released per runbook 13 C (backups `aa-db-2026-10-17-1414`, `-1424`, `-1428`; `requirements.txt.pre-doctrines-0.2.x` in `~/backups`; build of all services each time; migration 0003 in 0.2.1; collectstatic before `up -d`). Live now: 0.2.5 (see below), 0 errors.
-
-**Done**
-- 0.2.1: **SRP percent** per doctrine (`srp_percent`, migration 0003) shown as a yellow tag on the tile and the page card and taken off the final cost; **role headers** in the ships table (DPS, Logi, Tackle, Support, with an icon and the hull count) with the hulls indented under them, the Role column gone; the T1 / T2 choice as **Bootstrap tabs** (label, "lower skills" / "full skills", the fit's cost) joined to the panel; the explanatory paragraph above the table removed (the column headers carry it on hover).
-- 0.2.2: the **fitting wheel**: an opened fit draws the game's fitting window with the `shipfit` web component (npm `shipfit` 1.0.0, MIT, 396 KB, self-hosted in `static/doctrines/vendor/` with a licence file; item data bundled from 2021, only EVE's image server at runtime; its GitHub repository is gone, the npm package remains). This is what the owner remembered from other alliances' doctrine pages. Looked at and not taken: EVEShip.fit's React components (React plus self-hosted data files behind CORS) and quiescens' eve-ui (a list, jQuery, unmaintained).
-- 0.2.5: the **target ratio of the roles** on the card (`composition`, one `Role: number` per line, migration 0005), chips with the role icons; AB Armor frigs set to DPS 6, Logistics 2, Tackle 1, Support 1. Live: commit `4647fc3` pinned, 19 tests.
-- 0.2.4: the owner changed his mind: the table is **Cost** (one decimal on millions) **and SRP as a percentage** only; a ship's own *SRP percent* overrides the doctrine's (migration 0004), the two logi hulls set to 100 %. Net insurance and the final cost are still computed, not shown. Live: commit `740cd9a` pinned, 18 tests.
-- 0.2.3: the table read **Cost, SRP, Net insurance, Final cost** (cost minus SRP minus net insurance) with the Shipyard reprocessing rounding (`isk_auto`: millions with three decimals, 100 k and up whole).
-- Content of **AB Armor frigs** set from the owner's texts (summary, strengths, weaknesses, strategy notes), the description cleared (the card shows the name and the summary only), SRP 50 %.
-
-**Owner has to do by hand**
-- Import the corporation fits: `Armor AB Frigs.xml` is in `Documents/EVE/fittings/` (copy in `docs/doctrines/`), fitting window → Import & Export → Import from file, then save each as a corporation fit. Next doctrines: hand over a text file in the same shape plus the fitting export (re-export it; the current `fittings.xml` is cut off at the end).
-- Landing text; delete or hide "Example: Rail Harpies"; runbook 16 E.
-- Still open: My business "Connect the jobs" with Catherine Frey; Structure income untick your own payers; send Eemar the CEO roster guide.
-
-### Next — any session
-A management command `doctrines_import` (text file + fitting export → doctrine with T1/T2 ships) would replace the session-scratchpad converter used for the first doctrine. The table shows two lines per hull (T1 and T2); if the owner wants one line, show the T2 figures in the row and keep T1 in the tabs.
