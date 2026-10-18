@@ -65,6 +65,23 @@ More doctrines: the owner hands over a text file in the same shape (name, type, 
 
 **Also (2026-10-17, 18:00 UTC):** the doctrines landing page text (auth admin → Doctrines → Landing page text, the one `SiteText` row) was replaced from the shell on the owner's instruction: title "How we Fly", his two paragraphs (wording kept as given, including "strenghts"), and, instead of the four fleet-type bullets, five bullets explaining the roles a pilot can fill: DPS, Logistics, Tackle, Support (EWAR, boosts, scouts) and FC, matching the role names on the doctrine cards. Verified rendered at doctrines.orlovfamily.space as tony: three paragraphs, five bullets, old bullets gone. Nothing in the code changed; the text lives in the database only.
 
+## 2026-10-18 (09:40 UTC) — desktop session → any session
+
+**Runbook / topic:** **Heavy Water sales in Piekura** (owner's rule for the books, 2026-10-18) and the Saatuban mining ledger, both read for the next alliance state message.
+
+**Heavy Water, the owner's rule.** Tommy McPhee (the owner's alt) sells Heavy Water for the Orcas at 120 ISK a unit at Piekura - Freeport Giant Mini-Mart. Everything sold up to and including 2026-10-17 was **donated stock**: book it as pure profit, and **the counter of sold Heavy Water stands at 0 as of 2026-10-18**. From today the corporation **buys** Heavy Water from the master wallet division and puts it back up for sale, so from today on a sale has a cost of goods. For the record, the donated period (first sale 2026-10-08, last 2026-10-17 19:32 EVE, Member Audit transactions of Tommy McPhee): 879,151 units for 105.5 M, of which 250,000 units / 30.0 M to the owner's own alt carbondnb (stock moved, not income) and 629,151 units / 75.5 M to twelve other pilots (100,000 of those to the member Sabbard). Jita at the time of reading: lowest sell 108.9, highest buy 99.99. Any future "how much Heavy Water did we sell" question counts from 2026-10-18 00:00 EVE and compares against the purchase price on the master wallet division; the source for the sales is Tommy McPhee's wallet transactions in Member Audit (the corp wallet feed in the Shipyard carries the structure tax journal only).
+
+**Saatuban ledger.** The Saatuban Athanor (Orlov Mining Facility II) reports miners per EVE day through aa-moonmining's ledger (refinery id 1055997584926; the Piekura one is 1055901489178). 2026-10-17: 18 characters, 362,791 units, 185 M at the module's Jita prices; Sabbard 53 M, Hamu 19.8 M, Tommy McPhee 19.4 M on top; one outsider, Velorra Lenoir of Tax Evasion Corp 81, mined 39,254 Bitumens (14.5 M). The same table is in auth under Moon Mining → the refinery → Mining ledger.
+
+**Owner has to do by hand**
+- Buy the first Heavy Water stock from the master wallet division and relist it; from then on sales minus purchases is the profit.
+- Still open from the entries below: import the corporation fits, the landing text, delete the sample doctrine, runbook 16 E.
+
+### Next — any session
+Nothing on the server. If the owner asks for the Heavy Water figures again: sales since 2026-10-18 from Member Audit (character Tommy McPhee, type Heavy Water, location Piekura, is_buy false) against the corporation's purchases (the master wallet division's market transactions; the corp wallet scope is on the structure corp token).
+
+---
+
 ## 2026-10-17 (14:35 UTC) — desktop session → any session
 
 **Runbook / topic:** **Doctrines 0.2.1 → 0.2.5** on the owner's requests while he reviewed the first doctrine page; all released per runbook 13 C (backups `aa-db-2026-10-17-1414`, `-1424`, `-1428`; `requirements.txt.pre-doctrines-0.2.x` in `~/backups`; build of all services each time; migration 0003 in 0.2.1; collectstatic before `up -d`). Live now: 0.2.5 (see below), 0 errors.
@@ -84,22 +101,3 @@ More doctrines: the owner hands over a text file in the same shape (name, type, 
 
 ### Next — any session
 A management command `doctrines_import` (text file + fitting export → doctrine with T1/T2 ships) would replace the session-scratchpad converter used for the first doctrine. The table shows two lines per hull (T1 and T2); if the owner wants one line, show the T2 figures in the row and keep T1 in the tabs.
-
----
-
-## 2026-10-17 (10:35 UTC) — desktop session → any session
-
-**Runbook / topic:** **runbook 16 A and C, the doctrines site is live** at https://doctrines.orlovfamily.space.
-
-**Done.** The owner added the DNS record and the Nginx Proxy Manager host (A; the tunnel must use the `orlov` alias, noted in the runbook). The desktop session then did C: `local.py.pre-doctrines-host` in `~/backups`, `DOCTRINES_HOST = "doctrines.orlovfamily.space"` in `conf/local.py`, gunicorn, workers and beat restarted. Verified from the server: new host → 302 `/doctrines/` → 302 SSO login with `next=/doctrines/go/`; auth's `/doctrines/` → 302 to the new host; auth's login unchanged; 0 errors. Shipyard untouched at 0.13.3 (`695b655`), Doctrines 0.1.0 (`6495158`).
-
-**Owner has to do by hand**
-- Runbook 16 D: write the landing text and the doctrines in auth's admin (https://auth.orlovfamily.space/admin/doctrines/); fittings pasted from the game's Export → To clipboard. Edit or delete the sample doctrine "Example: Rail Harpies".
-- Runbook 16 E: the browser checks (private window → the new address → EVE login → landing page; copy a fit; a Family Friend sees "not for you").
-- Still open from earlier entries: My business "Connect the jobs" with Catherine Frey; Structure income untick your own payers; send Eemar the CEO roster guide.
-
-### Next — any session
-Nothing on the server until the owner has written doctrines. If a doctrine shows "EVE does not know" or a question mark for cost, see the troubleshooting table in runbook 16.
-
----
-
