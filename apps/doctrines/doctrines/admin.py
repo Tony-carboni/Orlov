@@ -4,7 +4,7 @@ with their ships inline. A fitting is parsed on save; a problem shows in the 'pa
 from django import forms
 from django.contrib import admin
 
-from .models import Category, Doctrine, DoctrineShip, Insurance, ItemType, MemberCharacter, RefreshRun, SiteText, SrpLevel, TypePrice
+from .models import Category, Doctrine, DoctrineShip, Insurance, ItemType, MemberCharacter, RefreshRun, SiteText, SrpLevel, SrpRequest, TypePrice
 from .services import fittings
 
 
@@ -133,3 +133,11 @@ class MemberCharacterAdmin(admin.ModelAdmin):
     list_display = ("user", "character_name", "character_id", "total_sp", "fetched_at")
     search_fields = ("user__username", "character_name")
     readonly_fields = ("skills", "total_sp", "fetched_at")
+
+
+@admin.register(SrpRequest)
+class SrpRequestAdmin(admin.ModelAdmin):
+    list_display = ("kill_id", "kill_time", "pilot_name", "ship_type_name", "doctrine_ship", "status", "payout", "paid_amount", "requested_by", "source")
+    list_filter = ("status", "adhoc", "doctrine", "source")
+    search_fields = ("pilot_name", "ship_type_name", "kill_id")
+    readonly_fields = ("created_at", "updated_at")

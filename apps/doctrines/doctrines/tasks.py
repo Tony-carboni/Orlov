@@ -45,3 +45,18 @@ def refresh_insurance():
         _done(run, False, 0, str(exc))
         return
     _done(run, True, result["hulls"], f"{result['hulls']} hulls at {result['level']}")
+
+
+@shared_task
+def srp_match_payments():
+    """Hourly: mark SRP requests paid when the SRP wallet's journal shows the transfer with the kill id."""
+    from .services import srp
+
+    run = _run("srp_payments")
+    try:
+        result = srp.match_payments()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("SRP payments: %s", exc)
+        _done(run, False, message=str(exc)[:300])
+        return
+    _done(run, bool(result.get("ok")), items=int(result.get("matched", 0)), message=result.get("message", "")[:300])

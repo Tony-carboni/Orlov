@@ -142,3 +142,8 @@
 .doctrines-skill-inline { display: inline-block; min-width: 5.2rem; text-align: left; margin-left: .5rem; font-size: .8rem; }
 .doctrines-switch-btn { color: var(--dc-text); border-color: var(--dc-muted); }
 .doctrines-switch-btn:hover, .doctrines-switch[open] > .doctrines-switch-btn { color: #fff; border-color: var(--dc-accent); background: rgba(76,195,255,.12); }
+.doctrines-srp-tabs .nav-link { color: var(--dc-muted); }
+.doctrines-srp-tabs .nav-link.active { background: var(--dc-accent); color: #0b1628; }
+.doctrines-srp td { vertical-align: top; }
+.doctrines-copy-text { color: var(--dc-muted); }
+.doctrines-copy-text:hover { color: #fff; }

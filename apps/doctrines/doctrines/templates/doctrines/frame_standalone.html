@@ -29,6 +29,7 @@
             </ul>
             <ul class="navbar-nav align-items-lg-center">
                 {% if user.is_authenticated %}
+                    {% if can_srp %}<li class="nav-item"><a class="nav-link" href="{% url 'doctrines:srp' %}" title="SRP requests"><i class="fas fa-hand-holding-dollar fa-fw"></i> SRP</a></li>{% endif %}
                     {% if can_manage %}<li class="nav-item"><a class="nav-link" href="{{ SITE_URL }}/admin/doctrines/doctrine/" title="Edit the doctrines in auth's admin"><i class="fas fa-pen fa-fw"></i> Edit</a></li>{% endif %}
                     <li class="nav-item"><a class="nav-link" href="{{ SITE_URL }}" title="Alliance Auth"><i class="fas fa-shield-halved fa-fw"></i> Auth</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ ''|logout_url }}"><i class="fas fa-right-from-bracket fa-fw"></i> Log out</a></li>

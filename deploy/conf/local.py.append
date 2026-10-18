@@ -214,3 +214,9 @@ CELERYBEAT_SCHEDULE["doctrines_refresh_insurance"] = {
     "task": "doctrines.tasks.refresh_insurance",
     "schedule": crontab(minute="40", hour="5"),
 }
+# SRP (runbook 17): the SRP wallet (OARMI division 2) checked hourly for payouts with the kill id in the reason
+DOCTRINES_SRP_WALLET_DIVISION = 2
+CELERYBEAT_SCHEDULE["doctrines_srp_match_payments"] = {
+    "task": "doctrines.tasks.srp_match_payments",
+    "schedule": crontab(minute="50"),
+}

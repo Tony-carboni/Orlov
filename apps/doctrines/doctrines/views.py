@@ -6,6 +6,7 @@ import logging
 from allianceauth.authentication.models import CharacterOwnership
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
+from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -13,7 +14,7 @@ from django.views.decorators.http import require_POST
 from esi.views import sso_redirect
 
 from . import app_settings
-from .models import Category, Doctrine, DoctrineShip, RefreshRun, SiteText
+from .models import Category, Doctrine, DoctrineShip, RefreshRun, SiteText, SrpRequest
 from .services import fittings, prices, skills
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ def _context(request, **extra):
         "standalone": standalone,
         "brand": app_settings.DOCTRINES_BRAND,
         "can_manage": request.user.has_perm("doctrines.manage_doctrines"),
+        "can_srp": request.user.has_perm("doctrines.srp_agent"),
     }
     context.update(extra)
     return context
@@ -153,3 +155,106 @@ def go(request):
     """Bounce after auth's SSO login: back to the doctrines' own address."""
     host = app_settings.host()
     return redirect(f"https://{host}/doctrines/" if host else "/doctrines/")
+
+
+# --- SRP -----------------------------------------------------------------------------------------
+
+SRP_PERMISSION = "doctrines.srp_agent"
+
+
+@login_required
+@permission_required(SRP_PERMISSION)
+def srp(request):
+    from .services import srp as srp_service
+
+    tab = request.GET.get("tab") or "open"
+    counts = {row["status"]: row["n"] for row in SrpRequest.objects.values("status").annotate(n=Count("id"))}
+    tabs = [(SrpRequest.OPEN, "Open", counts.get(SrpRequest.OPEN, 0)), (SrpRequest.REVIEW, "To review", counts.get(SrpRequest.REVIEW, 0)),
+            (SrpRequest.PAID, "Paid", counts.get(SrpRequest.PAID, 0)), (SrpRequest.REJECTED, "Rejected", counts.get(SrpRequest.REJECTED, 0)), ("all", "All", sum(counts.values()))]
+    qs = SrpRequest.objects.select_related("doctrine", "doctrine_ship")
+    if tab != "all":
+        qs = qs.filter(status=tab)
+    return render(request, "doctrines/srp.html", _context(
+        request, requests=qs[:300], tab=tab, tabs=tabs, market=fittings.market_name(),
+        division=app_settings.DOCTRINES_SRP_WALLET_DIVISION, wallet_ok=srp_service.wallet_token() is not None,
+    ))
+
+
+@login_required
+@permission_required(SRP_PERMISSION)
+@require_POST
+def srp_add(request):
+    from .services import srp as srp_service
+
+    kill_id = srp_service.kill_id_from(request.POST.get("kill", ""))
+    if not kill_id:
+        messages.error(request, "Give a zKillboard link or a kill id.")
+        return redirect("doctrines:srp")
+    try:
+        record, created = srp_service.create_from_kill(kill_id, requested_by=request.user.username, source="manual")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("SRP add of %s by %s failed: %s", kill_id, request.user, exc)
+        messages.error(request, f"The kill could not be read: {exc}")
+        return redirect("doctrines:srp")
+    if created:
+        messages.success(request, f"Request #{record.pk} recorded: {record.pilot_name}, {record.ship_type_name}, {record.get_status_display().lower()}.")
+    else:
+        messages.info(request, f"Kill {kill_id} was requested before: #{record.pk}, {record.get_status_display().lower()}.")
+    return redirect(f"{reverse('doctrines:srp')}?tab={record.status}")
+
+
+@login_required
+@permission_required(SRP_PERMISSION)
+@require_POST
+def srp_action(request, pk):
+    record = get_object_or_404(SrpRequest, pk=pk)
+    action = request.POST.get("action")
+    who = request.user.username
+    if action == "approve":
+        raw = (request.POST.get("payout") or "").replace(",", "").replace(" ", "")
+        try:
+            payout = float(raw) if raw else record.payout
+        except ValueError:
+            payout = None
+        if not payout:
+            messages.error(request, "Give the payout in ISK before approving.")
+            return redirect(f"{reverse('doctrines:srp')}?tab={record.status}")
+        record.payout = payout
+        record.status = SrpRequest.OPEN
+        record.reviewed_by = who
+        record.save()
+        messages.success(request, f"#{record.pk} approved at {payout:,.0f} ISK.")
+    elif action == "paid":
+        record.mark_paid(note="marked by hand", by=who)
+        messages.success(request, f"#{record.pk} marked paid.")
+    elif action == "reject":
+        record.status = SrpRequest.REJECTED
+        record.reviewed_by = who
+        record.save()
+        messages.info(request, f"#{record.pk} rejected.")
+    elif action == "reopen":
+        record.status = SrpRequest.REVIEW if record.adhoc and not record.payout else SrpRequest.OPEN
+        record.paid_at = None
+        record.paid_amount = None
+        record.paid_journal_id = None
+        record.paid_note = ""
+        record.reviewed_by = who
+        record.save()
+        messages.info(request, f"#{record.pk} reopened.")
+    return redirect(f"{reverse('doctrines:srp')}?tab={record.status}")
+
+
+@login_required
+@permission_required(SRP_PERMISSION)
+@require_POST
+def srp_sync(request):
+    from .services import srp as srp_service
+
+    try:
+        result = srp_service.match_payments()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("SRP wallet check by %s failed: %s", request.user, exc)
+        messages.error(request, f"The wallet could not be read: {exc}")
+        return redirect("doctrines:srp")
+    (messages.success if result.get("ok") else messages.warning)(request, result.get("message", ""))
+    return redirect("doctrines:srp")

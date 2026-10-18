@@ -46,7 +46,22 @@
         });
     }
 
+    // small copy buttons on the SRP page: the text sits in data-text
+    function copyText(button) {
+        var text = button.dataset.text || "";
+        var icon = button.innerHTML;
+        function done(ok) {
+            button.innerHTML = ok ? '<i class="fas fa-check text-success"></i>' : '<i class="fas fa-triangle-exclamation text-warning"></i>';
+            window.setTimeout(function () { button.innerHTML = icon; }, 1500);
+        }
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+        } else { done(false); }
+    }
+
     document.addEventListener("click", function (e) {
+        var small = e.target.closest(".doctrines-copy-text");
+        if (small) { e.preventDefault(); e.stopPropagation(); copyText(small); return; }
         var tab = e.target.closest(".doctrines-variant");
         if (tab) { e.preventDefault(); e.stopPropagation(); pick(tab); return; }
         var button = e.target.closest(".doctrines-copy");

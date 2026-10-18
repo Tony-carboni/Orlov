@@ -23,3 +23,9 @@ DOCTRINES_BRAND = getattr(settings, "DOCTRINES_BRAND", "Orlov Doctrines")
 def host() -> str:
     """Read at call time (not import time), so tests can override the setting."""
     return (getattr(settings, "DOCTRINES_HOST", "") or "").strip().lower()
+
+# SRP (owner, 2026-10-18): the corporation whose wallet pays, its SRP wallet division, and the alliances
+# whose pilots may ask (empty = no check; the kill feed's alliance list is used as well).
+DOCTRINES_SRP_CORP_ID = getattr(settings, "DOCTRINES_SRP_CORP_ID", 98843356)   # Orlov Arms International
+DOCTRINES_SRP_WALLET_DIVISION = getattr(settings, "DOCTRINES_SRP_WALLET_DIVISION", 2)
+DOCTRINES_SRP_ALLIANCE_IDS = getattr(settings, "DOCTRINES_SRP_ALLIANCE_IDS", [])

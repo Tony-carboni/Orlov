@@ -16,6 +16,7 @@ class General(models.Model):
         permissions = (
             ("basic_access", "Can read the fleet doctrines"),
             ("manage_doctrines", "Can edit doctrines, ships and fittings"),
+            ("srp_agent", "Can handle SRP requests"),
         )
 
 
@@ -208,3 +209,67 @@ class RefreshRun(models.Model):
 
     class Meta:
         ordering = ["-started_at"]
+
+
+class SrpRequest(models.Model):
+    """A ship replacement request: one per zKillboard kill. Created by the bot when a pilot replies
+    "SRP" to the loss in #zkillboard, or by an SRP agent by hand. The payout is the doctrine fit's
+    cost × the ship's SRP percentage; a loss that is not a doctrine fit is an ad-hoc request for review."""
+
+    OPEN, REVIEW, PAID, REJECTED = "open", "review", "paid", "rejected"
+    STATUS = ((OPEN, "Open"), (REVIEW, "Ad hoc, to review"), (PAID, "Paid"), (REJECTED, "Rejected"))
+
+    kill_id = models.BigIntegerField(unique=True, help_text="zKillboard kill id; keeps requests unique")
+    kill_hash = models.CharField(max_length=64, blank=True)
+    kill_time = models.DateTimeField()
+    system_name = models.CharField(max_length=100, blank=True)
+    pilot_id = models.BigIntegerField(default=0)
+    pilot_name = models.CharField(max_length=100)
+    corporation_name = models.CharField(max_length=100, blank=True)
+    ship_type_id = models.PositiveIntegerField(default=0)
+    ship_type_name = models.CharField(max_length=100, blank=True)
+    doctrine = models.ForeignKey(Doctrine, on_delete=models.SET_NULL, null=True, blank=True, related_name="srp_requests")
+    doctrine_ship = models.ForeignKey(DoctrineShip, on_delete=models.SET_NULL, null=True, blank=True, related_name="srp_requests")
+    match_score = models.FloatField(default=0, help_text="Share of the doctrine fit's modules that were fitted on the lost ship")
+    match_note = models.CharField(max_length=300, blank=True)
+    adhoc = models.BooleanField(default=False, help_text="Not a standard doctrine fit (or another reason to review)")
+    adhoc_reason = models.CharField(max_length=500, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS, default=OPEN, db_index=True)
+    zkb_value = models.FloatField(default=0, help_text="zKillboard's total value, for reference only")
+    fitted_value = models.FloatField(default=0)
+    doctrine_cost = models.FloatField(null=True, blank=True, help_text="The doctrine fit's cost when the request was made")
+    srp_percent = models.PositiveSmallIntegerField(null=True, blank=True)
+    payout = models.FloatField(null=True, blank=True, help_text="ISK to send; the doctrine figure, or set by the agent for an ad-hoc loss")
+    requested_by = models.CharField(max_length=100, blank=True)
+    requested_by_discord_id = models.BigIntegerField(null=True, blank=True)
+    discord_message_id = models.BigIntegerField(null=True, blank=True)
+    source = models.CharField(max_length=20, default="discord")
+    notes = models.CharField(max_length=500, blank=True)
+    reviewed_by = models.CharField(max_length=150, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    paid_amount = models.FloatField(null=True, blank=True)
+    paid_journal_id = models.BigIntegerField(null=True, blank=True, help_text="The SRP wallet's journal entry that paid it")
+    paid_note = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "SRP request"
+
+    def __str__(self):
+        return f"SRP {self.kill_id}: {self.pilot_name}, {self.ship_type_name}"
+
+    @property
+    def match_pct(self) -> int:
+        return int(round((self.match_score or 0) * 100))
+
+    def mark_paid(self, amount=None, journal_id=None, note="", when=None, by=""):
+        self.status = self.PAID
+        self.paid_amount = amount if amount is not None else self.payout
+        self.paid_journal_id = journal_id
+        self.paid_note = note[:200]
+        self.paid_at = when or timezone.now()
+        if by:
+            self.reviewed_by = by[:150]
+        self.save()

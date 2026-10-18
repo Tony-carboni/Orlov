@@ -47,6 +47,19 @@ An Alliance Auth plugin that serves the alliance's fleet doctrines under their o
   of each variant) and opens to T1 / T2 buttons that switch the fitting shown. Set the *variant*
   field on each ship (`T1`, `T2`, ...); ships without a variant are rows of their own.
 
+## SRP (0.4.0)
+
+A pilot who loses a ship on an SRP fleet replies `SRP` to the loss in #zkillboard. The kill feed cog
+(`deploy/orlovbot/cogs/killfeed.py`) creates an `SrpRequest` with the **doctrine's figure**: the cost of the
+matching doctrine fit × the ship's SRP percentage, never the killmail's value, so cargo and odd modules
+cannot inflate it. A loss whose modules do not match a doctrine fit (or an unknown hull, or a pilot outside
+the alliance) is an **ad-hoc** request for an SRP agent to review and price. The zKillboard kill id keeps
+requests unique. The SRP page (`/doctrines/srp/`, permission `doctrines.srp_agent`) lists the requests with
+copy buttons for the pilot, the amount and the kill id; paying from the SRP wallet (`DOCTRINES_SRP_CORP_ID`,
+division `DOCTRINES_SRP_WALLET_DIVISION`) with the kill id in the reason lets the hourly task
+`doctrines.tasks.srp_match_payments` mark the request paid (it needs the Shipyard's production-corp token with
+the corporation wallet scope). Agents can also add a kill by hand and mark paid, reject or reopen.
+
 ## How it is edited
 
 In auth's admin (members with `doctrines.manage_doctrines`, the superuser always):

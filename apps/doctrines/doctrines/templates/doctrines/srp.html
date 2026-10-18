@@ -1,0 +1,71 @@
+{% extends "doctrines/base.html" %}
+{% load static doctrines_tags %}
+
+{% block doctrines_title %}SRP{% endblock %}
+
+{% block doctrines_content %}
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+    <div>
+        <h1 class="doctrines-h1 mb-1"><i class="fas fa-hand-holding-dollar fa-fw"></i> SRP requests</h1>
+        <div class="doctrines-k">A pilot replies <code>SRP</code> to the loss in #zkillboard; the bot records it here with the doctrine's figure. Pay from the SRP wallet with the <strong>kill id in the reason</strong>: the hourly matcher marks the request paid.</div>
+    </div>
+    <form method="post" action="{% url 'doctrines:srp_add' %}" class="d-flex gap-2 align-items-center">{% csrf_token %}
+        <input type="text" name="kill" class="form-control form-control-sm" placeholder="zKillboard link or kill id" style="min-width: 18rem" required>
+        <button type="submit" class="btn btn-sm btn-outline-light text-nowrap"><i class="fas fa-plus fa-fw"></i> Add by hand</button>
+    </form>
+</div>
+
+<ul class="nav nav-pills doctrines-srp-tabs mb-3">
+    {% for key, label, count in tabs %}
+    <li class="nav-item"><a class="nav-link{% if key == tab %} active{% endif %}" href="?tab={{ key }}">{{ label }} <span class="badge rounded-pill text-bg-secondary">{{ count }}</span></a></li>
+    {% endfor %}
+    <li class="nav-item ms-auto">
+        <form method="post" action="{% url 'doctrines:srp_sync' %}" class="d-inline">{% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Read the SRP wallet's journal now and mark the paid requests"><i class="fas fa-rotate fa-fw"></i> Check the wallet</button>
+        </form>
+    </li>
+</ul>
+
+<div class="table-responsive">
+<table class="table table-sm table-hover align-middle doctrines-srp">
+    <thead><tr>
+        <th>#</th><th>Lost</th><th>Pilot</th><th>Ship</th><th class="text-end">Payout</th><th>Kill</th><th>Requested</th><th>Status</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for r in requests %}
+    <tr class="{% if r.status == 'review' %}table-warning-subtle{% endif %}">
+        <td class="doctrines-k">{{ r.pk }}</td>
+        <td class="text-nowrap small" title="{{ r.kill_time|date:'Y-m-d H:i' }} EVE">{{ r.kill_time|date:"d M H:i" }}<div class="doctrines-k">{{ r.system_name }}</div></td>
+        <td class="text-nowrap"><span class="fw-semibold">{{ r.pilot_name }}</span> <button type="button" class="btn btn-sm btn-link p-0 ms-1 doctrines-copy-text" data-text="{{ r.pilot_name }}" title="Copy the pilot's name"><i class="fas fa-copy"></i></button><div class="small doctrines-k">{{ r.corporation_name }}</div></td>
+        <td><img src="https://images.evetech.net/types/{{ r.ship_type_id }}/icon?size=32" width="24" height="24" class="rounded me-1" alt=""><span class="fw-semibold">{{ r.ship_type_name }}</span>
+            {% if r.doctrine_ship %}<div class="small doctrines-k">{{ r.doctrine.name }} · {{ r.doctrine_ship.name }} · {{ r.match_pct }} % of the doctrine modules</div>{% endif %}
+            {% if r.adhoc %}<div class="small text-warning"><i class="fas fa-triangle-exclamation fa-fw"></i> Ad hoc: {{ r.adhoc_reason }}</div>{% endif %}
+            {% if r.notes %}<div class="small doctrines-k"><i class="fas fa-note-sticky fa-fw"></i> {{ r.notes }}</div>{% endif %}</td>
+        <td class="text-end text-nowrap">{% if r.payout %}<span class="fw-semibold">{{ r.payout|isk }}</span> <button type="button" class="btn btn-sm btn-link p-0 ms-1 doctrines-copy-text" data-text="{{ r.payout|floatformat:0 }}" title="Copy the amount in ISK, digits only"><i class="fas fa-copy"></i></button><div class="small doctrines-k">{{ r.srp_percent }} % of {{ r.doctrine_cost|isk }}</div>{% else %}<span class="doctrines-k">to set</span>{% endif %}
+            {% if r.status == 'paid' %}<div class="small text-success">paid {{ r.paid_amount|isk }}{% if r.paid_at %} · {{ r.paid_at|date:"d M H:i" }}{% endif %}</div>{% endif %}</td>
+        <td class="text-nowrap"><a href="https://zkillboard.com/kill/{{ r.kill_id }}/" target="_blank" rel="noopener">{{ r.kill_id }}</a> <button type="button" class="btn btn-sm btn-link p-0 ms-1 doctrines-copy-text" data-text="{{ r.kill_id }}" title="Copy the kill id for the transfer's reason"><i class="fas fa-copy"></i></button><div class="small doctrines-k">zKill {{ r.zkb_value|isk }}</div></td>
+        <td class="small text-nowrap">{{ r.requested_by|default:"–" }}<div class="doctrines-k">{{ r.created_at|date:"d M H:i" }} · {{ r.source }}</div></td>
+        <td><span class="badge {% if r.status == 'open' %}text-bg-primary{% elif r.status == 'review' %}text-bg-warning{% elif r.status == 'paid' %}text-bg-success{% else %}text-bg-secondary{% endif %}">{{ r.get_status_display }}</span>{% if r.reviewed_by %}<div class="small doctrines-k">{{ r.reviewed_by }}</div>{% endif %}</td>
+        <td class="text-end text-nowrap">
+            <form method="post" action="{% url 'doctrines:srp_action' r.pk %}" class="d-inline-flex gap-1 align-items-center flex-wrap justify-content-end">{% csrf_token %}
+                {% if r.status == 'review' %}
+                    <input type="number" name="payout" class="form-control form-control-sm" style="width: 9rem" placeholder="ISK" value="{{ r.payout|default_if_none:''|floatformat:0 }}" title="The payout for this ad-hoc loss">
+                    <button type="submit" name="action" value="approve" class="btn btn-sm btn-primary" title="Approve with this payout: the request moves to Open"><i class="fas fa-check fa-fw"></i> Approve</button>
+                {% endif %}
+                {% if r.status == 'open' or r.status == 'review' %}
+                    <button type="submit" name="action" value="paid" class="btn btn-sm btn-success" title="Mark paid by hand (the matcher does it when the wallet shows the transfer)"><i class="fas fa-coins fa-fw"></i> Paid</button>
+                    <button type="submit" name="action" value="reject" class="btn btn-sm btn-outline-danger" title="Reject the request"><i class="fas fa-xmark fa-fw"></i></button>
+                {% else %}
+                    <button type="submit" name="action" value="reopen" class="btn btn-sm btn-outline-secondary" title="Back to Open"><i class="fas fa-rotate-left fa-fw"></i></button>
+                {% endif %}
+            </form>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="9" class="doctrines-k">Nothing here.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+<div class="small doctrines-k">Payout = the doctrine fit's cost at {{ market }} × the ship's SRP percentage; the killmail's own value is shown for reference only. Standard fit = every module of the doctrine fit was on the lost ship. The wallet matcher reads division {{ division }} every hour{% if not wallet_ok %}; <span class="text-warning">no wallet token yet (Catherine Frey: Connect the jobs on My business)</span>{% endif %}.</div>
+{% endblock %}

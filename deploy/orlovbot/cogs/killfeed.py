@@ -16,6 +16,7 @@ repeats nor floods. docs/runbooks/11-kill-feed.md
 import asyncio
 import datetime as dt
 import logging
+import re
 import time
 
 import discord
@@ -62,6 +63,8 @@ STREAM_MAX_BACKLOG = 3000  # further behind than this (about an hour of EVE) →
 STREAM_BACKOFF = 60  # seconds to wait after a failed request
 STREAM_LOG_EVERY = dt.timedelta(minutes=15)  # one warning per this while the feed keeps failing
 SEQUENCE_KEY = "orlovbot:killfeed:sequence"  # the next sequence number to read, kept in the cache
+SRP_WORD = re.compile(r"^\s*srp\b", re.I)  # a reply to a loss post that starts with "SRP" asks for ship replacement
+KILL_LINK = re.compile(r"zkillboard\.com/kill/(\d+)", re.I)
 
 
 def _ours() -> tuple:
@@ -363,6 +366,25 @@ def prepare_stream(killmail: dict):
     return build_embed(killmail, alliances, corporations)
 
 
+def srp_request(kill_id: int, requested_by: str, discord_id: int, message_id: int):
+    """Record the SRP request through the Doctrines plugin (runs in a thread: database and HTTP)."""
+    from doctrines.services import srp
+
+    return srp.create_from_kill(kill_id, requested_by=requested_by, discord_id=discord_id, message_id=message_id, source="discord")
+
+
+def srp_reply(record, created: bool) -> str:
+    """What the bot answers under the pilot's "SRP" reply."""
+    if not created:
+        return f"That loss was requested before: SRP request #{record.pk}, {record.get_status_display().lower()}."
+    if record.status == "open":
+        return (f"SRP request **#{record.pk}** recorded for **{record.pilot_name}**, {record.ship_type_name} "
+                f"({record.match_note}): **{record.payout:,.0f} ISK** ({record.srp_percent} % of the doctrine fit). "
+                f"An SRP agent pays it out of the SRP wallet.")
+    return (f"SRP request **#{record.pk}** recorded for **{record.pilot_name}**, {record.ship_type_name}, as an **ad-hoc request**: "
+            f"{record.adhoc_reason}. An SRP agent reviews it.")
+
+
 class Killfeed(commands.Cog):
     """Kills and losses of our pilots, from zKillboard."""
 
@@ -385,6 +407,40 @@ class Killfeed(commands.Cog):
     def cog_unload(self):
         self.check.cancel()
         self.stream.cancel()
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """A member replies "SRP" to one of the kill posts: record the ship replacement request."""
+        if message.author.bot or message.reference is None or not message.guild:
+            return
+        if not SRP_WORD.match(message.content or ""):
+            return
+        channel = self.board.get_channel()
+        if channel is None or message.channel.id != channel.id:
+            return
+        referenced = message.reference.resolved
+        if referenced is None or isinstance(referenced, discord.DeletedReferencedMessage):
+            try:
+                referenced = await message.channel.fetch_message(message.reference.message_id)
+            except Exception:  # noqa: BLE001
+                referenced = None
+        kill_id = None
+        for embed in (referenced.embeds if referenced else []):
+            m = KILL_LINK.search(embed.url or "")
+            if m:
+                kill_id = int(m.group(1))
+                break
+        if kill_id is None:
+            await message.reply("Reply with `SRP` to one of my loss posts (the red ones) and I record the request.")
+            return
+        try:
+            record, created = await sync_to_async(srp_request)(kill_id, message.author.display_name, message.author.id, message.id)
+        except Exception as ex:  # noqa: BLE001
+            logger.warning("%s: SRP request for kill %s by %s failed: %s", FEED_NAME, kill_id, message.author, ex)
+            await message.reply("I could not read that kill from zKillboard just now; an SRP agent can add it by hand, or try again in a minute.")
+            return
+        await message.reply(srp_reply(record, created))
+        logger.info("%s: SRP request for kill %s by %s: #%s %s", FEED_NAME, kill_id, message.author, record.pk, "new" if created else "existing")
 
     async def _next_sequence(self) -> int:
         """Where to read next: the remembered position, or zKillboard's pointer when there is
