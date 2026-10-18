@@ -37,7 +37,7 @@
                 <div><span class="shipyard-k">Paid out, {% if days %}last {{ days }} days{% else %}all{% endif %}</span><br><strong class="fs-5">{{ paid_range|isk }}</strong></div>
                 <div><span class="shipyard-k">Paid out, all projects ever seen</span><br><strong class="fs-5">{{ paid_all|isk }}</strong></div>
             </div>
-            <div class="shipyard-k">EVE reports totals, not a history: the per-period figures come from hourly snapshots and start at the first read. "Paid out" is the reward pool going down; units are the project's own (items delivered, ore mined, ships destroyed…).</div>
+            <div class="shipyard-k">EVE reports totals, not a history: the per-period figures come from hourly snapshots and start at the first read (14 October). "Paid out" is what members earned: units delivered × reward per unit; a closed project's refund to the wallet is not a payout. Units are the project's own (items delivered, signatures scanned…).</div>
         </div>
     </div>
 </div>
@@ -57,6 +57,48 @@
         </div>
     </div>
 </form>
+
+<h5 class="d-flex align-items-center gap-2">History <span class="small shipyard-k fw-normal">seven views of the same events; pick the ones that help</span></h5>
+<div class="shipyard-infobar mb-2">
+    <div class="d-flex flex-wrap align-items-center gap-3">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Interval" id="books-interval">
+            <button type="button" class="btn btn-outline-secondary" data-interval="day">Days</button>
+            <button type="button" class="btn btn-outline-secondary active" data-interval="week">Weeks</button>
+            <button type="button" class="btn btn-outline-secondary" data-interval="custom">Custom</button>
+        </div>
+        <label class="small d-flex align-items-center gap-1" id="books-custom-wrap" hidden>every <input type="number" min="1" max="90" value="3" id="books-custom" class="form-control form-control-sm" style="width:4.5rem"> days</label>
+        <label class="small d-flex align-items-center gap-1">from <input type="date" id="books-from" class="form-control form-control-sm"></label>
+        <label class="small d-flex align-items-center gap-1">to <input type="date" id="books-to" class="form-control form-control-sm"></label>
+        <button type="button" class="btn btn-outline-light btn-sm py-0" id="books-reset">All dates</button>
+        <span class="small shipyard-k ms-auto">{% if ledger_token %}wallet read with {{ ledger_token.character_name }}{% if ledger_run %} · last {{ ledger_run.started_at|date:"Y-m-d H:i" }}{% if not ledger_run.ok %} <span class="text-danger">failed</span>{% endif %}{% endif %}{% else %}<span class="text-warning">no wallet token for the corp: sales and funding stay empty</span>{% endif %}</span>
+    </div>
+    <div class="small shipyard-k mt-1">Lighter bars are <strong>estimated</strong>: work done before the hourly reads began on 14 October, spread evenly over the days the project ran. Sales are gross, before broker fee and sales tax. Stock and values at {{ books.market|default:"Jita" }} highest buy, today's prices.</div>
+</div>
+<div class="row g-3 mb-4" id="books-charts">
+    <div class="col-xl-6"><div class="card h-100"><div class="card-body py-2">
+        <div class="fw-semibold">1 · Paid to members</div><div class="small shipyard-k mb-1">ISK members earned per interval, by what they delivered.</div>
+        <canvas id="books-paid" height="150"></canvas></div></div></div>
+    <div class="col-xl-6"><div class="card h-100"><div class="card-body py-2">
+        <div class="fw-semibold">2 · Money in and out of projects</div><div class="small shipyard-k mb-1">ISK put into projects, refunds when they closed, payouts; the line is what sits in open projects.</div>
+        <canvas id="books-flow" height="150"></canvas></div></div></div>
+    <div class="col-xl-6"><div class="card h-100"><div class="card-body py-2">
+        <div class="fw-semibold">3 · Paid out against sold, running total</div><div class="small shipyard-k mb-1">Payouts to members against what the matched sales brought in; the gap is stock not sold yet.</div>
+        <canvas id="books-cumulative" height="150"></canvas></div></div></div>
+    <div class="col-xl-6"><div class="card h-100"><div class="card-body py-2">
+        <div class="fw-semibold">4 · Result of sold project goods</div><div class="small shipyard-k mb-1">Each sale matched to the oldest deliveries it came from (ores through their reprocessed minerals): revenue, cost, profit; the line is stock on hand at cost.</div>
+        <canvas id="books-result" height="150"></canvas>
+        <div class="small shipyard-k mt-1" id="books-stock-now"></div></div></div></div>
+    <div class="col-xl-6"><div class="card h-100"><div class="card-body py-2">
+        <div class="fw-semibold">5 · Buyback margin per material</div><div class="small shipyard-k mb-1">What projects paid against what the goods are worth today, as delivered and reprocessed. Below 100 % the corp bought cheap.</div>
+        <canvas id="books-margin" height="190"></canvas></div></div></div>
+    <div class="col-xl-6"><div class="card h-100"><div class="card-body py-2">
+        <div class="fw-semibold">6 · Volume delivered</div><div class="small shipyard-k mb-1">m³ delivered per interval, by kind.</div>
+        <canvas id="books-volume" height="150"></canvas></div></div></div>
+    <div class="col-xl-6"><div class="card h-100"><div class="card-body py-2">
+        <div class="fw-semibold">7 · Members taking part</div><div class="small shipyard-k mb-1">How many members delivered per interval, and the average they earned.</div>
+        <canvas id="books-members" height="150"></canvas></div></div></div>
+</div>
+{{ books|json_script:"books-data" }}
 
 <h5>Projects</h5>
 <div class="table-responsive mb-4">
@@ -126,7 +168,9 @@
 {% endblock %}
 
 {% block shipyard_js %}
+{% include "bundles/chart-js.html" %}
 <script src="{% static 'shipyard/columns.js' %}"></script>
+<script src="{% static 'shipyard/projects_charts.js' %}"></script>
 <script>
 (function ($) {
     "use strict";

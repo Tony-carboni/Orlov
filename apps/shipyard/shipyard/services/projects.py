@@ -171,18 +171,23 @@ def period_key(when: dt.datetime, period: str) -> str:
 
 
 def payout_deltas(since=None) -> list[dict]:
-    """ISK paid out per project between consecutive snapshots: the reward pool going down.
+    """ISK members earned per project between consecutive snapshots: the units delivered times the
+    reward per unit. (Until 0.14.0 this was the reward pool going down, which also counted the
+    refund a project pays back to the corp wallet when it is closed.)
 
     Returns [{project, taken_at, paid, progress}] newest first; the first snapshot of a project
-    counts from the initial pool so a project that was already running shows what it had paid.
+    counts from zero so a project that was already running shows what it had paid.
     """
     out = []
     for project in CorpProject.objects.filter(corporation_id=corp_id()):
+        if project.state == "Deleted" and not project.contributions.exists():
+            continue  # deleted before anyone delivered: the pool went back to the wallet
         snaps = list(project.snapshots.order_by("taken_at"))
         prev_remaining, prev_progress = project.reward_initial, 0
+        rate = project.reward_per_contribution or 0
         for s in snaps:
-            paid = max(0.0, prev_remaining - s.reward_remaining)
             done = max(0, s.progress_current - prev_progress)
+            paid = done * rate
             if since is None or s.taken_at >= since:
                 out.append({"project": project, "taken_at": s.taken_at, "paid": paid, "progress": done})
             prev_remaining, prev_progress = s.reward_remaining, s.progress_current

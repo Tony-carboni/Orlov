@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun,
     ScrapItem, Ship, ShipConfig, ShipMarketStats,
 )
-from .services import business, contracts, esi, everef, fuzzwork, industry, nearbuy, projects, reprocessing, scrapmetal, wallet
+from .services import business, contracts, esi, everef, fuzzwork, industry, ledger, nearbuy, projects, reprocessing, scrapmetal, wallet
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -227,6 +227,15 @@ def refresh_corp_projects():
         return
     _done(run, True, result["projects"],
           f"{result['projects']} projects, {result['snapshots']} new snapshots, {result['contributions']} contribution rows, {result['missing']} gone")
+    # the executor corp's journal and market transactions, for the history graphs on the Corp projects tab (0.14.0)
+    run = _run("ledger")
+    try:
+        result = ledger.refresh()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("corp ledger refresh failed: %s", exc)
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, True, result["journal"] + result["transactions"], f"{result['journal']} journal entries, {result['transactions']} market transactions")
 
 
 @shared_task

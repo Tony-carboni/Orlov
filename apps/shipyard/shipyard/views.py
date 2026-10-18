@@ -20,7 +20,7 @@ from .models import (
     CorpProject, Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, RefreshRun, Ship,
     ShipConfig, WalletDivision, WalletJournalEntry,
 )
-from .services import board, business, characters, industry, projects, reprocessing, scrapmetal, wallet
+from .services import board, business, characters, industry, ledger, projectbooks, projects, reprocessing, scrapmetal, wallet
 from .services.pricing import tax_rates
 
 logger = logging.getLogger(__name__)
@@ -493,6 +493,9 @@ def projects_view(request):
         paid_range=sum(d["paid"] for d in deltas),
         pivot=projects.pivot(deltas, period),
         contributors=projects.contributors(cdeltas, period),
+        books=projectbooks.books(),
+        ledger_token=ledger.token(),
+        ledger_run=RefreshRun.objects.filter(step="ledger").order_by("-started_at").first(),
         last_run=RefreshRun.objects.filter(step="projects").order_by("-started_at").first(),
         can_manage=True,
     )

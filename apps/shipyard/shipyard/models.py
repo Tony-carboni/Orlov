@@ -337,6 +337,29 @@ class WalletJournalEntry(models.Model):
         return f"{self.date:%Y-%m-%d} {self.ref_type} {self.amount:,.0f}"
 
 
+class CorpWalletTransaction(models.Model):
+    """A market transaction of a corporation wallet division (ESI keeps a month; services/ledger.py keeps it all).
+    Used to match the executor corp's sales against what its projects bought from members."""
+
+    transaction_id = models.BigIntegerField(primary_key=True)
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    division = models.PositiveSmallIntegerField()
+    date = models.DateTimeField(db_index=True)
+    type_id = models.PositiveIntegerField(db_index=True)
+    quantity = models.BigIntegerField(default=0)
+    unit_price = models.FloatField(default=0)
+    is_buy = models.BooleanField(default=False)
+    client_id = models.BigIntegerField(default=0)
+    location_id = models.BigIntegerField(default=0)
+    journal_ref_id = models.BigIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"{self.date:%Y-%m-%d} {'buy' if self.is_buy else 'sell'} {self.quantity} x {self.type_id}"
+
+
 class WalletExcludedPayer(models.Model):
     """A payer whose entries are left out of the Structure income figures (owner, 2026-10-15):
     the tax is still charged in game, the ledger still holds the entries, only the totals, the
@@ -389,7 +412,12 @@ class CorpProject(models.Model):
 
     @property
     def paid_out(self) -> float:
-        return max(0.0, self.reward_initial - self.reward_remaining)
+        """ISK members earned: units delivered x reward per unit (capped by the pool). Not the pool going down,
+        because closing a project refunds what is left to the corp wallet (0.14.0)."""
+        if self.state == "Deleted" and not self.contributions.exists():
+            return 0.0  # deleted before anyone delivered; the journal shows the pool refunded in full
+        earned = self.progress_current * (self.reward_per_contribution or 0)
+        return max(0.0, min(earned, self.reward_initial)) if self.reward_initial else max(0.0, earned)
 
     @property
     def progress_pct(self) -> float:
