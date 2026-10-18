@@ -4,6 +4,20 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-18 (19:00 UTC) — desktop session → any session
+
+**Runbook / topic:** **Shipyard 0.14.0: history graphs on the Corp projects tab** (runbook 13 C release paragraph has the details).
+
+**Done.** Seven graphs with a days / weeks / every-N-days switch and a date range (paid to members, money in and out of projects, paid out against sold, result of sold goods, buyback margin per material, m³ delivered, members taking part); the hourly projects task also copies OARMI's wallet journal and market transactions; sales are matched first in, first out to project deliveries, ores through their minerals. Fixed: "paid out" no longer counts the refunds of closed projects (the tab showed 4.7 B, the members earned 732 M). Released: backup `aa-db-2026-10-18-1832.sql.gz`, migration 0020, build, 91 tests, collectstatic, `up -d`, nginx; first ledger read done by hand (3,601 journal entries, 197 transactions). Verified: page 200, all seven charts draw (Chart.js 4.4.1), 0 gunicorn errors.
+
+**Findings for the books.** Matched so far: 185.2 M of sales against 163.6 M of project cost (Pyerite, Zero-Point Condensate, Mexallon, Crystalline Isogen, Heavy Water from ice, Hydrocarbons, Silicates). Stock from projects not sold: 550.7 M at cost, 640.6 M at Jita buy. Buyback paid between 83 and 106 % of today's Jita value (ice 102 % as delivered but 83 % reprocessed; Omber 106 % as delivered). Unmatched corp sales: one 5,086 M Tritanium sale on 6 Oct (owner's stock, before the baseline) and 96 M of donated Heavy Water.
+
+**Owner has to do by hand.** Look at the seven graphs on /shipyard/projects/ and say which to keep; the rest can go. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3.
+
+**Next.** Trim the graphs to the owner's choice.
+
+---
+
 ## 2026-10-18 (18:45 UTC) — desktop session → any session
 
 **Runbook / topic:** **the corporation's books on 18 October and the first balance sheet for the directors** (`docs/finance/2026-10-18-oarmi-balance-sheet.pdf`, built with reportlab from `scratchpad/balance_sheet_pdf.py`; the rules of the 5 B baseline are in the 09:40 entry below).
@@ -96,26 +110,6 @@ Nothing on the server. If the owner asks for the Heavy Water figures again: sale
 - Look at an opened ship on doctrines.orlovfamily.space (AB Armor frigs): the choice cards, the skills card, the character switch. Members choose their own character the first time.
 - The default lines on the T1 / T2 cards ("Meta modules. Flyable in the first weeks." / "Tech II modules. The fit the FC expects from veterans.") come from the ship's *notes* field when it is filled: write a line per fit in the admin if a better one is wanted.
 - Still open: the DigitalOcean weekly backups check (runbook 04 B1); "Connect the projects" with Catherine Frey on the Shipyard projects tab; the stray top-level #pings; roster tokens for GB44 and 1E3; the Heat Sink I in the Punisher T1 (swap for a Compact variant, or ask for the thin-market price guard).
-
-**Next.** Nothing queued. Any session: `git pull` and read this entry.
-
----
-
-## 2026-10-17 (18:20 UTC) — desktop session → any session
-
-**Runbook / topic:** **Doctrines 0.2.6, the landing page text, the backups** (runbooks 16 and 04 A).
-
-**Done.**
-- **Landing page text** (auth admin → Doctrines → Landing page text, one `SiteText` row, set from the shell): title "How we Fly", the owner's two paragraphs (wording as given, including "strenghts"), then a lead line and five bullets that explain the roles a pilot can fill (DPS, Logistics, Tackle, Support with EWAR, boosts and scouts, FC) instead of the four fleet-type bullets; each explanation starts with a capital letter (owner's request after seeing the tags).
-- **Doctrines 0.2.6** (commit `12fd77b` pinned): a list line written as `Keyword: explanation` renders the keyword as an uppercase tag with the role's icon and colour and the explanation beside it (tag column left, text right, stacked on a phone); the same five colours mark the ratio chips on the card and the role headers of the ships table (`ROLE_KEYS` / `role_key()` in `services/fittings.py`, `split_keyword` / `tag_html` in the template tags, `data-role` attributes, colour tokens `--dc-role-*` in the stylesheet). Design rules applied: one colour per role everywhere, icon and name next to the colour, light tints on the navy for at least 4.5:1 contrast, the explanation kept in the body colour. Released per runbook 13 C: backup `aa-db-2026-10-17-1801.sql.gz`, `requirements.txt.pre-doctrines-0.2.6` in `~/backups`, build of all services, `check`, no migration, 20 tests green on the image (one older test now accepts the hashed static name of the fitting-wheel script; it could never pass against the live settings), collectstatic, `up -d`, nginx. Verified as tony: five tags on the landing page, chips and role rows carry `data-role`, the stylesheet is served by nginx with the new rules, 0 gunicorn errors.
-- **Backup diagnostic** on the owner's request. Found: the nightly job (cron 03:30, `~/bin/aa-backup.sh`) runs every night and its dump is sound (gzip ok, 265 tables incl. the doctrines ones), 14 days kept; the config tarball held `.env`, `conf/` and the compose file. Gaps: Nginx Proxy Manager's proxy hosts and the seven Let's Encrypt certificates (Docker volumes, nowhere in a backup), the bot's code, the alliance site, the backup script and the crontab (all small, mostly in git), and above all no copy off the server. Done: the script now also archives those (`aa-proxy-<stamp>.tgz` and a fuller `aa-config-<stamp>.tgz`; old copy `~/backups/aa-backup.sh.pre-proxy-2026-10-17`; source of truth `deploy/bin/aa-backup.sh`), ran once (18:15 UTC, all three files verified), and the three files were copied to the PC at `C:\Users\Toon Budeners\OrlovBackups\2026-10-17\` (outside the repo; holds `.env`). Not covered on purpose: `grafana-data` (dashboards only), redis (cache), the static volume (rebuilt by collectstatic), `~/shipyard-dev` (scratch).
-
-**Also (2026-10-17, 18:35 UTC):** the Punisher T1 showed 192.2 M because the only Heat Sink I sell order at Jita 4-4 at the 18:04 read was a 189.9 M one (meta-0 module, two orders in the station); a refresh by hand brought it to 2.52 M. Proposed, not built: read The Forge's 5 % percentile next to the station minimum and fall back to it when the station figure is more than twice as high, with a "thin market" marker; or swap the module for a Compact variant in the fit. The corporation import file `docs/doctrines/armor-ab-frigs.xml` (15 fits, names `<Doctrine> - <Hull> - <T1/T2>`) was validated and copied to this PC's EVE fittings folder, which is `OneDrive\Dokumente\EVEittings` here. **Doctrines 0.2.7** (commit `7d65e4b` pinned, released per runbook 13 C, 20 tests): the ratio chips are labelled "Target composition · per N pilots" with the explanation on hover.
-
-**Owner still has to do by hand.**
-- Check in the DigitalOcean panel whether the weekly Droplet backups are enabled (runbook 04 B1); that is the "server died" layer and cannot be seen from the server. If not, enable them.
-- Repeat the copy to the PC now and then (runbook 04 B2), or ask the local session for it.
-- Still open from before: "Connect the projects" with Catherine Frey on the Shipyard projects tab; delete the stray top-level #pings; roster tokens for GB44 and 1E3.
 
 **Next.** Nothing queued. Any session: `git pull` and read this entry.
 

@@ -35,3 +35,7 @@ Sales tax = base 7.5 % × (1 − 0.11 × Accounting). Broker fee (NPC station) =
 
 ## Tests
 From `apps/shipyard` with a scratch settings module containing the app: `python -m django test shipyard`.
+
+## Corp projects history (0.14.0)
+
+The Corp projects tab draws seven graphs from one event list built in `services/projectbooks.py`; the interval (days, weeks, every N days) and the date range change in the browser (`static/shipyard/projects_charts.js`). Payouts are each member's contribution growth between two hourly reads times the reward per unit; contributions the first read found are spread over the days before and marked estimated. Funding and refunds come from the executor corp's wallet journal, sales from its market transactions, both copied hourly by `services/ledger.py` (token: a corp character with `esi-wallet.read_corporation_wallets.v1`). Sales are matched first in, first out to the deliveries they came from; an ore or ice the corp never sold as delivered is matched through its reprocessing outputs, its cost split by their Jita buy value.
