@@ -4,6 +4,22 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-18 (18:45 UTC) — desktop session → any session
+
+**Runbook / topic:** **the corporation's books on 18 October and the first balance sheet for the directors** (`docs/finance/2026-10-18-oarmi-balance-sheet.pdf`, built with reportlab from `scratchpad/balance_sheet_pdf.py`; the rules of the 5 B baseline are in the 09:40 entry below).
+
+**Done (read-only, nothing changed on the server).**
+- Position at 17:30 EVE against the 5 B baseline: master wallet division 1 **2,576.3 M**, reward ISK in the 26 active projects **2,369.6 M** (fresh `projects.refresh()`), Heavy Water stock at buy value **216.0 M**, buyback material still on sale in Jita **44.6 M** at list (Pyerite 1,725,104 at 16.97, Hydrocarbons 33,190 at 459.70; 42.6 M at Jita buy) = **5,206.5 M**, result **+206.5 M**. Division 7 (Director) 3,221.2 M excluded.
+- Since the baseline: seven buyback materials sold in Jita for 143.2 M gross (Zero-Point Condensate 61.0, Pyerite 44.1, Mexallon 16.6, Crystalline Isogen-10 14.0, Hydrocarbons 5.5, Silicates 2.0), proceeds in division 1; 5.5 M moon-mining tax from Ryaku711; projects pot down 17.4 M (rewards paid); 4.5 M broker fee and tax. No Heavy Water sold since the 18th. The buyback material came in through Deliver Item projects paid before the baseline, so its sales are new money. Catherine Frey placed the corporation orders (visible through her character-orders scope with `is_corporation`); no OARMI token carries `esi-markets.read_corporation_orders.v1`.
+- **Fuel** (section 3 of the sheet), from EVE's dogma: Standup Moon Drill I 5 blocks/h, Manufacturing Plant I 12, Research Lab I 12, Reprocessing Facility I 10; Athanor service bonus −20 %, Raitaru −25 % (engineering services only). Online services per the structures app: Raitaru manufacturing + research lab + reprocessing = 28/h = 672/day; each Athanor moon drill 4/h = 96/day. Total 864 blocks/day; at the cheapest block (Nitrogen 17,890 at Jita) **15.5 M/day, 463.7 M per 30 days** (Raitaru 360.7, each Athanor 51.5). Fuel in the bays, prepaid by GWON, about 668 M (Raitaru to 21 Nov, Athanor I to 26 Dec, Athanor II to 11 Jan). The owner said "both structures"; the sheet shows all three and says so.
+- Outlook in the sheet: fuel −463.7 M a month against the structure corp's industry-tax income (65.1 M in the last 7 days, members only, run-rate about 280 M), plus 43 M of open buyback orders and 84 M of Heavy Water upside: about −57 M a month if nothing else changes. Fuel and that income are GWON's, shown side by side for the directors.
+
+**Owner has to do by hand.** Share the PDF with the directors (it is in the repo and was sent in chat). Month-end per the 09:40 entry.
+
+**Next.** Nothing queued.
+
+---
+
 ## 2026-10-18 (09:50 UTC) — desktop session → any session
 
 **Runbook / topic:** **SRP from the kill feed, runbook 17** (owner's story of 2026-10-18), **Doctrines 0.4.0** (commit `600b16f` pinned, migration 0007, backup `aa-db-2026-10-18-0933.sql.gz`; `requirements.txt.pre-doctrines-0.4.0`, `local.py.pre-srp`, `killfeed.py.pre-srp` in `~/backups`), 36 tests.
@@ -103,20 +119,3 @@ Nothing on the server. If the owner asks for the Heavy Water figures again: sale
 
 ---
 
-## 2026-10-17 (14:10 UTC) — desktop session → any session
-
-**Runbook / topic:** **Doctrines 0.2.0 and the first doctrine** (runbook 16 D), on the owner's doctrine text file and his fitting export.
-
-**Done.**
-- Doctrines 0.2.0 (commit `14ecacc` pinned): a **variant** field on a ship (T1, T2); the doctrine page lists a hull once per role with the cost and loss of each variant, and the opened row has T1 / T2 buttons that switch the fitting shown. Strengths and weaknesses are written one per line as `Keyword - description` and the keyword comes out bold. `DOCTRINES_HOST` is read at call time so tests can override it. 16 tests. Released per runbook 13 C: backup `aa-db-2026-10-17-1353.sql.gz`, `requirements.txt.pre-doctrines-0.2.0` in `~/backups`, build of **all** services (the workers and beat build their own image from the same Dockerfile; building only gunicorn leaves them on the old version), throwaway `check` and `migrate --plan`, migration 0002, collectstatic before `up -d`, `up -d` (the Discord bot is recreated with the rest and came back), nginx. Verified: gunicorn, workers and beat on 0.2.0, 0 errors.
-- The doctrine **AB Armor frigs** (category Light & cheap, gameplay Faction warfare) loaded from the shell: 8 hulls, 15 fits converted from the owner's `fittings.xml` (the "Doctrine 1 - <ship> T1/T2 - checked" entries; the export file is cut off at the end but those fits are intact), named "<Hull> T1" / "<Hull> T2", roles DPS (Punisher, Rifter, Incursus), Logi (Inquisitor, Navitas), Tackle (Executioner, Atron), Support (Crucifier, T2 only). All 15 parsed, 75 types resolved, prices read; T1 fits 2.3 to 3.4 M, T2 4.0 to 8.4 M. The strengths and weaknesses are the owner's four and three, paraphrased; description, summary and strategy notes are drafts by the session. No SRP level set. The owner's file says "Easy & Cheap"; the seeded category "Light & cheap" was used.
-- Page rendered as the owner (200) and the layout checked in the browser pane.
-
-**Owner has to do by hand**
-- Read https://doctrines.orlovfamily.space/doctrines/ab-armor-frigs/ and edit the texts in the admin (https://auth.orlovfamily.space/admin/doctrines/doctrine/): the strategy notes and description are drafts; set SRP levels per ship if wanted; rename the category to "Easy & Cheap" under Categories if preferred.
-- Write the landing text (Landing page text) and delete or hide the sample "Example: Rail Harpies".
-- Runbook 16 E (browser checks, copy a fit into the game).
-- Still open: My business "Connect the jobs" with Catherine Frey; Structure income untick your own payers; send Eemar the CEO roster guide.
-
-### Next — any session
-More doctrines: the owner hands over a text file in the same shape (name, type, strengths, weaknesses, roles with ships) plus the fitting export; the converter and loader of this session live in the session scratchpad only, so a new session rewrites them from `apps/doctrines` (store a ship with `fittings.store`, then `prices.refresh`). A management command for that import would save the rewrite.
