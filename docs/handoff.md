@@ -73,7 +73,7 @@ More doctrines: the owner hands over a text file in the same shape (name, type, 
 
 **Saatuban ledger.** The Saatuban Athanor (Orlov Mining Facility II) reports miners per EVE day through aa-moonmining's ledger (refinery id 1055997584926; the Piekura one is 1055901489178). 2026-10-17: 18 characters, 362,791 units, 185 M at the module's Jita prices; Sabbard 53 M, Hamu 19.8 M, Tommy McPhee 19.4 M on top; one outsider, Velorra Lenoir of Tax Evasion Corp 81, mined 39,254 Bitumens (14.5 M). The same table is in auth under Moon Mining → the refinery → Mining ledger.
 
-**Also (06:40 UTC): Shipyard 0.13.4** (commit `f4e41fb` pinned, backup `aa-db-2026-10-18-0635.sql.gz`): the Reprocessing tab has a **BB** column after Buy, the alliance buyback price per unit = 90 % of the Jita highest buy (`SHIPYARD_BUYBACK_SHARE`, default 0.9); no bearing on the reprocessing figures. No migration; released per runbook 13 C.
+**Also (06:55 UTC): Shipyard 0.13.5** (backup `aa-db-2026-10-18-0653.sql.gz`; 0.13.4 an hour earlier had it at 90 % of the Jita buy): the Reprocessing tab has a **BB** column in front of the price points, the alliance buyback price per unit = **85 % of the output value** (`SHIPYARD_BUYBACK_SHARE`, default 0.85). No migration; released per runbook 13 C.
 
 **Owner has to do by hand**
 - Buy the first Heavy Water stock from the master wallet division and relist it; from then on sales minus purchases is the profit.

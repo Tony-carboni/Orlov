@@ -264,10 +264,10 @@ class OreRow:
 
     @property
     def buyback_price(self) -> float | None:
-        """The alliance buyback price for one unit: a fixed share of the Jita highest buy (owner's rule,
-        2026-10-18: 90 %). Independent of the reprocessing output."""
+        """The alliance buyback price for one unit: a share of the reprocessing output value after tax
+        (owner's rule, 2026-10-18: 85 %), i.e. one more price point."""
         from .. import app_settings
-        return self.buy_price * app_settings.SHIPYARD_BUYBACK_SHARE if self.buy_price else None
+        return self.net_value * app_settings.SHIPYARD_BUYBACK_SHARE if self.net_value else None
 
     @property
     def price_points(self):

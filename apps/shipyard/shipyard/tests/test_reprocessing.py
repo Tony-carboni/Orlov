@@ -188,7 +188,7 @@ class RowTests(TestCase):
         self.assertTrue(v.complete)
         self.assertAlmostEqual(v.sell_ratio, 12.0 / v.net_value)
         self.assertAlmostEqual(v.buy_ratio, 11.0 / v.net_value)
-        self.assertAlmostEqual(v.buyback_price, 11.0 * 0.9)  # BB: 90 % of the Jita buy, independent of the output
+        self.assertAlmostEqual(v.buyback_price, v.net_value * 0.85)  # BB: 85 % of the output value
         self.assertEqual((v.avg_daily_volume, v.avg_price), (1_234_567.0, 11.5))
         self.assertAlmostEqual(v.market_depth_days, 2.0)
         self.assertIsNone(rows["Compressed Scordite II-Grade"].market_depth_days)
