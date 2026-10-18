@@ -403,6 +403,7 @@ def reprocessing_view(request):
         rarities=reprocessing.rarities_present(),
         areas=reprocessing.areas_present(),
         price_points=list(app_settings.SHIPYARD_REPRO_PRICE_POINTS),
+        buyback_pct=f"{app_settings.SHIPYARD_BUYBACK_SHARE * 100:.0f} %",
         freshness=board.data_freshness(),
         complete_rows=sum(1 for r in rows if r.complete),
         can_manage=request.user.has_perm("shipyard.manage_shipyard"),

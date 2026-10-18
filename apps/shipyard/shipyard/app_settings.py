@@ -128,3 +128,6 @@ SHIPYARD_BROKER_CORP_STANDING_PER_POINT = getattr(
 # later app or scope change needs another login. False: only the Shipyard's set (Member Audit's 33).
 SHIPYARD_REQUEST_ALL_SCOPES = getattr(settings, "SHIPYARD_REQUEST_ALL_SCOPES", True)
 SHIPYARD_EXTRA_SCOPES = list(getattr(settings, "SHIPYARD_EXTRA_SCOPES", []))  # more scopes to ask for, on top
+
+# Reprocessing tab: the alliance buyback price as a share of the Jita highest buy order (the "BB" column).
+SHIPYARD_BUYBACK_SHARE = float(getattr(settings, "SHIPYARD_BUYBACK_SHARE", 0.9))
