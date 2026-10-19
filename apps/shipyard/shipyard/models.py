@@ -337,6 +337,46 @@ class WalletJournalEntry(models.Model):
         return f"{self.date:%Y-%m-%d} {self.ref_type} {self.amount:,.0f}"
 
 
+class LpOffer(models.Model):
+    """One offer of a loyalty point store (ESI /loyalty/stores/{corp}/offers/, services/lpstore.py)."""
+
+    store_corp_id = models.PositiveIntegerField(db_index=True)
+    offer_id = models.PositiveIntegerField()
+    type_id = models.PositiveIntegerField(db_index=True)
+    quantity = models.PositiveIntegerField(default=1)
+    lp_cost = models.PositiveIntegerField(default=0)
+    isk_cost = models.FloatField(default=0)
+    ak_cost = models.PositiveIntegerField(default=0)
+    required_items = models.JSONField(default=list, blank=True, help_text="[[type id, quantity], ...] handed in with the LP")
+    fetched_at = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["store_corp_id", "offer_id"]
+        unique_together = [("store_corp_id", "offer_id")]
+
+    def __str__(self):
+        return f"offer {self.offer_id}: {self.quantity} x {self.type_id} for {self.lp_cost} LP"
+
+
+class LpTypeMarket(models.Model):
+    """Name and Jita market figures of every type an LP store touches (outputs and inputs)."""
+
+    type_id = models.PositiveIntegerField(primary_key=True)
+    name = models.CharField(max_length=100)
+    is_blueprint = models.BooleanField(default=False)
+    sell_min = models.FloatField(null=True, blank=True)
+    sell_volume = models.FloatField(default=0)
+    sell_orders = models.PositiveIntegerField(default=0)
+    buy_max = models.FloatField(null=True, blank=True)
+    avg_daily_volume = models.FloatField(default=0)
+    prices_at = models.DateTimeField(null=True, blank=True)
+    volume_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
 class CorpJournalEntry(models.Model):
     """The executor corp's wallet journal (services/ledger.py). Its own table because EVE gives a transfer
     between two corporations the same entry id in both journals (the structure corp's job tax, a donation),

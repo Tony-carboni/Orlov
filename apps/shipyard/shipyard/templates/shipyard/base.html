@@ -35,6 +35,11 @@
             <i class="fas fa-screwdriver-wrench fa-fw"></i> Scrapmetal
         </a>
         {% endif %}
+        {% if 'lp' in tabs %}
+        <a class="nav-link {% if request.resolver_match.url_name == 'lp' %}active{% endif %}" href="{% url 'shipyard:lp' %}">
+            <i class="fas fa-medal fa-fw"></i> LP conversion
+        </a>
+        {% endif %}
         {% if 'industry' in tabs %}
         <a class="nav-link {% if request.resolver_match.url_name == 'industry' %}active{% endif %}" href="{% url 'shipyard:industry' %}">
             <i class="fas fa-gears fa-fw"></i> My industry

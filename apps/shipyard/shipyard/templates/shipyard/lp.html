@@ -1,0 +1,141 @@
+{% extends "shipyard/base.html" %}
+{% load static shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · LP conversion{% endblock %}
+
+{% block shipyard_content %}
+<div class="row g-3 mb-3 align-items-stretch">
+    <div class="col-lg-5 col-xl-4">
+        <div class="card shipyard-facility h-100">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-medal fa-2x text-info"></i>
+                    <div>
+                        <div class="fw-semibold">{{ store_name }} loyalty store</div>
+                        <div class="small shipyard-k">{{ rows|length }} offers · {{ item_rows }} items, {{ bpc_rows }} blueprint copies · target {{ target|num:0 }} ISK per LP</div>
+                    </div>
+                </div>
+                <div class="small mt-2 d-flex align-items-center flex-wrap gap-2">
+                    {% if can_manage %}
+                    <form method="post" action="{% url 'shipyard:lp_refresh' %}" class="d-inline">{% csrf_token %}<button class="btn btn-outline-light btn-sm py-0" title="Read the offers, the Jita prices and the daily volumes again now (otherwise offers and volumes daily, prices hourly)"><i class="fas fa-rotate fa-fw"></i> Refresh</button></form>
+                    {% endif %}
+                    <span class="shipyard-k">offers {{ freshness.offers|date:"Y-m-d H:i"|default:"never" }} · prices {{ freshness.prices|date:"Y-m-d H:i"|default:"never" }} · volumes {{ freshness.volumes|date:"Y-m-d H:i"|default:"never" }} EVE</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7 col-xl-8">
+        <div class="shipyard-infobar h-100">
+            <div><span class="shipyard-k">Reading the table:</span> <strong>Net</strong> is what the offer's items fetch at Jita lowest sell, minus the ISK the store charges and minus the items you hand in (at Jita lowest sell). <strong>ISK/LP</strong> is that net per loyalty point; <strong>after fees</strong> takes your sales tax and broker fee ({{ fees|pct:2 }}) off the sale.</div>
+            <div><span class="shipyard-k">Blueprint copies</span> have no market price. Their row shows the <strong>BPC price</strong> a copy must fetch to reach {{ target|num:0 }} ISK/LP (and the price with fees on top); a copy that sells for more on contracts is a top offer.</div>
+            <div class="shipyard-k"><strong>Vol/day</strong> is what Jita's region trades per day ({{ volume_days }}-day average); <strong>Depth</strong> is the units on Jita sell orders divided by that: how many days of stock the sellers hold.</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-2 mb-2 align-items-center">
+    <div class="col-auto">
+        <input type="search" id="lp-text" class="form-control form-control-sm" placeholder="Search item or input…" autocomplete="off" style="width: 16rem">
+    </div>
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" id="lp-kind" aria-label="Kind (tick any; none ticked shows all)">
+            <input type="checkbox" class="btn-check" id="lp-kind-item" value="item" autocomplete="off"><label class="btn btn-outline-secondary" for="lp-kind-item">Items</label>
+            <input type="checkbox" class="btn-check" id="lp-kind-blueprint" value="blueprint" autocomplete="off"><label class="btn btn-outline-secondary" for="lp-kind-blueprint">Blueprint copies</label>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" id="lp-inputs" aria-label="Inputs">
+            <input type="checkbox" class="btn-check" id="lp-inputs-none" value="none" autocomplete="off"><label class="btn btn-outline-secondary" for="lp-inputs-none" title="Offers that need nothing but LP and ISK">No inputs</label>
+            <input type="checkbox" class="btn-check" id="lp-inputs-some" value="some" autocomplete="off"><label class="btn btn-outline-secondary" for="lp-inputs-some" title="Offers that need items handed in">Needs inputs</label>
+        </div>
+    </div>
+    <div class="col-auto">
+        <label class="small d-flex align-items-center gap-1">min ISK/LP <input type="number" id="lp-min" class="form-control form-control-sm" style="width: 6rem" placeholder="any" autocomplete="off"></label>
+    </div>
+    <div class="col-auto" id="lp-presets" title="Save the current filters under a name and load them later; remembered in this browser"></div>
+    <div class="col-auto" id="lp-columns" title="Choose which columns to show; remembered in this browser"></div>
+</div>
+
+<div class="table-responsive">
+<table id="lp-table" class="table table-sm table-hover table-striped align-middle w-100">
+    <thead>
+        <tr>
+            <th data-key="item">Item</th>
+            <th data-key="qty" class="text-end" title="Units the offer gives">Qty</th>
+            <th data-key="lp" class="text-end" title="Loyalty points the offer costs">LP</th>
+            <th data-key="isk" class="text-end" title="ISK the store charges on top of the LP">ISK cost</th>
+            <th data-key="inputs" title="Items you hand in, valued at Jita lowest sell">Inputs</th>
+            <th data-key="inputcost" class="text-end" title="Cost of the inputs at Jita lowest sell">Input cost</th>
+            <th data-key="sell" class="text-end" title="Jita lowest sell per unit of the item">Jita sell</th>
+            <th data-key="value" class="text-end" title="Jita lowest sell × quantity">Output value</th>
+            <th data-key="net" class="text-end" title="Output value − ISK cost − input cost">Net</th>
+            <th data-key="rate" class="text-end" title="Net ISK per loyalty point">ISK/LP</th>
+            <th data-key="rateafter" class="text-end" title="ISK per LP once your sales tax and broker fee ({{ fees|pct:2 }}) come off the sale">After fees</th>
+            <th data-key="vol" class="text-end" title="Units traded per day in Jita's region, {{ volume_days }}-day average">Vol/day</th>
+            <th data-key="depth" class="text-end" title="Units on Jita sell orders ÷ units traded per day: days of stock the sellers hold">Depth</th>
+            <th data-key="bpc" class="text-end" title="What a blueprint copy must fetch per copy to reach {{ target|num:0 }} ISK/LP: {{ target|num:0 }} × LP + ISK cost + inputs">BPC @ {{ target|num:0 }}</th>
+            <th data-key="bpcafter" class="text-end" title="The same with your sales tax and broker fee on top">BPC + fees</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+        <tr data-kind="{{ r.kind }}" data-inputs="{% if r.inputs %}some{% else %}none{% endif %}" data-rate="{% if r.isk_per_lp is not None %}{{ r.isk_per_lp|floatformat:'0' }}{% endif %}">
+            <td class="text-nowrap"><img src="https://images.evetech.net/types/{{ r.type_id }}/{% if r.is_blueprint %}bp{% else %}icon{% endif %}?size=32" width="22" height="22" class="rounded me-1" alt="">{{ r.name }}{% if r.is_blueprint %} <span class="badge text-bg-secondary">BPC</span>{% endif %}</td>
+            <td class="text-end" data-order="{{ r.quantity }}">{{ r.quantity|num:0 }}</td>
+            <td class="text-end" data-order="{{ r.lp }}">{{ r.lp|num:0 }}</td>
+            <td class="text-end" data-order="{{ r.isk_cost }}">{{ r.isk_cost|isk }}</td>
+            <td class="small">{% for tid, name, qty, unit, cost in r.inputs %}<span class="text-nowrap me-2" title="{{ qty|num:0 }} × {% if unit %}{{ unit|isk_full }}{% else %}no Jita price{% endif %}"><img src="https://images.evetech.net/types/{{ tid }}/icon?size=32" width="16" height="16" class="rounded" alt=""> {{ qty|num:0 }} × {{ name }}{% if cost is None %} <span class="text-warning">?</span>{% endif %}</span>{% empty %}<span class="shipyard-k">–</span>{% endfor %}</td>
+            <td class="text-end" data-order="{{ r.inputs_cost }}">{% if r.inputs %}{{ r.inputs_cost|isk }}{% if not r.inputs_complete %} <i class="fas fa-circle-question text-warning" title="An input has no Jita price; the cost is incomplete"></i>{% endif %}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
+            <td class="text-end" data-order="{{ r.sell|default:0 }}">{% if r.sell %}{{ r.sell|isk }}{% elif r.is_blueprint %}<span class="shipyard-k">BPC</span>{% else %}<span class="text-warning" title="No sell order at Jita">none</span>{% endif %}</td>
+            <td class="text-end" data-order="{{ r.output_value|default:0 }}">{% if r.output_value %}{{ r.output_value|isk }}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
+            <td class="text-end {% if r.net is not None %}{{ r.net|profit_class }}{% endif %}" data-order="{{ r.net|default:0 }}">{% if r.net is not None %}{{ r.net|isk }}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
+            <td class="text-end fw-semibold" data-order="{% if r.isk_per_lp is not None %}{{ r.isk_per_lp }}{% else %}-1000000{% endif %}">{% if r.isk_per_lp is not None %}{{ r.isk_per_lp|num:0 }}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
+            <td class="text-end" data-order="{% if r.isk_per_lp_after is not None %}{{ r.isk_per_lp_after }}{% else %}-1000000{% endif %}">{% if r.isk_per_lp_after is not None %}{{ r.isk_per_lp_after|num:0 }}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
+            <td class="text-end" data-order="{{ r.avg_daily_volume }}">{% if r.is_blueprint %}<span class="shipyard-k">–</span>{% else %}{{ r.avg_daily_volume|num:0 }}{% endif %}</td>
+            <td class="text-end" data-order="{{ r.depth_days|default:0 }}">{% if r.is_blueprint %}<span class="shipyard-k">–</span>{% else %}{{ r.depth_days|depth }}{% endif %}</td>
+            <td class="text-end fw-semibold" data-order="{{ r.bpc_target|default:0 }}">{% if r.bpc_target is not None %}{{ r.bpc_target|isk }}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
+            <td class="text-end" data-order="{{ r.bpc_target_after|default:0 }}">{% if r.bpc_target_after is not None %}{{ r.bpc_target_after|isk }}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="15" class="shipyard-k">No offers read yet{% if can_manage %}: press Refresh{% endif %}.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}
+
+{% block shipyard_js %}
+<script src="{% static 'shipyard/columns.js' %}"></script>
+<script>
+(function ($) {
+    "use strict";
+    $(function () {
+        var el = document.getElementById("lp-table");
+        if (!el) { return; }
+        var t = $("#lp-table").DataTable({ order: [[9, "desc"]], paging: false, info: false, dom: "rt", stateSave: true, autoWidth: false,
+            columnDefs: [{ targets: [1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], type: "num" }] });
+        var kinds = [], inputs = [], min = null;
+        function checked(id) { return $("#" + id + " input:checked").map(function () { return this.value; }).get(); }
+        $.fn.dataTable.ext.search.push(function (settings, data, index) {
+            if (settings.nTable !== el) { return true; }
+            var row = t.row(index).node();
+            if (kinds.length && kinds.indexOf(row.dataset.kind) < 0) { return false; }
+            if (inputs.length && inputs.indexOf(row.dataset.inputs) < 0) { return false; }
+            if (min !== null && (row.dataset.rate === "" || parseFloat(row.dataset.rate) < min)) { return false; }
+            return true;
+        });
+        function apply() { kinds = checked("lp-kind"); inputs = checked("lp-inputs"); var v = $("#lp-min").val(); min = v === "" ? null : parseFloat(v); t.draw(); }
+        $("#lp-kind input, #lp-inputs input").on("change", apply);
+        $("#lp-min").on("input change", apply);
+        $("#lp-text").on("input search", function () { t.search(this.value).draw(); });
+        if (window.shipyardColumnPicker) {
+            window.shipyardColumnPicker(t, el, { container: "#lp-columns", storageKey: "shipyard.lp.columns", hiddenByDefault: ["rateafter", "bpcafter"] });
+        }
+        if (window.shipyardColumnResizer) { window.shipyardColumnResizer(t, el, { storageKey: "shipyard.lp.widths" }); }
+        if (window.shipyardFilterPresets) {
+            window.shipyardFilterPresets({ container: "#lp-presets", storageKey: "shipyard.lp.presets", groups: ["#lp-kind", "#lp-inputs"], text: "#lp-text" });
+        }
+    });
+})(jQuery);
+</script>
+{% endblock %}

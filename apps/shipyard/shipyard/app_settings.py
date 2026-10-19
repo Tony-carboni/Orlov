@@ -79,6 +79,11 @@ SHIPYARD_SCRAP_PRICE_POINTS = getattr(settings, "SHIPYARD_SCRAP_PRICE_POINTS", [
 SHIPYARD_NEAR_BUY_SYSTEMS = getattr(settings, "SHIPYARD_NEAR_BUY_SYSTEMS", {30000142: 0, 30000144: 1})  # Jita, Perimeter
 SHIPYARD_NEAR_BUY_STATION = getattr(settings, "SHIPYARD_NEAR_BUY_STATION", 60003760)  # Jita 4-4
 
+# --- LP conversion tab (owner, 2026-10-19): a militia's loyalty point store valued at Jita --------
+SHIPYARD_LP_STORE_CORP_ID = getattr(settings, "SHIPYARD_LP_STORE_CORP_ID", 1000180)  # State Protectorate (Caldari militia)
+SHIPYARD_LP_STORE_NAME = getattr(settings, "SHIPYARD_LP_STORE_NAME", "State Protectorate")
+SHIPYARD_LP_TARGET_ISK_PER_LP = getattr(settings, "SHIPYARD_LP_TARGET_ISK_PER_LP", 900)  # the rate a blueprint copy must reach
+
 # --- Structure income tab (owner, 2026-10-14): the structure corp's wallet journal ---------
 SHIPYARD_STRUCTURE_CORP_ID = getattr(settings, "SHIPYARD_STRUCTURE_CORP_ID", 98635713)  # Gewoon voor structures (GWON)
 SHIPYARD_WALLET_SCOPES = getattr(settings, "SHIPYARD_WALLET_SCOPES", [

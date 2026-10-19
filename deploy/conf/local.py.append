@@ -162,6 +162,14 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_industry"] = {
 }
 
 # Shipyard: pirate/Trig/EDENCOM blueprint prices from public contracts (EVE Ref snapshot, hourly)
+CELERYBEAT_SCHEDULE["shipyard_refresh_lp_store"] = {
+    "task": "shipyard.tasks.refresh_lp_store",        # the militia LP store: offers + Jita prices + daily volumes (0.15.0)
+    "schedule": crontab(minute="50", hour="3"),
+}
+CELERYBEAT_SCHEDULE["shipyard_refresh_lp_prices"] = {
+    "task": "shipyard.tasks.refresh_lp_prices",       # Jita prices of the LP store's types only
+    "schedule": crontab(minute="45"),
+}
 CELERYBEAT_SCHEDULE["shipyard_refresh_contract_prices"] = {
     "task": "shipyard.tasks.refresh_contract_prices",
     "schedule": crontab(minute="50"),

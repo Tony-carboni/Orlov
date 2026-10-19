@@ -20,7 +20,7 @@ from .models import (
     CorpProject, Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, RefreshRun, Ship,
     ShipConfig, WalletDivision, WalletJournalEntry,
 )
-from .services import board, business, characters, industry, ledger, projectbooks, projects, reprocessing, scrapmetal, wallet
+from .services import board, business, characters, industry, ledger, lpstore, projectbooks, projects, reprocessing, scrapmetal, wallet
 from .services.pricing import tax_rates
 
 logger = logging.getLogger(__name__)
@@ -500,6 +500,40 @@ def projects_view(request):
         can_manage=True,
     )
     return render(request, "shipyard/projects.html", context)
+
+
+@login_required
+@access.allows("lp")
+def lp_view(request):
+    """LP conversion: every offer of the militia's LP store, valued at Jita, net ISK per LP."""
+    settings = board.get_user_settings(request.user)
+    rates = tax_rates(settings.market, settings)
+    fees = rates.sales_tax + rates.broker_fee
+    rows = lpstore.rows(fees=fees)
+    context = _context(
+        request,
+        settings=settings,
+        rows=rows,
+        item_rows=sum(1 for r in rows if not r.is_blueprint),
+        bpc_rows=sum(1 for r in rows if r.is_blueprint),
+        fees=fees,
+        target=lpstore.target(),
+        store_name=app_settings.SHIPYARD_LP_STORE_NAME,
+        volume_days=app_settings.SHIPYARD_VOLUME_DAYS,
+        freshness=lpstore.freshness(),
+        can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+    )
+    return render(request, "shipyard/lp.html", context)
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+@require_POST
+def lp_refresh(request):
+    from . import tasks
+    tasks.refresh_lp_store.delay()
+    messages.success(request, "LP store refresh started: offers, Jita prices and daily volumes. Reload the page in a minute or two.")
+    return redirect("shipyard:lp")
 
 
 @login_required

@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun,
     ScrapItem, Ship, ShipConfig, ShipMarketStats,
 )
-from .services import business, contracts, esi, everef, fuzzwork, industry, ledger, nearbuy, projects, reprocessing, scrapmetal, wallet
+from .services import business, contracts, esi, everef, fuzzwork, industry, ledger, lpstore, nearbuy, projects, reprocessing, scrapmetal, wallet
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -262,6 +262,35 @@ def refresh_corp_wallet():
         _done(run, False, 0, str(exc))
         return
     _done(run, True, result["added"], f"{result['added']} new entries, {result['total']} in the ledger, {result['divisions']} divisions")
+
+
+@shared_task
+def refresh_lp_store():
+    """The LP store's offers, Jita prices and daily volumes (beat entry shipyard_refresh_lp_store, daily)."""
+    run = _run("lp_store")
+    try:
+        offers = lpstore.refresh_offers()
+        prices = lpstore.refresh_prices()
+        volumes = lpstore.refresh_volumes()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("LP store refresh failed: %s", exc)
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, not volumes["errors"], offers["offers"],
+          f"{offers['offers']} offers ({offers['gone']} gone), {prices['types']} types priced, {volumes['types']} volumes; " + "; ".join(volumes["errors"][:10]))
+
+
+@shared_task
+def refresh_lp_prices():
+    """Jita prices of the LP store's types only (beat entry shipyard_refresh_lp_prices, hourly)."""
+    run = _run("lp_prices")
+    try:
+        result = lpstore.refresh_prices()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("LP price refresh failed: %s", exc)
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, True, result["types"], f"{result['types']} types priced")
 
 
 @shared_task
