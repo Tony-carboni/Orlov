@@ -4,6 +4,22 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-19 (19:00 UTC) — desktop session → any session
+
+**Runbook / topic:** the directors' balance sheet of 19 October (`docs/finance/2026-10-19-oarmi-balance-sheet.pdf`), Shipyard 0.14.1 (runbook 13 C), and two owner's rules for the books.
+
+**Done.**
+- **Sheet of 19 October, 18:50 EVE**: master wallet 2,764.8 M, active projects' pool 2,292.4 M, Heavy Water 1,990,000 units at 108 = 214.9 M, project goods bought since the baseline and not sold 89.4 M at cost (first in, first out matching of Shipyard 0.14), Caldari State LP 50,000 at 800 = 40.0 M: 5,401.5 M, result **+401.5 M** above the 5 B. Section 2 reconciles to it exactly: project goods sold in Jita +187.8, Heavy Water sold in Piekura +0.4 profit (10,000 at 149.9 less 108 cost), escrow of a corp buy order placed before the baseline returned +149.5, Raitaru tax transferred from GWON +77.0, fees and tax −8.0, rewards paid to members −94.6 (fall of the pool), goods they bought still held +89.4, LP bought 0.0 (cash into LP at cost). Not counted: Director division 3,221.2 M; older project stock ≈ 525 M at cost (603 M Jita buy); 13.6 M structure income still in GWON's wallet. Fuel: Athanors 192 blocks a day, 105.8 M per 30 days at Oxygen 18,360; 5.2 M burned since the baseline; Raitaru sponsored.
+- The owner asked why Heavy Water showed −1.1 M: the sale (+1.5 M) sat inside "goods sold" and the −1.1 M was the stock leaving at cost; the sheet now shows one Heavy Water line with the +0.4 M profit. Correction to the sheet of 18 October: its "17:30 EVE" was the owner's local time; the figures were read at about 16:33 EVE.
+- **Shipyard 0.14.1**: the 0.14.0 corp ledger and the structure ledger overwrote each other's shared journal entries every hour; fixed with a separate table (release paragraph in runbook 13). Backup `aa-db-2026-10-19-1852.sql.gz`.
+- **Owner's rules, saved in memory:** (1) the directors' sheet covers movements since the date of the last State of the Union post (this once: since the 18 Oct baseline); (2) the corp buys **Caldari State LP at 800 ISK**; each payment leaves a corp wallet division with a reason like "50.000 LP": scan the corp journal (`CorpJournalEntry`) for them and summarise. The first one, 40.0 M for 50,000 LP from the master wallet between 18:44 and 18:49 EVE today, showed in the balance but not yet in the journal (ESI journal cache until 19:25); the next hourly read picks it up.
+
+**Owner has to do by hand.** Share the sheet with the directors. Look at the seven graphs on the Corp projects tab and say which to keep. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3.
+
+**Next.** Next sheet: movements since the newest State of the Union post; LP from the journal scan.
+
+---
+
 ## 2026-10-18 (19:00 UTC) — desktop session → any session
 
 **Runbook / topic:** **Shipyard 0.14.0: history graphs on the Corp projects tab** (runbook 13 C release paragraph has the details).
@@ -93,25 +109,6 @@ Month-end (end of October 2026): the corporation's result = master wallet liquid
 
 ### Next — any session
 Nothing on the server. If the owner asks for the Heavy Water figures again: sales since 2026-10-18 from Member Audit (character Tommy McPhee, type Heavy Water, location Piekura, is_buy false) against the corporation's purchases (the master wallet division's market transactions; the corp wallet scope is on the structure corp token).
-
----
-
-## 2026-10-17 (20:20 UTC) — desktop session → any session
-
-**Runbook / topic:** **Doctrines 0.3.0 and 0.3.1: the skills check and the choice cards** (runbook 16).
-
-**Done.**
-- **0.3.0, the skills check** (commit `c4d8d64`, migration 0006, backup `aa-db-2026-10-17-2001.sql.gz` first). A member chooses one of their auth characters in the bar above the ships table (every character on the account; one without a token carrying `esi-skills.read_skills.v1` goes through EVE's login once, the 33-scope tokens from the Shipyard and Member Audit already carry it, 18 users have one). The table has a Skills column (ready, or "3 skills"), and an opened fit shows wheel, the now smaller slot tiles and a skills card side by side: the missing skills as have → need, highest gap first, with what each one is for. Requirements come from the dogma attributes of every type in the fit (`ItemType.required_skills`, prerequisites included); `doctrines_backfill_skills` read them once for the 84 types in the table plus 39 skills. The character's skills live in `MemberCharacter`, 12 h fresh, Refresh button. 29 tests. The owner's row was set to Catherine Frey from the shell to verify (329 skills, 144.9 M SP): T1 fits all ready, the T2 gun fits need Motion Prediction III and the turret skill V, the logi hulls Weapon Disruption.
-- **0.3.1, choice cards** (commit `5074303` pinned): the owner picked option C of four mockups (https://claude.ai/artifact/BW8chP9nrubMtFh3qVynry) after feedback that members did not notice the T1 / T2 tabs. A "2 fits" badge in the ships row; in the opened ship two cards with a radio mark, level pill, cost, a line from the ship's notes (or a default) and the skills verdict. No migration; collectstatic. Verified live: 7 badges, 14 cards, 0 gunicorn errors.
-- **0.3.2** (commit `6089d3b` pinned): the skills verdict (ready / n skills, with the missing skills on hover) is a label right after each cost in the ships table, no column of its own; the Change character button drawn like Refresh (it rendered too dim). Verified live, 29 tests.
-- Earlier today, see the entries below: landing text and role tags (0.2.6), target composition label (0.2.7), the Punisher price, the fits file, the backups.
-
-**Owner still has to do by hand.**
-- Look at an opened ship on doctrines.orlovfamily.space (AB Armor frigs): the choice cards, the skills card, the character switch. Members choose their own character the first time.
-- The default lines on the T1 / T2 cards ("Meta modules. Flyable in the first weeks." / "Tech II modules. The fit the FC expects from veterans.") come from the ship's *notes* field when it is filled: write a line per fit in the admin if a better one is wanted.
-- Still open: the DigitalOcean weekly backups check (runbook 04 B1); "Connect the projects" with Catherine Frey on the Shipyard projects tab; the stray top-level #pings; roster tokens for GB44 and 1E3; the Heat Sink I in the Punisher T1 (swap for a Compact variant, or ask for the thin-market price guard).
-
-**Next.** Nothing queued. Any session: `git pull` and read this entry.
 
 ---
 
