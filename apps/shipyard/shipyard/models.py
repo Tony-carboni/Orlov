@@ -337,6 +337,35 @@ class WalletJournalEntry(models.Model):
         return f"{self.date:%Y-%m-%d} {self.ref_type} {self.amount:,.0f}"
 
 
+class CorpJournalEntry(models.Model):
+    """The executor corp's wallet journal (services/ledger.py). Its own table because EVE gives a transfer
+    between two corporations the same entry id in both journals (the structure corp's job tax, a donation),
+    so one table keyed on the entry id alone made the two ledgers overwrite each other (fixed in 0.14.1)."""
+
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    entry_id = models.BigIntegerField()
+    division = models.PositiveSmallIntegerField()
+    date = models.DateTimeField(db_index=True)
+    ref_type = models.CharField(max_length=60, db_index=True)
+    amount = models.FloatField(default=0)
+    balance = models.FloatField(default=0)
+    first_party_id = models.BigIntegerField(default=0)
+    second_party_id = models.BigIntegerField(default=0)
+    context_id = models.BigIntegerField(default=0)
+    context_id_type = models.CharField(max_length=40, blank=True)
+    description = models.CharField(max_length=500, blank=True)
+    reason = models.CharField(max_length=500, blank=True)
+    tax = models.FloatField(default=0)
+    tax_receiver_id = models.BigIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-date"]
+        unique_together = [("corporation_id", "entry_id")]
+
+    def __str__(self):
+        return f"{self.date:%Y-%m-%d} {self.ref_type} {self.amount:,.0f}"
+
+
 class CorpWalletTransaction(models.Model):
     """A market transaction of a corporation wallet division (ESI keeps a month; services/ledger.py keeps it all).
     Used to match the executor corp's sales against what its projects bought from members."""

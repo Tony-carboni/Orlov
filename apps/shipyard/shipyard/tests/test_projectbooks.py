@@ -5,8 +5,8 @@ from unittest import mock
 from django.test import TestCase
 from django.utils import timezone
 
-from ..models import (CorpProject, CorpWalletTransaction, MarketLocation, MaterialType, Ore, PriceSnapshot, ProjectContribution,
-                      ProjectSnapshot, WalletJournalEntry)
+from ..models import (CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, MaterialType, Ore, PriceSnapshot,
+                      ProjectContribution, ProjectSnapshot, WalletJournalEntry)
 from ..services import ledger, projectbooks, projects, reprocessing
 
 NOW = timezone.now().replace(microsecond=0)
@@ -46,8 +46,8 @@ class BooksTests(TestCase):
         # a project deleted before anyone delivered: no payout
         project("d1", "Zeolites", VELD, 1125.0, NOW - dt.timedelta(days=1), state="Deleted", progress=100_000)
         # the journal: 50 M into the ZPC project
-        WalletJournalEntry.objects.create(entry_id=1, corporation_id=projects.corp_id(), division=1, date=NOW - dt.timedelta(days=3),
-                                          ref_type="project_payouts", amount=-50e6)
+        CorpJournalEntry.objects.create(entry_id=1, corporation_id=projects.corp_id(), division=1, date=NOW - dt.timedelta(days=3),
+                                        ref_type="project_payouts", amount=-50e6)
 
     def test_payouts_with_the_backlog_spread_and_marked(self):
         ev = projectbooks.payout_events()
@@ -96,10 +96,13 @@ class BooksTests(TestCase):
 
 class LedgerTests(TestCase):
     def test_refresh_copies_journal_and_transactions_once(self):
+        # the structure corp's ledger holds entry 901 too: a job tax has the same id in both corps' journals
+        WalletJournalEntry.objects.create(entry_id=901, corporation_id=98635713, division=1, date=NOW, ref_type="industry_job_tax", amount=1e6)
+
         def fake(path, access_token, params=None):
             r = mock.Mock(headers={"X-Pages": "1"})
             if path.endswith("/journal/"):
-                r.json.return_value = [{"id": 900 + int(path.split("/")[-3]), "date": "2026-10-18T07:00:00Z", "ref_type": "project_payouts", "amount": -1e6}] if "/wallets/1/" in path else []
+                r.json.return_value = [{"id": 900 + int(path.split("/")[-3]), "date": "2026-10-18T07:00:00Z", "ref_type": "industry_job_tax", "amount": -1e6}] if "/wallets/1/" in path else []
             else:
                 r.json.return_value = [{"transaction_id": 77, "date": "2026-10-18T08:00:00Z", "type_id": TRIT, "quantity": 5, "unit_price": 4.0, "is_buy": False}] if "/wallets/1/" in path else []
             return r
@@ -108,5 +111,8 @@ class LedgerTests(TestCase):
              mock.patch.object(ledger, "polite_pause"):
             self.assertEqual(ledger.refresh(), {"journal": 1, "transactions": 1})
             self.assertEqual(ledger.refresh(), {"journal": 0, "transactions": 0})
-        self.assertEqual(WalletJournalEntry.objects.get(entry_id=901).corporation_id, projects.corp_id())
+        mine = CorpJournalEntry.objects.get(entry_id=901)
+        self.assertEqual((mine.corporation_id, mine.amount), (projects.corp_id(), -1e6))
+        theirs = WalletJournalEntry.objects.get(entry_id=901)  # the structure corp's copy is untouched
+        self.assertEqual((theirs.corporation_id, theirs.amount), (98635713, 1e6))
         self.assertEqual(CorpWalletTransaction.objects.get(transaction_id=77).quantity, 5)

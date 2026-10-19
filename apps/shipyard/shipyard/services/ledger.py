@@ -1,9 +1,9 @@
 """The executor corp's own books: its wallet journal and market transactions, kept as our copy.
 
 ESI serves a corporation's journal and transactions for about a month. The hourly projects task
-also copies every new journal entry of Orlov Arms International (OARMI) into WalletJournalEntry
-(the same table as the structure corp's ledger, told apart by corporation_id) and every market
-transaction into CorpWalletTransaction, so the Corp projects tab can match what the corp sold
+also copies every new journal entry of Orlov Arms International (OARMI) into CorpJournalEntry (its
+own table: a transfer between two corps has the same entry id in both journals, so it cannot share
+the structure corp's table) and every market transaction into CorpWalletTransaction, so the Corp projects tab can match what the corp sold
 against what its projects bought from members (services/projectbooks.py, owner's request 2026-10-18).
 
 Token: a valid token with the corporation wallet scope for a character of the executor corp
@@ -17,7 +17,7 @@ from allianceauth.eveonline.models import EveCharacter
 from esi.models import Token
 
 from .. import app_settings
-from ..models import CorpWalletTransaction, WalletJournalEntry
+from ..models import CorpJournalEntry, CorpWalletTransaction
 from . import esi
 from .http import polite_pause
 
@@ -67,7 +67,7 @@ def refresh() -> dict:
         raise RuntimeError("no token with the corporation wallet scope for a character of the executor corp")
     access_token = tok.valid_access_token()
     cid = corp_id()
-    known = set(WalletJournalEntry.objects.filter(corporation_id=cid).values_list("entry_id", flat=True))
+    known = set(CorpJournalEntry.objects.filter(corporation_id=cid).values_list("entry_id", flat=True))
     known_tx = set(CorpWalletTransaction.objects.filter(corporation_id=cid).values_list("transaction_id", flat=True))
     added = added_tx = 0
     for division in DIVISIONS:
@@ -77,10 +77,10 @@ def refresh() -> dict:
             logger.warning("journal of division %s failed: %s", division, exc)
             rows = []
         for r in rows:
-            WalletJournalEntry.objects.update_or_create(
-                entry_id=int(r["id"]),
+            CorpJournalEntry.objects.update_or_create(
+                corporation_id=cid, entry_id=int(r["id"]),
                 defaults={
-                    "corporation_id": cid, "division": division, "date": _when(r["date"]),
+                    "division": division, "date": _when(r["date"]),
                     "ref_type": r.get("ref_type") or "", "amount": float(r.get("amount") or 0),
                     "balance": float(r.get("balance") or 0), "first_party_id": int(r.get("first_party_id") or 0),
                     "second_party_id": int(r.get("second_party_id") or 0), "context_id": int(r.get("context_id") or 0),

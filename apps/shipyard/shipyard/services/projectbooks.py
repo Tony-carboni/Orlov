@@ -24,7 +24,7 @@ import datetime as dt
 import math
 from collections import defaultdict, deque
 
-from ..models import CorpProject, CorpWalletTransaction, MarketLocation, MaterialType, Ore, PriceSnapshot, WalletJournalEntry
+from ..models import CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, MaterialType, Ore, PriceSnapshot
 from . import projects, reprocessing
 
 ESTIMATE_GAP = dt.timedelta(hours=6)  # a first read this long after the project started holds a backlog
@@ -98,7 +98,7 @@ def payout_events(cid=None) -> list[dict]:
 def funding_events(cid=None) -> list[dict]:
     """[{t, amount}] from the journal: negative = put into a project, positive = refund on closing."""
     cid = cid or projects.corp_id()
-    qs = WalletJournalEntry.objects.filter(corporation_id=cid, ref_type="project_payouts").order_by("date")
+    qs = CorpJournalEntry.objects.filter(corporation_id=cid, ref_type="project_payouts").order_by("date")
     return [{"t": e.date, "amount": e.amount} for e in qs]
 
 
