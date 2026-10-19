@@ -60,7 +60,7 @@ class RowTests(TestCase):
         hook = rows[4]
         self.assertFalse(hook.inputs_complete)
         self.assertAlmostEqual(hook.isk_per_lp, 25_000_000 / 5_000)  # the unpriced input costs nothing in the figure, flagged on the page
-        self.assertEqual([r.offer_id for r in lpstore.rows()][:2], [1, 2])  # best rate first, blueprints last
+        self.assertEqual([r.offer_id for r in lpstore.rows()], [4, 1, 2, 3])  # best rate first (5,000, 4,000, 2,500), the blueprint last
 
 
 class RefreshTests(TestCase):

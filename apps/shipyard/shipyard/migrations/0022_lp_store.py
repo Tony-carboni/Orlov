@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 ("lp_cost", models.PositiveIntegerField(default=0)),
                 ("isk_cost", models.FloatField(default=0)),
                 ("ak_cost", models.PositiveIntegerField(default=0)),
-                ("required_items", models.JSONField(blank=True, default=list)),
+                ("required_items", models.JSONField(blank=True, default=list, help_text="[[type id, quantity], ...] handed in with the LP")),
                 ("fetched_at", models.DateTimeField()),
                 ("is_active", models.BooleanField(default=True)),
             ],
