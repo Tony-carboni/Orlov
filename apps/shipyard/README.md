@@ -47,3 +47,7 @@ The LP conversion tab lists every offer of a militia's loyalty point store (`SHI
 ## Member shipyards (0.16.0)
 
 For the owner (`shipyard.manage_shipyard`): the **Member shipyards** tab shows the ship dashboard as a new member sees it, from `services.board.member_settings()` (an unsaved default settings row: the corp's default facility and market, no character, the corp's blueprint markup, no own blueprints or prices). Nothing on it is saved; `?facility=<pk>` previews another facility.
+
+## Finance (0.17)
+
+The directors' balance sheet against the owner's working budget (`services/books.py`), at `/shipyard/finance/` for `manage_shipyard` or `books_access`, with a PDF on demand (`services/books_pdf.py`, reportlab). The baseline and stock batches are edited in the admin (books baseline, stock batches). Settings: `SHIPYARD_BOOKS_DIVISIONS` (default 1 to 6; 7 is the owner's), `SHIPYARD_BOOKS_STRUCTURE_TRANSFER` (reason pattern of structure income moved in, default `raitaru`), `SHIPYARD_BOOKS_FUEL` (structures, blocks per hour, sponsored).
