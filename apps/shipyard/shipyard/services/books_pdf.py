@@ -59,7 +59,7 @@ def render(d: dict) -> bytes:
     rows = [["Master wallet, division 1 (liquid)", _m(d["wallet"]), "Balance from the corporation's journal"],
             [f"Reward ISK still inside the {d['n_projects']} active corporation projects", _m(d["pool"]), "Rewards not yet paid out, read from EVE"]]
     for s in d["stock"]:
-        if s["units"] or s["sold"]:
+        if s["units"] >= 0.5:
             listed = f" (listed at {s['list_price']:g} in {e(s['location'].split(' - ')[0])})" if s["list_price"] else ""
             rows.append([f"{e(s['name'])} stock, {s['units']:,.0f} units{listed}", _m(s["value"]), f"At cost, {s['unit_cost']:,.0f} ISK a unit; {s['sold']:,.0f} units sold since the baseline"])
     held_list = ", ".join(f"{e(k)} {v / M:.1f}" for k, v in d["held"] if v >= 0.05 * M)

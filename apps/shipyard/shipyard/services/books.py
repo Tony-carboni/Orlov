@@ -511,6 +511,9 @@ def _project_buybacks(cid, base, cut, led, goods_tax, brokers, stock_types, held
     fixed = _names(bare) if bare else {}
     led = dict(led, matches=[[w, fixed.get(int(n), n) if str(n).isdigit() else n, *rest] for w, n, *rest in led["matches"]],
                others=[[w, fixed.get(int(n), n) if str(n).isdigit() else n, *rest] for w, n, *rest in led["others"]])
+    # items kept as stock (Heavy Water, the LP store's boosters) have their own lines: leave them out here
+    stock_names = {(led["names"].get(tid) or _names([tid]).get(tid, str(tid))) for tid in stock_types}
+    led = dict(led, matches=[m for m in led["matches"] if m[1] not in stock_names], others=[o for o in led["others"] if o[1] not in stock_names])
     for when, name, revenue, cost, qty in led["matches"]:
         if dt.datetime.fromisoformat(when) >= base.replace(second=0, microsecond=0):
             row = sold[name]
@@ -521,6 +524,7 @@ def _project_buybacks(cid, base, cut, led, goods_tax, brokers, stock_types, held
     for when, name, revenue in led["others"]:
         if dt.datetime.fromisoformat(when) >= base.replace(second=0, microsecond=0):
             unmatched[name] += revenue
+    unmatched = defaultdict(float, {k: v for k, v in unmatched.items() if v >= 0.05e6})
     by_name = {}
     for tid, tax in goods_tax.items():
         by_name.setdefault(led["names"].get(tid) or _names([tid]).get(tid, str(tid)), [0.0, 0.0])[0] += tax

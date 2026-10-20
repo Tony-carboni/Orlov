@@ -36,7 +36,7 @@
     <tbody>
         <tr><td>Master wallet, division 1 (liquid)</td><td class="text-end">{{ d.wallet|mil }}</td><td class="small shipyard-k">Balance from the corporation's journal</td></tr>
         <tr><td>Reward ISK still inside the {{ d.n_projects }} active corporation projects</td><td class="text-end">{{ d.pool|mil }}</td><td class="small shipyard-k">Rewards not yet paid out</td></tr>
-        {% for s in d.stock %}{% if s.units or s.sold %}
+        {% for s in d.stock %}{% if s.units >= 0.5 %}
         <tr><td>{{ s.name }} stock, {{ s.units|floatformat:0 }} units{% if s.list_price %} (listed at {{ s.list_price }}){% endif %}</td><td class="text-end">{{ s.value|mil }}</td><td class="small shipyard-k">At cost, {{ s.unit_cost|floatformat:0 }} ISK a unit; {{ s.sold|floatformat:0 }} units sold since the baseline</td></tr>
         {% endif %}{% endfor %}
         <tr><td>Goods bought through projects since the baseline, not sold yet</td><td class="text-end">{{ d.held_total|mil }}</td><td class="small shipyard-k">At what the projects paid ({{ d.held_value|mil }} at Jita's highest buy){% for k, v in d.held %}{% if forloop.first %}: {% else %}, {% endif %}{{ k }} {{ v|mil }}{% endfor %}</td></tr>
