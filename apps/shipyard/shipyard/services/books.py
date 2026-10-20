@@ -352,9 +352,13 @@ def compute(now=None) -> dict:
     goods_tax_month = defaultdict(float)  # (YYYY-MM, type) -> sales tax of project-goods sales
     for entry_id, tid, when in goods_sale_entries:
         goods_tax_month[(when.strftime("%Y-%m"), tid)] += tax_by_entry.get(entry_id + 1, tax_by_entry.get(entry_id - 1, 0.0))
-    project_bb = _project_buybacks(cid, base, cut, led, goods_tax_month, _broker_split(broker_lines, orders)[1], stock_types,
+    sale_prices = defaultdict(set)
+    for t in txs.values():
+        if not t.is_buy:
+            sale_prices[t.type_id].add(t.unit_price)
+    project_bb = _project_buybacks(cid, base, cut, led, goods_tax_month, _broker_split(broker_lines, orders, sale_prices)[1], stock_types,
                                    held_items, older_cost, older_value, paid_members)
-    buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, sold_month, lots, names, orders, broker_lines)
+    buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices)
     if abs(gap) >= 1.0:
         moves.append(["Not explained", gap, "The journal and the position differ: a missing journal page or a new kind of entry"])
 
@@ -408,28 +412,54 @@ def compute(now=None) -> dict:
     }
 
 
-def _broker_split(broker_lines, orders):
+def _broker_split(broker_lines, orders, sale_prices=None):
     """Broker fees of listings, by item type and by (month, type): each fee line goes to the order issued
     (or last modified) nearest to it, within 90 seconds. Orders: open ones and EVE's order history."""
     by_type, by_month = defaultdict(float), defaultdict(float)
     listed = list(orders) + order_history()
-    for t, amount in broker_lines:
+
+    def rate(amount, o):
+        value = o["price"] * o["total"]
+        return (-amount / value) if value else 0.0
+
+    nearest = {}
+    for k, (t, amount) in enumerate(broker_lines):
         near = sorted((abs((o["issued"] - t).total_seconds()), i) for i, o in enumerate(listed) if abs((o["issued"] - t).total_seconds()) <= 90)
-        if near:
-            tid = listed[near[0][1]]["type_id"]
+        nearest[k] = near[0][1] if near else None
+    # the usual broker rate, from fees that sit right next to their order (a listing fee is that rate x the order's value)
+    rates = sorted(rate(broker_lines[k][1], listed[i]) for k, i in nearest.items() if i is not None and 0.003 < rate(broker_lines[k][1], listed[i]) < 0.05)
+    usual = rates[len(rates) // 2] if rates else None
+    for k, (t, amount) in enumerate(broker_lines):
+        pick = nearest[k]
+        if usual and (pick is None or abs(rate(amount, listed[pick]) / usual - 1) > 0.01):
+            # a repriced order carries its new time and price: look at orders placed or repriced at or after this fee,
+            # valued at the prices that item really sold at (a sell order fills at its listed price)
+            fits = []
+            for i, o in enumerate(listed):
+                if not (-90 <= (o["issued"] - t).total_seconds() <= 12 * 3600):
+                    continue
+                for price in {o["price"]} | set((sale_prices or {}).get(o["type_id"], ())):
+                    value = price * o["total"]
+                    if value:
+                        fits.append((abs((-amount / value) / usual - 1), i))
+            fits.sort()
+            if fits and fits[0][0] <= 0.005:
+                pick = fits[0][1]
+        if pick is not None:
+            tid = listed[pick]["type_id"]
             by_type[tid] += amount
             by_month[(t.strftime("%Y-%m"), tid)] += amount
     return by_type, by_month
 
 
-def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, sold_month, lots, names, orders, broker_lines) -> dict:
+def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices=None) -> dict:
     """LP buybacks and conversions per calendar month (owner, 2026-10-20): LP bought and converted, what it
     was converted into, what those items sold for with their sales tax and broker fees, the net profit,
     and what is still on sell orders with its projected net. Items bought to convert that are not
     converted yet are ordinary stock (section 1)."""
     import datetime as dt
 
-    by_type, by_month = _broker_split(broker_lines, orders)
+    by_type, by_month = _broker_split(broker_lines, orders, sale_prices)
     products = []
     for c in conversions:
         if c["type_id"] not in products:
