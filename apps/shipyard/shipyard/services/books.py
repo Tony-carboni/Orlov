@@ -319,14 +319,16 @@ def compute(now=None) -> dict:
     if market_bought:
         bought_names = sorted({names.get(tid, str(tid)) for _, tid, _, _ in market_buys})
         moves.append(["Bought on the market", 0.0, f"{market_bought / M:.1f} M paid for {', '.join(bought_names)}, held as stock at cost or used below"])
+    corp_isk = sum(c["isk"] for c in conversions if not c["outside"])
     for c in conversions:
-        value = c["isk"] if c["outside"] else 0.0
+        value = c["isk"] if c["outside"] else 0.0  # corp-paid ISK nets against the LP store payment below
         inputs = f", {c['input_units']:,.0f} {c['input']} ({c['input_cost'] / M:.1f} M)" if c["input_units"] else ""
         who = "paid from outside the corporation's wallets: a contribution" if c["outside"] else "paid from a corporation wallet"
         moves.append([f"LP store: {c['units']:,} {c['name']}", value,
                       f"{c['lp']:,} LP ({c['lp_value'] / M:.1f} M at cost){inputs} and {c['isk'] / M:.1f} M ISK ({who}); now stock at {c['total'] / M:.1f} M"])
-    if lp_store_paid:
-        moves.append(["Paid in the LP store", lp_store_paid, "The ISK part of LP store offers, from a corporation wallet; the items are stock"])
+    if abs(lp_store_paid + corp_isk) >= 1:
+        moves.append(["Paid in the LP store, not entered as stock", lp_store_paid + corp_isk,
+                      "LP store payments from a corporation wallet without a matching redemption in the admin (stock batches)"])
     if bought_since:
         paid_in_books = sum(a for _, a in stock_paid)
         moves.append(["Stock bought", bought_since - paid_in_books,
@@ -402,10 +404,10 @@ def _broker_by_type(broker_lines, orders) -> dict:
     out = defaultdict(float)
     listed = list(orders) + order_history()
     for t, amount in broker_lines:
-        near = [o for o in listed if abs((o["issued"] - t).total_seconds()) <= 90]
-        total = sum(o["price"] * o["total"] for o in near)
-        for o in near:
-            out[o["type_id"]] += amount * (o["price"] * o["total"]) / total if total else 0.0
+        # the order issued (or last modified) nearest to the fee, within 90 seconds
+        near = sorted((abs((o["issued"] - t).total_seconds()), i) for i, o in enumerate(listed) if abs((o["issued"] - t).total_seconds()) <= 90)
+        if near:
+            out[listed[near[0][1]]["type_id"]] += amount
     return out
 
 

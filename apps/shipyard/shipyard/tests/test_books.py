@@ -117,6 +117,15 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(labels["LP store: 240 Navy Cap Booster 800"], 24e6)  # the ISK from a character's own wallet
         self.assertAlmostEqual(labels["Bought on the market"], 0.0)
         self.assertAlmostEqual(d["lp_cost"], 26_000 * 800)
+        # paid from a corporation wallet instead: the LP store payment and the redemption net to nothing
+        BookStock.objects.filter(type_id=32014).update(isk_paid_by="corp")
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_002, division=1, date=at(10.9), ref_type="lp_store", amount=-24e6)
+        with mock.patch.object(books, "live_orders", lambda: [dict(o) for o in listed]), mock.patch.object(books, "order_history", lambda: []):
+            d = books.compute()
+        self.assertLess(abs(d["gap"]), 1.0)
+        labels = {m[0]: m[1] for m in d["moves"]}
+        self.assertAlmostEqual(labels["LP store: 240 Navy Cap Booster 800"], 0.0)
+        self.assertNotIn("Paid in the LP store, not entered as stock", labels)
 
     def test_project_buybacks(self):
         pb = books.compute()["project_bb"]
