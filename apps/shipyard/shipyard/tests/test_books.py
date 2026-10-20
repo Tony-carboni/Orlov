@@ -8,7 +8,7 @@ from django.contrib.auth.models import Permission
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction
+from ..models import BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, ProjectContribution
 from ..services import books
 
 CORP = 98843356
@@ -22,9 +22,10 @@ def at(hours):
 @override_settings(SHIPYARD_STANDALONE_HOST="", SHIPYARD_PROJECTS_CORP_ID=CORP, SHIPYARD_BOOKS_STRUCTURE_TRANSFER=r"raitaru")
 class BooksTests(TestCase):
     def setUp(self):
-        wallets = mock.patch.object(books, "live_wallets", lambda: {})
-        wallets.start()
-        self.addCleanup(wallets.stop)
+        for name, value in (("live_wallets", {}), ("live_orders", []), ("order_history", [])):
+            patch = mock.patch.object(books, name, lambda value=value: value)
+            patch.start()
+            self.addCleanup(patch.stop)
         patcher = mock.patch.object(books, "_names", lambda ids: {35: "Pyerite", 16272: "Heavy Water"})
         patcher.start()
         self.addCleanup(patcher.stop)
@@ -55,13 +56,26 @@ class BooksTests(TestCase):
         j(7.5, "corporation_account_withdrawal", 25e6, "", first=CORP, second=CORP, division=2, entry_id=5555)
         j(8, "corporation_account_withdrawal", -1.3e6, "Reprocessing buybacks", first=CORP, second=333)
         j(9, "market_transaction", 2e6)  # a sale whose transaction EVE has not listed yet
+        # a closed project that bought 3,000,000 Pyerite from a member before that Pyerite sold
+        p2 = CorpProject.objects.create(project_id="p2", corporation_id=CORP, name="pyerite", state="Closed", reward_per_contribution=10.0,
+                                        details={"configuration": [{"deliver_item": {"items": [{"type_id": 35}]}}]})
+        ProjectContribution.objects.create(project=p2, taken_at=at(0.5), character_id=4242, character_name="Miner", contributed=3_000_000)
+        # the LP chain: input boosters bought by a buy order that filled at once, 12 LP-store offers, booster sales
+        j(10, "market_escrow", -8_813_000, tx=3)
+        CorpWalletTransaction.objects.create(transaction_id=3, corporation_id=CORP, division=1, date=at(10), type_id=11289, quantity=1000, unit_price=8813, is_buy=True)
+        BookStock.objects.create(name="Navy Cap Booster 800", type_id=32014, units=240, bought_at=at(11), lp_used=24_000, input_type_id=11289, input_units=240,
+                                 isk_paid=24e6, isk_paid_by="outside", list_price=211_100)
+        sale = j(12, "market_transaction", 10 * 211_100, tx=4)
+        CorpWalletTransaction.objects.create(transaction_id=4, corporation_id=CORP, division=1, date=at(12), type_id=32014, quantity=10, unit_price=211_100)
+        j(12, "transaction_tax", -10 * 211_100 * 0.0337, entry_id=sale + 1)
+        j(11.5, "brokers_fee", -50_000, entry_id=99_001)
 
     def test_sheet_reconciles_and_names_every_movement(self):
         d = books.compute()
         self.assertAlmostEqual(d["explained"], d["result"], places=2)
         self.assertLess(abs(d["gap"]), 1.0)
         labels = {m[0]: m[1] for m in d["moves"]}
-        self.assertAlmostEqual(labels["Heavy Water sold, profit over its buy value"], 10_000 * (149.9 - 108), places=2)
+        self.assertAlmostEqual(labels["Heavy Water sold, profit over its cost"], 10_000 * (149.9 - 108), places=2)
         self.assertAlmostEqual(labels["Project goods sold on the market (gross)"], 52e6, places=2)
         self.assertAlmostEqual(labels["Escrow of corporation buy orders"], 149.5e6)
         self.assertAlmostEqual(labels["Structure income transferred to the corporation"], 77e6)
@@ -70,12 +84,52 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(labels["LP bought"], 0.0)
         # rewards paid = baseline pool + new funding - pool now = 2387 + 66 - 2350
         self.assertAlmostEqual(labels["Project rewards paid to members"], -(2387e6 + 66e6 - 2350e6), places=2)
-        self.assertEqual(d["lp_units"], 50_000)
-        self.assertAlmostEqual(d["stock"][0]["units"], 1_990_000)
-        self.assertAlmostEqual(d["stock_now"], 1_990_000 * 108)
-        self.assertAlmostEqual(d["wallet"], 2397e6 + 1_499_000 + 50e6 - 1.7e6 + 149.5e6 + 77e6 - 40e6 - 66e6 - 10e6 - 25e6 - 1.3e6 + 2e6, places=2)
+        self.assertEqual((d["buyback"]["lp_units"], d["lp_units"]), (50_000, 26_000))  # 24,000 went into the boosters
+        hw = next(s for s in d["stock"] if s["name"] == "Heavy Water")
+        self.assertAlmostEqual(hw["units"], 1_990_000)
+        self.assertAlmostEqual(hw["value"], 1_990_000 * 108)
+        booster_lp = 2397e6 + 1_499_000 + 50e6 - 1.7e6 + 149.5e6 + 77e6 - 40e6 - 66e6 - 10e6 - 25e6 - 1.3e6 + 2e6
+        booster_lp += -8_813_000 + 10 * 211_100 - 10 * 211_100 * 0.0337 - 50_000
+        self.assertAlmostEqual(d["wallet"], booster_lp, places=2)
         self.assertAlmostEqual(d["other_divs"], 25e6)  # the SRP division's side of the transfer is kept
-        self.assertEqual(d["cut"], at(9))
+        self.assertEqual(d["cut"], at(12))  # the last journal line
+
+    def test_buyback_chain(self):
+        listed = [{"type_id": 32014, "is_buy": False, "price": 211_100.0, "remain": 230, "total": 240, "escrow": 0.0, "location_id": 1, "division": 1, "issued": at(11.5)}]
+        with mock.patch.object(books, "live_orders", lambda: [dict(o) for o in listed]), mock.patch.object(books, "order_history", lambda: []):
+            d = books.compute()
+        self.assertLess(abs(d["gap"]), 1.0)
+        bb = d["buyback"]
+        self.assertEqual((bb["lp_units"], bb["lp_used"], bb["lp_left"]), (50_000, 24_000, 26_000))
+        self.assertAlmostEqual(bb["lp_avg"], 800.0)
+        inp = bb["inputs"][0]
+        self.assertEqual((inp["bought"], inp["used"], inp["left"]), (1000, 240, 760))
+        self.assertAlmostEqual(inp["left_cost"], 760 * 8813)
+        p = bb["products"][0]
+        cost_each = (24_000 * 800 + 240 * 8813 + 24e6) / 240
+        self.assertAlmostEqual(p["unit_cost"], cost_each)
+        self.assertEqual((p["made"], p["sold"], p["list_units"]), (240, 10, 230))
+        self.assertAlmostEqual(p["tax"], -10 * 211_100 * 0.0337)
+        self.assertAlmostEqual(p["broker"], -50_000)
+        self.assertAlmostEqual(p["net"], 10 * 211_100 - 10 * cost_each - 10 * 211_100 * 0.0337 - 50_000)
+        self.assertAlmostEqual(bb["outside"], 24e6)
+        labels = {m[0]: m[1] for m in d["moves"]}
+        self.assertAlmostEqual(labels["LP store: 240 Navy Cap Booster 800"], 24e6)  # the ISK from a character's own wallet
+        self.assertAlmostEqual(labels["Bought on the market"], 0.0)
+        self.assertAlmostEqual(d["lp_cost"], 26_000 * 800)
+
+    def test_project_buybacks(self):
+        pb = books.compute()["project_bb"]
+        self.assertEqual([(r["name"], round(r["isk"])) for r in pb["paid"]], [("Pyerite", 30_000_000)])
+        self.assertEqual(pb["members"], 1)
+        row = pb["sold"][0]
+        self.assertEqual(row["name"], "Pyerite")
+        revenue = 3_000_000 * 16.67  # what the transaction says the Pyerite sold for
+        self.assertAlmostEqual(row["revenue"], revenue, places=2)
+        self.assertAlmostEqual(row["cost"], 30e6)
+        self.assertAlmostEqual(row["tax"], -1.7e6)
+        self.assertAlmostEqual(row["margin"], revenue - 30e6 - 1.7e6, places=2)
+        self.assertAlmostEqual(pb["cash_net"], revenue - 1.7e6 - 30e6, places=2)
 
     def test_page_and_pdf_for_the_owner_only(self):
         owner = get_user_model().objects.create_user("tony", password="x")

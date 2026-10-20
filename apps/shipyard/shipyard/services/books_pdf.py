@@ -61,12 +61,14 @@ def render(d: dict) -> bytes:
     for s in d["stock"]:
         if s["units"] or s["sold"]:
             listed = f" (listed at {s['list_price']:g} in {e(s['location'].split(' - ')[0])})" if s["list_price"] else ""
-            rows.append([f"{e(s['name'])} stock, {s['units']:,.0f} units{listed}", _m(s["value"]), f"At buy value, {s['unit_cost']:g} ISK a unit; {s['sold']:,.0f} units sold since the baseline"])
+            rows.append([f"{e(s['name'])} stock, {s['units']:,.0f} units{listed}", _m(s["value"]), f"At cost, {s['unit_cost']:,.0f} ISK a unit; {s['sold']:,.0f} units sold since the baseline"])
     held_list = ", ".join(f"{e(k)} {v / M:.1f}" for k, v in d["held"] if v >= 0.05 * M)
     rows.append(["Goods bought through projects since the baseline, not sold yet", _m(d["held_total"]),
                  f"At what the projects paid for them ({d['held_value'] / M:.1f} M at Jita's highest buy){'; ' + held_list if held_list else ''}"])
     if d["lp_cost"]:
-        rows.append([f"Loyalty points, {d['lp_units']:,} LP", _m(d["lp_cost"]), "At cost, as paid from the corporation's wallets"])
+        rows.append([f"Loyalty points, {d['lp_units']:,} LP", _m(d["lp_cost"]), "At cost, the LP not used yet"])
+    if d.get("open_escrow"):
+        rows.append(["ISK in open buy orders", _m(d["open_escrow"]), "Escrow of the corporation's buy orders"])
     if abs(d["other_divs"]) >= 0.05 * M:
         rows.append(["Wallet divisions 2 to 6", _m(d["other_divs"]), "Balances from the corporation's journal"])
     n = len(rows)
@@ -89,6 +91,68 @@ def render(d: dict) -> bytes:
     mrows.append(["<b>Total since the baseline</b>", f"<font color='#2e7d32'><b>{_m(sum(m[1] for m in d['moves']), True)}</b></font>", "Equals the result in section 1"])
     story.append(table(["Movement", "ISK", "Note"], mrows, [72 * mm, 24 * mm, 78 * mm], total_rows=(len(mrows),)))
 
+    pb = d.get("project_bb") or {}
+    if pb.get("active"):
+        pct = f" ({pb['margin'] / pb['cost'] * 100:.0f} % over what the projects paid)" if pb.get("cost") else ""
+        part = [Paragraph("3. Project buybacks", h2),
+                Paragraph("What the corporation projects paid members since the baseline, and what the corporation sold of those items, at what the projects paid "
+                          "for them (first in, first out; ores count through the minerals they reprocess into), with the sales tax and broker fees of those sales.", p),
+                Spacer(1, 4),
+                Paragraph(f"<b>ISK out</b>, paid to {pb['members']} members: {_m(pb['paid_total'])}. <b>ISK in</b>, sold after fees: {_m(pb['revenue'] + pb['fees'])} "
+                          f"({_m(pb['revenue'])} gross). <b>Margin on what sold</b>: {_m(pb['margin'], True)}{pct}. <b>Still held</b> from projects: {_m(pb['held'])} at cost "
+                          f"({_m(pb['held_value'])} at Jita buy); older stock {_m(pb['older'])}.", p), Spacer(1, 4)]
+        srows = []
+        for r in pb["sold"]:
+            label = e(r["name"]) + (f"<br/><font size='6.5' color='#5b6b82'>plus {_m(r['unmatched'])} from stock older than the projects' records</font>" if r["unmatched"] else "")
+            srows.append([label, f"{r['units']:,.0f}", _m(r["revenue"]), _m(r["cost"]), _m(r["tax"]), _m(r["broker"]), f"<b>{_m(r['margin'], True)}</b>",
+                          f"{r['pct'] * 100:.0f} %" if r["pct"] is not None else "–"])
+        srows.append(["<b>Total</b>", "", f"<b>{_m(pb['revenue'])}</b>", f"<b>{_m(pb['cost'])}</b>", "", f"<b>{_m(pb['fees'])}</b>", f"<b>{_m(pb['margin'], True)}</b>",
+                      f"{pb['pct'] * 100:.0f} %" if pb.get("pct") is not None else ""])
+        part.append(table(["Sold, by item", "Units", "Revenue", "Paid by projects", "Sales tax", "Broker", "Margin", "%"], srows,
+                          [46 * mm, 20 * mm, 18 * mm, 22 * mm, 17 * mm, 15 * mm, 20 * mm, 12 * mm], total_rows=(len(srows),), numeric=(1, 2, 3, 4, 5, 6, 7)))
+        prows = [[e(r["name"]), f"{r['units']:,.0f}", _m(r["isk"]), str(r["members"])] for r in pb["paid"]]
+        part += [Spacer(1, 6), table(["Paid to members, by item", "Units delivered", "ISK paid", "Members"], prows, [80 * mm, 34 * mm, 34 * mm, 26 * mm], numeric=(1, 2, 3)),
+                 Paragraph(f"ISK in minus ISK out since the baseline: {_m(pb['cash_net'], True)}; the difference is mostly goods still held. Paid to members comes from the "
+                           "contributions read every hour; the pool fall in section 2 can differ slightly.", note)]
+        story.append(KeepTogether(part[:5]))
+        story.extend(part[5:])
+
+    bb = d.get("buyback") or {}
+    if bb.get("active"):
+        part = [Paragraph("4. LP buybacks and conversions", h2),
+                Paragraph("The LP the corporation buys, the items it buys to feed LP store offers, what came out of the store and what that sold for, "
+                          "with the sales tax and the broker fees of those listings. Costs follow the items first in, first out.", p), Spacer(1, 4)]
+        lrows = [[f"{t.day} {t:%b %H:%M}", e(to), f"{units:,}", _m(isk), f"{isk / units:,.0f}" if units else "–"] for t, units, isk, to in bb["lp_purchases"]]
+        lrows.append([f"<b>Total</b> · used {bb['lp_used']:,} · left {bb['lp_left']:,} ({_m(bb['lp_left_value'])})", "", f"<b>{bb['lp_units']:,}</b>", f"<b>{_m(bb['lp_cost'])}</b>", f"<b>{bb['lp_avg']:,.0f}</b>"])
+        part.append(table(["LP bought", "Paid to", "LP", "ISK", "ISK per LP"], lrows, [62 * mm, 40 * mm, 22 * mm, 26 * mm, 24 * mm], total_rows=(len(lrows),), numeric=(2, 3, 4)))
+        if bb["inputs"]:
+            irows = [[e(i["name"]), f"{i['bought']:,.0f}", _m(i["bought_cost"]), f"{i['used']:,.0f}", f"{i['left']:,.0f}", _m(i["left_cost"])] for i in bb["inputs"]]
+            part += [Spacer(1, 6), table(["Items bought to convert", "Bought", "Cost", "Used", "Left to convert", "Left, at cost"], irows,
+                                         [54 * mm, 20 * mm, 22 * mm, 20 * mm, 30 * mm, 28 * mm], numeric=(1, 2, 3, 4, 5))]
+        if bb["products"]:
+            prows = []
+            for x in bb["products"]:
+                own = " (own wallet)" if x["outside"] else ""
+                prows.append([f"{e(x['name'])}<br/><font size='6.5' color='#5b6b82'>{x['made']:,.0f} made at {x['unit_cost']:,.0f} each: {x['lp']:,} LP {_m(x['lp_value'])}, "
+                              f"inputs {_m(x['input_cost'])}, LP store ISK {_m(x['isk'])}{own}</font>",
+                              f"{x['sold']:,.0f}", _m(x["revenue"]), _m(x["cost_sold"]), _m(x["tax"]), _m(x["broker"]), f"<b>{_m(x['net'], True)}</b>",
+                              f"{x['list_units']:,}" + (f" at {x['list_price']:,.0f}" if x["list_price"] else ""), _m(x["expected"], True)])
+            prows.append(["<b>Total</b>", "", "", "", "", "", f"<b>{_m(bb['realised'], True)}</b>", "", f"<b>{_m(bb['expected'], True)}</b>"])
+            part += [Spacer(1, 6), table(["Out of the LP store", "Sold", "Revenue", "Cost", "Sales tax", "Broker", "Net profit", "Listed", "Expected net"], prows,
+                                         [50 * mm, 11 * mm, 17 * mm, 16 * mm, 15 * mm, 14 * mm, 17 * mm, 20 * mm, 17 * mm],
+                                         total_rows=(len(prows),), numeric=(1, 2, 3, 4, 5, 6, 7, 8))]
+            if bb["outside"]:
+                part.append(Paragraph(f"{bb['outside'] / M:.1f} M of LP store ISK came from a character's own wallet: it is in the items' cost and counted as a contribution in section 2. "
+                                      "Expected net: the items still listed, at their list price, less sales tax at the rate paid so far and their cost.", note))
+        buying = bb.get("buying") or []
+        if buying:
+            brows = [[e(o["name"]), f"{o['remain']:,} / {o['total']:,}", f"{o['price']:,.2f}", _m(o["escrow"])] for o in buying]
+            part += [Spacer(1, 6), table(["Buying now", "Still to buy", "Price", "ISK in escrow"], brows, [74 * mm, 34 * mm, 30 * mm, 36 * mm], numeric=(1, 2, 3))]
+        else:
+            part.append(Paragraph("No open buy orders.", note))
+        story.append(KeepTogether(part[:4]))
+        story.extend(part[4:])
+
     if d["fuel_rows"]:
         frows = []
         for f in d["fuel_rows"]:
@@ -96,7 +160,7 @@ def render(d: dict) -> bytes:
         pay = d["fuel_paying_bph"]
         frows.append(["<b>Cost to the alliance</b>", f"<b>{pay}</b>", f"<b>{pay * 24}</b>", f"<b>{_m(pay * 24 * d['fuel_price'])}</b>", f"<b>{_m(pay * 24 * 30 * d['fuel_price'])}</b>"])
         story.append(KeepTogether([
-            Paragraph("3. Running costs: structure fuel", h2),
+            Paragraph("5. Running costs: structure fuel", h2),
             Paragraph(f"Fuel need of the online service modules, priced at today's cheapest fuel block at {e(d['market'])} ({e(d['fuel_name'])}, {d['fuel_price']:,.0f} ISK). "
                       "Sponsored structures cost the alliance nothing.", p),
             Spacer(1, 4),

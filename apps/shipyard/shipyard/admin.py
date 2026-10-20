@@ -99,4 +99,4 @@ class BooksBaselineAdmin(admin.ModelAdmin):
 
 @admin.register(BookStock)
 class BookStockAdmin(admin.ModelAdmin):
-    list_display = ("name", "type_id", "units", "unit_cost", "bought_at", "list_price", "location_name")
+    list_display = ("name", "type_id", "units", "unit_cost", "bought_at", "lp_used", "input_type_id", "input_units", "isk_paid", "isk_paid_by", "list_price")
