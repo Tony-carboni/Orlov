@@ -181,3 +181,15 @@ def profit_class(value):
     except (TypeError, ValueError):
         return ""
     return "text-success fw-semibold" if v > 0 else "text-danger"
+
+
+@register.filter
+def mil(value, sign=False):
+    """Millions with one decimal for the Finance tab: 2703077119 → '2,703.1 M'; sign=True adds + or −."""
+    if value is None:
+        return "–"
+    try:
+        v = float(value) / 1e6
+    except (TypeError, ValueError):
+        return "–"
+    return f"{v:+,.1f} M" if sign else f"{v:,.1f} M"

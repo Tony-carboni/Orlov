@@ -18,6 +18,7 @@ class General(models.Model):
             ("manage_shipyard", "Can edit blueprint prices, LP prices and facilities"),
             ("view_corp_industry", "Can see the industry of everyone in their corporation"),
             ("view_alliance_industry", "Can see the industry of everyone in the alliance"),
+            ("books_access", "Can see the corporation's balance sheet (Finance tab)"),
         )
 
 
@@ -765,3 +766,43 @@ class RefreshRun(models.Model):
 
     class Meta:
         ordering = ["-started_at"]
+
+
+class BooksBaseline(models.Model):
+    """The owner's working budget (2026-10-18): what the corporation held at the moment its money was
+    separated from the owner's. The loan counts as nothing; the Finance tab's result is everything above it."""
+
+    taken_at = models.DateTimeField(help_text="The baseline moment (EVE time)")
+    loan = models.FloatField(help_text="The working budget lent by the owner, ISK")
+    wallet = models.FloatField(help_text="Master wallet (division 1) at the baseline, ISK")
+    pool = models.FloatField(help_text="Reward ISK in the active projects at the baseline, ISK")
+    note = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        verbose_name = "books baseline"
+
+    def __str__(self):
+        return f"Baseline {self.taken_at:%Y-%m-%d %H:%M}: {self.loan / 1e6:,.0f} M"
+
+
+class BookStock(models.Model):
+    """A batch of stock the corporation bought to sell (Heavy Water for the Orcas): held at its buy value
+    until sold, first in first out. Market buys of the same type are picked up by themselves; enter here
+    what was bought by direct trade."""
+
+    name = models.CharField(max_length=100)
+    type_id = models.PositiveIntegerField()
+    units = models.BigIntegerField()
+    unit_cost = models.FloatField(help_text="Buy value per unit, ISK")
+    bought_at = models.DateTimeField()
+    list_price = models.FloatField(null=True, blank=True, help_text="Price it is listed at, for the sheet")
+    location_name = models.CharField(max_length=150, blank=True)
+    note = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        ordering = ["bought_at"]
+        verbose_name = "stock batch"
+        verbose_name_plural = "stock batches"
+
+    def __str__(self):
+        return f"{self.name}: {self.units:,} at {self.unit_cost:g}"

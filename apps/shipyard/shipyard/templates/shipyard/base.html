@@ -69,6 +69,11 @@
             <i class="fas fa-scroll fa-fw"></i> Blueprints &amp; LP
         </a>
         {% endif %}
+        {% if perms.shipyard.manage_shipyard or perms.shipyard.books_access %}
+        <a class="nav-link {% if request.resolver_match.url_name == 'finance' %}active{% endif %}" href="{% url 'shipyard:finance' %}" title="The corporation's balance sheet against the working budget">
+            <i class="fas fa-scale-balanced fa-fw"></i> Finance
+        </a>
+        {% endif %}
     </nav>
     {% if data_notice %}
     <div class="alert alert-warning py-2"><i class="fas fa-triangle-exclamation fa-fw"></i> {{ data_notice }}</div>

@@ -86,6 +86,58 @@ def index(request):
     return render(request, "shipyard/index.html", context)
 
 
+def _books_allowed(user) -> bool:
+    return user.has_perm("shipyard.manage_shipyard") or user.has_perm("shipyard.books_access")
+
+
+@login_required
+def finance(request):
+    """Finance: the directors' balance sheet against the owner's working budget, live from our copies (0.17.0)."""
+    from django.core.exceptions import PermissionDenied
+    from .services import books
+    if not _books_allowed(request.user):
+        raise PermissionDenied
+    try:
+        data = books.compute()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("balance sheet failed: %s", exc)
+        data = None
+        messages.error(request, f"The balance sheet could not be built: {exc}")
+    return render(request, "shipyard/finance.html", _context(request, d=data, can_manage=request.user.has_perm("shipyard.manage_shipyard")))
+
+
+@login_required
+def finance_pdf(request):
+    from django.core.exceptions import PermissionDenied
+    from django.http import HttpResponse
+    from .services import books, books_pdf
+    if not _books_allowed(request.user):
+        raise PermissionDenied
+    data = books.compute()
+    if data is None:
+        messages.error(request, "No baseline yet: add one in the admin (Shipyard → books baseline).")
+        return redirect("shipyard:finance")
+    try:
+        pdf = books_pdf.render(data)
+    except ImportError:
+        messages.error(request, "The PDF library (reportlab) is not installed on the server yet.")
+        return redirect("shipyard:finance")
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="oarmi-balance-sheet-{data["cut"]:%Y-%m-%d-%H%M}.pdf"'
+    return response
+
+
+@login_required
+@require_POST
+def finance_refresh(request):
+    from django.core.exceptions import PermissionDenied
+    from .services import books
+    if not _books_allowed(request.user):
+        raise PermissionDenied
+    messages.info(request, "Read from EVE: " + "; ".join(books.refresh()) + ". EVE itself refreshes the corporation's journal and transactions once an hour.")
+    return redirect("shipyard:finance")
+
+
 def _member_facility(request):
     """The facility the member preview shows: ?facility=<pk>, else the corp's default."""
     pk = _int(request.GET.get("facility"), 0)

@@ -1,0 +1,71 @@
+{% extends "shipyard/base.html" %}
+{% load shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · Finance{% endblock %}
+
+{% block shipyard_content %}
+{% if not d %}
+<div class="alert alert-warning">No balance sheet yet: a books baseline is needed (auth admin → Shipyard → books baseline).</div>
+{% else %}
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+    <div>
+        <h2 class="h4 mb-1">Orlov Arms International · simplified balance sheet</h2>
+        <div class="shipyard-k small">As of {{ d.cut|date:"j F Y, H:i" }} EVE (the corporation's last journal line). Movements since the working-budget baseline of {{ d.base|date:"j F, H:i" }} EVE. All amounts in millions of ISK.</div>
+    </div>
+    <div class="d-flex gap-2">
+        <form method="post" action="{% url 'shipyard:finance_refresh' %}">{% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Read the projects and the corporation's journal from EVE now (EVE refreshes them hourly)"><i class="fas fa-rotate fa-fw"></i> Read EVE now</button>
+        </form>
+        <a class="btn btn-sm btn-primary" href="{% url 'shipyard:finance_pdf' %}"><i class="fas fa-file-pdf fa-fw"></i> Download PDF</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Result against the baseline</div><div class="fs-3 fw-bold {% if d.result >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.result|mil:True }}</div></div></div>
+    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Total assets</div><div class="fs-3 fw-bold">{{ d.assets|mil }}</div><div class="shipyard-k small">against a loan of {{ d.loan|mil }}</div></div></div>
+    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Master wallet</div><div class="fs-3 fw-bold">{{ d.wallet|mil }}</div><div class="shipyard-k small">{{ d.pool|mil }} still inside {{ d.n_projects }} active projects</div></div></div>
+</div>
+
+<h3 class="h5 mt-4">1. Position against the baseline</h3>
+<p class="small shipyard-k mb-2">The owner lent the corporation a working budget of {{ d.loan|mil }}, interest-free and without a repayment date. That loan counts as nothing: the corporation's result is everything above or below it.</p>
+<div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>Assets</th><th class="text-end">ISK</th><th>How it is valued</th></tr></thead>
+    <tbody>
+        <tr><td>Master wallet, division 1 (liquid)</td><td class="text-end">{{ d.wallet|mil }}</td><td class="small shipyard-k">Balance from the corporation's journal</td></tr>
+        <tr><td>Reward ISK still inside the {{ d.n_projects }} active corporation projects</td><td class="text-end">{{ d.pool|mil }}</td><td class="small shipyard-k">Rewards not yet paid out</td></tr>
+        {% for s in d.stock %}{% if s.units or s.sold %}
+        <tr><td>{{ s.name }} stock, {{ s.units|floatformat:0 }} units{% if s.list_price %} (listed at {{ s.list_price }}){% endif %}</td><td class="text-end">{{ s.value|mil }}</td><td class="small shipyard-k">At buy value, {{ s.unit_cost }} ISK a unit; {{ s.sold|floatformat:0 }} units sold since the baseline</td></tr>
+        {% endif %}{% endfor %}
+        <tr><td>Goods bought through projects since the baseline, not sold yet</td><td class="text-end">{{ d.held_total|mil }}</td><td class="small shipyard-k">At what the projects paid ({{ d.held_value|mil }} at Jita's highest buy){% for k, v in d.held %}{% if forloop.first %}: {% else %}, {% endif %}{{ k }} {{ v|mil }}{% endfor %}</td></tr>
+        {% if d.lp_cost %}<tr><td>Loyalty points, {{ d.lp_units }} LP</td><td class="text-end">{{ d.lp_cost|mil }}</td><td class="small shipyard-k">At cost</td></tr>{% endif %}
+        {% if d.other_divs %}<tr><td>Wallet divisions 2 to 6</td><td class="text-end">{{ d.other_divs|mil }}</td><td class="small shipyard-k">Balances from the corporation's journal</td></tr>{% endif %}
+        <tr class="fw-bold"><td>Total assets</td><td class="text-end">{{ d.assets|mil }}</td><td></td></tr>
+        <tr><td>Loan from the owner (the working budget)</td><td class="text-end">{{ d.loan|mil }}</td><td class="small shipyard-k">Interest-free, perpetual, extractable when the corporation can bear it</td></tr>
+        <tr class="fw-bold table-success"><td>Result: assets above the loan</td><td class="text-end">{{ d.result|mil:True }}</td><td class="small">The corporation's own money</td></tr>
+    </tbody>
+</table></div>
+<p class="small shipyard-k">Not included: {% if d.director is not None %}wallet division 7 (the Director division, {{ d.director|mil }}), the owner's characters' shared wallet. {% endif %}Project goods paid for before the baseline and not sold yet, about {{ d.older.0|mil }} at cost ({{ d.older.1|mil }} at Jita buy): never part of the budget, they count when they sell.{% if d.structure_income is not None %} Structure income since the last transfer to the corporation, {{ d.structure_income|mil }}, still sits in the structure corporation's wallet.{% endif %}</p>
+
+<h3 class="h5 mt-4">2. What happened since the baseline</h3>
+<div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>Movement</th><th class="text-end">ISK</th><th>Note</th></tr></thead>
+    <tbody>
+        {% for label, value, note in d.moves %}
+        <tr{% if label == "Not explained" %} class="table-warning"{% endif %}><td>{{ label }}</td><td class="text-end {% if value < 0 %}text-danger{% elif value > 0 %}text-success{% endif %}">{{ value|mil:True }}</td><td class="small shipyard-k">{{ note }}</td></tr>
+        {% endfor %}
+        <tr class="fw-bold"><td>Total since the baseline</td><td class="text-end">{{ d.result|mil:True }}</td><td class="small shipyard-k">Equals the result above</td></tr>
+    </tbody>
+</table></div>
+
+<h3 class="h5 mt-4">3. Running costs: structure fuel</h3>
+<p class="small shipyard-k mb-2">Fuel need of the online service modules at today's cheapest fuel block at {{ d.market }} ({{ d.fuel_name }}, {{ d.fuel_price|floatformat:0 }} ISK). Sponsored structures cost the alliance nothing.</p>
+<div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>Structure</th><th class="text-end">Blocks / hour</th><th class="text-end">Blocks / day</th><th class="text-end">ISK / day</th><th class="text-end">ISK / 30 days</th></tr></thead>
+    <tbody>
+        {% for f in d.fuel_rows %}<tr><td>{{ f.name }}{% if f.sponsored %} <span class="badge text-bg-secondary">sponsored</span>{% endif %}</td><td class="text-end">{{ f.bph }}</td><td class="text-end">{% widthratio f.bph 1 24 %}</td><td class="text-end">{{ f.day|mil }}</td><td class="text-end">{{ f.month|mil }}</td></tr>{% endfor %}
+    </tbody>
+</table></div>
+<p class="small shipyard-k">Burned since the baseline by the structures the alliance pays for: {{ d.fuel_burned }} blocks, {{ d.fuel_burned_isk|mil }}.</p>
+<p class="small shipyard-k">The baseline and the stock batches (Heavy Water bought by direct trade) are kept in the admin: Shipyard → books baseline and stock batches. Market buys of a stock type are picked up by themselves.</p>
+{% endif %}
+{% endblock %}

@@ -114,15 +114,23 @@ def _names(type_ids):
     return names
 
 
-def books(cid=None) -> dict:
-    """Everything the graphs need, as JSON-ready lists. Pure apart from the database reads."""
+def ledger(cid=None, until=None) -> dict:
+    """The deliveries turned into lots and matched against the corp's sales, first in first out.
+    until = a cut-off time: payouts and sales after it are left out (the balance sheet's moment).
+    Returns the working pieces: lots (type_id -> deque of [t, qty, unit_cost] still unsold), matches,
+    others, stock, payout_rows, prices (Jita buy), names, market, sells."""
     cid = cid or projects.corp_id()
     market = _market()
     pays = payout_events(cid)
+    if until is not None:
+        pays = [e for e in pays if e["t"] <= until]
     project_types = {e["type_id"] for e in pays if e["type_id"]}
     ores = {o.type_id: o for o in Ore.objects.filter(type_id__in=list(project_types))}
     outputs = {int(m) for o in ores.values() for m in (o.materials or {})}
-    sells = list(CorpWalletTransaction.objects.filter(corporation_id=cid, is_buy=False).order_by("date"))
+    sells_qs = CorpWalletTransaction.objects.filter(corporation_id=cid, is_buy=False)
+    if until is not None:
+        sells_qs = sells_qs.filter(date__lte=until)
+    sells = list(sells_qs.order_by("date"))
     sold_types = {t.type_id for t in sells}
     universe = project_types | outputs
     prices = _prices(universe, market)
@@ -186,18 +194,29 @@ def books(cid=None) -> dict:
             stock.append([_iso(s.date), round(-cost, 2)])
         if need > 1e-9:
             others.append([_iso(s.date), names.get(s.type_id, str(s.type_id)), round(need * s.unit_price, 2)])
+    stock.sort(key=lambda r: r[0])
+    return {"lots": lots, "matches": matches, "others": others, "stock": stock, "payout_rows": payout_rows,
+            "prices": prices, "names": names, "market": market, "sells": sells}
+
+
+def books(cid=None) -> dict:
+    """Everything the graphs need, as JSON-ready lists. Pure apart from the database reads."""
+    cid = cid or projects.corp_id()
+    led = ledger(cid)
+    lots, prices = led["lots"], led["prices"]
     left_cost = sum(q * c for queue in lots.values() for _, q, c in queue)
     left_value = sum(q * prices.get(tid, 0.0) for tid, queue in lots.items() for _, q, _ in queue)
-    stock.sort(key=lambda r: r[0])
+    payout_rows = led["payout_rows"]
+    market = led["market"]
     return {
         "payouts": payout_rows,
         "funding": [[_iso(f["t"]), round(f["amount"], 2)] for f in funding_events(cid)],
-        "matches": matches,
-        "others": others,
-        "stock": stock,
+        "matches": led["matches"],
+        "others": led["others"],
+        "stock": led["stock"],
         "stock_now": {"cost": round(left_cost, 2), "value": round(left_value, 2)},
         "kinds": KIND_LABELS,
         "first": payout_rows[0][0] if payout_rows else None,
         "market": market.name if market else "",
-        "has_sales": bool(sells),
+        "has_sales": bool(led["sells"]),
     }

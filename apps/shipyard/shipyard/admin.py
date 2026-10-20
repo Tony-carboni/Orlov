@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from .models import BooksBaseline, BookStock
 from .models import (
     ScrapItem,
     BuildSnapshot, CharacterSync, Facility, IndustryJob, LocationName, LpFaction, MarketLocation, RefreshRun,
@@ -89,3 +90,13 @@ class ScrapItemAdmin(admin.ModelAdmin):
     list_editable = ("group", "group_order", "is_active")
     search_fields = ("name",)
 
+
+
+@admin.register(BooksBaseline)
+class BooksBaselineAdmin(admin.ModelAdmin):
+    list_display = ("taken_at", "loan", "wallet", "pool", "note")
+
+
+@admin.register(BookStock)
+class BookStockAdmin(admin.ModelAdmin):
+    list_display = ("name", "type_id", "units", "unit_cost", "bought_at", "list_price", "location_name")

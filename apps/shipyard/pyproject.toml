@@ -12,6 +12,7 @@ license = { text = "MIT" }
 dependencies = [
     "allianceauth>=4.0",
     "requests>=2.31",
+    "reportlab>=4.0",
 ]
 
 [tool.setuptools.dynamic]
