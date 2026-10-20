@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import BooksBaseline, BookStock
+from .models import BookIgnoredEntry, BooksBaseline, BookStock
 from .models import (
     ScrapItem,
     BuildSnapshot, CharacterSync, Facility, IndustryJob, LocationName, LpFaction, MarketLocation, RefreshRun,
@@ -95,6 +95,12 @@ class ScrapItemAdmin(admin.ModelAdmin):
 @admin.register(BooksBaseline)
 class BooksBaselineAdmin(admin.ModelAdmin):
     list_display = ("taken_at", "source", "loan", "wallet", "other_divs", "pool", "held", "open_escrow", "lp_units", "opening_result", "note")
+
+
+@admin.register(BookIgnoredEntry)
+class BookIgnoredEntryAdmin(admin.ModelAdmin):
+    list_display = ("entry_id", "division", "corporation_id", "reason", "added_at")
+    search_fields = ("entry_id", "reason")
 
 
 @admin.register(BookStock)

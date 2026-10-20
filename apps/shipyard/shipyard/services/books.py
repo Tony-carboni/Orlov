@@ -31,7 +31,7 @@ from collections import defaultdict, deque
 from django.utils import timezone
 
 from .. import app_settings
-from ..models import BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, PriceSnapshot
+from ..models import BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, PriceSnapshot
 from . import projectbooks, projects
 
 M = 1e6
@@ -106,6 +106,33 @@ def _drop_corrections(journal):
     return out
 
 
+def _drop_ignored(journal, cid):
+    """Leave out the lines flagged in the admin (BookIgnoredEntry) and those whose reason matches
+    SHIPYARD_BOOKS_IGNORE_REASONS. Returns (journal, {"count", "net", "lines"})."""
+    flagged = {(r.division, r.entry_id): r.reason for r in BookIgnoredEntry.objects.filter(corporation_id=cid)}
+    patterns = [re.compile(p, re.I) for p in app_settings.SHIPYARD_BOOKS_IGNORE_REASONS]
+    kept, out = [], []
+    for e in journal:
+        why = flagged.get((e.division, e.entry_id))
+        if why is None and e.reason and any(p.search(e.reason) for p in patterns):
+            why = f"reason: {e.reason}"
+        if why is None:
+            kept.append(e)
+        else:
+            out.append([e.date, e.ref_type, e.amount, why])
+    return kept, {"count": len(out), "net": sum(r[2] for r in out), "lines": out}
+
+
+def ignore_entries(entry_ids, reason: str, cid=None, division: int = 1) -> int:
+    """Flag journal lines by id (the corp's division 1 unless told otherwise). Returns how many were new."""
+    cid = cid or projects.corp_id()
+    n = 0
+    for entry_id in entry_ids:
+        _, created = BookIgnoredEntry.objects.get_or_create(corporation_id=cid, division=division, entry_id=int(entry_id), defaults={"reason": reason[:200]})
+        n += 1 if created else 0
+    return n
+
+
 def _is_conversion(s) -> bool:
     return bool(s.lp_used or s.input_units or s.isk_paid)
 
@@ -142,6 +169,7 @@ def compute(now=None) -> dict:
     if now is not None:
         journal = [e for e in journal if e.date <= now]
     journal = _drop_corrections(journal)
+    journal, ignored = _drop_ignored(journal, cid)
     cut = journal[-1].date if journal else base
     if cut < base:
         cut = base
@@ -487,7 +515,7 @@ def compute(now=None) -> dict:
         "held": sorted(held.items(), key=lambda kv: -kv[1]), "held_total": held_total, "held_value": held_value,
         "lp_units": lp_units - lp_used, "lp_cost": lp_left, "lp_bought": lp_units, "open_escrow": open_escrow,
         "assets": assets, "result": result, "moves": moves, "explained": explained, "gap": gap,
-        "move_groups": move_groups, "asset_groups": asset_groups,
+        "move_groups": move_groups, "asset_groups": asset_groups, "ignored": ignored,
         "director": director, "older": (older_cost, older_value), "structure_income": structure_income,
         "live_books": live_books, "books_now": books_now, "live_ahead": (live_books - books_now) if live_books is not None else None,
         "orders": orders, "buyback": buyback, "project_bb": project_bb,

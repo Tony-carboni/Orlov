@@ -8,7 +8,7 @@ from django.contrib.auth.models import Permission
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, ProjectContribution, ProjectSnapshot
+from ..models import BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, ProjectContribution, ProjectSnapshot
 from ..services import books
 
 CORP = 98843356
@@ -177,6 +177,30 @@ class BooksTests(TestCase):
         self.assertIn("November", d["since_label"])
         # the stock position is unchanged
         self.assertAlmostEqual(next(s for s in d["stock"] if s["name"] == "Heavy Water")["units"], 1_990_000)
+
+    def test_ignored_lines_leave_the_books(self):
+        """An accidental sale and its tax, flagged by id, and the owner's settlement, matched by its reason, net out."""
+        before = books.compute()
+        sale = CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_301, division=1, date=at(14), ref_type="market_transaction", amount=147.8e6,
+                                               context_id=9, context_id_type="market_transaction_id")
+        CorpWalletTransaction.objects.create(transaction_id=9, corporation_id=CORP, division=1, date=at(14), type_id=49711, quantity=1, unit_price=147.8e6)
+        tax = CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_302, division=1, date=at(14), ref_type="transaction_tax", amount=-4.98e6)
+        d = books.compute()
+        self.assertAlmostEqual(d["result"], before["result"] + 147.8e6 - 4.98e6, places=2)
+        self.assertEqual(books.ignore_entries([sale.entry_id, tax.entry_id], "accidental corporation order: Drekavac"), 2)
+        self.assertEqual(books.ignore_entries([sale.entry_id], "again"), 0)
+        d = books.compute()
+        self.assertAlmostEqual(d["result"], before["result"], places=2)
+        self.assertLess(abs(d["gap"]), 1.0)
+        self.assertEqual(d["ignored"]["count"], 2)
+        self.assertAlmostEqual(d["ignored"]["net"], 147.8e6 - 4.98e6, places=2)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_303, division=1, date=at(15), ref_type="corporation_account_withdrawal", amount=-142.82e6,
+                                        reason="accidental orders settlement", first_party_id=CORP, second_party_id=4444)
+        d = books.compute()
+        self.assertEqual(d["ignored"]["count"], 3)
+        self.assertAlmostEqual(d["result"], before["result"], places=2)
+        self.assertAlmostEqual(d["ignored"]["net"], 0.0, places=2)
+        self.assertLess(abs(d["gap"]), 1.0)
 
     def test_categories_add_up(self):
         d = books.compute()

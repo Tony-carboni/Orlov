@@ -150,3 +150,6 @@ SHIPYARD_BOOKS_FUEL = getattr(settings, "SHIPYARD_BOOKS_FUEL", [
 # Finance tab: a new reporting period opens at every State of the Alliance post found on the alliance site
 SHIPYARD_BOOKS_POSTS_URL = getattr(settings, "SHIPYARD_BOOKS_POSTS_URL", "https://alliance.orlovfamily.space/")
 SHIPYARD_BOOKS_POST_PATTERN = getattr(settings, "SHIPYARD_BOOKS_POST_PATTERN", r"state-of-the-(alliance|union)")
+# Finance tab: journal lines whose reason matches one of these patterns are left out of the books
+# (mistakes being corrected, e.g. the settlement transfers of orders put up on the corporation by accident)
+SHIPYARD_BOOKS_IGNORE_REASONS = getattr(settings, "SHIPYARD_BOOKS_IGNORE_REASONS", [r"accidental"])

@@ -824,3 +824,24 @@ class BookStock(models.Model):
 
     def __str__(self):
         return f"{self.name}: {self.units:,} at {self.unit_cost:g}"
+
+
+class BookIgnoredEntry(models.Model):
+    """A corporation journal line the Finance tab leaves out (owner, 2026-10-20): mistakes that will be
+    corrected and net to zero, such as sales from orders put up on the corporation by accident and the
+    transfers that settle them. The line still exists in EVE; the books pretend it does not. Lines whose
+    reason matches SHIPYARD_BOOKS_IGNORE_REASONS are left out without a row here."""
+
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    division = models.PositiveSmallIntegerField()
+    entry_id = models.BigIntegerField()
+    reason = models.CharField(max_length=200, blank=True, help_text="Why the line is left out")
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [("corporation_id", "division", "entry_id")]
+        verbose_name = "ignored journal line"
+        verbose_name_plural = "ignored journal lines"
+
+    def __str__(self):
+        return f"ignore {self.entry_id} ({self.reason})"

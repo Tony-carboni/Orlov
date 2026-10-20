@@ -80,6 +80,9 @@ def render(d: dict) -> bytes:
              "were never part of the budget; they count when they sell.")
     if d["structure_income"] is not None:
         text += f" Structure income earned since the last transfer to the corporation, {d['structure_income'] / M:.1f} M, still sits in the structure corporation's wallet."
+    ign = d.get("ignored") or {}
+    if ign.get("count"):
+        text += f" {ign['count']} journal lines are left out of the books ({_m(ign['net'], True)} together): mistakes being corrected, which net to zero once the corrections land."
     story.append(Paragraph(text, note))
 
     story.append(Paragraph(f"2. What happened since {e(d['since_label'])}" + (f" ({base.day} {base:%B}, {base:%H:%M} EVE)" if d.get("period") is not None and d["period"].source else ""), h2))
