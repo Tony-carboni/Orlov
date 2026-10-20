@@ -102,16 +102,24 @@ class BooksTests(TestCase):
         bb = d["buyback"]
         self.assertEqual((bb["lp_units"], bb["lp_used"], bb["lp_left"]), (50_000, 24_000, 26_000))
         self.assertAlmostEqual(bb["lp_avg"], 800.0)
-        inp = bb["inputs"][0]
-        self.assertEqual((inp["bought"], inp["used"], inp["left"]), (1000, 240, 760))
-        self.assertAlmostEqual(inp["left_cost"], 760 * 8813)
-        p = bb["products"][0]
+        month = bb["months"][0]
+        self.assertEqual((month["label"], month["lp_bought"], month["lp_converted"]), ("October 2026", 50_000, 24_000))
+        conv = month["converted"][0]
         cost_each = (24_000 * 800 + 240 * 8813 + 24e6) / 240
-        self.assertAlmostEqual(p["unit_cost"], cost_each)
-        self.assertEqual((p["made"], p["sold"], p["list_units"]), (240, 10, 230))
-        self.assertAlmostEqual(p["tax"], -10 * 211_100 * 0.0337)
-        self.assertAlmostEqual(p["broker"], -50_000)
-        self.assertAlmostEqual(p["net"], 10 * 211_100 - 10 * cost_each - 10 * 211_100 * 0.0337 - 50_000)
+        self.assertEqual((conv["name"], conv["units"]), ("Navy Cap Booster 800", 240))
+        self.assertAlmostEqual(conv["unit_cost"], cost_each)
+        sale = month["sales"][0]
+        self.assertEqual(sale["sold"], 10)
+        self.assertAlmostEqual(sale["tax"], -10 * 211_100 * 0.0337)
+        self.assertAlmostEqual(sale["broker"], -50_000)
+        self.assertAlmostEqual(sale["net"], 10 * 211_100 - 10 * cost_each - 10 * 211_100 * 0.0337 - 50_000)
+        still = month["still"][0]
+        self.assertEqual(still["units"], 230)
+        self.assertAlmostEqual(still["expected"], 230 * 211_100 * (1 - 0.0337) - 230 * cost_each)
+        self.assertAlmostEqual(month["output_value"], 10 * 211_100 + 230 * 211_100)
+        # the input boosters not converted are ordinary stock
+        left = next(x for x in d["stock"] if x["type_id"] == 11289)
+        self.assertEqual(left["units"], 760)
         self.assertAlmostEqual(bb["outside"], 24e6)
         labels = {m[0]: m[1] for m in d["moves"]}
         self.assertAlmostEqual(labels["LP store: 240 Navy Cap Booster 800"], 24e6)  # the ISK from a character's own wallet

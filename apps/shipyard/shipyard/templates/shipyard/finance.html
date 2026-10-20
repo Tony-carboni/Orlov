@@ -86,48 +86,42 @@
 
 {% with bb=d.buyback %}{% if bb.active %}
 <h3 class="h5 mt-4">4. LP buybacks and conversions</h3>
-<p class="small shipyard-k mb-2">The LP the corporation buys, the items it buys to feed LP store offers, what came out of the store and what that sold for, with the sales tax and the broker fees of those listings. Costs follow the items first in, first out.</p>
+<p class="small shipyard-k mb-2">Per month: the LP the corporation bought and converted, what it became in the LP store, what that sold for after sales tax and broker fees, and what is still on sell orders. Items bought to convert but not converted yet are ordinary stock in section 1.</p>
 <div class="row g-3 mb-2">
-    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Net profit so far (sold)</div><div class="fs-4 fw-bold {% if bb.realised >= 0 %}text-success{% else %}text-danger{% endif %}">{{ bb.realised|mil:True }}</div><div class="shipyard-k small">after cost, sales tax and broker fees</div></div></div>
-    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Still listed, expected net</div><div class="fs-4 fw-bold">{{ bb.expected|mil:True }}</div><div class="shipyard-k small">if the rest sells at its list price</div></div></div>
-    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Stock to convert</div><div class="fs-4 fw-bold">{{ bb.stock_to_convert|mil }}</div><div class="shipyard-k small">LP left {{ bb.lp_left|floatformat:0 }} and input items, at cost</div></div></div>
+    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Net profit so far</div><div class="fs-4 fw-bold {% if bb.realised >= 0 %}text-success{% else %}text-danger{% endif %}">{{ bb.realised|mil:True }}</div><div class="shipyard-k small">after cost, sales tax and broker fees</div></div></div>
+    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Projected on what is still listed</div><div class="fs-4 fw-bold">{{ bb.expected|mil:True }}</div><div class="shipyard-k small">at the list price, after sales tax</div></div></div>
+    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">LP not converted yet</div><div class="fs-4 fw-bold">{{ bb.lp_left|floatformat:0 }} LP</div><div class="shipyard-k small">{{ bb.lp_left_value|mil }} at cost</div></div></div>
 </div>
-<h4 class="h6 mt-3">LP bought</h4>
-<div class="table-responsive"><table class="table table-sm align-middle">
-    <thead><tr><th>When</th><th>Paid to</th><th class="text-end">LP</th><th class="text-end">ISK</th><th class="text-end">ISK per LP</th></tr></thead>
-    <tbody>
-        {% for t, units, isk, to in bb.lp_purchases %}<tr><td>{{ t|date:"j M H:i" }}</td><td>{{ to }}</td><td class="text-end">{{ units|floatformat:0 }}</td><td class="text-end">{{ isk|mil }}</td><td class="text-end">{% widthratio isk units 1 %}</td></tr>{% endfor %}
-        <tr class="fw-bold"><td colspan="2">Total · used {{ bb.lp_used|floatformat:0 }} · left {{ bb.lp_left|floatformat:0 }} ({{ bb.lp_left_value|mil }})</td><td class="text-end">{{ bb.lp_units|floatformat:0 }}</td><td class="text-end">{{ bb.lp_cost|mil }}</td><td class="text-end">{{ bb.lp_avg|floatformat:0 }}</td></tr>
-    </tbody>
-</table></div>
-{% if bb.inputs %}
-<h4 class="h6 mt-3">Items bought to convert</h4>
-<div class="table-responsive"><table class="table table-sm align-middle">
-    <thead><tr><th>Item</th><th class="text-end">Bought</th><th class="text-end">Cost</th><th class="text-end">Used in offers</th><th class="text-end">Left to convert</th><th class="text-end">Left, at cost</th></tr></thead>
-    <tbody>{% for i in bb.inputs %}<tr><td>{{ i.name }}</td><td class="text-end">{{ i.bought|floatformat:0 }}</td><td class="text-end">{{ i.bought_cost|mil }}</td><td class="text-end">{{ i.used|floatformat:0 }}</td><td class="text-end">{{ i.left|floatformat:0 }}</td><td class="text-end">{{ i.left_cost|mil }}</td></tr>{% endfor %}</tbody>
+{% for m in bb.months %}
+<div class="card mb-3"><div class="card-body py-2">
+<h4 class="h6 mb-2">{{ m.label }}</h4>
+<ul class="mb-2 small">
+    <li><strong>LP bought:</strong> {% if m.lp_bought %}{{ m.lp_bought|floatformat:0 }} LP for {{ m.lp_isk|mil }} ({{ m.lp_avg|floatformat:0 }} ISK per LP){% else %}none{% endif %}</li>
+    <li><strong>LP converted:</strong> {{ m.lp_converted|floatformat:0 }} LP</li>
+</ul>
+{% if m.converted %}
+<div class="table-responsive"><table class="table table-sm align-middle mb-2">
+    <thead><tr><th>Converted into</th><th class="text-end">Units</th><th class="text-end">Cost</th><th class="text-end">Cost each</th><th>Made of</th></tr></thead>
+    <tbody>{% for c in m.converted %}<tr><td>{{ c.name }}</td><td class="text-end">{{ c.units|floatformat:0 }}</td><td class="text-end">{{ c.cost|mil }}</td><td class="text-end">{{ c.unit_cost|floatformat:0 }}</td><td class="small shipyard-k">{{ c.lp|floatformat:0 }} LP ({{ c.lp_value|mil }}){% if c.input_units %} + {{ c.input_units|floatformat:0 }} {{ c.input }} ({{ c.input_cost|mil }}){% endif %} + LP store ISK {{ c.isk|mil }}</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endif %}
-{% if bb.products %}
-<h4 class="h6 mt-3">What came out of the LP store, and what it earned</h4>
-<div class="table-responsive"><table class="table table-sm align-middle">
-    <thead><tr><th>Item</th><th class="text-end">Made</th><th class="text-end">Cost each</th><th class="text-end">Sold</th><th class="text-end">Revenue</th><th class="text-end">Cost of sold</th><th class="text-end">Sales tax</th><th class="text-end">Broker fees</th><th class="text-end">Net profit</th><th class="text-end">Listed</th><th class="text-end">Expected net</th></tr></thead>
-    <tbody>{% for p in bb.products %}<tr>
-        <td>{{ p.name }}<div class="small shipyard-k">{{ p.lp|floatformat:0 }} LP ({{ p.lp_value|mil }}) + inputs {{ p.input_cost|mil }} + LP store ISK {{ p.isk|mil }}{% if p.outside %}, paid from a character's own wallet{% endif %}</div></td>
-        <td class="text-end">{{ p.made|floatformat:0 }}</td><td class="text-end">{{ p.unit_cost|floatformat:0 }}</td><td class="text-end">{{ p.sold|floatformat:0 }}</td>
-        <td class="text-end">{{ p.revenue|mil }}</td><td class="text-end">{{ p.cost_sold|mil }}</td><td class="text-end">{{ p.tax|mil }}</td><td class="text-end">{{ p.broker|mil }}</td>
-        <td class="text-end fw-semibold {% if p.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ p.net|mil:True }}</td>
-        <td class="text-end">{{ p.list_units|floatformat:0 }}{% if p.list_price %} at {{ p.list_price|floatformat:0 }}{% endif %}</td><td class="text-end">{{ p.expected|mil:True }}</td>
-    </tr>{% endfor %}</tbody>
+{% if m.sales or m.still %}
+<div class="table-responsive"><table class="table table-sm align-middle mb-2">
+    <thead><tr><th>Sales on converted items</th><th class="text-end">Sold</th><th class="text-end">Revenue</th><th class="text-end">Sales tax</th><th class="text-end">Broker fees</th><th class="text-end">Cost</th><th class="text-end">Net profit</th></tr></thead>
+    <tbody>{% for x in m.sales %}<tr><td>{{ x.name }}</td><td class="text-end">{{ x.sold|floatformat:0 }}</td><td class="text-end">{{ x.revenue|mil }}</td><td class="text-end">{{ x.tax|mil }}</td><td class="text-end">{{ x.broker|mil }}</td><td class="text-end">{{ x.cost|mil }}</td><td class="text-end fw-semibold {% if x.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ x.net|mil:True }}</td></tr>{% endfor %}
+    {% for v in m.still %}<tr class="shipyard-k"><td>{{ v.name }}, still on sell orders</td><td class="text-end">{{ v.units|floatformat:0 }}</td><td class="text-end">{{ v.value|mil }} at list</td><td class="text-end" colspan="2"></td><td class="text-end">{{ v.cost|mil }}</td><td class="text-end">{{ v.expected|mil:True }} projected</td></tr>{% endfor %}</tbody>
 </table></div>
-{% if bb.outside %}<p class="small shipyard-k">{{ bb.outside|mil }} of LP store ISK came from a character's own wallet: it is in the items' cost and counted as a contribution to the corporation in section 2.</p>{% endif %}
 {% endif %}
+<p class="mb-0 small"><strong>Summary:</strong> {% if m.lp_bought %}{{ m.lp_isk|mil }} of LP bought{% if m.converted %}, {% endif %}{% endif %}{% if m.converted %}converted into {{ m.output_value|mil }} of sell orders ({{ m.sold_value|mil }} sold{% if m.listed_value %}, {{ m.listed_value|mil }} still listed{% endif %}){% endif %}. Net profit {{ m.realised|mil:True }}{% if m.expected %}, {{ m.expected|mil:True }} more projected: {{ m.total|mil:True }} in total{% endif %}.</p>
+</div></div>
+{% endfor %}
 {% if bb.buying %}
 <h4 class="h6 mt-3">Buying now</h4>
 <div class="table-responsive"><table class="table table-sm align-middle">
     <thead><tr><th>Item</th><th class="text-end">Still to buy</th><th class="text-end">Price</th><th class="text-end">ISK in escrow</th><th>Since</th></tr></thead>
     <tbody>{% for o in bb.buying %}<tr><td>{{ o.name }}</td><td class="text-end">{{ o.remain }} / {{ o.total }}</td><td class="text-end">{{ o.price|floatformat:2 }}</td><td class="text-end">{{ o.escrow|mil }}</td><td>{{ o.issued|date:"j M H:i" }}</td></tr>{% endfor %}</tbody>
 </table></div>
-{% else %}<p class="small shipyard-k">No open buy orders.</p>{% endif %}
+{% endif %}
 {% endif %}{% endwith %}
 
 {% if d.orders %}

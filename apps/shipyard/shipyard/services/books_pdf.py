@@ -120,38 +120,43 @@ def render(d: dict) -> bytes:
     bb = d.get("buyback") or {}
     if bb.get("active"):
         part = [Paragraph("4. LP buybacks and conversions", h2),
-                Paragraph("The LP the corporation buys, the items it buys to feed LP store offers, what came out of the store and what that sold for, "
-                          "with the sales tax and the broker fees of those listings. Costs follow the items first in, first out.", p), Spacer(1, 4)]
-        lrows = [[f"{t.day} {t:%b %H:%M}", e(to), f"{units:,}", _m(isk), f"{isk / units:,.0f}" if units else "–"] for t, units, isk, to in bb["lp_purchases"]]
-        lrows.append([f"<b>Total</b> · used {bb['lp_used']:,} · left {bb['lp_left']:,} ({_m(bb['lp_left_value'])})", "", f"<b>{bb['lp_units']:,}</b>", f"<b>{_m(bb['lp_cost'])}</b>", f"<b>{bb['lp_avg']:,.0f}</b>"])
-        part.append(table(["LP bought", "Paid to", "LP", "ISK", "ISK per LP"], lrows, [62 * mm, 40 * mm, 22 * mm, 26 * mm, 24 * mm], total_rows=(len(lrows),), numeric=(2, 3, 4)))
-        if bb["inputs"]:
-            irows = [[e(i["name"]), f"{i['bought']:,.0f}", _m(i["bought_cost"]), f"{i['used']:,.0f}", f"{i['left']:,.0f}", _m(i["left_cost"])] for i in bb["inputs"]]
-            part += [Spacer(1, 6), table(["Items bought to convert", "Bought", "Cost", "Used", "Left to convert", "Left, at cost"], irows,
-                                         [54 * mm, 20 * mm, 22 * mm, 20 * mm, 30 * mm, 28 * mm], numeric=(1, 2, 3, 4, 5))]
-        if bb["products"]:
-            prows = []
-            for x in bb["products"]:
-                own = " (own wallet)" if x["outside"] else ""
-                prows.append([f"{e(x['name'])}<br/><font size='6.5' color='#5b6b82'>{x['made']:,.0f} made at {x['unit_cost']:,.0f} each: {x['lp']:,} LP {_m(x['lp_value'])}, "
-                              f"inputs {_m(x['input_cost'])}, LP store ISK {_m(x['isk'])}{own}</font>",
-                              f"{x['sold']:,.0f}", _m(x["revenue"]), _m(x["cost_sold"]), _m(x["tax"]), _m(x["broker"]), f"<b>{_m(x['net'], True)}</b>",
-                              f"{x['list_units']:,}" + (f" at {x['list_price']:,.0f}" if x["list_price"] else ""), _m(x["expected"], True)])
-            prows.append(["<b>Total</b>", "", "", "", "", "", f"<b>{_m(bb['realised'], True)}</b>", "", f"<b>{_m(bb['expected'], True)}</b>"])
-            part += [Spacer(1, 6), table(["Out of the LP store", "Sold", "Revenue", "Cost", "Sales tax", "Broker", "Net profit", "Listed", "Expected net"], prows,
-                                         [50 * mm, 11 * mm, 17 * mm, 16 * mm, 15 * mm, 14 * mm, 17 * mm, 20 * mm, 17 * mm],
-                                         total_rows=(len(prows),), numeric=(1, 2, 3, 4, 5, 6, 7, 8))]
-            if bb["outside"]:
-                part.append(Paragraph(f"{bb['outside'] / M:.1f} M of LP store ISK came from a character's own wallet: it is in the items' cost and counted as a contribution in section 2. "
-                                      "Expected net: the items still listed, at their list price, less sales tax at the rate paid so far and their cost.", note))
+                Paragraph("Per month: the LP the corporation bought and converted, what it became in the LP store, what that sold for after sales tax and broker "
+                          "fees, and what is still on sell orders. Items bought to convert but not converted yet are ordinary stock in section 1.", p), Spacer(1, 4)]
+        first = True
+        for mo in bb["months"]:
+            block = [Paragraph(f"<b>{e(mo['label'])}</b>", p)]
+            lp_line = (f"{mo['lp_bought']:,} LP for {_m(mo['lp_isk'])} ({mo['lp_avg']:,.0f} ISK per LP)" if mo["lp_bought"] else "none")
+            block.append(Paragraph(f"LP bought: {lp_line}. LP converted: {mo['lp_converted']:,} LP.", p))
+            if mo["converted"]:
+                crows = []
+                for c in mo["converted"]:
+                    inputs = f" + {c['input_units']:,.0f} {e(c['input'])} ({_m(c['input_cost'])})" if c["input_units"] else ""
+                    crows.append([e(c["name"]), f"{c['units']:,.0f}", _m(c["cost"]), f"{c['unit_cost']:,.0f}",
+                                  f"<font size='7'>{c['lp']:,} LP ({_m(c['lp_value'])}){inputs} + LP store ISK {_m(c['isk'])}</font>"])
+                block += [Spacer(1, 3), table(["Converted into", "Units", "Cost", "Cost each", "Made of"], crows, [48 * mm, 16 * mm, 20 * mm, 20 * mm, 70 * mm], numeric=(1, 2, 3))]
+            if mo["sales"] or mo["still"]:
+                srows = [[e(x["name"]), f"{x['sold']:,.0f}", _m(x["revenue"]), _m(x["tax"]), _m(x["broker"]), _m(x["cost"]), f"<b>{_m(x['net'], True)}</b>"] for x in mo["sales"]]
+                for v in mo["still"]:
+                    srows.append([f"{e(v['name'])}, still on sell orders", f"{v['units']:,}", f"{_m(v['value'])} at list", "", "", _m(v["cost"]), f"{_m(v['expected'], True)} projected"])
+                block += [Spacer(1, 3), table(["Sales on converted items", "Sold", "Revenue", "Sales tax", "Broker", "Cost", "Net profit"], srows,
+                                              [56 * mm, 14 * mm, 24 * mm, 18 * mm, 16 * mm, 20 * mm, 26 * mm], numeric=(1, 2, 3, 4, 5, 6))]
+            summary = []
+            if mo["lp_bought"]:
+                summary.append(f"{_m(mo['lp_isk'])} of LP bought")
+            if mo["converted"]:
+                listed = f", {_m(mo['listed_value'])} still listed" if mo["listed_value"] else ""
+                summary.append(f"converted into {_m(mo['output_value'])} of sell orders ({_m(mo['sold_value'])} sold{listed})")
+            more = f", {_m(mo['expected'], True)} more projected: {_m(mo['total'], True)} in total" if mo["expected"] else ""
+            block += [Spacer(1, 3), Paragraph(f"<b>Summary:</b> {', '.join(summary) or 'no LP activity'}. Net profit {_m(mo['realised'], True)}{more}.", p), Spacer(1, 6)]
+            if first:
+                story.append(KeepTogether(part + block))
+                first = False
+            else:
+                story.append(KeepTogether(block))
         buying = bb.get("buying") or []
         if buying:
             brows = [[e(o["name"]), f"{o['remain']:,} / {o['total']:,}", f"{o['price']:,.2f}", _m(o["escrow"])] for o in buying]
-            part += [Spacer(1, 6), table(["Buying now", "Still to buy", "Price", "ISK in escrow"], brows, [74 * mm, 34 * mm, 30 * mm, 36 * mm], numeric=(1, 2, 3))]
-        else:
-            part.append(Paragraph("No open buy orders.", note))
-        story.append(KeepTogether(part[:4]))
-        story.extend(part[4:])
+            story += [Spacer(1, 4), table(["Buying now", "Still to buy", "Price", "ISK in escrow"], brows, [74 * mm, 34 * mm, 30 * mm, 36 * mm], numeric=(1, 2, 3))]
 
     if d["fuel_rows"]:
         frows = []

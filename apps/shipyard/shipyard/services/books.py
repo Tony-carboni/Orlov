@@ -194,6 +194,7 @@ def compute(now=None) -> dict:
         tax = tax_by_entry.get(entry_id + 1, tax_by_entry.get(entry_id - 1, 0.0))
         events.append((t, 2, "sale", (tid, qty, revenue, tax)))
     sold = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])  # type -> [qty, revenue, cost, sales tax]
+    sold_month = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])  # (YYYY-MM, type) -> [qty, revenue, cost, sales tax]
     bought_units = defaultdict(lambda: [0.0, 0.0])  # type -> [units, cost] bought on the market
     used_units = defaultdict(lambda: [0.0, 0.0])  # type -> [units, cost] used in LP store offers
     lp_used = 0
@@ -212,6 +213,11 @@ def compute(now=None) -> dict:
             s[1] += revenue
             s[2] += cost
             s[3] += tax
+            sm = sold_month[(t.strftime("%Y-%m"), tid)]
+            sm[0] += qty
+            sm[1] += revenue
+            sm[2] += cost
+            sm[3] += tax
         elif not _is_conversion(p):
             lots[p.type_id].append([t, float(p.units), p.unit_cost or 0.0])
             if t <= base:
@@ -341,10 +347,9 @@ def compute(now=None) -> dict:
     goods_tax = defaultdict(float)
     for entry_id, tid in goods_sale_entries:
         goods_tax[tid] += tax_by_entry.get(entry_id + 1, tax_by_entry.get(entry_id - 1, 0.0))
-    project_bb = _project_buybacks(cid, base, cut, led, goods_tax, _broker_by_type(broker_lines, orders), stock_types,
+    project_bb = _project_buybacks(cid, base, cut, led, goods_tax, _broker_split(broker_lines, orders)[0], stock_types,
                                    held_total, held_value, older_cost, older_value, paid_members)
-    buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, lots, names,
-                       bought_units, used_units, orders, broker_lines, batches)
+    buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, sold_month, lots, names, orders, broker_lines)
     if abs(gap) >= 1.0:
         moves.append(["Not explained", gap, "The journal and the position differ: a missing journal page or a new kind of entry"])
 
@@ -398,66 +403,92 @@ def compute(now=None) -> dict:
     }
 
 
-def _broker_by_type(broker_lines, orders) -> dict:
-    """Broker fees of listings, by item type: a fee line at the moment an order was issued (within 90 s)
-    belongs to the orders issued then, split by their value. Orders: open ones and EVE's order history."""
-    out = defaultdict(float)
+def _broker_split(broker_lines, orders):
+    """Broker fees of listings, by item type and by (month, type): each fee line goes to the order issued
+    (or last modified) nearest to it, within 90 seconds. Orders: open ones and EVE's order history."""
+    by_type, by_month = defaultdict(float), defaultdict(float)
     listed = list(orders) + order_history()
     for t, amount in broker_lines:
-        # the order issued (or last modified) nearest to the fee, within 90 seconds
         near = sorted((abs((o["issued"] - t).total_seconds()), i) for i, o in enumerate(listed) if abs((o["issued"] - t).total_seconds()) <= 90)
         if near:
-            out[listed[near[0][1]]["type_id"]] += amount
-    return out
+            tid = listed[near[0][1]]["type_id"]
+            by_type[tid] += amount
+            by_month[(t.strftime("%Y-%m"), tid)] += amount
+    return by_type, by_month
 
 
-def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, lots, names,
-             bought_units, used_units, orders, broker_lines, batches) -> dict:
-    """Buybacks and conversions (owner, 2026-10-20): the LP bought, the items bought to feed LP store
-    offers, the redemptions, the sales of what came out, with their sales tax and broker fees."""
-    brokers = _broker_by_type(broker_lines, orders)
-    input_types = sorted({c_type for c_type in used_units} | {s.input_type_id for s in batches if s.input_type_id})
-    output_types = []
-    for c in conversions:
-        if c["type_id"] not in output_types:
-            output_types.append(c["type_id"])
-    inputs = []
-    for tid in input_types:
-        left_units = sum(r[1] for r in lots[tid])
-        left_cost = sum(r[1] * r[2] for r in lots[tid])
-        inputs.append({"name": names.get(tid, f"type {tid}"), "bought": bought_units[tid][0], "bought_cost": bought_units[tid][1],
-                       "used": used_units[tid][0], "used_cost": used_units[tid][1], "left": left_units, "left_cost": left_cost})
+def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, sold_month, lots, names, orders, broker_lines) -> dict:
+    """LP buybacks and conversions per calendar month (owner, 2026-10-20): LP bought and converted, what it
+    was converted into, what those items sold for with their sales tax and broker fees, the net profit,
+    and what is still on sell orders with its projected net. Items bought to convert that are not
+    converted yet are ordinary stock (section 1)."""
+    import datetime as dt
+
+    by_type, by_month = _broker_split(broker_lines, orders)
     products = []
-    for tid in output_types:
-        made = [c for c in conversions if c["type_id"] == tid]
-        units = sum(c["units"] for c in made)
-        cost = sum(c["total"] for c in made)
-        qty, revenue, cost_sold, tax = sold[tid]
-        broker = brokers.get(tid, 0.0)
+    for c in conversions:
+        if c["type_id"] not in products:
+            products.append(c["type_id"])
+    tax_rate = {}
+    for tid in products:
+        qty, revenue, cost, tax = sold[tid]
+        tax_rate[tid] = (-tax / revenue) if revenue else 0.0
+    listed = {}
+    for tid in products:
+        rows = [o for o in orders if o["type_id"] == tid and not o["is_buy"]]
+        units = sum(o["remain"] for o in rows)
+        value = sum(o["remain"] * o["price"] for o in rows)
         left_units = sum(r[1] for r in lots[tid])
         left_cost = sum(r[1] * r[2] for r in lots[tid])
-        listed = [o for o in orders if o["type_id"] == tid and not o["is_buy"]]
-        list_units = sum(o["remain"] for o in listed)
-        list_value = sum(o["remain"] * o["price"] for o in listed)
-        tax_rate = (-tax / revenue) if revenue else 0.0
-        expected = list_value * (1 - tax_rate) - (left_cost * list_units / left_units if left_units else 0.0)
-        products.append({"name": names.get(tid, f"type {tid}"), "made": units, "cost": cost, "unit_cost": cost / units if units else 0.0,
-                         "lp": sum(c["lp"] for c in made), "lp_value": sum(c["lp_value"] for c in made),
-                         "input_cost": sum(c["input_cost"] for c in made), "isk": sum(c["isk"] for c in made),
-                         "outside": all(c["outside"] for c in made),
-                         "sold": qty, "revenue": revenue, "cost_sold": cost_sold, "tax": tax, "broker": broker,
-                         "net": revenue - cost_sold + tax + broker,
-                         "left": left_units, "left_cost": left_cost, "list_units": list_units, "list_value": list_value,
-                         "list_price": (list_value / list_units) if list_units else None, "expected": expected, "tax_rate": tax_rate})
+        cost_listed = left_cost * units / left_units if left_units else 0.0
+        listed[tid] = {"name": names.get(tid, f"type {tid}"), "units": units, "value": value, "price": (value / units) if units else None,
+                       "cost": cost_listed, "expected": value * (1 - tax_rate[tid]) - cost_listed, "left": left_units, "left_cost": left_cost}
+
+    months = sorted({t.strftime("%Y-%m") for t, *_ in lp_purchases} | {c["t"].strftime("%Y-%m") for c in conversions}
+                    | {m for m, tid in sold_month if tid in products} | {m for m, tid in by_month if tid in products}, reverse=True)
+    out = []
+    for i, key in enumerate(months):
+        bought = [p for p in lp_purchases if p[0].strftime("%Y-%m") == key]
+        made = [c for c in conversions if c["t"].strftime("%Y-%m") == key]
+        conv = []
+        for tid in products:
+            rows = [c for c in made if c["type_id"] == tid]
+            if rows:
+                units = sum(c["units"] for c in rows)
+                cost = sum(c["total"] for c in rows)
+                conv.append({"name": names.get(tid, f"type {tid}"), "units": units, "cost": cost, "unit_cost": cost / units if units else 0.0,
+                             "lp": sum(c["lp"] for c in rows), "lp_value": sum(c["lp_value"] for c in rows),
+                             "input_units": sum(c["input_units"] for c in rows), "input": rows[0]["input"],
+                             "input_cost": sum(c["input_cost"] for c in rows), "isk": sum(c["isk"] for c in rows)})
+        sales = []
+        for tid in products:
+            qty, revenue, cost, tax = sold_month.get((key, tid), [0.0, 0.0, 0.0, 0.0])
+            broker = by_month.get((key, tid), 0.0)
+            if qty or broker:
+                sales.append({"name": names.get(tid, f"type {tid}"), "sold": qty, "revenue": revenue, "cost": cost, "tax": tax, "broker": broker,
+                              "net": revenue - cost + tax + broker})
+        latest = i == 0
+        still = [v for v in listed.values() if v["units"]] if latest else []
+        realised = sum(x["net"] for x in sales)
+        expected = sum(v["expected"] for v in still)
+        sold_value = sum(x["revenue"] for x in sales)
+        listed_value = sum(v["value"] for v in still)
+        lp_b = sum(p[1] for p in bought)
+        isk_b = sum(p[2] for p in bought)
+        first = dt.datetime.strptime(key, "%Y-%m")
+        out.append({"key": key, "label": f"{first:%B %Y}", "lp_bought": lp_b, "lp_isk": isk_b, "lp_avg": (isk_b / lp_b) if lp_b else None,
+                    "purchases": bought, "lp_converted": sum(c["lp"] for c in made), "converted": conv,
+                    "converted_cost": sum(c["cost"] for c in conv), "sales": sales, "still": still,
+                    "realised": realised, "expected": expected, "total": realised + expected,
+                    "sold_value": sold_value, "listed_value": listed_value, "output_value": sold_value + listed_value, "latest": latest})
     buying = [o for o in orders if o["is_buy"]]
-    realised = sum(p["net"] for p in products)
-    expected = sum(p["expected"] for p in products)
-    outside = sum(p["isk"] for p in products if p["outside"])
-    return {"lp_purchases": lp_purchases, "lp_units": lp_units, "lp_cost": lp_cost, "lp_avg": lp_avg, "lp_used": lp_used,
-            "lp_left": lp_units - lp_used, "lp_left_value": lp_left, "inputs": inputs, "products": products, "buying": buying,
-            "realised": realised, "expected": expected, "outside": outside,
-            "stock_to_convert": sum(i["left_cost"] for i in inputs) + lp_left,
-            "active": bool(lp_purchases or products or inputs)}
+    realised = sum(m["realised"] for m in out)
+    expected = sum(m["expected"] for m in out)
+    return {"months": out, "lp_units": lp_units, "lp_cost": lp_cost, "lp_avg": lp_avg, "lp_used": lp_used,
+            "lp_left": lp_units - lp_used, "lp_left_value": lp_left, "buying": buying,
+            "realised": realised, "expected": expected, "total": realised + expected,
+            "outside": sum(c["isk"] for c in conversions if c["outside"]),
+            "active": bool(lp_purchases or conversions)}
 
 
 def _project_buybacks(cid, base, cut, led, goods_tax, brokers, stock_types, held_total, held_value, older_cost, older_value, paid_members) -> dict:
