@@ -93,29 +93,42 @@ def render(d: dict) -> bytes:
 
     pb = d.get("project_bb") or {}
     if pb.get("active"):
-        pct = f" ({pb['margin'] / pb['cost'] * 100:.0f} % over what the projects paid)" if pb.get("cost") else ""
         part = [Paragraph("3. Project buybacks", h2),
-                Paragraph("What the corporation projects paid members since the baseline, and what the corporation sold of those items, at what the projects paid "
-                          "for them (first in, first out; ores count through the minerals they reprocess into), with the sales tax and broker fees of those sales.", p),
-                Spacer(1, 4),
-                Paragraph(f"<b>ISK out</b>, paid to {pb['members']} members: {_m(pb['paid_total'])}. <b>ISK in</b>, sold after fees: {_m(pb['revenue'] + pb['fees'])} "
-                          f"({_m(pb['revenue'])} gross). <b>Margin on what sold</b>: {_m(pb['margin'], True)}{pct}. <b>Still held</b> from projects: {_m(pb['held'])} at cost "
-                          f"({_m(pb['held_value'])} at Jita buy); older stock {_m(pb['older'])}.", p), Spacer(1, 4)]
-        srows = []
-        for r in pb["sold"]:
-            label = e(r["name"]) + (f"<br/><font size='6.5' color='#5b6b82'>plus {_m(r['unmatched'])} from stock older than the projects' records</font>" if r["unmatched"] else "")
-            srows.append([label, f"{r['units']:,.0f}", _m(r["revenue"]), _m(r["cost"]), _m(r["tax"]), _m(r["broker"]), f"<b>{_m(r['margin'], True)}</b>",
-                          f"{r['pct'] * 100:.0f} %" if r["pct"] is not None else "–"])
-        srows.append(["<b>Total</b>", "", f"<b>{_m(pb['revenue'])}</b>", f"<b>{_m(pb['cost'])}</b>", "", f"<b>{_m(pb['fees'])}</b>", f"<b>{_m(pb['margin'], True)}</b>",
-                      f"{pb['pct'] * 100:.0f} %" if pb.get("pct") is not None else ""])
-        part.append(table(["Sold, by item", "Units", "Revenue", "Paid by projects", "Sales tax", "Broker", "Margin", "%"], srows,
-                          [46 * mm, 20 * mm, 18 * mm, 22 * mm, 17 * mm, 15 * mm, 20 * mm, 12 * mm], total_rows=(len(srows),), numeric=(1, 2, 3, 4, 5, 6, 7)))
-        prows = [[e(r["name"]), f"{r['units']:,.0f}", _m(r["isk"]), str(r["members"])] for r in pb["paid"]]
-        part += [Spacer(1, 6), table(["Paid to members, by item", "Units delivered", "ISK paid", "Members"], prows, [80 * mm, 34 * mm, 34 * mm, 26 * mm], numeric=(1, 2, 3)),
-                 Paragraph(f"ISK in minus ISK out since the baseline: {_m(pb['cash_net'], True)}; the difference is mostly goods still held. Paid to members comes from the "
-                           "contributions read every hour; the pool fall in section 2 can differ slightly.", note)]
-        story.append(KeepTogether(part[:5]))
-        story.extend(part[5:])
+                Paragraph("Per month: what the corporation projects paid members, what the corporation sold of those goods at what the projects paid for them "
+                          "(first in, first out; ores count through the minerals they reprocess into), with sales tax and broker fees, and what is still held.", p),
+                Spacer(1, 4)]
+        first = True
+        for mo in pb["months"]:
+            block = [Paragraph(f"<b>{e(mo['label'])}</b>", p),
+                     Paragraph(f"Paid to members: {_m(mo['paid_total'])}" + (f" to {mo['members']} members" if mo["members"] else "")
+                               + f". Sold: {_m(mo['sold_value'])} of goods the projects had bought for {_m(mo['cost_sold'])}.", p)]
+            if mo["paid"]:
+                prows = [[e(r["name"]), f"{r['units']:,.0f}", _m(r["isk"]), str(r["members"])] for r in mo["paid"]]
+                block += [Spacer(1, 3), table(["Bought from members", "Units delivered", "ISK paid", "Members"], prows, [80 * mm, 34 * mm, 34 * mm, 26 * mm], numeric=(1, 2, 3))]
+            if mo["sales"] or mo["still"]:
+                srows = []
+                for x in mo["sales"]:
+                    label = e(x["name"]) + (f"<br/><font size='6.5' color='#5b6b82'>plus {_m(x['unmatched'])} from stock older than the projects' records</font>" if x["unmatched"] else "")
+                    srows.append([label, f"{x['sold']:,.0f}", _m(x["revenue"]), _m(x["tax"]), _m(x["broker"]), _m(x["cost"]), f"<b>{_m(x['net'], True)}</b>",
+                                  f"{x['pct'] * 100:.0f} %" if x["pct"] is not None else "–"])
+                for v in mo["still"]:
+                    srows.append([f"{e(v['name'])}, still held", f"{v['units']:,.0f}", f"{_m(v['value'])} at Jita buy", "", "", _m(v["cost"]), f"{_m(v['expected'], True)} projected", ""])
+                block += [Spacer(1, 3), table(["Sales of project goods", "Sold", "Revenue", "Sales tax", "Broker", "Cost", "Net profit", "Margin"], srows,
+                                              [46 * mm, 18 * mm, 24 * mm, 16 * mm, 15 * mm, 18 * mm, 24 * mm, 13 * mm], numeric=(1, 2, 3, 4, 5, 6, 7))]
+            pct = f" ({mo['pct'] * 100:.0f} % over what the projects paid)" if mo["pct"] is not None else ""
+            more = (f", {_m(mo['expected'], True)} more projected on the {_m(mo['held_cost'])} still held: {_m(mo['total'], True)} in total" if mo["expected"] else "")
+            block += [Spacer(1, 3), Paragraph(f"<b>Summary:</b> {_m(mo['paid_total'])} paid to members; {_m(mo['sold_value'])} of project goods sold. "
+                                              f"Net profit {_m(mo['realised'], True)}{pct}{more}.", p), Spacer(1, 6)]
+            if first:
+                story.append(KeepTogether(part + block[:3]))
+                story.extend(block[3:])
+                first = False
+            else:
+                story.append(KeepTogether(block[:3]))
+                story.extend(block[3:])
+        story.append(Paragraph(f"Paid to members comes from the contributions read every hour (section 2 uses the fall of the projects' pool: {_m(pb['paid_pool'])}). "
+                               "Goods still held are valued at Jita's highest buy, less sales tax at the rate paid so far. Older stock, "
+                               f"{_m(pb['older'])} at cost, is not in these figures.", note))
 
     bb = d.get("buyback") or {}
     if bb.get("active"):

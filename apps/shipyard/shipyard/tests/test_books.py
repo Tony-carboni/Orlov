@@ -137,16 +137,19 @@ class BooksTests(TestCase):
 
     def test_project_buybacks(self):
         pb = books.compute()["project_bb"]
-        self.assertEqual([(r["name"], round(r["isk"])) for r in pb["paid"]], [("Pyerite", 30_000_000)])
-        self.assertEqual(pb["members"], 1)
-        row = pb["sold"][0]
+        month = pb["months"][0]
+        self.assertEqual(month["label"], "October 2026")
+        self.assertEqual([(r["name"], round(r["isk"])) for r in month["paid"]], [("Pyerite", 30_000_000)])
+        self.assertEqual(month["members"], 1)
+        row = month["sales"][0]
         self.assertEqual(row["name"], "Pyerite")
         revenue = 3_000_000 * 16.67  # what the transaction says the Pyerite sold for
         self.assertAlmostEqual(row["revenue"], revenue, places=2)
         self.assertAlmostEqual(row["cost"], 30e6)
         self.assertAlmostEqual(row["tax"], -1.7e6)
-        self.assertAlmostEqual(row["margin"], revenue - 30e6 - 1.7e6, places=2)
-        self.assertAlmostEqual(pb["cash_net"], revenue - 1.7e6 - 30e6, places=2)
+        self.assertAlmostEqual(row["net"], revenue - 30e6 - 1.7e6, places=2)
+        self.assertAlmostEqual(month["realised"], revenue - 30e6 - 1.7e6, places=2)
+        self.assertAlmostEqual(pb["paid_total"], 30e6)
 
     def test_page_and_pdf_for_the_owner_only(self):
         owner = get_user_model().objects.create_user("tony", password="x")
