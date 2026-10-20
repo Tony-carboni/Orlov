@@ -342,3 +342,17 @@ def refresh_all():
 def refresh_prices_and_stats():
     """Cheaper refresh for a shorter beat interval (no EVE Ref calls)."""
     chain(refresh_prices.si(), refresh_market_stats.si()).apply_async()
+
+
+@shared_task
+def books_check_periods():
+    """Hourly: open a new Finance reporting period when the alliance site has a newer State of the Alliance post."""
+    from .services import books
+    run = _run("books_periods")
+    try:
+        period = books.check_posts()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("books periods: %s", exc)
+        _done(run, False, 0, str(exc)[:300])
+        return
+    _done(run, True, 1 if period else 0, f"period opened: {period.source}" if period else "no newer State of the Alliance post")

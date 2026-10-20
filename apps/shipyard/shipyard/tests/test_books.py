@@ -8,7 +8,7 @@ from django.contrib.auth.models import Permission
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, ProjectContribution
+from ..models import BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, ProjectContribution, ProjectSnapshot
 from ..services import books
 
 CORP = 98843356
@@ -134,6 +134,49 @@ class BooksTests(TestCase):
         labels = {m[0]: m[1] for m in d["moves"]}
         self.assertAlmostEqual(labels["LP store: 240 Navy Cap Booster 800"], 0.0)
         self.assertNotIn("Paid in the LP store, not entered as stock", labels)
+
+    def test_a_new_period_opens_at_a_state_of_the_alliance_post(self):
+        """A post dated after the budget baseline opens a period: section 2 then counts from there and adds
+        up to the result minus the opening; stock, LP and goods keep counting from the budget baseline."""
+        p1 = CorpProject.objects.get(project_id="p1")
+        ProjectSnapshot.objects.create(project=p1, taken_at=at(0.5), state="Active", reward_remaining=2387e6)
+        ProjectSnapshot.objects.create(project=p1, taken_at=at(11), state="Active", reward_remaining=2350e6)
+        before = books.compute()
+        posts = [(dt.date(2026, 10, 18), "State of the Alliance, October", "2026-10-18-state-of-the-alliance-october")]
+        with mock.patch.object(books, "state_posts", lambda: posts):
+            self.assertIsNone(books.check_posts())  # the post's date is before the budget baseline of 07:40: nothing opens
+        posts = [(dt.date(2026, 10, 19), "State of the Alliance, November", "2026-10-19-state-of-the-alliance-november")]
+        with mock.patch.object(books, "state_posts", lambda: posts):
+            period = books.check_posts()
+            self.assertIsNotNone(period)
+            self.assertIsNone(books.check_posts())  # once only
+        self.assertEqual(period.taken_at, dt.datetime(2026, 10, 19, tzinfo=dt.timezone.utc))
+        self.assertIn("November", period.source)
+        opening = books.compute(now=period.taken_at)
+        self.assertAlmostEqual(period.opening_result, opening["result"], places=2)
+        self.assertAlmostEqual(period.held, opening["held_total"], places=2)
+        d = books.compute()
+        self.assertLess(abs(d["gap"]), 1.0)
+        self.assertEqual(d["period"].pk, period.pk)
+        self.assertAlmostEqual(d["result"], before["result"], places=2)  # the position does not change with the period
+        self.assertAlmostEqual(sum(m[1] for m in d["moves"]), d["result"] - period.opening_result, places=2)
+        # every movement in the new period is dated after its start (19 Oct 00:00 = hour 16.3): the Heavy Water
+        # profit of hour 1 and the LP store redemption of hour 11 belong to the earlier period
+        labels = [m[0] for m in d["moves"]]
+        self.assertNotIn("Heavy Water sold, profit over its cost", labels)
+        self.assertNotIn("LP store: 240 Navy Cap Booster 800", labels)
+        self.assertEqual(labels, ["Project rewards paid to members", "Goods those rewards bought, still held"])
+        self.assertAlmostEqual(d["moves"][0][1], 0.0, places=2)  # the pool did not move after the period's opening snapshot
+        # a sale inside the new period shows up, and the period keeps adding up
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_201, division=1, date=at(20), ref_type="market_transaction", amount=5 * 211_100,
+                                        context_id=5, context_id_type="market_transaction_id")
+        CorpWalletTransaction.objects.create(transaction_id=5, corporation_id=CORP, division=1, date=at(20), type_id=32014, quantity=5, unit_price=211_100)
+        d = books.compute()
+        self.assertLess(abs(d["gap"]), 1.0)
+        self.assertIn("Navy Cap Booster 800 sold, profit over its cost", [m[0] for m in d["moves"]])
+        self.assertIn("November", d["since_label"])
+        # the stock position is unchanged
+        self.assertAlmostEqual(next(s for s in d["stock"] if s["name"] == "Heavy Water")["units"], 1_990_000)
 
     def test_categories_add_up(self):
         d = books.compute()

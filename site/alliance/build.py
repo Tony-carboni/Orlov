@@ -18,6 +18,7 @@ page address: posts/2026-10-14-state-of-the-union.md becomes /2026-10-14-state-o
 """
 
 import html
+import json
 import pathlib
 import re
 import shutil
@@ -83,6 +84,8 @@ def main() -> int:
     index = render(site=SITE_NAME, title="Alliance news", date="", author="", nav="",
                    content="\n".join(items) or "<p>No posts yet.</p>")
     (DIST / "index.html").write_text(index, encoding="utf-8")
+    # posts.json: the list for other tools (the Shipyard's Finance tab opens a new reporting period at each State of the Alliance post)
+    (DIST / "posts.json").write_text(json.dumps([{k: meta[k] for k in ("slug", "title", "date", "author", "summary")} for meta in posts], indent=1), encoding="utf-8")
     # a 404 page so a mistyped link still looks like ours
     (DIST / "404.html").write_text(render(site=SITE_NAME, title="Not found", date="", author="", nav='<a href="/">All posts</a>',
                                           content="<p>That page does not exist. The posts are on the front page.</p>"), encoding="utf-8")

@@ -94,7 +94,7 @@ class ScrapItemAdmin(admin.ModelAdmin):
 
 @admin.register(BooksBaseline)
 class BooksBaselineAdmin(admin.ModelAdmin):
-    list_display = ("taken_at", "loan", "wallet", "pool", "note")
+    list_display = ("taken_at", "source", "loan", "wallet", "other_divs", "pool", "held", "open_escrow", "lp_units", "opening_result", "note")
 
 
 @admin.register(BookStock)

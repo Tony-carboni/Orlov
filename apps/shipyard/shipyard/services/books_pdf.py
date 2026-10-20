@@ -49,11 +49,13 @@ def render(d: dict) -> bytes:
     cut, base = d["cut"], d["base"]
     story = [
         Paragraph("Orlov Arms International · simplified balance sheet", h1),
-        Paragraph(f"As of {cut.day} {cut:%B %Y}, {cut:%H:%M} EVE time. Movements since the working-budget baseline of {base.day} {base:%B}, {base:%H:%M} EVE. "
-                  "Figures from EVE (ESI) through auth. All amounts in millions of ISK. Prepared for the directors of The Orlov Family.", sub),
+        Paragraph(f"As of {cut.day} {cut:%B %Y}, {cut:%H:%M} EVE time. Movements since {e(d['since_label'])}"
+                  + (f" ({base.day} {base:%B}, {base:%H:%M} EVE)" if d.get("period") is not None and d["period"].source else "")
+                  + ". Figures from EVE (ESI) through auth. All amounts in millions of ISK. Prepared for the directors of The Orlov Family.", sub),
         Paragraph("1. Position against the baseline", h2),
-        Paragraph(f"On {base.day} {base:%B} the corporation's money was separated from the owner's. The corporation works with a budget of {d['loan'] / M:,.0f} M lent by "
-                  "the owner, interest-free and without a repayment date. That loan counts as nothing: the corporation's result is everything above or below it.", p),
+        Paragraph(f"On {d['origin'].day} {d['origin']:%B} the corporation's money was separated from the owner's. The corporation works with a budget of {d['loan'] / M:,.0f} M lent by "
+                  "the owner, interest-free and without a repayment date. That loan counts as nothing: the corporation's result is everything above or below it."
+                  + (f" Since {e(d['since_label'])} the result moved {_m(d['period_result'], True)} (the opening was {_m(d['opening_result'], True)} above the loan)." if d.get("period") is not None and d["period"].source else ""), p),
         Spacer(1, 4),
     ]
     shade_rows = []
@@ -80,7 +82,7 @@ def render(d: dict) -> bytes:
         text += f" Structure income earned since the last transfer to the corporation, {d['structure_income'] / M:.1f} M, still sits in the structure corporation's wallet."
     story.append(Paragraph(text, note))
 
-    story.append(Paragraph(f"2. What happened since the baseline ({base.day} {base:%B}, {base:%H:%M} EVE)", h2))
+    story.append(Paragraph(f"2. What happened since {e(d['since_label'])}" + (f" ({base.day} {base:%B}, {base:%H:%M} EVE)" if d.get("period") is not None and d["period"].source else ""), h2))
     story.append(Paragraph("Every journal line since the baseline lands in exactly one category, so the categories add up to the result.", p))
     story.append(Spacer(1, 4))
     shade_rows = []
@@ -90,7 +92,8 @@ def render(d: dict) -> bytes:
         mrows.append([f"<b>{e(g['label'])}</b>", f"<b>{_m(g['total'], True)}</b>", e(g["note"])])
         for label, v, n_ in g["rows"]:
             mrows.append([f"&nbsp;&nbsp;&nbsp;{e(label)}", _m(v, True), e(n_)])
-    mrows.append(["<b>Total since the baseline</b>", f"<font color='#2e7d32'><b>{_m(d['result'], True)}</b></font>", "Equals the result in section 1"])
+    mrows.append([f"<b>Total since {e(d['since_label'])}</b>", f"<font color='#2e7d32'><b>{_m(d['period_result'], True)}</b></font>",
+                  f"The result in section 1 minus the opening of {_m(d['opening_result'], True)}" if d.get("period") is not None and d["period"].source else "Equals the result in section 1"])
     t = table(["Category", "ISK", "Note"], mrows, [72 * mm, 24 * mm, 78 * mm], total_rows=(len(mrows),))
     t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), colors.HexColor("#f4f6fa")) for b in shade_rows]))
     story.append(t)

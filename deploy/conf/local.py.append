@@ -203,6 +203,12 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_scrap_catalog"] = {
     "schedule": crontab(minute="30", hour="4", day_of_week="sunday"),
 }
 
+# Shipyard: the Finance tab opens a new reporting period at every State of the Alliance post on the alliance site (hourly)
+CELERYBEAT_SCHEDULE["shipyard_books_check_periods"] = {
+    "task": "shipyard.tasks.books_check_periods",
+    "schedule": crontab(minute="45"),
+}
+
 # Shipyard: the executor corp's projects into the Corp projects snapshots (hourly)
 CELERYBEAT_SCHEDULE["shipyard_refresh_corp_projects"] = {
     "task": "shipyard.tasks.refresh_corp_projects",

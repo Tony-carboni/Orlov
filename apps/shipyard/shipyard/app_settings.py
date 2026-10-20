@@ -147,3 +147,6 @@ SHIPYARD_BOOKS_FUEL = getattr(settings, "SHIPYARD_BOOKS_FUEL", [
     {"name": "Orlov Mining Facility I (Athanor, Piekura)", "blocks_per_hour": 4},
     {"name": "Orlov Mining Facility II (Athanor, Saatuban)", "blocks_per_hour": 4},
 ])
+# Finance tab: a new reporting period opens at every State of the Alliance post found on the alliance site
+SHIPYARD_BOOKS_POSTS_URL = getattr(settings, "SHIPYARD_BOOKS_POSTS_URL", "https://alliance.orlovfamily.space/")
+SHIPYARD_BOOKS_POST_PATTERN = getattr(settings, "SHIPYARD_BOOKS_POST_PATTERN", r"state-of-the-(alliance|union)")

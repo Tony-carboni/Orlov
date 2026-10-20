@@ -770,17 +770,29 @@ class RefreshRun(models.Model):
 
 
 class BooksBaseline(models.Model):
-    """The owner's working budget (2026-10-18): what the corporation held at the moment its money was
-    separated from the owner's. The loan counts as nothing; the Finance tab's result is everything above it."""
+    """A reporting period of the Finance tab, with the corporation's position at its start (the opening).
+    The oldest row is the owner's working budget (2026-10-18: the loan that counts as nothing); every
+    State of the Alliance post after it opens a new period, created by the hourly task from the alliance
+    site's posts.json (or by hand). Section 2 shows the movements since the newest period's start and adds
+    up to the result minus the opening result."""
 
-    taken_at = models.DateTimeField(help_text="The baseline moment (EVE time)")
-    loan = models.FloatField(help_text="The working budget lent by the owner, ISK")
-    wallet = models.FloatField(help_text="Master wallet (division 1) at the baseline, ISK")
-    pool = models.FloatField(help_text="Reward ISK in the active projects at the baseline, ISK")
+    taken_at = models.DateTimeField(help_text="The period's start (EVE time): the budget baseline, or the date of a State of the Alliance post")
+    loan = models.FloatField(help_text="The working budget lent by the owner, ISK (the same on every row)")
+    wallet = models.FloatField(help_text="Master wallet (division 1) at the start, ISK")
+    other_divs = models.FloatField(default=0, help_text="Wallet divisions 2 to 6 at the start, ISK")
+    pool = models.FloatField(help_text="Reward ISK in the active projects at the start, ISK")
+    held = models.FloatField(default=0, help_text="Goods from project buybacks held at the start, at what the projects paid")
+    open_escrow = models.FloatField(default=0, help_text="ISK in open buy orders at the start")
+    lp_units = models.IntegerField(default=0, help_text="Loyalty points held at the start")
+    lp_cost = models.FloatField(default=0, help_text="What those loyalty points cost, ISK")
+    opening_result = models.FloatField(default=0, help_text="Assets above the loan at the start, ISK (0 for the budget baseline)")
+    source = models.CharField(max_length=200, blank=True, help_text="What opened the period: the State of the Alliance post's title and date")
     note = models.CharField(max_length=300, blank=True)
 
     class Meta:
-        verbose_name = "books baseline"
+        ordering = ["taken_at"]
+        verbose_name = "books period"
+        verbose_name_plural = "books periods"
 
     def __str__(self):
         return f"Baseline {self.taken_at:%Y-%m-%d %H:%M}: {self.loan / 1e6:,.0f} M"

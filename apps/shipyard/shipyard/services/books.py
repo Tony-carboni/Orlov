@@ -43,7 +43,22 @@ DIRECTOR_DIVISION = 7
 
 
 def baseline():
+    """The newest period (its start and opening figures); the loan comes from the oldest, the budget baseline."""
     return BooksBaseline.objects.order_by("-taken_at").first()
+
+
+def budget():
+    return BooksBaseline.objects.order_by("taken_at").first()
+
+
+def _pool_at(cid, when):
+    """Reward ISK in the active projects at a past moment, from the hourly snapshots: per project the last
+    snapshot at or before `when`; a project without one by then did not exist yet."""
+    from ..models import ProjectSnapshot
+    latest = {}
+    for snap in ProjectSnapshot.objects.filter(project__corporation_id=cid, taken_at__lte=when).order_by("taken_at", "id"):
+        latest[snap.project_id] = snap
+    return sum(snap.reward_remaining for snap in latest.values() if snap.state == "Active")
 
 
 def _names(ids) -> dict:
@@ -114,16 +129,24 @@ def compute(now=None) -> dict:
     b = baseline()
     if b is None:
         return None
+    first = budget()
+    if now is not None:
+        # the position at a past moment: the period in force then
+        b = BooksBaseline.objects.filter(taken_at__lte=now).order_by("-taken_at").first() or first
     cid = projects.corp_id()
-    base = b.taken_at
+    base = b.taken_at          # the period's start: movements count from here
+    origin = first.taken_at    # the budget baseline: stock and goods count from here (position)
+    loan = first.loan
     divisions = list(app_settings.SHIPYARD_BOOKS_DIVISIONS)
-    journal = list(CorpJournalEntry.objects.filter(corporation_id=cid, date__gte=base, division__in=divisions).order_by("date", "entry_id"))
+    journal = list(CorpJournalEntry.objects.filter(corporation_id=cid, date__gte=origin, division__in=divisions).order_by("date", "entry_id"))
     if now is not None:
         journal = [e for e in journal if e.date <= now]
     journal = _drop_corrections(journal)
     cut = journal[-1].date if journal else base
+    if cut < base:
+        cut = base
     # a market journal line names its transaction in context_id (the transaction's journal_ref_id points elsewhere)
-    txs = {t.transaction_id: t for t in CorpWalletTransaction.objects.filter(corporation_id=cid, date__gte=base, date__lte=cut)}
+    txs = {t.transaction_id: t for t in CorpWalletTransaction.objects.filter(corporation_id=cid, date__gte=origin, date__lte=cut)}
     batches = [s for s in BookStock.objects.all().order_by("bought_at", "id") if s.bought_at <= cut]
     stock_types = {s.type_id for s in batches} | {s.input_type_id for s in batches if s.input_type_id}
     stock_types |= {t.type_id for t in txs.values() if t.is_buy}
@@ -146,60 +169,79 @@ def compute(now=None) -> dict:
     lp_units, lp_cost = 0, 0.0
     stock_paid = []  # withdrawals that paid for a stock batch: [batch id, amount]
     transfers_out = 0.0
-    purchase_left = {s.id: s.units * (s.unit_cost or 0) for s in batches if s.bought_at > base and not _is_conversion(s)}
+    purchase_left = {s.id: s.units * (s.unit_cost or 0) for s in batches if s.bought_at > origin and not _is_conversion(s)}
+    lp_units, lp_cost = b.lp_units, b.lp_cost  # the LP held at the period's start, then what the period bought
+    period_sales = set()  # stock sales inside the period (the profit moves); all sales feed the position and the months
     for e in journal:
-        cash[e.division] += e.amount
+        inp = e.date >= base  # inside the period: a movement; before it: only the position (stock, LP, months)
+        if inp:
+            cash[e.division] += e.amount
         rt = e.ref_type
         t = txs.get(e.context_id) if e.context_id_type == "market_transaction_id" else None
         if rt == "market_transaction":
             if e.amount >= 0:
                 if t is None:
-                    untyped_sales += e.amount
+                    if inp:
+                        untyped_sales += e.amount
                 elif t.type_id in stock_types:
                     stock_sales.append([t.date, t.type_id, t.quantity, e.amount, e.entry_id])
+                    if inp:
+                        period_sales.add(e.entry_id)
                 else:
-                    goods_sales[names.get(t.type_id, f"type {t.type_id}")] += e.amount
+                    if inp:
+                        goods_sales[names.get(t.type_id, f"type {t.type_id}")] += e.amount
                     goods_sale_entries.append([e.entry_id, t.type_id, e.date])
             elif t is not None:
-                market_buys.append([t.date, t.type_id, t.quantity, -e.amount])
-            else:
+                market_buys.append([t.date, t.type_id, t.quantity, -e.amount, inp])
+            elif inp:
                 other_buys += e.amount
         elif rt == "market_escrow" and t is not None and t.is_buy and e.amount < 0:
-            market_buys.append([t.date, t.type_id, t.quantity, -e.amount])  # a buy order that filled at once
+            market_buys.append([t.date, t.type_id, t.quantity, -e.amount, inp])  # a buy order that filled at once
         elif rt == "market_escrow":
-            escrow += e.amount
+            if inp:
+                escrow += e.amount
         elif rt in FEES:
-            fees += e.amount
+            if inp:
+                fees += e.amount
             if rt == "transaction_tax":
                 tax_by_entry[e.entry_id] = e.amount
             elif rt == "brokers_fee":
                 broker_lines.append([e.date, e.amount])
         elif rt == "project_payouts":
-            project_net += e.amount
+            if inp:
+                project_net += e.amount
         elif rt == "lp_store":
-            lp_store_paid += e.amount
+            if inp:
+                lp_store_paid += e.amount
         elif rt == "player_donation" and e.amount > 0:
+            if not inp:
+                continue
             m = DIRECT_SALE.search(e.reason or "")
             row = {"t": e.date, "who": names.get(e.first_party_id, str(e.first_party_id)), "reason": e.reason, "amount": e.amount}
             (direct_sales if m else deposits).append({**row, "item": m.group(1).strip() if m else ""})
         elif rt == "corporation_account_withdrawal":
             if e.first_party_id == cid and e.second_party_id == cid:
                 # between wallet divisions: within 1-6 it nets to zero; to division 7 it leaves the books
-                transfers_out += e.amount
+                if inp:
+                    transfers_out += e.amount
                 continue
             lp = LP_REASON.search(e.reason or "")
             if lp and e.amount < 0:
-                lp_units += int(re.sub(r"[.,]", "", lp.group(1)))
-                lp_cost += -e.amount
-                lp_purchases.append([e.date, int(re.sub(r"[.,]", "", lp.group(1))), -e.amount, names.get(e.second_party_id, str(e.second_party_id))])
+                units = int(re.sub(r"[.,]", "", lp.group(1)))
+                lp_purchases.append([e.date, units, -e.amount, names.get(e.second_party_id, str(e.second_party_id))])
+                if inp:
+                    lp_units += units
+                    lp_cost += -e.amount
                 continue
             paid = next((bid for bid, left in purchase_left.items() if left and abs(-e.amount - left) <= max(1.0, 0.001 * left)), None)
             if paid is not None and e.amount < 0:
-                stock_paid.append([paid, -e.amount])
+                if inp:
+                    stock_paid.append([paid, -e.amount])
                 purchase_left[paid] = 0
                 continue
-            payouts.append({"t": e.date, "to": names.get(e.second_party_id, str(e.second_party_id)), "reason": e.reason, "amount": e.amount})
-        else:
+            if inp:
+                payouts.append({"t": e.date, "to": names.get(e.second_party_id, str(e.second_party_id)), "reason": e.reason, "amount": e.amount})
+        elif inp:
             others[rt] += e.amount
 
     # --- stock: every lot at cost, first in, first out ---------------------------------------------
@@ -209,12 +251,13 @@ def compute(now=None) -> dict:
     events = []  # (t, order, kind, payload): purchases and redemptions before the sales of the same moment
     for s in batches:
         events.append((s.bought_at, 1 if _is_conversion(s) else 0, "batch", s))
-    for t, tid, qty, cost in market_buys:
+    for t, tid, qty, cost, inp in market_buys:
         events.append((t, 0, "buy", (tid, qty, cost)))
     for t, tid, qty, revenue, entry_id in stock_sales:
         tax = tax_by_entry.get(entry_id + 1, tax_by_entry.get(entry_id - 1, 0.0))
-        events.append((t, 2, "sale", (tid, qty, revenue, tax)))
+        events.append((t, 2, "sale", (tid, qty, revenue, tax, entry_id in period_sales)))
     sold = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])  # type -> [qty, revenue, cost, sales tax]
+    sold_period = defaultdict(lambda: [0.0, 0.0, 0.0])  # type -> [qty, revenue, cost] inside the period (the profit moves)
     sold_month = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])  # (YYYY-MM, type) -> [qty, revenue, cost, sales tax]
     bought_units = defaultdict(lambda: [0.0, 0.0])  # type -> [units, cost] bought on the market
     used_units = defaultdict(lambda: [0.0, 0.0])  # type -> [units, cost] used in LP store offers
@@ -227,13 +270,18 @@ def compute(now=None) -> dict:
             bought_units[tid][0] += qty
             bought_units[tid][1] += cost
         elif kind == "sale":
-            tid, qty, revenue, tax = p
+            tid, qty, revenue, tax, inp = p
             cost, _ = _take(lots[tid], float(qty))
             s = sold[tid]
             s[0] += qty
             s[1] += revenue
             s[2] += cost
             s[3] += tax
+            if inp:
+                sp = sold_period[tid]
+                sp[0] += qty
+                sp[1] += revenue
+                sp[2] += cost
             sm = sold_month[(t.strftime("%Y-%m"), tid)]
             sm[0] += qty
             sm[1] += revenue
@@ -241,7 +289,7 @@ def compute(now=None) -> dict:
             sm[3] += tax
         elif not _is_conversion(p):
             lots[p.type_id].append([t, float(p.units), p.unit_cost or 0.0])
-            if t <= base:
+            if t <= origin:
                 stock_base += p.units * (p.unit_cost or 0.0)
         else:
             lp_value = p.lp_used * lp_avg
@@ -251,8 +299,9 @@ def compute(now=None) -> dict:
                 used_units[p.input_type_id][1] += input_cost
             total = lp_value + input_cost + p.isk_paid
             lots[p.type_id].append([t, float(p.units), total / p.units if p.units else 0.0])
-            lp_used += p.lp_used
-            conversions.append({"type_id": p.type_id, "t": t, "name": p.name, "units": p.units, "lp": p.lp_used, "lp_value": lp_value, "input": names.get(p.input_type_id, ""),
+            if t >= base:
+                lp_used += p.lp_used
+            conversions.append({"type_id": p.type_id, "t": t, "in_period": t >= base, "name": p.name, "units": p.units, "lp": p.lp_used, "lp_value": lp_value, "input": names.get(p.input_type_id, ""),
                                 "input_units": input_taken, "input_cost": input_cost, "isk": p.isk_paid, "outside": p.isk_paid_by == "outside", "total": total})
     stock_lines = []
     stock_now = 0.0
@@ -266,7 +315,7 @@ def compute(now=None) -> dict:
                                 "unit_cost": (value / units) if units > 1e-9 else 0.0,
                                 "list_price": last.list_price if last else None, "location": last.location_name if last else ""})
     bought_since = sum(s.units * (s.unit_cost or 0) for s in batches if s.bought_at > base and not _is_conversion(s))
-    market_bought = sum(c for _, _, _, c in market_buys)
+    market_bought = sum(c for _, _, _, c, inp in market_buys if inp)
     lp_left = lp_cost - lp_used * lp_avg
 
     # --- project goods still held, split at the baseline -----------------------------------------
@@ -281,8 +330,8 @@ def compute(now=None) -> dict:
         name = pnames.get(tid, str(tid))
         sold_directly = any(name.lower().startswith(w[:6]) for w in direct_words)
         for t, qty, cost, *rest in queue:
-            origin = rest[0] if rest else "item"
-            if t >= base:
+            lot_origin = rest[0] if rest else "item"
+            if t >= origin:
                 if sold_directly:
                     continue
                 held[name] += qty * cost
@@ -291,14 +340,14 @@ def compute(now=None) -> dict:
                 hi[0] += qty
                 hi[1] += qty * cost
                 hi[2] += qty * prices.get(tid, 0.0)
-                hi[3] = origin
+                hi[3] = lot_origin
             else:
                 older_cost += qty * cost
                 older_value += qty * prices.get(tid, 0.0)
     held_total = sum(held.values())
 
     # --- open orders (EVE now) ---------------------------------------------------------------------
-    orders = live_orders()
+    orders = live_orders() if now is None else []  # the orders of a past moment are not known
     open_escrow = sum(o["escrow"] for o in orders if o["is_buy"] and o["issued"] <= cut)
     order_names = _names([o["type_id"] for o in orders if o["type_id"] not in names])
     for o in orders:
@@ -308,12 +357,16 @@ def compute(now=None) -> dict:
         o["value"] = o["remain"] * o["price"]
 
     # --- position --------------------------------------------------------------------------------
-    pool = sum(p.reward_remaining for p in CorpProject.objects.filter(corporation_id=cid, missing=False, state="Active"))
-    n_projects = CorpProject.objects.filter(corporation_id=cid, missing=False, state="Active").count()
+    if now is None:
+        pool = sum(p.reward_remaining for p in CorpProject.objects.filter(corporation_id=cid, missing=False, state="Active"))
+        n_projects = CorpProject.objects.filter(corporation_id=cid, missing=False, state="Active").count()
+    else:
+        pool = _pool_at(cid, now)
+        n_projects = 0
     wallet = b.wallet + cash.get(1, 0.0)
-    other_divs = sum(v for d, v in cash.items() if d != 1)
+    other_divs = b.other_divs + sum(v for d, v in cash.items() if d != 1)
     assets = wallet + other_divs + pool + stock_now + held_total + lp_left + open_escrow
-    result = assets - b.loan
+    result = assets - loan
     paid_members = b.pool + (-project_net) - pool
 
     # --- movements, in the order of the sheet ------------------------------------------------------
@@ -326,14 +379,14 @@ def compute(now=None) -> dict:
         moves.append(["Project goods sold on the market (gross)", sum(goods_sales.values()) + untyped_sales, note])
     for d in direct_sales:
         moves.append([f"Goods sold directly ({d['item']})", d["amount"], f"Deposited by {d['who']}, {_when(d['t'])}; the lot left the stock"])
-    for tid, (qty, revenue, cost, _tax) in sold.items():
+    for tid, (qty, revenue, cost) in sold_period.items():
         if qty:
             moves.append([f"{names.get(tid, tid)} sold, profit over its cost", revenue - cost,
                           f"{qty:,.0f} units for {revenue / M:.1f} M, less what they cost = {cost / M:.1f} M"])
     if escrow:
-        moves.append(["Escrow of corporation buy orders", escrow, "Set aside (−) for open buy orders or returned (+); an order placed before the baseline was not part of the budget"])
-    if open_escrow:
-        moves.append(["ISK still in open buy orders", open_escrow, "Corporation money waiting in buy orders (section 1)"])
+        moves.append(["Escrow of corporation buy orders", escrow, "Set aside (−) for open buy orders or returned (+); an order placed before the period was not part of its opening"])
+    if abs(open_escrow - b.open_escrow) >= 1:
+        moves.append(["ISK still in open buy orders", open_escrow - b.open_escrow, "Corporation money waiting in buy orders (section 1), against the period's opening"])
     for d in deposits:
         rule = app_settings.SHIPYARD_BOOKS_STRUCTURE_TRANSFER
         label = "Structure income transferred to the corporation" if rule and re.search(rule, d["reason"] or "", re.I) else f"Deposit: {d['reason'] or 'no reason given'}"
@@ -349,10 +402,12 @@ def compute(now=None) -> dict:
     for rt, amount in sorted(others.items()):
         moves.append([f"Other: {rt.replace('_', ' ')}", amount, ""])
     moves.append(["Project rewards paid to members", -paid_members, "Fall of the active projects' pool, corrected for ISK put into new projects and refunds of closed ones"])
-    moves.append(["Goods those rewards bought, still held", held_total, "At cost, as in section 1"])
+    moves.append(["Goods those rewards bought, still held", held_total - b.held, "At cost, as in section 1" + (f"; {b.held / M:.1f} M of it was already held at the period's start" if b.held else "")])
     if market_bought:
-        bought_names = sorted({names.get(tid, str(tid)) for _, tid, _, _ in market_buys})
+        bought_names = sorted({names.get(tid, str(tid)) for _, tid, _, _, inp in market_buys if inp})
         moves.append(["Bought on the market", 0.0, f"{market_bought / M:.1f} M paid for {', '.join(bought_names)}, held as stock at cost or used below"])
+    all_conv = list(conversions)
+    conversions = [c for c in conversions if c["in_period"]]
     corp_isk = sum(c["isk"] for c in conversions if not c["outside"])
     for c in conversions:
         value = c["isk"] if c["outside"] else 0.0  # corp-paid ISK nets against the LP store payment below
@@ -368,10 +423,10 @@ def compute(now=None) -> dict:
         moves.append(["Stock bought", bought_since - paid_in_books,
                       f"{bought_since / M:.1f} M of stock since the baseline, now held at buy value"
                       + (f"; {(bought_since - paid_in_books) / M:.1f} M of it not paid from a corporation wallet" if abs(bought_since - paid_in_books) >= 1 else "")])
-    if lp_cost:
-        moves.append(["LP bought", 0.0, f"{lp_cost / M:.1f} M paid for {lp_units:,} LP, held at cost until used"])
+    if lp_cost - b.lp_cost:
+        moves.append(["LP bought", 0.0, f"{(lp_cost - b.lp_cost) / M:.1f} M paid for {lp_units - b.lp_units:,} LP, held at cost until used"])
     explained = sum(m[1] for m in moves)
-    gap = result - explained
+    gap = (result - b.opening_result) - explained
     goods_tax_month = defaultdict(float)  # (YYYY-MM, type) -> sales tax of project-goods sales
     for entry_id, tid, when in goods_sale_entries:
         goods_tax_month[(when.strftime("%Y-%m"), tid)] += tax_by_entry.get(entry_id + 1, tax_by_entry.get(entry_id - 1, 0.0))
@@ -381,7 +436,8 @@ def compute(now=None) -> dict:
             sale_prices[t.type_id].add(t.unit_price)
     project_bb = _project_buybacks(cid, base, cut, led, goods_tax_month, _broker_split(broker_lines, orders, sale_prices)[1], stock_types,
                                    held_items, older_cost, older_value, paid_members)
-    buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices)
+    all_conversions = all_conv
+    buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, all_conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices)
     if abs(gap) >= 1.0:
         moves.append(["Not explained", gap, "The journal and the position differ: a missing journal page or a new kind of entry"])
     outputs = {c["name"] for c in conversions}
@@ -421,10 +477,12 @@ def compute(now=None) -> dict:
             paying += bph
         fuel_rows.append({"name": f["name"], "bph": bph, "sponsored": sponsored,
                           "day": 0.0 if sponsored else bph * 24 * fuel_price, "month": 0.0 if sponsored else bph * 24 * 30 * fuel_price})
-    hours = max(0.0, (cut - base).total_seconds() / 3600)
+    hours = max(0.0, (cut - origin).total_seconds() / 3600)
 
     return {
-        "cut": cut, "base": base, "loan": b.loan, "wallet": wallet, "other_divs": other_divs, "pool": pool, "n_projects": n_projects,
+        "cut": cut, "base": base, "origin": origin, "loan": loan, "period": b, "opening_result": b.opening_result,
+        "since_label": b.source or f"the working-budget baseline of {origin.day} {origin:%B}, {origin:%H:%M} EVE",
+        "period_result": result - b.opening_result, "wallet": wallet, "other_divs": other_divs, "pool": pool, "n_projects": n_projects,
         "stock": stock_lines, "stock_now": stock_now, "stock_base": stock_base,
         "held": sorted(held.items(), key=lambda kv: -kv[1]), "held_total": held_total, "held_value": held_value,
         "lp_units": lp_units - lp_used, "lp_cost": lp_left, "lp_bought": lp_units, "open_escrow": open_escrow,
@@ -784,6 +842,62 @@ def _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held
         groups.append({"key": "lp", "label": "Loyalty points", "id": "as-lp", "total": lp_left,
                        "rows": [[f"{lp_units:,} LP not converted yet", lp_left, "At what the corporation paid per LP"]]})
     return groups
+
+
+def open_period(start_at, source: str = "", note: str = ""):
+    """Open a reporting period at `start_at`: the corporation's position at that moment becomes the opening.
+    Returns the new row, or None when a period already starts at or after that moment."""
+    first = budget()
+    if first is None or start_at <= first.taken_at:
+        return None
+    if BooksBaseline.objects.filter(taken_at__gte=start_at).exists():
+        return None
+    d = compute(now=start_at)
+    return BooksBaseline.objects.create(
+        taken_at=start_at, loan=first.loan, wallet=d["wallet"], other_divs=d["other_divs"], pool=d["pool"], held=d["held_total"],
+        open_escrow=d["open_escrow"], lp_units=int(d["lp_units"]), lp_cost=d["lp_cost"], opening_result=d["result"], source=source[:200], note=note[:300],
+    )
+
+
+def state_posts() -> list:
+    """The State of the Alliance posts on the alliance site, newest first: [(date, title, slug)]. posts.json
+    first, the front page's links as the fallback; [] when the site does not answer."""
+    import datetime as dt
+    import requests
+
+    url = app_settings.SHIPYARD_BOOKS_POSTS_URL.rstrip("/") + "/"
+    pattern = re.compile(app_settings.SHIPYARD_BOOKS_POST_PATTERN, re.I)
+    out = []
+    try:
+        r = requests.get(url + "posts.json", timeout=20)
+        if r.ok:
+            for p in r.json():
+                if pattern.search(p.get("slug", "")) or pattern.search(p.get("title", "").lower().replace(" ", "-")):
+                    out.append((dt.date.fromisoformat(p["date"]), p.get("title", ""), p.get("slug", "")))
+        else:
+            r = requests.get(url, timeout=20)
+            for slug in re.findall(r'href="/?([0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+)\.html"', r.text if r.ok else ""):
+                if pattern.search(slug):
+                    out.append((dt.date.fromisoformat(slug[:10]), slug[11:].replace("-", " ").capitalize(), slug))
+    except Exception:  # noqa: BLE001
+        return []
+    out.sort(reverse=True)
+    return out
+
+
+def check_posts():
+    """Open a new period when the alliance site has a State of the Alliance post newer than the current one.
+    Returns the new period or None."""
+    import datetime as dt
+    posts = state_posts()
+    if not posts:
+        return None
+    day, title, slug = posts[0]
+    start = dt.datetime(day.year, day.month, day.day, tzinfo=dt.timezone.utc)
+    current = baseline()
+    if current is None or start <= current.taken_at:
+        return None
+    return open_period(start, source=f"{title} ({day.isoformat()})", note=f"opened by the hourly check from {app_settings.SHIPYARD_BOOKS_POSTS_URL}{slug}.html")
 
 
 def _cached_get(key, fn, seconds=300):

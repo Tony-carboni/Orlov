@@ -10,7 +10,7 @@
 <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
     <div>
         <h2 class="h4 mb-1">Orlov Arms International · simplified balance sheet</h2>
-        <div class="shipyard-k small">As of {{ d.cut|date:"j F Y, H:i" }} EVE (the corporation's last journal line). Movements since the working-budget baseline of {{ d.base|date:"j F, H:i" }} EVE. All amounts in millions of ISK.</div>
+        <div class="shipyard-k small">As of {{ d.cut|date:"j F Y, H:i" }} EVE (the corporation's last journal line). Movements since {{ d.since_label }}{% if d.period.source %} ({{ d.base|date:"j F, H:i" }} EVE){% endif %}. All amounts in millions of ISK.</div>
     </div>
     <div class="d-flex gap-2">
         <form method="post" action="{% url 'shipyard:finance_refresh' %}">{% csrf_token %}
@@ -22,6 +22,7 @@
 
 <div class="row g-3 mb-3">
     <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Result against the baseline</div><div class="fs-3 fw-bold {% if d.result >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.result|mil:True }}</div></div></div>
+    {% if d.period.source %}<div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Since {{ d.since_label }}</div><div class="fs-3 fw-bold {% if d.period_result >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.period_result|mil:True }}</div><div class="shipyard-k small">the opening was {{ d.opening_result|mil:True }} above the loan</div></div></div>{% endif %}
     <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Total assets</div><div class="fs-3 fw-bold">{{ d.assets|mil }}</div><div class="shipyard-k small">against a loan of {{ d.loan|mil }}</div></div></div>
     <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Master wallet</div><div class="fs-3 fw-bold">{{ d.wallet|mil }}</div><div class="shipyard-k small">{{ d.pool|mil }} still inside {{ d.n_projects }} active projects</div></div></div>
 </div>
@@ -50,8 +51,8 @@
 </table></div>
 <p class="small shipyard-k">Not included: {% if d.director is not None %}wallet division 7 (the Director division, {{ d.director|mil }}), the owner's characters' shared wallet. {% endif %}Project goods paid for before the baseline and not sold yet, about {{ d.older.0|mil }} at cost ({{ d.older.1|mil }} at Jita buy): never part of the budget, they count when they sell.{% if d.structure_income is not None %} Structure income since the last transfer to the corporation, {{ d.structure_income|mil }}, still sits in the structure corporation's wallet.{% endif %}</p>
 
-<h3 class="h5 mt-4">2. What happened since the baseline</h3>
-<p class="small shipyard-k mb-2">Every journal line since the baseline lands in exactly one category, so the categories add up to the result. Click a line for the movements.</p>
+<h3 class="h5 mt-4">2. What happened since {{ d.since_label }}</h3>
+<p class="small shipyard-k mb-2">Every journal line since the period's start lands in exactly one category, so the categories add up to the result{% if d.period.source %} minus the opening{% endif %}. Click a line for the movements. A new period opens at every State of the Alliance post on the alliance site.</p>
 <div class="table-responsive"><table class="table table-sm align-middle shipyard-collapsing">
     <thead><tr><th>Category</th><th class="text-end">ISK</th><th>Note</th></tr></thead>
     <tbody>
@@ -64,7 +65,7 @@
         <tr class="collapse {{ g.id }} small shipyard-k"><td class="ps-4">{{ label }}</td><td class="text-end">{{ value|mil:True }}</td><td>{{ note }}</td></tr>
         {% endfor %}
         {% endfor %}
-        <tr class="fw-bold"><td>Total since the baseline</td><td class="text-end">{{ d.result|mil:True }}</td><td class="small shipyard-k">Equals the result above</td></tr>
+        <tr class="fw-bold"><td>Total since {{ d.since_label }}</td><td class="text-end">{{ d.period_result|mil:True }}</td><td class="small shipyard-k">{% if d.period.source %}The result above minus the opening of {{ d.opening_result|mil:True }}{% else %}Equals the result above{% endif %}</td></tr>
     </tbody>
 </table></div>
 
