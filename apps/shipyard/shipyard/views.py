@@ -771,7 +771,10 @@ def business_view(request):
     days = _int(request.GET.get("days"), 90, 0, 3650)
     since = timezone.now() - dt.timedelta(days=days) if days else None
     can_manage = request.user.has_perm("shipyard.manage_shipyard")
-    who = request.GET.get("who", "me") if can_manage else "me"
+    # a manager's business is the whole production corp (the owner's alts install the jobs; 0.22.1), a member's own jobs
+    who = request.GET.get("who", "corp") if can_manage else "me"
+    if who not in ("me", "corp"):
+        who = "corp" if can_manage else "me"
     settings = board.get_user_settings(request.user)
     character_id = settings.skills_character_id
     ma = business.ma_character(character_id)
