@@ -56,6 +56,9 @@
         </a>
         {% endif %}
         {% if perms.shipyard.manage_shipyard and full_access %}
+        <a class="nav-link {% if request.resolver_match.url_name == 'member' or request.resolver_match.url_name == 'member_ship' %}active{% endif %}" href="{% url 'shipyard:member' %}" title="The dashboard as a member sees it, without your own settings">
+            <i class="fas fa-user-group fa-fw"></i> Member shipyards
+        </a>
         <a class="nav-link {% if request.resolver_match.url_name == 'wallet' %}active{% endif %}" href="{% url 'shipyard:wallet' %}">
             <i class="fas fa-coins fa-fw"></i> Structure income
         </a>

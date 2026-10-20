@@ -25,6 +25,8 @@ opens the picker, dashboard) and `pick` (button that makes this the user's facil
             </span>
             {% if swap %}
                 <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#facility-picker"><i class="fas fa-right-left fa-fw"></i> Swap</button>
+            {% elif pick and member_preview %}
+                {% if selected %}<button class="btn btn-sm btn-outline-secondary" disabled><i class="fas fa-check fa-fw"></i> current</button>{% else %}<a class="btn btn-sm btn-info" href="?facility={{ facility.pk }}" title="Preview the member dashboard at this facility; saves nothing"><i class="fas fa-location-dot fa-fw"></i> Build here</a>{% endif %}
             {% elif pick %}
                 <form method="post" action="{% url 'shipyard:set_facility' facility.pk %}" class="d-inline">
                     {% csrf_token %}

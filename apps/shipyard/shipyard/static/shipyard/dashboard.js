@@ -3,6 +3,9 @@
     "use strict";
 
     $(function () {
+        // the member preview remembers its filters, columns and widths under its own keys
+        var tableEl = document.getElementById("shipyard-table");
+        var prefix = (tableEl && tableEl.dataset.storagePrefix) || "";
         var table = $("#shipyard-table").DataTable({
             order: [[4, "desc"]],
             paging: false,
@@ -14,7 +17,7 @@
 
         // draggable column widths (shared helper in columns.js)
         if (window.shipyardColumnResizer) {
-            window.shipyardColumnResizer(table, document.getElementById("shipyard-table"), { storageKey: "shipyard.dashboard.widths" });
+            window.shipyardColumnResizer(table, document.getElementById("shipyard-table"), { storageKey: prefix + "shipyard.dashboard.widths" });
         }
 
         // custom filters read the data-* attributes on each row
@@ -41,13 +44,13 @@
                 try { window.localStorage.setItem(key, JSON.stringify(selected(group))); } catch (e) { /* ignore */ }
             });
         }
-        remember("#filter-category", "shipyard.categories");
-        remember("#filter-hull", "shipyard.hulls");
+        remember("#filter-category", prefix + "shipyard.categories");
+        remember("#filter-hull", prefix + "shipyard.hulls");
 
         // free-text search over every column; DataTables remembers it with the table state
         if (window.shipyardFilterPresets && document.getElementById("dashboard-presets")) {
             window.shipyardFilterPresets({
-                container: "#dashboard-presets", storageKey: "shipyard.dashboard.presets", text: "#filter-text",
+                container: "#dashboard-presets", storageKey: prefix + "shipyard.dashboard.presets", text: "#filter-text",
                 groups: ["#filter-category", "#filter-hull"]
             });
         }

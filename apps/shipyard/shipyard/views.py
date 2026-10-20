@@ -86,6 +86,64 @@ def index(request):
     return render(request, "shipyard/index.html", context)
 
 
+def _member_facility(request):
+    """The facility the member preview shows: ?facility=<pk>, else the corp's default."""
+    pk = _int(request.GET.get("facility"), 0)
+    return Facility.objects.filter(pk=pk, is_active=True).first() if pk else None
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+def member_view(request):
+    """Member shipyards (owner, 2026-10-20): the ship dashboard exactly as a new member sees it, built
+    from board.member_settings() instead of the owner's own settings, so his markup, character,
+    own blueprints and own prices play no part. ?facility=<pk> previews another facility. Nothing is saved."""
+    facility = _member_facility(request)
+    settings = board.member_settings(facility)
+    rows = board.dashboard_rows(settings, exclude=[constants.CAT_FUEL])
+    context = _context(
+        request,
+        member_preview=True,
+        member_query=f"?facility={facility.pk}" if facility else "",
+        ship_url_name="shipyard:member_ship",
+        rows=rows,
+        settings=settings,
+        rates=tax_rates(settings.market, settings),
+        facilities=Facility.objects.filter(is_active=True),
+        markets=MarketLocation.objects.filter(is_active=True),
+        categories=constants.CATEGORY_ORDER,
+        hulls=constants.HULL_ORDER,
+        freshness=board.data_freshness(),
+        complete_rows=sum(1 for r in rows if r.econ.complete),
+        can_manage=False,
+    )
+    return render(request, "shipyard/index.html", context)
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+def member_ship(request, type_id):
+    """A ship page of the member preview: the member's settings, no own blueprint."""
+    ship = get_object_or_404(Ship, type_id=type_id)
+    facility = _member_facility(request)
+    settings = board.member_settings(facility)
+    detail = board.ship_detail(ship, settings)
+    context = _context(
+        request,
+        member_preview=True,
+        member_query=f"?facility={facility.pk}" if facility else "",
+        ship=ship,
+        settings=settings,
+        owned=None,
+        detail=detail,
+        econ=detail["econ"],
+        facilities=Facility.objects.filter(is_active=True),
+        freshness=board.data_freshness(),
+        can_manage=False,
+    )
+    return render(request, "shipyard/ship_detail.html", context)
+
+
 @login_required
 @permission_required("shipyard.basic_access")
 def fuel_view(request):
@@ -148,7 +206,10 @@ def ship_detail(request, type_id):
 def api_simulate(request, type_id):
     """Ad-hoc simulation for the detail page. Never writes anything."""
     ship = get_object_or_404(Ship, type_id=type_id)
-    settings = board.get_user_settings(request.user)
+    if request.GET.get("as") == "member" and request.user.has_perm("shipyard.manage_shipyard"):
+        settings = board.member_settings()  # the member preview's ship page
+    else:
+        settings = board.get_user_settings(request.user)
     me = _int(request.GET.get("me"), ship.default_me_te[0], 0, 10)
     te = _int(request.GET.get("te"), ship.default_me_te[1], 0, 20)
     facility = None

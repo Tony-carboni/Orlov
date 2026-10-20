@@ -30,6 +30,17 @@ def get_user_settings(user) -> UserSettings:
     return settings
 
 
+def member_settings(facility=None) -> UserSettings:
+    """The settings a new member starts with (owner's member preview, 2026-10-20): an unsaved row with
+    every default, no user (so no own blueprints and no own blueprint prices), no character (skills and
+    standings 0), the corp's blueprint markup, no tax overrides; the corp's default facility (or the one
+    given) and market. Never saved, so previewing changes nobody's settings."""
+    s = UserSettings()
+    s.facility = facility or Facility.objects.filter(is_active=True).order_by("-is_default", "name").first()
+    s.market = MarketLocation.objects.filter(is_active=True).order_by("-is_default", "name").first()
+    return s
+
+
 def _price_map(location, type_ids) -> dict:
     """{type_id: PriceSnapshot}"""
     if location is None:

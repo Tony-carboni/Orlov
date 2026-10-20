@@ -1,9 +1,15 @@
 {% extends "shipyard/base.html" %}
 {% load static shipyard_tags %}
 
-{% block shipyard_title %}{% if fuel %}Shipyard · Fuel blocks{% else %}Shipyard · Dashboard{% endif %}{% endblock %}
+{% block shipyard_title %}{% if member_preview %}Shipyard · Member shipyards{% elif fuel %}Shipyard · Fuel blocks{% else %}Shipyard · Dashboard{% endif %}{% endblock %}
 
 {% block shipyard_content %}
+{% if member_preview %}
+<div class="alert alert-info py-2 d-flex align-items-start gap-2 shipyard-preview">
+    <i class="fas fa-user-group fa-fw mt-1"></i>
+    <div><strong>Member shipyards</strong>: the dashboard as a new member sees it. The corp's default facility and market, no character chosen (skills and standings count as 0), the corp's blueprint markup, no own blueprints and no own blueprint prices. Your own settings are not used, and nothing on this page changes them: swapping the facility here only previews it, filters and columns are remembered apart from your own dashboard.</div>
+</div>
+{% endif %}
 <div class="row g-3 mb-3 align-items-stretch">
     <div class="col-lg-5 col-xl-4">
         {% if settings.facility %}
@@ -22,13 +28,15 @@
                     <a class="text-decoration-none" href="{% url 'shipyard:settings' %}" title="Skills and standings read from EVE {{ settings.skills_fetched_at|date:'Y-m-d H:i' }}, refreshed daily. Click to pick another.">
                         <img class="shipyard-portrait me-1" src="https://images.evetech.net/characters/{{ settings.skills_character_id }}/portrait?size=64" alt=""><strong>{{ settings.skills_character_name }}</strong>
                     </a>
+                {% elif member_preview %}
+                    <span class="badge text-bg-warning">none chosen yet: skills count as 0</span>
                 {% else %}
                     <a class="badge text-bg-warning text-decoration-none" href="{% url 'shipyard:settings' %}">none chosen yet: skills count as 0</a>
                 {% endif %}
             </div>
             <div class="shipyard-k d-flex align-items-center flex-wrap gap-2">
                 <span>Jita lowest sell, refreshed {{ freshness.prices|date:"Y-m-d H:i" }} EVE · builds {{ freshness.builds|date:"Y-m-d H:i" }} · volume {{ freshness.stats|date:"Y-m-d H:i" }}{% if freshness.contracts %} · contracts {{ freshness.contracts|date:"Y-m-d H:i" }}{% endif %}</span>
-                {% include "shipyard/_refresh_button.html" with refresh_next="index" %}
+                {% if not member_preview %}{% include "shipyard/_refresh_button.html" with refresh_next="index" %}{% endif %}
             </div>
         </div>
     </div>
@@ -94,7 +102,7 @@
 </div>
 
 <div class="table-responsive">
-<table id="shipyard-table" class="table table-sm table-hover table-striped align-middle w-100">
+<table id="shipyard-table" data-storage-prefix="{% if member_preview %}member.{% endif %}" class="table table-sm table-hover table-striped align-middle w-100">
     <thead>
         <tr>
             <th>Type</th>
@@ -117,12 +125,12 @@
     {% for r in rows %}
         <tr data-category="{{ r.ship.category }}" data-hull="{{ r.ship.hull_size }}"
             data-complete="{{ r.econ.complete|yesno:'1,0' }}" data-profit="{{ r.econ.net_profit|default_if_none:'' }}"
-            data-href="{% url 'shipyard:ship_detail' r.ship.type_id %}"
+            data-href="{% url ship_url_name|default:'shipyard:ship_detail' r.ship.type_id %}{{ member_query }}"
             data-type-id="{{ r.ship.type_id }}" data-name="{{ r.ship.name }}" data-own-price="{{ r.own_price|default_if_none:''|floatformat:0 }}" data-contract-price="{% if r.contract %}{{ r.contract.lowest_per_run|floatformat:0 }}{% endif %}">
             <td><span class="badge shipyard-cat shipyard-cat-{{ r.ship.category|lower }}">{{ r.ship.category }}</span></td>
             <td>{{ r.ship.hull_size }}</td>
             <td>
-                <a href="{% url 'shipyard:ship_detail' r.ship.type_id %}" class="fw-semibold">
+                <a href="{% url ship_url_name|default:'shipyard:ship_detail' r.ship.type_id %}{{ member_query }}" class="fw-semibold">
                     <img src="https://images.evetech.net/types/{{ r.ship.type_id }}/icon?size=32" width="24" height="24" class="me-1 rounded" alt="">{{ r.ship.name }}
                 </a>
                 {% if not r.econ.complete %}<i class="fas fa-triangle-exclamation text-warning ms-1" title="Missing prices or build data"></i>{% endif %}
@@ -169,7 +177,8 @@
     <strong>Contracts</strong> is information only: the cheapest price per run on public contracts at Jita 4-4 right now, refreshed hourly from EVE Ref's snapshot; hover for the contract (ID, issuer, price, runs). It never enters the numbers; use it to spot copies worth buying.
 </p>
 
-{# own blueprint price: opened by a right-click on a Blueprint cell #}
+{# own blueprint price: opened by a right-click on a Blueprint cell (not in the member preview: it would save the owner's price) #}
+{% if not member_preview %}
 <div class="modal fade" id="bpc-price" tabindex="-1" aria-labelledby="bpc-price-title" aria-hidden="true">
     <div class="modal-dialog modal-sm">
         <form class="modal-content" method="post" id="bpc-price-form" data-action="{% url 'shipyard:set_bpc_price' 0 %}">
@@ -190,6 +199,7 @@
         </form>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block shipyard_js %}

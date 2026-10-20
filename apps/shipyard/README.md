@@ -43,3 +43,7 @@ The Corp projects tab draws seven graphs from one event list built in `services/
 ## LP conversion (0.15.0)
 
 The LP conversion tab lists every offer of a militia's loyalty point store (`SHIPYARD_LP_STORE_CORP_ID`, State Protectorate by default; ESI's public `/loyalty/stores/{corp}/offers/`) valued at Jita: the items at Jita lowest sell, minus the store's ISK charge, minus the items you hand in at Jita lowest sell, gives the net ISK per LP, plus the rate after your sales tax and broker fee, Jita's daily volume and the depth of the sell orders. A blueprint copy has no market price; its row shows what a copy must fetch to reach `SHIPYARD_LP_TARGET_ISK_PER_LP` (900). `services/lpstore.py`; offers and volumes refresh daily (`shipyard_refresh_lp_store`), prices hourly (`shipyard_refresh_lp_prices`); managers have a Refresh button.
+
+## Member shipyards (0.16.0)
+
+For the owner (`shipyard.manage_shipyard`): the **Member shipyards** tab shows the ship dashboard as a new member sees it, from `services.board.member_settings()` (an unsaved default settings row: the corp's default facility and market, no character, the corp's blueprint markup, no own blueprints or prices). Nothing on it is saved; `?facility=<pk>` previews another facility.

@@ -59,7 +59,7 @@
         var useLp = document.getElementById("sim-use-lp");
         if (!useLp.disabled) { params.set("use_lp", useLp.checked ? "1" : "0"); }
         status.textContent = "calculating…";
-        fetch(url + "?" + params.toString(), { credentials: "same-origin" })
+        fetch(url + (url.indexOf("?") >= 0 ? "&" : "?") + params.toString(), { credentials: "same-origin" })
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (!d.ok) { status.textContent = d.error || "failed"; return; }
