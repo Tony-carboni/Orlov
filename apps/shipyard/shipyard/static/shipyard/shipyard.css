@@ -112,3 +112,8 @@ body.shipyard-resizing, body.shipyard-resizing * { cursor: col-resize !important
 .shipyard-columns-menu > li { break-inside: avoid; padding: .1rem .5rem .1rem 1.75rem; white-space: nowrap; }
 .shipyard-columns-menu > li:last-child, .shipyard-columns-menu > li:nth-last-child(2) { column-span: all; padding-left: .5rem; }
 .shipyard-root .shipyard-columns-menu, .shipyard-body .shipyard-columns-menu { --bs-dropdown-bg: var(--sy-panel-2); --bs-dropdown-color: var(--sy-text); --bs-dropdown-border-color: var(--sy-line); }
+
+/* Finance: group lines that open their items on a click */
+.shipyard-collapsing tr[data-bs-toggle="collapse"] { cursor: pointer; }
+.shipyard-collapsing tr[data-bs-toggle="collapse"][aria-expanded="true"] .fa-chevron-right { transform: rotate(90deg); }
+.shipyard-collapsing .fa-chevron-right { transition: transform .15s ease; }

@@ -139,10 +139,12 @@ class BooksTests(TestCase):
         pb = books.compute()["project_bb"]
         month = pb["months"][0]
         self.assertEqual(month["label"], "October 2026")
-        self.assertEqual([(r["name"], round(r["isk"])) for r in month["paid"]], [("Pyerite", 30_000_000)])
+        self.assertEqual([g["key"] for g in month["groups"]], ["item"])  # Pyerite delivered as is: not an ore
+        group = month["groups"][0]
+        self.assertEqual((group["label"], group["members"], round(group["paid"])), ("Other items", 1, 30_000_000))
+        row = group["rows"][0]
+        self.assertEqual((row["name"], row["delivered"], round(row["paid"])), ("Pyerite", 3_000_000, 30_000_000))
         self.assertEqual(month["members"], 1)
-        row = month["sales"][0]
-        self.assertEqual(row["name"], "Pyerite")
         revenue = 3_000_000 * 16.67  # what the transaction says the Pyerite sold for
         self.assertAlmostEqual(row["revenue"], revenue, places=2)
         self.assertAlmostEqual(row["cost"], 30e6)

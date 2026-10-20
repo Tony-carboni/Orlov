@@ -99,33 +99,44 @@ def render(d: dict) -> bytes:
                 Spacer(1, 4)]
         first = True
         for mo in pb["months"]:
-            block = [Paragraph(f"<b>{e(mo['label'])}</b>", p),
-                     Paragraph(f"Paid to members: {_m(mo['paid_total'])}" + (f" to {mo['members']} members" if mo["members"] else "")
-                               + f". Sold: {_m(mo['sold_value'])} of goods the projects had bought for {_m(mo['cost_sold'])}.", p)]
-            if mo["paid"]:
-                prows = [[e(r["name"]), f"{r['units']:,.0f}", _m(r["isk"]), str(r["members"])] for r in mo["paid"]]
-                block += [Spacer(1, 3), table(["Bought from members", "Units delivered", "ISK paid", "Members"], prows, [80 * mm, 34 * mm, 34 * mm, 26 * mm], numeric=(1, 2, 3))]
-            if mo["sales"] or mo["still"]:
-                srows = []
-                for x in mo["sales"]:
-                    label = e(x["name"]) + (f"<br/><font size='6.5' color='#5b6b82'>plus {_m(x['unmatched'])} from stock older than the projects' records</font>" if x["unmatched"] else "")
-                    srows.append([label, f"{x['sold']:,.0f}", _m(x["revenue"]), _m(x["tax"]), _m(x["broker"]), _m(x["cost"]), f"<b>{_m(x['net'], True)}</b>",
-                                  f"{x['pct'] * 100:.0f} %" if x["pct"] is not None else "–"])
-                for v in mo["still"]:
-                    srows.append([f"{e(v['name'])}, still held", f"{v['units']:,.0f}", f"{_m(v['value'])} at Jita buy", "", "", _m(v["cost"]), f"{_m(v['expected'], True)} projected", ""])
-                block += [Spacer(1, 3), table(["Sales of project goods", "Sold", "Revenue", "Sales tax", "Broker", "Cost", "Net profit", "Margin"], srows,
-                                              [46 * mm, 18 * mm, 24 * mm, 16 * mm, 15 * mm, 18 * mm, 24 * mm, 13 * mm], numeric=(1, 2, 3, 4, 5, 6, 7))]
+            block = [Paragraph(f"<b>{e(mo['label'])}</b>", p)]
+            rows = []
+            bold = []
+            for g in mo["groups"]:
+                bold.append(len(rows) + 1)
+                rows.append([f"<b>{e(g['label'])}</b> <font size='6.5' color='#5b6b82'>{len(g['rows'])} items" + (f", {g['members']} members" if g["members"] else "") + "</font>",
+                             f"<b>{_m(g['paid'])}</b>", f"<b>{_m(g['revenue'])}</b>", f"<b>{_m(g['cost'])}</b>", f"<b>{_m(g['fees'])}</b>", f"<b>{_m(g['net'], True)}</b>",
+                             f"<b>{g['pct'] * 100:.0f} %</b>" if g["pct"] is not None else "–", f"<b>{_m(g['held_cost'])}</b>", f"<b>{_m(g['expected'], True)}</b>" if g["held_cost"] else "–"])
+                for r in g["rows"]:
+                    extra = []
+                    if r["delivered"]:
+                        extra.append(f"{r['delivered']:,.0f} delivered" + (f" by {r['members']}" if r["members"] else ""))
+                    if r["sold"]:
+                        extra.append(f"{r['sold']:,.0f} sold")
+                    if r["unmatched"]:
+                        extra.append(f"plus {_m(r['unmatched'])} from older stock")
+                    rows.append([f"&nbsp;&nbsp;&nbsp;{e(r['name'])}" + (f" <font size='6.5' color='#5b6b82'>{e(' · '.join(extra))}</font>" if extra else ""),
+                                 _m(r["paid"]) if r["paid"] else "–", _m(r["revenue"]) if r["revenue"] else "–", _m(r["cost"]) if r["cost"] else "–",
+                                 _m(r["fees"]) if r["fees"] else "–", _m(r["net"], True) if r["revenue"] else "–",
+                                 f"{r['pct'] * 100:.0f} %" if r["pct"] is not None else "–", _m(r["held_cost"]) if r["held_cost"] else "–",
+                                 _m(r["expected"], True) if r["held_cost"] else "–"])
+            rows.append(["<b>Total</b>", f"<b>{_m(mo['paid_total'])}</b>", f"<b>{_m(mo['sold_value'])}</b>", f"<b>{_m(mo['cost_sold'])}</b>", f"<b>{_m(mo['fees'])}</b>",
+                         f"<b>{_m(mo['realised'], True)}</b>", f"<b>{mo['pct'] * 100:.0f} %</b>" if mo["pct"] is not None else "", f"<b>{_m(mo['held_cost'])}</b>",
+                         f"<b>{_m(mo['expected'], True)}</b>" if mo["held_cost"] else ""])
+            t = table(["", "Paid to members", "Sold for", "Cost", "Tax and fees", "Net profit", "Margin", "Still held", "Projected"], rows,
+                      [54 * mm, 19 * mm, 17 * mm, 17 * mm, 17 * mm, 18 * mm, 12 * mm, 17 * mm, 17 * mm], total_rows=(len(rows),), numeric=(1, 2, 3, 4, 5, 6, 7, 8))
+            t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), colors.HexColor("#f4f6fa")) for b in bold]))
+            block.append(t)
             pct = f" ({mo['pct'] * 100:.0f} % over what the projects paid)" if mo["pct"] is not None else ""
             more = (f", {_m(mo['expected'], True)} more projected on the {_m(mo['held_cost'])} still held: {_m(mo['total'], True)} in total" if mo["expected"] else "")
-            block += [Spacer(1, 3), Paragraph(f"<b>Summary:</b> {_m(mo['paid_total'])} paid to members; {_m(mo['sold_value'])} of project goods sold. "
+            block += [Spacer(1, 3), Paragraph(f"<b>Summary:</b> {_m(mo['paid_total'])} paid to {mo['members']} members; {_m(mo['sold_value'])} of project goods sold. "
                                               f"Net profit {_m(mo['realised'], True)}{pct}{more}.", p), Spacer(1, 6)]
             if first:
-                story.append(KeepTogether(part + block[:3]))
-                story.extend(block[3:])
+                story.append(KeepTogether(part + block[:1]))
+                story.extend(block[1:])
                 first = False
             else:
-                story.append(KeepTogether(block[:3]))
-                story.extend(block[3:])
+                story.extend(block)
         story.append(Paragraph(f"Paid to members comes from the contributions read every hour (section 2 uses the fall of the projects' pool: {_m(pb['paid_pool'])}). "
                                "Goods still held are valued at Jita's highest buy, less sales tax at the rate paid so far. Older stock, "
                                f"{_m(pb['older'])} at cost, is not in these figures.", note))

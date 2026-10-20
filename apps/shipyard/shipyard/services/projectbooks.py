@@ -160,7 +160,7 @@ def ledger(cid=None, until=None) -> dict:
         if not tid or e["isk"] <= 0:
             continue
         if o is None or tid in sold_types:
-            lots[tid].append([e["t"], e["units"], e["isk"] / e["units"] if e["units"] else 0.0])
+            lots[tid].append([e["t"], e["units"], e["isk"] / e["units"] if e["units"] else 0.0, "ore" if o is not None else "item"])
         else:
             batches = e["units"] / float(o.portion_size or 1)
             parts = [(int(m), batches * float(q) * yields[tid]) for m, q in (o.materials or {}).items()]
@@ -168,7 +168,7 @@ def ledger(cid=None, until=None) -> dict:
             for m, q in parts:
                 if q > 0:
                     share = (q * prices.get(m, 0.0)) / total
-                    lots[m].append([e["t"], q, e["isk"] * share / q])
+                    lots[m].append([e["t"], q, e["isk"] * share / q, "ore"])
         stock.append([_iso(e["t"]), round(e["isk"], 2)])
 
     # --- sales against the lots, first in first out, only lots that existed at the sale
@@ -179,6 +179,7 @@ def ledger(cid=None, until=None) -> dict:
         need = float(s.quantity)
         queue = lots.get(s.type_id) or deque()
         revenue = cost = matched = 0.0
+        origin = queue[0][3] if queue else "item"
         while need > 1e-9 and queue and queue[0][0] <= s.date:
             lot = queue[0]
             take = min(need, lot[1])
@@ -190,7 +191,7 @@ def ledger(cid=None, until=None) -> dict:
             if lot[1] <= 1e-9:
                 queue.popleft()
         if matched:
-            matches.append([_iso(s.date), names.get(s.type_id, str(s.type_id)), round(revenue, 2), round(cost, 2), round(matched, 2)])
+            matches.append([_iso(s.date), names.get(s.type_id, str(s.type_id)), round(revenue, 2), round(cost, 2), round(matched, 2), origin])
             stock.append([_iso(s.date), round(-cost, 2)])
         if need > 1e-9:
             others.append([_iso(s.date), names.get(s.type_id, str(s.type_id)), round(need * s.unit_price, 2)])
@@ -204,8 +205,8 @@ def books(cid=None) -> dict:
     cid = cid or projects.corp_id()
     led = ledger(cid)
     lots, prices = led["lots"], led["prices"]
-    left_cost = sum(q * c for queue in lots.values() for _, q, c in queue)
-    left_value = sum(q * prices.get(tid, 0.0) for tid, queue in lots.items() for _, q, _ in queue)
+    left_cost = sum(q * c for queue in lots.values() for _, q, c, *_ in queue)
+    left_value = sum(q * prices.get(tid, 0.0) for tid, queue in lots.items() for _, q, *_ in queue)
     payout_rows = led["payout_rows"]
     market = led["market"]
     return {

@@ -253,13 +253,14 @@ def compute(now=None) -> dict:
     prices, pnames = led["prices"], led["names"]
     direct_words = [d["item"].lower().split()[0] for d in direct_sales if d["item"]]
     held, held_value, older_cost, older_value = defaultdict(float), 0.0, 0.0, 0.0
-    held_items = defaultdict(lambda: [0.0, 0.0, 0.0])  # item -> [units, cost, value at Jita buy], bought since the baseline
+    held_items = defaultdict(lambda: [0.0, 0.0, 0.0, "item"])  # item -> [units, cost, value at Jita buy, origin], bought since the baseline
     for tid, queue in led["lots"].items():
         if tid in stock_types:
             continue  # bought on the market or kept as stock: counted above
         name = pnames.get(tid, str(tid))
         sold_directly = any(name.lower().startswith(w[:6]) for w in direct_words)
-        for t, qty, cost in queue:
+        for t, qty, cost, *rest in queue:
+            origin = rest[0] if rest else "item"
             if t >= base:
                 if sold_directly:
                     continue
@@ -269,6 +270,7 @@ def compute(now=None) -> dict:
                 hi[0] += qty
                 hi[1] += qty * cost
                 hi[2] += qty * prices.get(tid, 0.0)
+                hi[3] = origin
             else:
                 older_cost += qty * cost
                 older_value += qty * prices.get(tid, 0.0)
@@ -527,11 +529,13 @@ def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversi
 
 
 def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock_types, held_items, older_cost, older_value, paid_members) -> dict:
-    """Project buybacks per calendar month (owner, 2026-10-20), in the LP section's shape: what the projects
-    paid members, by item; what the corp sold of those items, at what the projects paid for them (first in,
-    first out; ores through their minerals), with sales tax and broker fees; the net profit; what is still
-    held, valued at Jita buy, with a projected net after sales tax; a summary line."""
+    """Project buybacks per calendar month (owner, 2026-10-20), condensed: two lines per month, ore and
+    ice (asteroid, ice, moon and abyssal ore the projects buy, sold through what they reprocess into) and
+    other items (sold as delivered), each with what the projects paid members, what sold with sales tax
+    and broker fees, the net profit, and what is still held with a projected net; the items behind a click."""
     import datetime as dt
+
+    from ..models import Ore
 
     def month(when):
         return when.strftime("%Y-%m")
@@ -543,7 +547,6 @@ def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock
             names_of[tid] = led["names"].get(tid) or _names([tid]).get(tid, str(tid))
         return names_of[tid]
 
-    # items kept as stock (Heavy Water, the LP store's boosters) have their own lines: leave them out here
     stock_names = {name_of(tid) for tid in stock_types}
     bare = {int(m[1]) for m in led["matches"] + led["others"] if str(m[1]).isdigit()}
     fixed = _names(bare) if bare else {}
@@ -552,13 +555,15 @@ def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock
         return fixed.get(int(n), n) if str(n).isdigit() else n
 
     since = base.replace(second=0, microsecond=0)
-    matches = [[dt.datetime.fromisoformat(w), clean(n), rev, cost, qty] for w, n, rev, cost, qty in led["matches"]]
+    matches = [[dt.datetime.fromisoformat(w), clean(n), rev, cost, qty, (rest[0] if rest else "item")] for w, n, rev, cost, qty, *rest in led["matches"]]
     others = [[dt.datetime.fromisoformat(w), clean(n), rev] for w, n, rev in led["others"]]
     matches = [m for m in matches if m[0] >= since and m[1] not in stock_names]
     others = [o for o in others if o[0] >= since and o[1] not in stock_names]
+    sold_origin = {m[1]: m[5] for m in matches}
 
     pays = [e for e in projectbooks.payout_events(cid) if base <= e["t"] <= cut]
     type_names = _names({e["type_id"] for e in pays if e["type_id"]})
+    ore_types = set(Ore.objects.filter(type_id__in=[e["type_id"] for e in pays if e["type_id"]]).values_list("type_id", flat=True))
 
     fees = defaultdict(lambda: [0.0, 0.0])  # (month, item) -> [sales tax, broker]
     for (mo, tid), tax in goods_tax_month.items():
@@ -571,54 +576,81 @@ def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock
     all_tax = sum(v[0] for v in fees.values())
     all_revenue = sum(m[2] for m in matches) + sum(o[2] for o in others)
     tax_rate = (-all_tax / all_revenue) if all_revenue else 0.0
+    GROUPS = (("ore", "Ore and ice"), ("item", "Other items"))
+
+    def blank():
+        return {"delivered": 0.0, "paid": 0.0, "members": set(), "sold": 0.0, "revenue": 0.0, "cost": 0.0, "tax": 0.0, "broker": 0.0,
+                "unmatched": 0.0, "held_units": 0.0, "held_cost": 0.0, "held_value": 0.0}
+
     out = []
     for i, key in enumerate(months):
-        paid = defaultdict(lambda: [0.0, 0.0, set()])
+        items = defaultdict(blank)  # (group, item) -> figures
         for e in pays:
             if month(e["t"]) == key:
                 nm = type_names.get(e["type_id"], e["project"]) if e["type_id"] else f"{e['project']} (no item)"
-                row = paid[nm]
-                row[0] += e["units"]
-                row[1] += e["isk"]
-                row[2].add(e["member"])
-        paid_rows = [{"name": n, "units": v[0], "isk": v[1], "members": len(v[2])} for n, v in sorted(paid.items(), key=lambda kv: -kv[1][1])]
-        sold = defaultdict(lambda: [0.0, 0.0, 0.0])
-        for when, nm, rev, cost, qty in matches:
+                g = "ore" if e["type_id"] in ore_types else "item"
+                row = items[(g, nm)]
+                row["delivered"] += e["units"]
+                row["paid"] += e["isk"]
+                row["members"].add(e["member"])
+        for when, nm, rev, cost, qty, origin in matches:
             if month(when) == key:
-                row = sold[nm]
-                row[0] += qty
-                row[1] += rev
-                row[2] += cost
-        unmatched = defaultdict(float)
+                row = items[(origin, nm)]
+                row["sold"] += qty
+                row["revenue"] += rev
+                row["cost"] += cost
         for when, nm, rev in others:
-            if month(when) == key:
-                unmatched[nm] += rev
-        sales = []
-        for nm in sorted(set(sold) | {k for k, v in unmatched.items() if v >= 0.05e6}, key=lambda n: -(sold[n][1] + unmatched.get(n, 0.0))):
-            units, rev, cost = sold[nm]
+            if month(when) == key and rev >= 0.05e6:
+                items[(sold_origin.get(nm, "item"), nm)]["unmatched"] += rev
+        for (g, nm), row in items.items():
             tax, broker = fees.get((key, nm), [0.0, 0.0])
-            rev_all = rev + unmatched.get(nm, 0.0)
-            share = (rev / rev_all) if rev_all else 0.0  # fees in proportion to the part that came from projects
-            net = rev - cost + (tax + broker) * share
-            sales.append({"name": nm, "sold": units, "revenue": rev, "cost": cost, "tax": tax * share, "broker": broker * share, "net": net,
-                          "pct": (net / cost) if cost else None, "unmatched": unmatched.get(nm, 0.0) if unmatched.get(nm, 0.0) >= 0.05e6 else 0.0})
+            rev_all = row["revenue"] + row["unmatched"]
+            share = (row["revenue"] / rev_all) if rev_all else 0.0  # fees in proportion to the part that came from projects
+            row["tax"] = tax * share
+            row["broker"] = broker * share
         latest = i == 0
-        still = []
         if latest:
-            for nm, (units, cost, value) in sorted(held_items.items(), key=lambda kv: -kv[1][1]):
+            for nm, (units, cost, value, origin) in held_items.items():
                 if cost >= 0.05e6:
-                    still.append({"name": nm, "units": units, "cost": cost, "value": value, "expected": value * (1 - tax_rate) - cost})
-        paid_total = sum(r["isk"] for r in paid_rows)
-        realised = sum(x["net"] for x in sales)
-        expected = sum(x["expected"] for x in still)
-        sold_value = sum(x["revenue"] for x in sales)
-        cost_sold = sum(x["cost"] for x in sales)
+                    row = items[(origin, nm)]
+                    row["held_units"] += units
+                    row["held_cost"] += cost
+                    row["held_value"] += value
+        groups = []
+        for g, label in GROUPS:
+            rows = []
+            for (gg, nm), row in sorted(items.items(), key=lambda kv: -(kv[1]["revenue"] + kv[1]["paid"])):
+                if gg != g:
+                    continue
+                net = row["revenue"] - row["cost"] + row["tax"] + row["broker"]
+                expected = row["held_value"] * (1 - tax_rate) - row["held_cost"] if row["held_cost"] else 0.0
+                rows.append({"name": nm, "delivered": row["delivered"], "paid": row["paid"], "members": len(row["members"]),
+                             "sold": row["sold"], "revenue": row["revenue"], "cost": row["cost"], "tax": row["tax"], "broker": row["broker"],
+                             "fees": row["tax"] + row["broker"], "net": net, "pct": (net / row["cost"]) if row["cost"] else None,
+                             "unmatched": row["unmatched"], "held_units": row["held_units"], "held_cost": row["held_cost"],
+                             "held_value": row["held_value"], "expected": expected})
+            if not rows:
+                continue
+            tot = {k: sum(r[k] for r in rows) for k in ("delivered", "paid", "sold", "revenue", "cost", "tax", "broker", "fees", "net", "unmatched", "held_units", "held_cost", "held_value", "expected")}
+            members = set()
+            for (gg, nm), row in items.items():
+                if gg == g:
+                    members |= row["members"]
+            groups.append({"key": g, "label": label, "id": f"pb-{key}-{g}", "rows": rows, "members": len(members),
+                           "pct": (tot["net"] / tot["cost"]) if tot["cost"] else None, "total": tot["net"] + tot["expected"], **tot})
+        paid_total = sum(g["paid"] for g in groups)
+        realised = sum(g["net"] for g in groups)
+        expected = sum(g["expected"] for g in groups)
+        sold_value = sum(g["revenue"] for g in groups)
+        cost_sold = sum(g["cost"] for g in groups)
+        members = set()
+        for row in items.values():
+            members |= row["members"]
         first = dt.datetime.strptime(key, "%Y-%m")
-        out.append({"key": key, "label": f"{first:%B %Y}", "paid": paid_rows, "paid_total": paid_total,
-                    "members": len({m for v in paid.values() for m in v[2]}), "sales": sales, "still": still,
-                    "sold_value": sold_value, "cost_sold": cost_sold, "fees": sum(x["tax"] + x["broker"] for x in sales),
+        out.append({"key": key, "label": f"{first:%B %Y}", "groups": groups, "paid_total": paid_total, "members": len(members),
+                    "sold_value": sold_value, "cost_sold": cost_sold, "fees": sum(g["fees"] for g in groups),
                     "realised": realised, "pct": (realised / cost_sold) if cost_sold else None,
-                    "held_cost": sum(x["cost"] for x in still), "held_value": sum(x["value"] for x in still),
+                    "held_cost": sum(g["held_cost"] for g in groups), "held_value": sum(g["held_value"] for g in groups),
                     "expected": expected, "total": realised + expected, "latest": latest})
     realised = sum(m["realised"] for m in out)
     expected = sum(m["expected"] for m in out)

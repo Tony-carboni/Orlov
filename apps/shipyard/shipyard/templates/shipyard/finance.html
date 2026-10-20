@@ -72,24 +72,29 @@
 {% for m in pb.months %}
 <div class="card mb-3"><div class="card-body py-2">
 <h4 class="h6 mb-2">{{ m.label }}</h4>
-<ul class="mb-2 small">
-    <li><strong>Paid to members:</strong> {{ m.paid_total|mil }}{% if m.members %} to {{ m.members }} member{{ m.members|pluralize }}{% endif %}</li>
-    <li><strong>Sold:</strong> {{ m.sold_value|mil }} of goods the projects had bought for {{ m.cost_sold|mil }}</li>
-</ul>
-{% if m.paid %}
-<div class="table-responsive"><table class="table table-sm align-middle mb-2">
-    <thead><tr><th>Bought from members</th><th class="text-end">Units delivered</th><th class="text-end">ISK paid</th><th class="text-end">Members</th></tr></thead>
-    <tbody>{% for r in m.paid %}<tr><td>{{ r.name }}</td><td class="text-end">{{ r.units|floatformat:0 }}</td><td class="text-end">{{ r.isk|mil }}</td><td class="text-end">{{ r.members }}</td></tr>{% endfor %}</tbody>
+<div class="table-responsive"><table class="table table-sm align-middle mb-2 shipyard-collapsing">
+    <thead><tr><th></th><th class="text-end" title="ISK the projects paid members">Paid to members</th><th class="text-end" title="Sales of those goods, gross">Sold for</th><th class="text-end" title="What the projects paid for the goods that sold">Cost</th><th class="text-end" title="Sales tax and broker fees on those sales">Tax and fees</th><th class="text-end">Net profit</th><th class="text-end">Margin</th><th class="text-end" title="Goods still held, at what the projects paid">Still held</th><th class="text-end" title="At Jita's highest buy, less sales tax, less cost">Projected</th></tr></thead>
+    <tbody>
+    {% for g in m.groups %}
+    <tr class="fw-semibold" role="button" data-bs-toggle="collapse" data-bs-target=".{{ g.id }}" aria-expanded="false" title="Click for the items">
+        <td><i class="fas fa-chevron-right fa-fw shipyard-k small"></i> {{ g.label }} <span class="shipyard-k fw-normal small">{{ g.rows|length }} item{{ g.rows|length|pluralize }}{% if g.members %}, {{ g.members }} member{{ g.members|pluralize }}{% endif %}</span></td>
+        <td class="text-end">{{ g.paid|mil }}</td><td class="text-end">{{ g.revenue|mil }}</td><td class="text-end">{{ g.cost|mil }}</td><td class="text-end">{{ g.fees|mil }}</td>
+        <td class="text-end {% if g.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ g.net|mil:True }}</td><td class="text-end">{% if g.pct is not None %}{% widthratio g.net g.cost 100 %} %{% else %}–{% endif %}</td>
+        <td class="text-end">{{ g.held_cost|mil }}</td><td class="text-end">{% if g.held_cost %}{{ g.expected|mil:True }}{% else %}–{% endif %}</td>
+    </tr>
+    {% for r in g.rows %}
+    <tr class="collapse {{ g.id }} small shipyard-k">
+        <td class="ps-4">{{ r.name }}{% if r.delivered %} <span class="small">· {{ r.delivered|floatformat:0 }} delivered{% if r.members %} by {{ r.members }}{% endif %}</span>{% endif %}{% if r.sold %} <span class="small">· {{ r.sold|floatformat:0 }} sold</span>{% endif %}{% if r.unmatched %} <span class="small">· plus {{ r.unmatched|mil }} from stock older than the projects' records</span>{% endif %}</td>
+        <td class="text-end">{% if r.paid %}{{ r.paid|mil }}{% else %}–{% endif %}</td><td class="text-end">{% if r.revenue %}{{ r.revenue|mil }}{% else %}–{% endif %}</td><td class="text-end">{% if r.cost %}{{ r.cost|mil }}{% else %}–{% endif %}</td><td class="text-end">{% if r.fees %}{{ r.fees|mil }}{% else %}–{% endif %}</td>
+        <td class="text-end">{% if r.revenue %}{{ r.net|mil:True }}{% else %}–{% endif %}</td><td class="text-end">{% if r.pct is not None %}{% widthratio r.net r.cost 100 %} %{% else %}–{% endif %}</td>
+        <td class="text-end">{% if r.held_cost %}{{ r.held_cost|mil }}{% else %}–{% endif %}</td><td class="text-end">{% if r.held_cost %}{{ r.expected|mil:True }}{% else %}–{% endif %}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
+    <tr class="fw-bold"><td>Total</td><td class="text-end">{{ m.paid_total|mil }}</td><td class="text-end">{{ m.sold_value|mil }}</td><td class="text-end">{{ m.cost_sold|mil }}</td><td class="text-end">{{ m.fees|mil }}</td><td class="text-end {% if m.realised >= 0 %}text-success{% else %}text-danger{% endif %}">{{ m.realised|mil:True }}</td><td class="text-end">{% if m.pct is not None %}{% widthratio m.realised m.cost_sold 100 %} %{% endif %}</td><td class="text-end">{{ m.held_cost|mil }}</td><td class="text-end">{% if m.held_cost %}{{ m.expected|mil:True }}{% endif %}</td></tr>
+    </tbody>
 </table></div>
-{% endif %}
-{% if m.sales or m.still %}
-<div class="table-responsive"><table class="table table-sm align-middle mb-2">
-    <thead><tr><th>Sales of project goods</th><th class="text-end">Sold</th><th class="text-end">Revenue</th><th class="text-end">Sales tax</th><th class="text-end">Broker fees</th><th class="text-end">Cost</th><th class="text-end">Net profit</th><th class="text-end">Margin</th></tr></thead>
-    <tbody>{% for x in m.sales %}<tr><td>{{ x.name }}{% if x.unmatched %}<div class="small shipyard-k">plus {{ x.unmatched|mil }} sold from stock older than the projects' records</div>{% endif %}</td><td class="text-end">{{ x.sold|floatformat:0 }}</td><td class="text-end">{{ x.revenue|mil }}</td><td class="text-end">{{ x.tax|mil }}</td><td class="text-end">{{ x.broker|mil }}</td><td class="text-end">{{ x.cost|mil }}</td><td class="text-end fw-semibold {% if x.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ x.net|mil:True }}</td><td class="text-end">{% if x.pct is not None %}{% widthratio x.net x.cost 100 %} %{% else %}–{% endif %}</td></tr>{% endfor %}
-    {% for v in m.still %}<tr class="shipyard-k"><td>{{ v.name }}, still held</td><td class="text-end">{{ v.units|floatformat:0 }}</td><td class="text-end">{{ v.value|mil }} at Jita buy</td><td class="text-end" colspan="2"></td><td class="text-end">{{ v.cost|mil }}</td><td class="text-end">{{ v.expected|mil:True }} projected</td><td></td></tr>{% endfor %}</tbody>
-</table></div>
-{% endif %}
-<p class="mb-0 small"><strong>Summary:</strong> {{ m.paid_total|mil }} paid to members; {{ m.sold_value|mil }} of project goods sold. Net profit {{ m.realised|mil:True }}{% if m.pct is not None %} ({% widthratio m.realised m.cost_sold 100 %} % over what the projects paid){% endif %}{% if m.expected %}, {{ m.expected|mil:True }} more projected on the {{ m.held_cost|mil }} still held: {{ m.total|mil:True }} in total{% endif %}.</p>
+<p class="mb-0 small"><strong>Summary:</strong> {{ m.paid_total|mil }} paid to {{ m.members }} member{{ m.members|pluralize }}; {{ m.sold_value|mil }} of project goods sold. Net profit {{ m.realised|mil:True }}{% if m.pct is not None %} ({% widthratio m.realised m.cost_sold 100 %} % over what the projects paid){% endif %}{% if m.expected %}, {{ m.expected|mil:True }} more projected on the {{ m.held_cost|mil }} still held: {{ m.total|mil:True }} in total{% endif %}.</p>
 </div></div>
 {% endfor %}
 <p class="small shipyard-k">Paid to members comes from the contributions read every hour (section 2 uses the fall of the projects' pool: {{ pb.paid_pool|mil }}). Goods still held are valued at Jita's highest buy, less sales tax at the rate paid so far.</p>
