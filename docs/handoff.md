@@ -4,6 +4,23 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-20 (14:40 UTC) — desktop session → any session
+
+**Runbook / topic:** **the accidental corporation sell orders of 2026-10-20 and Shipyard 0.21.0** (runbook 13 C release paragraph).
+
+**What happened.** Six sell orders meant for the owner's own wallet were put up on the corporation (Catherine Frey) between 13:30 and 14:13 EVE: Drake Navy Issue 3, Drekavac 2, Prophecy Navy Issue 7, Caracal Navy Issue 10, Omen Navy Issue 8, Helium Fuel Block 20,000. One Drekavac sold at 13:48 for 147,800,000. The corporation paid 39,847,273 in listing fees (Drake 5,782,104, Drekavac 4,319,408, Prophecy 12,806,257, Caracal 6,194,172, Omen 4,999,759, Helium 5,745,573) and 4,988,250 sales tax on the Drekavac. **Net in the master wallet from the mistake: +102,964,477 ISK.** The owner transfers exactly that from the master wallet (division 1) to his own wallet with a reason that contains the word "accidental"; the corporation is then back at zero and the fees are the owner's own cost. The Drake, Drekavac and Prophecy orders were cancelled; Caracal, Omen and Helium were still open at 14:35 EVE, the owner cancels them. Anything that sells before they are cancelled is a new sale and tax line to flag the same way (a local session: `books.ignore_entries`), and the settlement amount grows by the sale minus its tax.
+
+**Done.**
+- **Shipyard 0.21.0** released (commit `a251dc3` pinned, migration 0027, backup `aa-db-2026-10-20-1422.sql.gz`): the Finance tab leaves out flagged journal lines, by id (admin: Shipyard → ignored journal lines) or by a reason matching the ignore patterns (`SHIPYARD_BOOKS_IGNORE_REASONS`, default "accidental"). The page and the PDF say how many lines are left out and their net.
+- The eight lines above are flagged (reason "accidental corporation orders 2026-10-20 (settled to personal wallet)"). The sheet reconciles (gap 0) and shows 8 lines left out, +102,964,477 together; result at 14:35 EVE +195.9 M above the 5 B with liquid ISK 2,569.6 M (the real wallet is 103.0 M higher until the settlement lands).
+- Rule for the books from now on: **a transfer that corrects a mistake carries "accidental" in its reason** and drops out of the books by itself; sales, taxes and fees of a mistake are flagged by id.
+
+**Owner has to do by hand.** Cancel the Caracal, Omen and Helium orders. Transfer 102,964,477 ISK from the master wallet to his own wallet, reason containing "accidental" (for example "accidental corp orders settlement"). Still open from earlier: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
+
+**Next.** After the transfer: check the Finance tab shows 9 lines left out with a net of 0 (any session, read-only). If something sold before the orders were cancelled: tell a local session, it flags the lines and gives the new settlement amount.
+
+---
+
 ## 2026-10-19 (19:40 UTC) — desktop session → any session
 
 **Runbook / topic:** **Shipyard 0.15.0: the LP conversion tab** (runbook 13 C release paragraph).
@@ -45,24 +62,6 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Owner has to do by hand.** Look at the seven graphs on /shipyard/projects/ and say which to keep; the rest can go. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3.
 
 **Next.** Trim the graphs to the owner's choice.
-
----
-
-## 2026-10-18 (18:45 UTC) — desktop session → any session
-
-**Runbook / topic:** **the corporation's books on 18 October and the first balance sheet for the directors** (`docs/finance/2026-10-18-oarmi-balance-sheet.pdf`, built with reportlab from `scratchpad/balance_sheet_pdf.py`; the rules of the 5 B baseline are in the 09:40 entry below).
-
-**Done (read-only, nothing changed on the server).**
-- Position at 17:30 EVE against the 5 B baseline: master wallet division 1 **2,576.3 M**, reward ISK in the 26 active projects **2,369.6 M** (fresh `projects.refresh()`), Heavy Water stock at buy value **216.0 M**, buyback material still on sale in Jita **44.6 M** at list (Pyerite 1,725,104 at 16.97, Hydrocarbons 33,190 at 459.70; 42.6 M at Jita buy) = **5,206.5 M**, result **+206.5 M**. Division 7 (Director) 3,221.2 M excluded.
-- Since the baseline: seven buyback materials sold in Jita for 143.2 M gross (Zero-Point Condensate 61.0, Pyerite 44.1, Mexallon 16.6, Crystalline Isogen-10 14.0, Hydrocarbons 5.5, Silicates 2.0), proceeds in division 1; 5.5 M moon-mining tax from Ryaku711; projects pot down 17.4 M (rewards paid); 4.5 M broker fee and tax. No Heavy Water sold since the 18th. The buyback material came in through Deliver Item projects paid before the baseline, so its sales are new money. Catherine Frey placed the corporation orders (visible through her character-orders scope with `is_corporation`); no OARMI token carries `esi-markets.read_corporation_orders.v1`.
-- **Fuel** (section 3 of the sheet), from EVE's dogma: Standup Moon Drill I 5 blocks/h, Manufacturing Plant I 12, Research Lab I 12, Reprocessing Facility I 10; Athanor service bonus −20 %, Raitaru −25 % (engineering services only). Online services per the structures app: Raitaru manufacturing + research lab + reprocessing = 28/h = 672/day; each Athanor moon drill 4/h = 96/day. Total 864 blocks/day; at the cheapest block (Nitrogen 17,890 at Jita) **15.5 M/day, 463.7 M per 30 days** (Raitaru 360.7, each Athanor 51.5). Fuel in the bays, prepaid by GWON, about 668 M (Raitaru to 21 Nov, Athanor I to 26 Dec, Athanor II to 11 Jan). The owner said "both structures"; the sheet shows all three and says so.
-- Outlook in the sheet: fuel −463.7 M a month against the structure corp's industry-tax income (65.1 M in the last 7 days, members only, run-rate about 280 M), plus 43 M of open buyback orders and 84 M of Heavy Water upside: about −57 M a month if nothing else changes. Fuel and that income are GWON's, shown side by side for the directors.
-
-- **Owner's rule (18:55 UTC): the Raitaru's fuel is sponsored by a private individual and counts as 0**; the structure income (industry job tax at the Raitaru, Structure income tab; 6.4 M since midnight, 65.1 M in 7 days) counts as corporation income; the two Athanors' fuel (103.1 M per 30 days) stays a cost. The sheet was regenerated with that: outlook about +304 M a month. Note: the Structure income tab has no excluded payers set, so the owner's own jobs are inside the 65.1 M.
-
-**Owner has to do by hand.** Share the PDF with the directors (it is in the repo and was sent in chat). Month-end per the 09:40 entry.
-
-**Next.** Nothing queued.
 
 ---
 
