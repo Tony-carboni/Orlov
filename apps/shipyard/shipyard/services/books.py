@@ -71,6 +71,26 @@ def _when(t):
     return f"{t.day} {t:%B} {t:%H:%M}"
 
 
+CORRECTION = re.compile(r"correct", re.I)
+
+
+def _drop_corrections(journal):
+    """A deposit whose reason says "correction" pays back a withdrawal of the same amount made shortly
+    before (a mistyped LP purchase, for example): both lines leave the books, nothing else changes."""
+    out = list(journal)
+    for i, e in enumerate(journal):
+        if e.ref_type != "player_donation" or e.amount <= 0 or not CORRECTION.search(e.reason or ""):
+            continue
+        for j in range(i - 1, -1, -1):
+            w = journal[j]
+            if (w.ref_type == "corporation_account_withdrawal" and abs(w.amount + e.amount) < 1
+                    and (e.date - w.date).total_seconds() <= 6 * 3600 and w in out):
+                out.remove(w)
+                out.remove(e)
+                break
+    return out
+
+
 def _is_conversion(s) -> bool:
     return bool(s.lp_used or s.input_units or s.isk_paid)
 
@@ -100,6 +120,7 @@ def compute(now=None) -> dict:
     journal = list(CorpJournalEntry.objects.filter(corporation_id=cid, date__gte=base, division__in=divisions).order_by("date", "entry_id"))
     if now is not None:
         journal = [e for e in journal if e.date <= now]
+    journal = _drop_corrections(journal)
     cut = journal[-1].date if journal else base
     # a market journal line names its transaction in context_id (the transaction's journal_ref_id points elsewhere)
     txs = {t.transaction_id: t for t in CorpWalletTransaction.objects.filter(corporation_id=cid, date__gte=base, date__lte=cut)}
@@ -363,6 +384,9 @@ def compute(now=None) -> dict:
     buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices)
     if abs(gap) >= 1.0:
         moves.append(["Not explained", gap, "The journal and the position differ: a missing journal page or a new kind of entry"])
+    outputs = {c["name"] for c in conversions}
+    move_groups = _group_moves(moves, outputs)
+    asset_groups = _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held, held_value, lp_units - lp_used, lp_left)
 
     # --- outside the books -----------------------------------------------------------------------
     live = live_wallets()
@@ -405,6 +429,7 @@ def compute(now=None) -> dict:
         "held": sorted(held.items(), key=lambda kv: -kv[1]), "held_total": held_total, "held_value": held_value,
         "lp_units": lp_units - lp_used, "lp_cost": lp_left, "lp_bought": lp_units, "open_escrow": open_escrow,
         "assets": assets, "result": result, "moves": moves, "explained": explained, "gap": gap,
+        "move_groups": move_groups, "asset_groups": asset_groups,
         "director": director, "older": (older_cost, older_value), "structure_income": structure_income,
         "live_books": live_books, "books_now": books_now, "live_ahead": (live_books - books_now) if live_books is not None else None,
         "orders": orders, "buyback": buyback, "project_bb": project_bb,
@@ -685,6 +710,80 @@ def order_history() -> list:
         except Exception:  # noqa: BLE001
             return []
     return [dict(o) for o in _cached_get("shipyard:books:history", read)]
+
+
+MOVE_GROUPS = [
+    ("project_sales", "Project buyback sales", "What the corporation sold of the goods its projects bought from members"),
+    ("project_rewards", "Project buyback rewards to members", "ISK the projects paid members, and the goods those rewards bought that are still held"),
+    ("lp", "LP conversion", "LP bought, what the LP store gave for it, and the sales of those items"),
+    ("stock", "Stock sales", "Stock bought to sell on (Heavy Water), and its sales"),
+    ("market", "Market orders and fees", "Escrow of buy orders, items bought on the market, broker fees and sales tax"),
+    ("transfers", "Transfers, deposits and payouts", "ISK moved into or out of the corporation's wallets by hand"),
+    ("gap", "Not explained", ""),
+]
+
+
+def _group_moves(moves, outputs) -> list:
+    """Section 2 by category (owner, 2026-10-20): each movement lands in one group; the groups add up to the result."""
+    def key(label):
+        if label.startswith("Project goods sold") or label.startswith("Goods sold directly"):
+            return "project_sales"
+        if label.startswith("Project rewards paid") or label.startswith("Goods those rewards bought"):
+            return "project_rewards"
+        if label.startswith("LP store:") or label.startswith("Paid in the LP store") or label == "LP bought":
+            return "lp"
+        if label.endswith("sold, profit over its cost"):
+            return "lp" if label[: -len(" sold, profit over its cost")] in outputs else "stock"
+        if label == "Stock bought":
+            return "stock"
+        if label.startswith("Escrow of") or label.startswith("ISK still in open buy orders") or label.startswith("Broker fees") or label.startswith("Bought on the market"):
+            return "market"
+        if label == "Not explained":
+            return "gap"
+        return "transfers"
+    groups = {k: {"key": k, "label": label, "note": note, "id": f"mv-{k}", "rows": [], "total": 0.0} for k, label, note in MOVE_GROUPS}
+    for m in moves:
+        g = groups[key(m[0])]
+        g["rows"].append(m)
+        g["total"] += m[1]
+    return [g for g in groups.values() if g["rows"]]
+
+
+def _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held, held_value, lp_units, lp_left) -> list:
+    """Section 1 by category: liquid ISK, reward ISK in projects, stock listed for sale, physical items in stock
+    (the inputs bought to convert), goods held from projects, loyalty points. Each with its items behind a click."""
+    groups = []
+    rows = [["Master wallet, division 1", wallet, "Balance from the corporation's journal"]]
+    for d in sorted(k for k in cash if k != 1):
+        if abs(cash[d]) >= 1:
+            rows.append([f"Wallet division {d}", cash[d], "Balance from the corporation's journal"])
+    for o in orders:
+        if o["is_buy"] and o["issued"] <= cut and o["escrow"]:
+            rows.append([f"Escrow of the buy order for {o['name']}", o["escrow"], f"{o['remain']:,} left to buy at {o['price']:,.2f}"])
+    groups.append({"key": "cash", "label": "Liquid ISK", "id": "as-cash", "rows": rows, "total": sum(r[1] for r in rows)})
+    groups.append({"key": "pool", "label": "Reward ISK in active corporation projects", "id": "as-pool", "total": pool,
+                   "rows": [[f"{n_projects} active projects", pool, "Rewards not yet paid out, read from EVE"]]})
+    listed, physical = [], []
+    for s in stock_lines:
+        if s["units"] < 0.5:
+            continue
+        where = f" at {s['location'].split(' - ')[0]}" if s["location"] else ""
+        row = [f"{s['name']}, {s['units']:,.0f} units", s["value"],
+               f"At cost, {s['unit_cost']:,.0f} ISK a unit" + (f"; listed at {s['list_price']:g}{where}" if s["list_price"] else "") + (f"; {s['sold']:,.0f} sold since the baseline" if s["sold"] else "")]
+        (listed if (s["list_price"] or s["sold"]) else physical).append(row)
+    if listed:
+        groups.append({"key": "listed", "label": "Stock listed for sale", "id": "as-listed", "rows": listed, "total": sum(r[1] for r in listed)})
+    if physical:
+        groups.append({"key": "physical", "label": "Physical items in stock", "id": "as-physical", "rows": physical, "total": sum(r[1] for r in physical),
+                       "note": "Inputs bought to convert in the LP store, and other items held for use, at cost"})
+    held_rows = [[name, cost, "At what the projects paid"] for name, cost in sorted(held.items(), key=lambda kv: -kv[1]) if cost >= 0.05e6]
+    if held_rows:
+        groups.append({"key": "held", "label": "Goods held from project buybacks", "id": "as-held", "rows": held_rows, "total": sum(held.values()),
+                       "note": f"At what the projects paid for them; {held_value / M:,.1f} M at Jita's highest buy"})
+    if lp_left:
+        groups.append({"key": "lp", "label": "Loyalty points", "id": "as-lp", "total": lp_left,
+                       "rows": [[f"{lp_units:,} LP not converted yet", lp_left, "At what the corporation paid per LP"]]})
+    return groups
 
 
 def _cached_get(key, fn, seconds=300):

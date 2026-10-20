@@ -56,26 +56,20 @@ def render(d: dict) -> bytes:
                   "the owner, interest-free and without a repayment date. That loan counts as nothing: the corporation's result is everything above or below it.", p),
         Spacer(1, 4),
     ]
-    rows = [["Master wallet, division 1 (liquid)", _m(d["wallet"]), "Balance from the corporation's journal"],
-            [f"Reward ISK still inside the {d['n_projects']} active corporation projects", _m(d["pool"]), "Rewards not yet paid out, read from EVE"]]
-    for s in d["stock"]:
-        if s["units"] >= 0.5:
-            listed = f" (listed at {s['list_price']:g} in {e(s['location'].split(' - ')[0])})" if s["list_price"] else ""
-            rows.append([f"{e(s['name'])} stock, {s['units']:,.0f} units{listed}", _m(s["value"]), f"At cost, {s['unit_cost']:,.0f} ISK a unit; {s['sold']:,.0f} units sold since the baseline"])
-    held_list = ", ".join(f"{e(k)} {v / M:.1f}" for k, v in d["held"] if v >= 0.05 * M)
-    rows.append(["Goods bought through projects since the baseline, not sold yet", _m(d["held_total"]),
-                 f"At what the projects paid for them ({d['held_value'] / M:.1f} M at Jita's highest buy){'; ' + held_list if held_list else ''}"])
-    if d["lp_cost"]:
-        rows.append([f"Loyalty points, {d['lp_units']:,} LP", _m(d["lp_cost"]), "At cost, the LP not used yet"])
-    if d.get("open_escrow"):
-        rows.append(["ISK in open buy orders", _m(d["open_escrow"]), "Escrow of the corporation's buy orders"])
-    if abs(d["other_divs"]) >= 0.05 * M:
-        rows.append(["Wallet divisions 2 to 6", _m(d["other_divs"]), "Balances from the corporation's journal"])
+    shade_rows = []
+    rows = []
+    for g in d["asset_groups"]:
+        shade_rows.append(len(rows) + 1)
+        rows.append([f"<b>{e(g['label'])}</b>", f"<b>{_m(g['total'])}</b>", e(g.get("note", ""))])
+        for label, value, note_ in g["rows"]:
+            rows.append([f"&nbsp;&nbsp;&nbsp;{e(label)}", _m(value), e(note_)])
     n = len(rows)
     rows += [["<b>Total assets</b>", f"<b>{_m(d['assets'])}</b>", ""], ["<b>Liabilities</b>", "", ""],
              ["Loan from the owner (the working budget)", _m(d["loan"]), "Interest-free, perpetual, extractable when the corporation can bear it"],
              ["<b>Result: assets above the loan</b>", f"<font color='#2e7d32'><b>{_m(d['result'], True)}</b></font>", "The corporation's own money"]]
-    story.append(table(["Assets", "ISK", "How it is valued"], rows, [78 * mm, 26 * mm, 70 * mm], total_rows=(n + 1,), green_rows=(len(rows),)))
+    t = table(["Assets", "ISK", "How it is valued"], rows, [78 * mm, 26 * mm, 70 * mm], total_rows=(n + 1,), green_rows=(len(rows),))
+    t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), colors.HexColor("#f4f6fa")) for b in shade_rows]))
+    story.append(t)
     outside = []
     if d["director"] is not None:
         outside.append(f"wallet division 7 (the Director division, {d['director'] / M:,.1f} M), the owner's characters' shared wallet")
@@ -87,9 +81,19 @@ def render(d: dict) -> bytes:
     story.append(Paragraph(text, note))
 
     story.append(Paragraph(f"2. What happened since the baseline ({base.day} {base:%B}, {base:%H:%M} EVE)", h2))
-    mrows = [[e(label), _m(v, True), e(n_)] for label, v, n_ in d["moves"]]
-    mrows.append(["<b>Total since the baseline</b>", f"<font color='#2e7d32'><b>{_m(sum(m[1] for m in d['moves']), True)}</b></font>", "Equals the result in section 1"])
-    story.append(table(["Movement", "ISK", "Note"], mrows, [72 * mm, 24 * mm, 78 * mm], total_rows=(len(mrows),)))
+    story.append(Paragraph("Every journal line since the baseline lands in exactly one category, so the categories add up to the result.", p))
+    story.append(Spacer(1, 4))
+    shade_rows = []
+    mrows = []
+    for g in d["move_groups"]:
+        shade_rows.append(len(mrows) + 1)
+        mrows.append([f"<b>{e(g['label'])}</b>", f"<b>{_m(g['total'], True)}</b>", e(g["note"])])
+        for label, v, n_ in g["rows"]:
+            mrows.append([f"&nbsp;&nbsp;&nbsp;{e(label)}", _m(v, True), e(n_)])
+    mrows.append(["<b>Total since the baseline</b>", f"<font color='#2e7d32'><b>{_m(d['result'], True)}</b></font>", "Equals the result in section 1"])
+    t = table(["Category", "ISK", "Note"], mrows, [72 * mm, 24 * mm, 78 * mm], total_rows=(len(mrows),))
+    t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), colors.HexColor("#f4f6fa")) for b in shade_rows]))
+    story.append(t)
 
     pb = d.get("project_bb") or {}
     if pb.get("active"):

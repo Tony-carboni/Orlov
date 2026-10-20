@@ -135,6 +135,35 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(labels["LP store: 240 Navy Cap Booster 800"], 0.0)
         self.assertNotIn("Paid in the LP store, not entered as stock", labels)
 
+    def test_categories_add_up(self):
+        d = books.compute()
+        self.assertAlmostEqual(sum(g["total"] for g in d["move_groups"]), d["result"], places=2)
+        self.assertAlmostEqual(sum(g["total"] for g in d["asset_groups"]), d["assets"], places=2)
+        self.assertEqual(sum(len(g["rows"]) for g in d["move_groups"]), len(d["moves"]))
+        keys = [g["key"] for g in d["move_groups"]]
+        self.assertEqual(keys, [k for k in keys if k != "gap"])  # nothing unexplained
+        self.assertIn("lp", keys)
+        self.assertIn("project_rewards", keys)
+        self.assertEqual([g["key"] for g in d["asset_groups"]][:2], ["cash", "pool"])
+        physical = next(g for g in d["asset_groups"] if g["key"] == "physical")
+        self.assertEqual(len(physical["rows"]), 1)  # the 760 Cap Booster 800 left to convert
+        listed = next(g for g in d["asset_groups"] if g["key"] == "listed")
+        self.assertEqual(len(listed["rows"]), 2)  # Heavy Water and the listed Navy boosters
+
+    def test_corrected_withdrawal_is_dropped(self):
+        # a mistyped LP purchase paid back a minute later with "correction" in the reason: neither line counts
+        j = lambda hours, ref, amount, reason="", entry_id=None: CorpJournalEntry.objects.create(  # noqa: E731
+            corporation_id=CORP, entry_id=entry_id, division=1, date=at(hours), ref_type=ref, amount=amount, reason=reason,
+            first_party_id=CORP if amount < 0 else 4444, second_party_id=4444 if amount < 0 else CORP)
+        j(13, "corporation_account_withdrawal", -12e6, "LP 16000", entry_id=99_101)
+        j(13.02, "player_donation", 12e6, "correction LP withdrawl", entry_id=99_102)
+        j(13.03, "corporation_account_withdrawal", -12e6, "15000 LP", entry_id=99_103)
+        d = books.compute()
+        self.assertLess(abs(d["gap"]), 1.0)
+        self.assertEqual(d["buyback"]["lp_units"], 65_000)  # 50,000 + 15,000, not 81,000
+        self.assertAlmostEqual(d["buyback"]["lp_cost"], 52e6)
+        self.assertFalse(any(m[0].startswith("Deposit: correction") for m in d["moves"]))
+
     def test_project_buybacks(self):
         pb = books.compute()["project_bb"]
         month = pb["months"][0]
