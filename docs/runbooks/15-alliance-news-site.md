@@ -21,7 +21,7 @@ nslookup alliance.orlovfamily.space
 
 Steps the local session takes, each announced first:
 
-1. Build the pages on the PC: from the repo root, `python site/alliance/build.py` writes `site/alliance/dist/` (index page, one page per post, the stylesheet, a 404 page).
+1. Build the pages on the PC: from the repo root, `python site/alliance/build.py` writes `site/alliance/dist/` (index page, one page per post, the stylesheet, a 404 page, and `posts.json`: the list of posts the Shipyard's Finance tab reads to open a new reporting period at every State of the Alliance post, runbook 13 release 0.20.0).
 2. On the server, create `~/aa-docker/alliance-site/` and copy the built pages into it.
 3. Append the `alliance_site` service (`deploy/docker-compose.alliance-site.append`) to `~/aa-docker/docker-compose.yml`, then `docker compose up -d alliance_site`.
 4. ✅ Done when, from inside the proxy container, `curl -s http://alliance_site/ | head -3` returns the page's first lines, and `docker compose ps` shows `aa-docker-alliance_site-1` as Up.
