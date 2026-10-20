@@ -34,6 +34,28 @@ That is the whole title. Everything on the "keep away" list is covered by *not* 
 
 Two things a Personnel Manager can do that are worth knowing: award decorations (medals, cosmetic, free) and see the member list in detail. Neither touches money or assets.
 
+## Worked example: a director with limited exposure (owner, 2026-10-20)
+
+Wanted: the corp's first director runs the corp day to day, with **full access to hangar divisions 4 to 7** and **one wallet, division 4**. Not wanted: hangar divisions 1 to 3 (the owner's only), every other wallet division, the journals of the other wallets.
+
+The one rule that decides the build: **the Director role cannot be limited.** It is "everything", including every hangar, every wallet and the right to hand out any role, and it is CEO-only to give. So a director with limited exposure must **not** hold the Director role; everything else is given as a title. If the role was already given, take it away first (Role Management → the member → untick Director).
+
+The title, built once under Title Management as "OARMI Director" and assigned to the member:
+
+| Area | Roles in the title | Why |
+|---|---|---|
+| Hangars 4 to 7 | Hangar Query 4, 5, 6, 7 · Hangar Take 4, 5, 6, 7 · Container Take 4, 5, 6, 7, each in **all three places** (Headquarters, Based At, Other) | See, take and move containers in the four open divisions wherever the corp has an office. Divisions 1 to 3 get no role at all. |
+| Wallet 4 | Account Take 4 | Take and transfer ISK from division 4, and see that division in the wallet window. No other division appears. |
+| People | Personnel Manager | Invitations and applications. |
+| Words | Communications Officer | Bulletins and the corp chat MOTD. |
+| Fits | Fitting Manager | Save and manage corporation fittings (the doctrine fits). |
+
+Left out on purpose: **Accountant and Junior Accountant** (both show the balances of *every* division, Accountant the journals too; a director who may not see the other wallets gets neither; the division 4 journal then stays with the owner), **Trader** (buys with the corp wallet), **Contract Manager** (contracts in the corp's name need a wallet and a hangar Take: add only if wanted, with division 4), **Rent Office** (rent is paid by the corp), **Station Manager, Config Equipment, Diplomat, Brand Manager** (structures, standings, SKINs), **Factory Manager** (corp industry jobs; the owner's production runs under the owner's own characters). Do not tick *grantable* on anything: the director then cannot hand roles on.
+
+Wallet side: give division 4 a name (Corporation → Wallet → the division's name, "Directors" for example) and move the working ISK into it. Corporation projects paid by the director must use division 4 as their payout wallet. The two bookkeeping rules of 2026-10-18 still hold: the master wallet (division 1) stays the owner's, the "Director" division (7) is the owner's shared personal wallet and never corp money.
+
+What the director then sees: the four hangars in every office, one wallet with its balance, applications and invitations, bulletins, corp fits; not the first three hangars, not the other six wallets, not the shareholders, not the corporation settings.
+
 ## General roles
 
 | Role | What it allows |
