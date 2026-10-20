@@ -75,7 +75,8 @@ def compute(now=None) -> dict:
     if now is not None:
         journal = [e for e in journal if e.date <= now]
         cut = journal[-1].date if journal else base
-    txs = {t.journal_ref_id: t for t in CorpWalletTransaction.objects.filter(corporation_id=cid, date__gte=base, date__lte=cut)}
+    # a market journal line names its transaction in context_id (the transaction's journal_ref_id points elsewhere)
+    txs = {t.transaction_id: t for t in CorpWalletTransaction.objects.filter(corporation_id=cid, date__gte=base, date__lte=cut)}
     batches_qs = list(BookStock.objects.all().order_by("bought_at", "id"))
     stock_types = {s.type_id: s.name for s in batches_qs}
     names = _names([e.first_party_id for e in journal] + [e.second_party_id for e in journal] + [t.type_id for t in txs.values()])
@@ -97,7 +98,7 @@ def compute(now=None) -> dict:
         cash[e.division] += e.amount
         rt = e.ref_type
         if rt == "market_transaction":
-            t = txs.get(e.entry_id)
+            t = txs.get(e.context_id) if e.context_id_type == "market_transaction_id" else None
             if e.amount >= 0:
                 if t is None:
                     untyped_sales += e.amount
@@ -250,10 +251,13 @@ def compute(now=None) -> dict:
         moves.append(["Not explained", gap, "The journal and the position differ: a missing journal page or a new kind of entry"])
 
     # --- outside the books -----------------------------------------------------------------------
-    director = None
-    last7 = CorpJournalEntry.objects.filter(corporation_id=cid, division=DIRECTOR_DIVISION).order_by("-date", "-entry_id").first()
-    if last7:
-        director = last7.balance
+    live = live_wallets()
+    director = live.get(DIRECTOR_DIVISION)
+    if director is None:
+        last7 = CorpJournalEntry.objects.filter(corporation_id=cid, division=DIRECTOR_DIVISION).order_by("-date", "-entry_id").first()
+        director = last7.balance if last7 else None
+    live_books = sum(v for k, v in live.items() if k in divisions) if live else None
+    books_now = wallet + other_divs
     structure_income = None
     rule = app_settings.SHIPYARD_BOOKS_STRUCTURE_TRANSFER
     if rule:
@@ -288,16 +292,39 @@ def compute(now=None) -> dict:
         "lp_units": lp_units, "lp_cost": lp_cost, "assets": assets, "result": result,
         "moves": moves, "explained": explained, "gap": gap,
         "director": director, "older": (older_cost, older_value), "structure_income": structure_income,
+        "live_books": live_books, "books_now": books_now, "live_ahead": (live_books - books_now) if live_books is not None else None,
         "fuel_price": fuel_price, "fuel_name": fuel_name, "fuel_rows": fuel_rows, "fuel_paying_bph": paying,
         "fuel_burned": round(hours * paying), "fuel_burned_isk": round(hours * paying) * fuel_price,
         "generated": timezone.now(), "market": market.name if market else "",
     }
 
 
+def live_wallets() -> dict:
+    """{division: balance} as EVE reports it now (cached 5 minutes); {} without a token or when EVE does not answer."""
+    from django.core.cache import cache
+    key = "shipyard:books:wallets"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    out = {}
+    try:
+        from . import esi, ledger
+        tok = ledger.token()
+        if tok is not None:
+            rows = esi._authed(f"/corporations/{ledger.corp_id()}/wallets/", tok.valid_access_token()).json() or []
+            out = {int(r["division"]): float(r["balance"]) for r in rows}
+            cache.set(key, out, 300)
+    except Exception:  # noqa: BLE001
+        out = {}
+    return out
+
+
 def refresh() -> list[str]:
     """Read EVE now: the projects, the corp's journal and transactions, the structure corp's journal."""
     from . import ledger, wallet as structure_wallet
     out = []
+    from django.core.cache import cache
+    cache.delete("shipyard:books:wallets")
     for label, fn in (("projects", projects.refresh), ("corporation journal", ledger.refresh), ("structure income", structure_wallet.refresh)):
         try:
             fn()

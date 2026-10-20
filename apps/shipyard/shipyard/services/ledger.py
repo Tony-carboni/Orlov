@@ -67,20 +67,22 @@ def refresh() -> dict:
         raise RuntimeError("no token with the corporation wallet scope for a character of the executor corp")
     access_token = tok.valid_access_token()
     cid = corp_id()
-    known = set(CorpJournalEntry.objects.filter(corporation_id=cid).values_list("entry_id", flat=True))
+    known = {d: set() for d in DIVISIONS}  # per division: a transfer between divisions has one entry id in both journals
+    for division, entry_id in CorpJournalEntry.objects.filter(corporation_id=cid).values_list("division", "entry_id"):
+        known.setdefault(division, set()).add(entry_id)
     known_tx = set(CorpWalletTransaction.objects.filter(corporation_id=cid).values_list("transaction_id", flat=True))
     added = added_tx = 0
     for division in DIVISIONS:
         try:
-            rows = _journal(division, access_token, known)
+            rows = _journal(division, access_token, known[division])
         except Exception as exc:  # noqa: BLE001
             logger.warning("journal of division %s failed: %s", division, exc)
             rows = []
         for r in rows:
             CorpJournalEntry.objects.update_or_create(
-                corporation_id=cid, entry_id=int(r["id"]),
+                corporation_id=cid, division=division, entry_id=int(r["id"]),
                 defaults={
-                    "division": division, "date": _when(r["date"]),
+                    "date": _when(r["date"]),
                     "ref_type": r.get("ref_type") or "", "amount": float(r.get("amount") or 0),
                     "balance": float(r.get("balance") or 0), "first_party_id": int(r.get("first_party_id") or 0),
                     "second_party_id": int(r.get("second_party_id") or 0), "context_id": int(r.get("context_id") or 0),
@@ -89,7 +91,7 @@ def refresh() -> dict:
                     "tax_receiver_id": int(r.get("tax_receiver_id") or 0),
                 },
             )
-            known.add(int(r["id"]))
+            known[division].add(int(r["id"]))
             added += 1
         polite_pause()
         try:

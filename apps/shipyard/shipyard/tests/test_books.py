@@ -22,6 +22,9 @@ def at(hours):
 @override_settings(SHIPYARD_STANDALONE_HOST="", SHIPYARD_PROJECTS_CORP_ID=CORP, SHIPYARD_BOOKS_STRUCTURE_TRANSFER=r"raitaru")
 class BooksTests(TestCase):
     def setUp(self):
+        wallets = mock.patch.object(books, "live_wallets", lambda: {})
+        wallets.start()
+        self.addCleanup(wallets.stop)
         patcher = mock.patch.object(books, "_names", lambda ids: {35: "Pyerite", 16272: "Heavy Water"})
         patcher.start()
         self.addCleanup(patcher.stop)
@@ -32,21 +35,24 @@ class BooksTests(TestCase):
         CorpProject.objects.create(project_id="p1", corporation_id=CORP, name="bitumens", state="Active", reward_initial=2400e6, reward_remaining=2350e6)
         n = iter(range(1000, 2000))
 
-        def j(hours, ref, amount, reason="", first=0, second=0, division=1):
-            e = CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=next(n), division=division, date=at(hours), ref_type=ref, amount=amount,
-                                                first_party_id=first, second_party_id=second, reason=reason)
+        def j(hours, ref, amount, reason="", first=0, second=0, division=1, tx=0, entry_id=None):
+            e = CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=entry_id or next(n), division=division, date=at(hours), ref_type=ref, amount=amount,
+                                                first_party_id=first, second_party_id=second, reason=reason,
+                                                context_id=tx, context_id_type="market_transaction_id" if tx else "")
             return e.entry_id
         # a Heavy Water sale and a project-goods sale, with their transactions
-        e1 = j(1, "market_transaction", 10_000 * 149.9)
-        CorpWalletTransaction.objects.create(transaction_id=1, corporation_id=CORP, division=1, date=at(1), type_id=16272, quantity=10_000, unit_price=149.9, journal_ref_id=e1)
-        e2 = j(2, "market_transaction", 50e6)
-        CorpWalletTransaction.objects.create(transaction_id=2, corporation_id=CORP, division=1, date=at(2), type_id=35, quantity=3_000_000, unit_price=16.67, journal_ref_id=e2)
+        j(1, "market_transaction", 10_000 * 149.9, tx=1)
+        CorpWalletTransaction.objects.create(transaction_id=1, corporation_id=CORP, division=1, date=at(1), type_id=16272, quantity=10_000, unit_price=149.9, journal_ref_id=777)
+        j(2, "market_transaction", 50e6, tx=2)
+        CorpWalletTransaction.objects.create(transaction_id=2, corporation_id=CORP, division=1, date=at(2), type_id=35, quantity=3_000_000, unit_price=16.67, journal_ref_id=778)
         j(2, "transaction_tax", -1.7e6)
         j(3, "market_escrow", 149.5e6)
         j(4, "player_donation", 77e6, "raitaru tax income", first=111)
         j(5, "corporation_account_withdrawal", -40e6, "50.000 LP", first=CORP, second=222)
         j(6, "project_payouts", -66e6)  # a new project funded
         j(7, "corporation_account_withdrawal", -10e6, "", first=CORP, second=CORP)  # to the Director division
+        j(7.5, "corporation_account_withdrawal", -25e6, "", first=CORP, second=CORP, entry_id=5555)  # to the SRP division: the same entry id in both journals
+        j(7.5, "corporation_account_withdrawal", 25e6, "", first=CORP, second=CORP, division=2, entry_id=5555)
         j(8, "corporation_account_withdrawal", -1.3e6, "Reprocessing buybacks", first=CORP, second=333)
         j(9, "market_transaction", 2e6)  # a sale whose transaction EVE has not listed yet
 
@@ -67,7 +73,8 @@ class BooksTests(TestCase):
         self.assertEqual(d["lp_units"], 50_000)
         self.assertAlmostEqual(d["stock"][0]["units"], 1_990_000)
         self.assertAlmostEqual(d["stock_now"], 1_990_000 * 108)
-        self.assertAlmostEqual(d["wallet"], 2397e6 + 1_499_000 + 50e6 - 1.7e6 + 149.5e6 + 77e6 - 40e6 - 66e6 - 10e6 - 1.3e6 + 2e6, places=2)
+        self.assertAlmostEqual(d["wallet"], 2397e6 + 1_499_000 + 50e6 - 1.7e6 + 149.5e6 + 77e6 - 40e6 - 66e6 - 10e6 - 25e6 - 1.3e6 + 2e6, places=2)
+        self.assertAlmostEqual(d["other_divs"], 25e6)  # the SRP division's side of the transfer is kept
         self.assertEqual(d["cut"], at(9))
 
     def test_page_and_pdf_for_the_owner_only(self):

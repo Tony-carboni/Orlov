@@ -401,7 +401,8 @@ class CorpJournalEntry(models.Model):
 
     class Meta:
         ordering = ["-date"]
-        unique_together = [("corporation_id", "entry_id")]
+        # a transfer between two wallet divisions carries the same entry id in both journals (0.17.1)
+        unique_together = [("corporation_id", "division", "entry_id")]
 
     def __str__(self):
         return f"{self.date:%Y-%m-%d} {self.ref_type} {self.amount:,.0f}"
