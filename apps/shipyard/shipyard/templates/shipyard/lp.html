@@ -26,7 +26,7 @@
     </div>
     <div class="col-lg-7 col-xl-8">
         <div class="shipyard-infobar h-100">
-            <div><span class="shipyard-k">Reading the table:</span> <strong>Net</strong> is what the offer's items fetch at Jita lowest sell, minus the ISK the store charges and minus the items you hand in (at Jita lowest sell). <strong>ISK/LP</strong> is that net per loyalty point; <strong>after fees</strong> takes your sales tax and broker fee ({{ fees|pct:2 }}) off the sale.</div>
+            <div><span class="shipyard-k">Reading the table:</span> <strong>Net</strong> is what the offer's items fetch at Jita lowest sell after your sales tax ({{ sales_tax|pct:2 }}), minus the ISK the store charges and minus the items you hand in (at Jita lowest sell). <strong>ISK/LP</strong> is that net per loyalty point (hover for the figure before tax); <strong>after fees</strong> also takes your broker fee off the sale ({{ fees|pct:2 }} in all).</div>
             <div><span class="shipyard-k">Blueprint copies</span> have no market price. Their row shows the <strong>BPC price</strong> a copy must fetch to reach {{ target|num:0 }} ISK/LP (and the price with fees on top); a copy that sells for more on contracts is a top offer.</div>
             <div class="shipyard-k"><strong>Vol/day</strong> is what Jita's region trades per day ({{ volume_days }}-day average); <strong>Depth</strong> is the units on Jita sell orders divided by that: how many days of stock the sellers hold.</div>
         </div>
@@ -68,8 +68,8 @@
             <th data-key="inputcost" class="text-end" title="Cost of the inputs at Jita lowest sell">Input cost</th>
             <th data-key="sell" class="text-end" title="Jita lowest sell per unit of the item">Jita sell</th>
             <th data-key="value" class="text-end" title="Jita lowest sell × quantity">Output value</th>
-            <th data-key="net" class="text-end" title="Output value − ISK cost − input cost">Net</th>
-            <th data-key="rate" class="text-end" title="Net ISK per loyalty point">ISK/LP</th>
+            <th data-key="net" class="text-end" title="Output value less your sales tax ({{ sales_tax|pct:2 }}) − ISK cost − input cost">Net</th>
+            <th data-key="rate" class="text-end" title="Net ISK per loyalty point, after sales tax on the output; hover a cell for the figure before tax">ISK/LP</th>
             <th data-key="rateafter" class="text-end" title="ISK per LP once your sales tax and broker fee ({{ fees|pct:2 }}) come off the sale">After fees</th>
             <th data-key="vol" class="text-end" title="Units traded per day in Jita's region, {{ volume_days }}-day average">Vol/day</th>
             <th data-key="depth" class="text-end" title="Units on Jita sell orders ÷ units traded per day: days of stock the sellers hold">Depth</th>
@@ -89,7 +89,7 @@
             <td class="text-end" data-order="{{ r.sell|default:0 }}">{% if r.sell %}{{ r.sell|isk }}{% elif r.is_blueprint %}<span class="shipyard-k">BPC</span>{% else %}<span class="text-warning" title="No sell order at Jita">none</span>{% endif %}</td>
             <td class="text-end" data-order="{{ r.output_value|default:0 }}">{% if r.output_value %}{{ r.output_value|isk }}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
             <td class="text-end {% if r.net is not None %}{{ r.net|profit_class }}{% endif %}" data-order="{{ r.net|default:0 }}">{% if r.net is not None %}{{ r.net|isk }}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
-            <td class="text-end fw-semibold" data-order="{% if r.isk_per_lp is not None %}{{ r.isk_per_lp }}{% else %}-1000000{% endif %}">{% if r.isk_per_lp is not None %}{{ r.isk_per_lp|num:0 }}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
+            <td class="text-end fw-semibold" data-order="{% if r.isk_per_lp is not None %}{{ r.isk_per_lp }}{% else %}-1000000{% endif %}"{% if r.isk_per_lp_gross is not None %} title="Before sales tax: {{ r.isk_per_lp_gross|num:0 }} ISK/LP"{% endif %}>{% if r.isk_per_lp is not None %}{{ r.isk_per_lp|num:0 }}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
             <td class="text-end" data-order="{% if r.isk_per_lp_after is not None %}{{ r.isk_per_lp_after }}{% else %}-1000000{% endif %}">{% if r.isk_per_lp_after is not None %}{{ r.isk_per_lp_after|num:0 }}{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
             <td class="text-end" data-order="{{ r.avg_daily_volume }}">{% if r.is_blueprint %}<span class="shipyard-k">–</span>{% else %}{{ r.avg_daily_volume|num:0 }}{% endif %}</td>
             <td class="text-end" data-order="{{ r.depth_days|default:0 }}">{% if r.is_blueprint %}<span class="shipyard-k">–</span>{% else %}{{ r.depth_days|depth }}{% endif %}</td>

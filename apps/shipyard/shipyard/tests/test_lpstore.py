@@ -60,7 +60,12 @@ class RowTests(TestCase):
         hook = rows[4]
         self.assertFalse(hook.inputs_complete)
         self.assertAlmostEqual(hook.isk_per_lp, 25_000_000 / 5_000)  # the unpriced input costs nothing in the figure, flagged on the page
-        self.assertEqual([r.offer_id for r in lpstore.rows()], [4, 1, 2, 3])  # best rate first (5,000, 4,000, 2,500), the blueprint last
+        self.assertEqual([r.offer_id for r in lpstore.rows()], [4, 1, 2, 3])
+        # sales tax on the output comes off Net and ISK/LP (owner, 2026-10-20); the gross figure stays for the tooltip
+        taxed = {r.offer_id: r for r in lpstore.rows(fees=0.05, sales_tax=0.0337)}[1]
+        self.assertAlmostEqual(taxed.isk_per_lp, (5_000_000 * (1 - 0.0337) - 1_000_000) / 1000)
+        self.assertAlmostEqual(taxed.isk_per_lp_gross, 4_000)
+        self.assertAlmostEqual(taxed.isk_per_lp_after, (5_000_000 * 0.95 - 1_000_000) / 1000)  # best rate first (5,000, 4,000, 2,500), the blueprint last
 
 
 class RefreshTests(TestCase):

@@ -622,11 +622,12 @@ def lp_view(request):
     settings = board.get_user_settings(request.user)
     rates = tax_rates(settings.market, settings)
     fees = rates.sales_tax + rates.broker_fee
-    rows = lpstore.rows(fees=fees)
+    rows = lpstore.rows(fees=fees, sales_tax=rates.sales_tax)
     context = _context(
         request,
         settings=settings,
         rows=rows,
+        sales_tax=rates.sales_tax,
         item_rows=sum(1 for r in rows if not r.is_blueprint),
         bpc_rows=sum(1 for r in rows if r.is_blueprint),
         fees=fees,

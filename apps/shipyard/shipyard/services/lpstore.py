@@ -134,8 +134,10 @@ class LpRow:
     sell: float | None = None                     # Jita lowest sell per unit of the output
     buy: float | None = None
     output_value: float | None = None             # sell × quantity
-    net: float | None = None                      # output − ISK cost − inputs
-    isk_per_lp: float | None = None
+    net: float | None = None                      # output after sales tax − ISK cost − inputs (owner, 2026-10-20)
+    gross: float | None = None                    # output − ISK cost − inputs, before any tax
+    isk_per_lp: float | None = None               # net per LP, after sales tax on the output
+    isk_per_lp_gross: float | None = None         # before sales tax
     isk_per_lp_after: float | None = None         # after sales tax and broker fee on the sale
     avg_daily_volume: float = 0.0
     sell_volume: float = 0.0
@@ -152,9 +154,11 @@ class LpRow:
         return "blueprint" if self.is_blueprint else "item"
 
 
-def rows(fees: float = 0.0, target_rate: float | None = None) -> list[LpRow]:
-    """One row per active offer. `fees` = sales tax + broker fee as a fraction, taken off the sale for the
-    'after fees' figures; `target_rate` for the blueprint price (the setting when not given)."""
+def rows(fees: float = 0.0, target_rate: float | None = None, sales_tax: float = 0.0) -> list[LpRow]:
+    """One row per active offer. `sales_tax` (a fraction) comes off the output in Net and ISK/LP (owner,
+    2026-10-20: profit always after the sales tax on what the store gives); `fees` = sales tax + broker fee,
+    taken off the sale for the 'after fees' figures; `target_rate` for the blueprint price (the setting when
+    not given). Blueprint copies sell on contracts, which charge no sales tax."""
     rate = target() if target_rate is None else float(target_rate)
     offers = list(LpOffer.objects.filter(store_corp_id=store_corp_id(), is_active=True))
     market = {m.type_id: m for m in LpTypeMarket.objects.filter(type_id__in=_type_ids(offers))}
@@ -184,9 +188,11 @@ def rows(fees: float = 0.0, target_rate: float | None = None) -> list[LpRow]:
         elif m and m.sell_min:
             row.sell = m.sell_min
             row.output_value = m.sell_min * row.quantity
-            row.net = row.output_value - costs
+            row.gross = row.output_value - costs
+            row.net = row.output_value * (1.0 - sales_tax) - costs
             if row.lp > 0:
                 row.isk_per_lp = row.net / row.lp
+                row.isk_per_lp_gross = row.gross / row.lp
                 row.isk_per_lp_after = (row.output_value * (1.0 - fees) - costs) / row.lp
         out.append(row)
     out.sort(key=lambda r: (-(r.isk_per_lp if r.isk_per_lp is not None else -1e18), r.name))
