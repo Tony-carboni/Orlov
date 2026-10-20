@@ -12,6 +12,11 @@ Three sources, one page:
   when no such token exists.
 - Ships are grouped the way the dashboard does: the category (Base, Navy, Pirate, ...) and the
   hull class (Frigate, Destroyer, ...). Fuel blocks are counted apart from ships.
+- **Loyalty points used** (owner's request, 2026-10-20): every manufacturing job of a ship whose
+  blueprint copy comes from an LP store, as the dashboard assumes (`ShipConfig.lp_faction`, `lp_cost`,
+  `lp_runs`), consumed runs x LP per copy / runs per copy of that faction's LP, valued at the
+  faction's dashboard rate (`LpFaction.isk_per_lp`). Per faction and per period, next to the
+  character's LP balances from Member Audit, so the owner can tune the rate he pays for LP.
 """
 
 import datetime as dt
@@ -71,10 +76,18 @@ def ma_freshness(character) -> dict:
 
 def catalog() -> dict:
     """{type_id: {name, category, hull, units_per_run}} for every ship and fuel block we know."""
-    return {
-        s.type_id: {"name": s.name, "category": s.category, "hull": s.hull_size, "units_per_run": s.units_per_run or 1}
-        for s in Ship.objects.all()
-    }
+    out = {}
+    for s in Ship.objects.select_related("config", "config__lp_faction"):
+        c = getattr(s, "config", None)
+        lp = c is not None and c.has_lp_offer
+        out[s.type_id] = {
+            "name": s.name, "category": s.category, "hull": s.hull_size, "units_per_run": s.units_per_run or 1,
+            "faction": c.lp_faction.name if lp else None,
+            "lp_per_run": float(c.lp_cost) / max(1, c.lp_runs) if lp else 0.0,
+            "lp_isk_per_run": float(c.lp_isk_cost) / max(1, c.lp_runs) if lp else 0.0,
+            "isk_per_lp": float(c.lp_faction.isk_per_lp) if lp else 0.0,
+        }
+    return out
 
 
 # --- wallet --------------------------------------------------------------------------------
@@ -316,6 +329,7 @@ def production_rows(installer_id=None, since=None) -> list[dict]:
             "job_id": j.job_id, "date": j.start_date, "end": j.end_date, "status": j.status,
             "type_id": j.product_type_id, "name": c["name"], "category": c["category"], "hull": c["hull"],
             "runs": j.runs, "quantity": j.runs * c["units_per_run"], "total": j.cost, "installer": j.installer_name or str(j.installer_id),
+            "faction": c["faction"], "lp": j.runs * c["lp_per_run"], "lp_isk": j.runs * c["lp_isk_per_run"], "isk_per_lp": c["isk_per_lp"],
         })
     return out
 
@@ -340,6 +354,57 @@ def production_summary(rows: list[dict], period: str, now=None) -> dict:
         "fuel_by_name": pivot(fuel, period, "name", "quantity"),
         "types": by_type(ships, count_key="quantity", money_key="total"),
         "fuel_types": by_type(fuel, count_key="quantity", money_key="total"),
+    }
+
+
+# --- loyalty points used --------------------------------------------------------------------
+
+def lp_balances(character) -> dict:
+    """{NPC corporation name: loyalty points} of the character, from Member Audit's loyalty section."""
+    if character is None:
+        return {}
+    try:
+        from memberaudit.models import CharacterLoyaltyEntry
+
+        return {e.corporation.name: int(e.loyalty_points) for e in CharacterLoyaltyEntry.objects.filter(character=character).select_related("corporation")}
+    except Exception as exc:  # noqa: BLE001
+        logger.info("Member Audit loyalty points not read: %s", exc)
+        return {}
+
+
+def lp_summary(rows: list[dict], period: str, balances: dict | None = None, now=None) -> dict:
+    """LP the production consumed, per faction and per period, as the dashboard assumes it. Pure.
+
+    A job of a ship with an LP store blueprint copy uses runs x LP per copy / runs per copy; the ISK
+    value is that LP at the faction's dashboard rate. `balances` is {faction name: LP held now}."""
+    now = now or timezone.now()
+    balances = balances or {}
+    used = [r for r in rows if r.get("lp")]
+    first = min((r["date"] for r in used if r["date"]), default=None)
+    weeks = max((now - first).total_seconds() / (7 * 86400), 1.0) if first else 1.0
+    agg = {}
+    for r in used:
+        a = agg.setdefault(r["faction"], {"faction": r["faction"], "lp": 0.0, "isk": 0.0, "store_isk": 0.0, "jobs": 0, "units": 0,
+                                          "rate": r["isk_per_lp"], "first": r["date"], "last": r["date"]})
+        a["lp"] += r["lp"]
+        a["isk"] += r["lp"] * r["isk_per_lp"]
+        a["store_isk"] += r["lp_isk"]
+        a["jobs"] += 1
+        a["units"] += r["quantity"]
+        a["first"] = min(a["first"], r["date"])
+        a["last"] = max(a["last"], r["date"])
+    factions = sorted(agg.values(), key=lambda a: -a["lp"])
+    for a in factions:
+        a["per_week"] = a["lp"] / weeks
+        a["balance"] = balances.get(a["faction"])
+        a["weeks_left"] = (a["balance"] / a["per_week"]) if a["balance"] is not None and a["per_week"] > 0 else None
+    lp = sum(a["lp"] for a in factions)
+    return {
+        "lp": lp, "isk": sum(a["isk"] for a in factions), "store_isk": sum(a["store_isk"] for a in factions),
+        "jobs": len(used), "units": sum(r["quantity"] for r in used), "per_week": lp / weeks, "weeks": weeks,
+        "factions": factions,
+        "by_faction": pivot(used, period, "faction", "lp"),
+        "by_ship": by_type(used, count_key="lp", money_key="lp_isk"),
     }
 
 

@@ -43,6 +43,7 @@
                 <div><span class="shipyard-k">Ships produced</span><br><strong class="fs-5">{{ production.units|num:0 }}</strong> <span class="shipyard-k">in {{ production.jobs }} jobs, {{ production.cost|isk }} job cost</span></div>
                 <div><span class="shipyard-k">Pace</span><br><strong class="fs-5">{{ production.per_week.units|num:0 }}</strong> <span class="shipyard-k">ships / week, {{ production.per_week.jobs|num:1 }} jobs / week</span></div>
                 <div><span class="shipyard-k">Jobs running</span><br><strong class="fs-5">{{ production.active }}</strong></div>
+                <div><span class="shipyard-k">LP used</span><br><strong class="fs-5">{{ lp.lp|num:0 }}</strong> <span class="shipyard-k">{{ lp.per_week|num:0 }} / week, {{ lp.isk|isk }} at the dashboard rates</span></div>
                 <div><span class="shipyard-k">Fuel blocks</span><br><strong class="fs-5">{{ sales.fuel_units|num:0 }}</strong> <span class="shipyard-k">sold ({{ sales.fuel_isk|isk }}), {{ production.fuel_units|num:0 }} produced</span></div>
                 <div><span class="shipyard-k">Wallet{% if days %}, {{ days }} days{% endif %}</span><br><strong class="fs-5 {% if wallet.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ wallet.net|isk }}</strong> <span class="shipyard-k">net: {{ wallet.income|isk }} in, {{ wallet.expenses|isk }} out</span></div>
             </div>
@@ -118,6 +119,51 @@
         <div class="card h-100"><div class="card-body py-2">
             <div class="fw-semibold mb-1">Sales ISK per {{ period }}, by type (fuel blocks included)</div>
             <canvas id="chart-isk-category" height="90"></canvas>
+        </div></div>
+    </div>
+</div>
+
+<h5>Loyalty points used, by faction <span class="small shipyard-k">({{ lp.jobs }} jobs of ships with an LP store blueprint copy, as the dashboard assumes them)</span></h5>
+<div class="row g-3 mb-4">
+    <div class="col-lg-7">
+        <div class="table-responsive">
+        <table id="lp-table" class="table table-sm table-hover table-striped align-middle w-100">
+            <thead><tr>
+                <th>Faction</th>
+                <th class="text-end" title="Runs x LP per blueprint copy / runs per copy, for every job in the range">LP used</th>
+                <th class="text-end" title="LP used divided by the weeks from the first job in the range to now">Per week</th>
+                <th class="text-end" title="The dashboard's ISK per LP for this faction (Shipyard: LP factions)">Rate</th>
+                <th class="text-end" title="LP used at the dashboard rate">ISK at rate</th>
+                <th class="text-end" title="The ISK part of the LP store offers, summed over the copies used">ISK to the store</th>
+                <th class="text-end">Jobs</th><th class="text-end">Ships</th>
+                <th class="text-end" title="The character's LP with this faction's corporation, from Member Audit">LP held</th>
+                <th class="text-end" title="LP held divided by the LP used per week">Weeks left</th>
+            </tr></thead>
+            <tbody>
+            {% for f in lp.factions %}
+                <tr>
+                    <td class="text-nowrap fw-semibold">{{ f.faction }}</td>
+                    <td class="text-end fw-semibold">{{ f.lp|num:0 }}</td>
+                    <td class="text-end">{{ f.per_week|num:0 }}</td>
+                    <td class="text-end">{{ f.rate|num:0 }}</td>
+                    <td class="text-end">{{ f.isk|isk }}</td>
+                    <td class="text-end">{{ f.store_isk|isk }}</td>
+                    <td class="text-end">{{ f.jobs }}</td>
+                    <td class="text-end">{{ f.units|num:0 }}</td>
+                    <td class="text-end">{% if f.balance is not None %}{{ f.balance|num:0 }}{% else %}<span class="shipyard-k">-</span>{% endif %}</td>
+                    <td class="text-end">{% if f.weeks_left is not None %}{{ f.weeks_left|num:1 }}{% else %}<span class="shipyard-k">-</span>{% endif %}</td>
+                </tr>
+            {% empty %}<tr><td colspan="10" class="shipyard-k">No job of a ship with an LP store blueprint copy in this range{% if not token %}: connect the jobs first{% endif %}.</td></tr>{% endfor %}
+            {% if lp.factions %}<tr class="fw-semibold"><td>All</td><td class="text-end">{{ lp.lp|num:0 }}</td><td class="text-end">{{ lp.per_week|num:0 }}</td><td></td><td class="text-end">{{ lp.isk|isk }}</td><td class="text-end">{{ lp.store_isk|isk }}</td><td class="text-end">{{ lp.jobs }}</td><td class="text-end">{{ lp.units|num:0 }}</td><td></td><td></td></tr>{% endif %}
+            </tbody>
+        </table>
+        </div>
+        <div class="shipyard-k small">LP per ship = the LP store offer the dashboard prices the blueprint copy with (LP per copy / runs per copy); the rate per faction is the dashboard's ISK per LP, the figure to tune against this use. LP held is the chosen character's balance from Member Audit (hourly).</div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card h-100"><div class="card-body py-2">
+            <div class="fw-semibold mb-1">LP used per {{ period }}, by faction</div>
+            <canvas id="chart-lp-faction" height="140"></canvas>
         </div></div>
     </div>
 </div>

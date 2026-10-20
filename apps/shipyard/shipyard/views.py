@@ -782,6 +782,7 @@ def business_view(request):
     sales = business.sales_summary(sales_rows, period)
     production = business.production_summary(production_rows, period)
     wallet_summary = business.wallet_summary(journal, period)
+    lp = business.lp_summary(production_rows, period, business.lp_balances(ma))
     ma_since = None
     if ma:
         try:
@@ -802,7 +803,7 @@ def business_view(request):
         period=period, periods=business.PERIODS, days=days, who=who, installer_only=who != "corp",
         corp_id=business.corp_id(), token=business.token(),
         last_run=RefreshRun.objects.filter(step="corp_jobs").order_by("-started_at").first(),
-        sales=sales, production=production, wallet=wallet_summary,
+        sales=sales, production=production, wallet=wallet_summary, lp=lp,
         comparison=business.compare(sales, production),
         fuel_table=business.fuel_table(sales, production),
         charts={
@@ -813,6 +814,7 @@ def business_view(request):
             "fuel_sold": business.chart(sales["fuel_by_name"]),
             "fuel_produced": business.chart(production["fuel_by_name"]),
             "isk_category": business.chart(sales["isk_by_category"]),
+            "lp_faction": business.chart(lp["by_faction"]),
         },
         can_manage=can_manage,
     )

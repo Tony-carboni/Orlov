@@ -58,6 +58,7 @@
             draw("chart-wallet", charts.wallet, true);
             draw("chart-fuel-sold", charts.fuel_sold, false);
             draw("chart-fuel-produced", charts.fuel_produced, false);
+            draw("chart-lp-faction", charts.lp_faction, false);
             draw("chart-isk-category", charts.isk_category, true);
         }
         if (document.getElementById("sold-table")) {

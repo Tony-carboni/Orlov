@@ -5,7 +5,7 @@ from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from .. import constants
-from ..models import CorpIndustryJob, Ship
+from ..models import CorpIndustryJob, LpFaction, Ship, ShipConfig
 from ..services import business
 
 
@@ -55,6 +55,32 @@ class PureTests(SimpleTestCase):
         self.assertEqual(chart["datasets"][2]["type"], "line")
         self.assertEqual(chart["datasets"][0]["data"], [100.0, 0])
 
+    def test_lp_summary_counts_the_dashboard_assumptions_per_faction(self):
+        rows = [
+            {"date": _d(1), "type_id": 2, "name": "Vexor Navy Issue", "category": "Navy", "hull": "Cruiser", "quantity": 2, "runs": 2, "total": 0,
+             "faction": "Federation Navy", "lp": 40000.0, "lp_isk": 40e6, "isk_per_lp": 850.0},
+            {"date": _d(9), "type_id": 3, "name": "Caracal Navy Issue", "category": "Navy", "hull": "Cruiser", "quantity": 1, "runs": 1, "total": 0,
+             "faction": "Caldari Navy", "lp": 20000.0, "lp_isk": 20e6, "isk_per_lp": 900.0},
+            {"date": _d(9), "type_id": 1, "name": "Rifter", "category": "Base", "hull": "Frigate", "quantity": 5, "runs": 5, "total": 0,
+             "faction": None, "lp": 0.0, "lp_isk": 0.0, "isk_per_lp": 0.0},
+        ]
+        s = business.lp_summary(rows, "week", {"Federation Navy": 15060, "Caldari Navy": 8395}, now=_d(15))
+        self.assertEqual((s["lp"], s["jobs"], s["units"]), (60000.0, 2, 3))
+        self.assertAlmostEqual(s["isk"], 40000 * 850 + 20000 * 900)
+        self.assertAlmostEqual(s["store_isk"], 60e6)
+        self.assertAlmostEqual(s["weeks"], 2.0)
+        self.assertAlmostEqual(s["per_week"], 30000.0)
+        self.assertEqual([f["faction"] for f in s["factions"]], ["Federation Navy", "Caldari Navy"])
+        fed = s["factions"][0]
+        self.assertEqual((fed["balance"], fed["rate"]), (15060, 850.0))
+        self.assertAlmostEqual(fed["per_week"], 20000.0)
+        self.assertAlmostEqual(fed["weeks_left"], 15060 / 20000.0)
+        self.assertEqual(s["by_faction"]["columns"], ["2026-09-28 (wk 40)", "2026-10-05 (wk 41)"])
+        self.assertEqual(s["by_faction"]["totals"], {"2026-09-28 (wk 40)": 40000.0, "2026-10-05 (wk 41)": 20000.0})
+        self.assertEqual(business.chart(s["by_faction"])["labels"], s["by_faction"]["columns"])
+        empty = business.lp_summary([rows[2]], "day")
+        self.assertEqual((empty["lp"], empty["factions"], empty["by_faction"]["columns"]), (0, [], []))
+
     def test_production_summary_and_comparison(self):
         now = _d(15)
         jobs = [
@@ -83,12 +109,24 @@ class ProductionRowsTests(TestCase):
     def setUp(self):
         Ship.objects.create(type_id=587, name="Rifter", group_id=25, hull_size="Frigate", category=constants.CAT_BASE, blueprint_type_id=1, units_per_run=1)
         Ship.objects.create(type_id=4051, name="Nitrogen Fuel Block", group_id=1136, hull_size="Fuel block", category=constants.CAT_FUEL, blueprint_type_id=2, units_per_run=40)
+        navy = LpFaction.objects.create(name="Caldari Navy", isk_per_lp=900)
+        cni = Ship.objects.create(type_id=17634, name="Caracal Navy Issue", group_id=26, hull_size="Cruiser", category=constants.CAT_NAVY, blueprint_type_id=3, units_per_run=1)
+        ShipConfig.objects.create(ship=cni, lp_faction=navy, lp_cost=20000, lp_isk_cost=20e6, lp_runs=2)
         cid = business.corp_id()
         now = timezone.now()
         CorpIndustryJob.objects.create(job_id=1, corporation_id=cid, installer_id=11, installer_name="Catherine Frey", activity_id=1, product_type_id=587, runs=5, status="delivered", start_date=now - dt.timedelta(days=3), end_date=now - dt.timedelta(days=2), cost=1e6)
         CorpIndustryJob.objects.create(job_id=2, corporation_id=cid, installer_id=22, installer_name="Someone Else", activity_id=1, product_type_id=4051, runs=3, status="active", start_date=now - dt.timedelta(days=1), end_date=now + dt.timedelta(days=1), cost=5e4)
         CorpIndustryJob.objects.create(job_id=3, corporation_id=cid, installer_id=11, installer_name="Catherine Frey", activity_id=8, product_type_id=587, runs=1, status="delivered", start_date=now - dt.timedelta(days=3), end_date=now - dt.timedelta(days=2), cost=0)  # invention: not production
         CorpIndustryJob.objects.create(job_id=4, corporation_id=cid, installer_id=11, installer_name="Catherine Frey", activity_id=1, product_type_id=99999, runs=1, status="delivered", start_date=now - dt.timedelta(days=3), end_date=now - dt.timedelta(days=2), cost=0)  # not in the catalog
+
+    def test_lp_per_job_follows_the_catalog(self):
+        now = timezone.now()
+        CorpIndustryJob.objects.create(job_id=5, corporation_id=business.corp_id(), installer_id=11, installer_name="Catherine Frey", activity_id=1, product_type_id=17634, runs=3, status="active", start_date=now - dt.timedelta(days=1), end_date=now + dt.timedelta(days=1), cost=2e6)
+        rows = {r["job_id"]: r for r in business.production_rows()}
+        self.assertEqual((rows[5]["faction"], rows[5]["lp"], rows[5]["lp_isk"], rows[5]["isk_per_lp"]), ("Caldari Navy", 30000.0, 30e6, 900.0))
+        self.assertEqual((rows[1]["faction"], rows[1]["lp"]), (None, 0.0))
+        s = business.lp_summary(list(rows.values()), "day")
+        self.assertEqual((s["lp"], s["factions"][0]["faction"]), (30000.0, "Caldari Navy"))
 
     def test_rows_filter_by_installer_and_range_and_multiply_fuel_runs(self):
         rows = business.production_rows()
