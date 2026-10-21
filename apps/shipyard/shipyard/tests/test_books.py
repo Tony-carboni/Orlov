@@ -184,7 +184,7 @@ class BooksTests(TestCase):
         from ..models import MaterialType
         MaterialType.objects.get_or_create(type_id=35, defaults={"name": "Pyerite"})
         p2 = CorpProject.objects.get(project_id="p2")
-        ProjectContribution.objects.create(project=p2, taken_at=at(12.5), character_id=4242, character_name="Miner", contributed=4_000_000)  # 1,000,000 more at 10
+        ProjectContribution.objects.create(project=p2, taken_at=at(11), character_id=4242, character_name="Miner", contributed=4_000_000)  # 1,000,000 more at 10, before the newest journal line (the sheet stops there)
         p1 = CorpProject.objects.get(project_id="p1")
         p1.reward_remaining -= 10e6  # the pool paid those 10 M
         p1.save()
