@@ -6,7 +6,7 @@ the quantity), the page quotes them by the owner's rule, and registers the sale 
 books take the registered lots out of the goods held when the deposit appears (services/books.py).
 
 The rule: compressed ore and ice at 95 % of the Reprocessing tab's value (the owner's own setup), never
-above Jita's highest buy; everything else at Jita's highest buy. Net profit = the quote minus what the
+above Jita's lowest sell (owner's correction of 2026-10-21); everything else at Jita's highest buy. Net profit = the quote minus what the
 projects paid for those goods (first in, first out, an ore through its minerals as the ledger holds them).
 EVE's transfer reason holds 40 characters, which is why the code and not the item list goes in it.
 """
@@ -121,12 +121,12 @@ def quote(text: str, user) -> dict:
         if ore is not None:
             row = ore_rows.get(tid)
             repro = row.net_value * ORE_SHARE if row else None
-            cap = row.buy_price if row and row.buy_price else b
+            cap = row.sell_price if row and row.sell_price else None
             if repro is None and cap is None:
-                problems.append(f"{full}: no reprocessing value and no Jita buy")
+                problems.append(f"{full}: no reprocessing value and no Jita sell")
                 continue
             unit = min(v for v in (repro, cap) if v is not None)
-            basis = (f"95 % of the reprocessing value {row.net_value:,.2f}" if row else "no reprocessing value") + (f", capped at Jita buy {cap:,.2f}" if cap is not None and (repro is None or cap < repro) else "")
+            basis = (f"95 % of the reprocessing value {row.net_value:,.2f}" if row else "no reprocessing value") + (f", capped at Jita sell {cap:,.2f}" if cap is not None and (repro is None or cap < repro) else "")
         else:
             if b is None:
                 problems.append(f"{full}: no Jita buy order known")
@@ -151,7 +151,7 @@ def quote(text: str, user) -> dict:
                       "cost": round(cost, 2), "held": round(taken, 3), "profit": round(line - cost, 2), "is_ore": ore is not None,
                       "short": taken + 1e-6 < qty if (o is None and ore is None) or (ore is not None and tid in lots) else False})
     return {"lines": lines, "problems": problems, "total": round(total, 2), "cost": round(cost_total, 2), "profit": round(total - cost_total, 2),
-            "market": market.name if market else "", "rule": f"ore and ice at {ORE_SHARE:.0%} of the reprocessing value, never above Jita buy; other items at Jita buy"}
+            "market": market.name if market else "", "rule": f"ore and ice at {ORE_SHARE:.0%} of the reprocessing value, never above Jita sell; other items at Jita buy"}
 
 
 def _take(queue, need, until):

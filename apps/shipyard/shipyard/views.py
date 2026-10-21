@@ -141,7 +141,7 @@ def finance_direct_sale(request):
             messages.error(request, f"The quote could not be made: {exc}")
     return render(request, "shipyard/finance_direct_sale.html", _context(
         request, text=text, q=q, registered=registered, pending=directsales.pending(), recent=directsales.recent(), write_offs=directsales.write_offs(),
-        rule=f"ore and ice at {directsales.ORE_SHARE:.0%} of the reprocessing value, never above Jita buy; other items at Jita buy",
+        rule=f"ore and ice at {directsales.ORE_SHARE:.0%} of the reprocessing value, never above Jita sell; other items at Jita buy",
         can_manage=True,
     ))
 
