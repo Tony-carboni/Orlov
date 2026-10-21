@@ -4,6 +4,22 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-21 (19:10 UTC) — desktop session → any session
+
+**Runbook / topic:** **Shipyard 0.23.0: direct sales of project goods** (runbook 13 C), and the owner's direct sale of 21 October.
+
+**What happened.** The owner sold nine kinds of project goods by direct trade for 200,415,238 ISK (quote by this session: ores at 95 % of the Reprocessing tab's value capped at Jita sell, White Glaze at Jita buy, Crystalline Isogen-10 and Zero-Point Condensate at Jita buy) and deposited the ISK into the master wallet at 18:34 EVE with the reason "Direct sale buyback goods". The Finance tab counted the cash and still held the goods: the old rule matched lots by the first six letters of the first word after "direct sale", and "buyback" matched nothing. The books never read the corp hangar (no assets scope), so nothing corrects itself when stock leaves it.
+
+**Done.** Shipyard 0.23.0 (commit `fe1cdbe` pinned, backup `aa-db-2026-10-21-1858.sql.gz`, migration 0028, 109 tests): the reason names the items with quantities (`direct sale 2,388 Zero-Point Condensate, 373 Crystalline Isogen-10, ...`; an ore is converted to its minerals as the ledger holds them; a name without a quantity takes every unit held); a deposit that names nothing shows "not matched" on the sheet and is completed in the admin under Shipyard → direct sales (`BookDirectSale`: journal entry id, items) or with `books.direct_sale(entry_id, items)`. Both open cases were recorded that way: entry 26177244778 (today, the nine items: 179.6 M of stock left the books at cost) and the 20 October deposit "Atmospheric Gasses" (typo; recorded as every Atmospheric Gases unit held).
+
+**Owner's rule from now on.** When selling project goods directly, deposit the ISK with a reason like `direct sale 2,388 Zero-Point Condensate, 373 Crystalline Isogen-10` (quantity, then the name, a comma between items; a space after each comma). Ores by their compressed name and units as delivered. Nothing else is needed.
+
+**Owner has to do by hand.** Nothing for this. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
+
+**Next.** Nothing queued.
+
+---
+
 ## 2026-10-20 (14:40 UTC) — desktop session → any session
 
 **Runbook / topic:** **the accidental corporation sell orders of 2026-10-20 and Shipyard 0.21.0** (runbook 13 C release paragraph).
@@ -72,49 +88,6 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Owner has to do by hand.** Look at the seven graphs on /shipyard/projects/ and say which to keep; the rest can go. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3.
 
 **Next.** Trim the graphs to the owner's choice.
-
----
-
-## 2026-10-18 (09:50 UTC) — desktop session → any session
-
-**Runbook / topic:** **SRP from the kill feed, runbook 17** (owner's story of 2026-10-18), **Doctrines 0.4.0** (commit `600b16f` pinned, migration 0007, backup `aa-db-2026-10-18-0933.sql.gz`; `requirements.txt.pre-doctrines-0.4.0`, `local.py.pre-srp`, `killfeed.py.pre-srp` in `~/backups`), 36 tests.
-
-**Done.**
-- `SrpRequest` in the Doctrines plugin, one per zKillboard kill id (unique). Created by the kill feed cog when a member **replies "SRP"** to one of the bot's loss posts in #zkillboard (`on_message` in `deploy/orlovbot/cogs/killfeed.py`, copied to `~/aa-docker/orlovbot/cogs/` and the bot restarted), or by an agent by hand on the page. The payout is the **doctrine's figure**: the matching doctrine fit's cost × the ship's SRP percentage (never the killmail's value). Standard fit = every module, rig and subsystem of the doctrine fit was on the lost ship; otherwise, or for a hull no doctrine carries, or a pilot outside the alliance, an **ad-hoc** request (status "to review") with the reason, for the agent to price and approve.
-- The page https://doctrines.orlovfamily.space/doctrines/srp/ (permission `doctrines.srp_agent`, given directly to the owner's user; the SRP link in the top bar): tabs Open / To review / Paid / Rejected / All; copy buttons for the pilot's name, the amount (digits) and the kill id; Approve (with payout), Paid, Reject, Reopen; Add by hand; Check the wallet.
-- The matcher `doctrines.tasks.srp_match_payments` (beat `doctrines_srp_match_payments`, hourly at :50; `DOCTRINES_SRP_WALLET_DIVISION = 2` in `conf/local.py`, both also in `deploy/conf/local.py.append`) reads the SRP wallet's journal (OARMI division 2) with the Shipyard's production-corp token and marks a request paid when an outgoing entry carries the kill id in its reason or description. **The token exists** (the owner connected Catherine Frey on My business with the three scopes the same morning, and she holds the Accountant role): the wallet read gives 200, the matcher ran once (0 journal entries in division 2 yet). Division balances at 09:55 UTC: master wallet (1) 2,546.5 M, SRP (2) 0, Director (7) 3,221.2 M; the owner still has to fund the SRP division.
-- The handoff file's entries were out of order after a merge (two 2026-10-18 entries below 2026-10-17 ones); sorted newest first again.
-
-**Also (2026-10-20, 11:30 UTC): Shipyard 0.20.0**: the Finance tab's section 2 counts from the newest State of the Alliance post (the post's date, 00:00 EVE) and adds up to the result minus that opening; the hourly task opens the period by itself from `posts.json` on the alliance site (`site/alliance/build.py` now writes it; copied to `~/aa-docker/alliance-site/`). This first window runs from the 18 October baseline, because the 14 October post is older. When a State of the Alliance post is published: run `python site/alliance/build.py` and copy `dist/` to the server as runbook 15 says, including `posts.json`; the period opens within the hour.
-
-**Also (2026-10-20, 10:40 UTC): Shipyard 0.19.0**: the Finance tab's sections 1 and 2 as clickable categories (liquid ISK, reward ISK in projects, stock listed, physical items in stock, goods held from projects, loyalty points; project buyback sales, project buyback rewards, LP conversion, stock sales, market orders and fees, transfers and deposits); corrected withdrawals dropped; the owner's second LP purchase (15,000 LP for 12 M) and the redemptions of 08:44 (500 Navy Cap Booster 100, 80 more 800s) in the books. Rule for sessions: after every LP store redemption add a stock batch (admin → Shipyard → stock batches) with the LP used, the input item and units, the ISK and who paid it; the offer terms are on ESI `/loyalty/stores/1000180/offers/`.
-
-**Also (2026-10-20, 09:10 UTC): Shipyard 0.18.2 to 0.18.8** (commit pinned per runbook 13 C, no migrations): both buyback sections of the Finance tab per calendar month in the owner's shape with a summary line; the project section condensed to two clickable lines (ore and ice, other items); broker fees matched to repriced orders through the item's real sale prices; the LP conversion tab's Net and ISK/LP after the viewer's sales tax (figure before tax on hover). Live at 07:41 EVE: +473.4 M; project buybacks +32.0 M net (11 %) on 326.6 M sold, +13.9 M projected on 88.9 M held; LP buybacks +2.5 M net, +0.8 M projected. Open: the owner's question why the LP profit is low was answered (fees fall on the boosters' full value, about 5 % of 103 M); nothing queued.
-
-**Also (2026-10-20, 07:55 UTC): Shipyard 0.18.0 and 0.18.1** (commit `75c4544` pinned, migration 0025, backup `aa-db-2026-10-20-0740.sql.gz`): the Finance tab has sections for **project buybacks** and **LP buybacks and conversions** (LP bought, items to convert, LP store redemptions, booster sales with sales tax and broker fees, net profit, still listed, open buy orders) and the corp's open orders. Entered in the admin as stock batches: the two LP store redemptions of 06:50 (240 Navy Cap Booster 800, 500 Navy Cap Booster 400; 49,000 LP, 740 input boosters, 49 M LP store ISK paid from the master wallet, not from the owner's own wallet as first assumed). The owner's orders scope login worked. When the corp buys LP or converts again: a new stock batch per redemption in the admin (Shipyard → stock batches: LP used, input item and units, ISK paid and by whom). Details in runbook 13 C.
-
-**Also (2026-10-20, 06:05 UTC): corporation market orders scope.** `SHIPYARD_PRODUCTION_SCOPES` in `conf/local.py` now also asks for `esi-markets.read_corporation_orders.v1` (copy `local.py.pre-orders-scope` in `~/backups`; `deploy/conf/local.py.append` updated; gunicorn, workers and beat restarted). Until the owner logs in with Catherine Frey once more on My business → Connect the jobs, `business.token()` finds no token, so the hourly corp jobs read and the SRP wallet check pause (the corp ledger has its own token lookup and keeps running). Next for a session once the token exists: read the corporation's open orders into the Finance tab (listed stock such as the cap boosters bought with the 50,000 LP, ISK in buy-order escrow), and turn the LP into a stock batch once the owner gives the booster type, count and the LP store ISK.
-
-**Also (2026-10-20, 05:50 UTC): Shipyard 0.17.0 and 0.17.1, the Finance tab** (commit `ca77d17` pinned, migrations 0023 and 0024, backups `aa-db-2026-10-20-0537` and `-0543`): the directors' balance sheet as a page on the front door with Download PDF and Read EVE now; the baseline and the Heavy Water batch are in the admin. The hand-made sheet of 20 October (`docs/finance/2026-10-20-oarmi-balance-sheet.pdf`, +393.8 M) was the check: the page gives the same. My earlier chat report of 05:20 (+249.0 M) left out the project goods bought since the baseline and not sold yet (124.8 M at cost) and today's sales; the sheet is the correct figure. Details in runbook 13 C.
-
-**Also (2026-10-20, 05:20 UTC): financial report against the 5 B baseline**, read from EVE through Catherine Frey's token: master wallet 2,683.1 M + rewards left in the 26 active projects 2,311.0 M + Heavy Water stock 1,990,000 × 108 = 214.9 M + 50,000 LP bought for the corp at 40 M (held by Tommy McPhee) = 5,249.0 M, so **+249.0 M over the baseline**. Of that, 149.5 M is a one-off (escrow released 2026-10-18 09:02 from an old corp buy order of carbondnb, money that existed but was not counted in the 5 B), 77.0 M the Raitaru tax deposited by Vieze Jonge Pass, 22.5 M operations (Jita sales of corp stock 187.8 M minus sales tax 6.4 M and broker fees 1.6 M, minus about 158 M paid out to members through projects, plus project funding moved). Heavy Water now sells as a **corporation** sell order issued by Catherine Frey at the Piekura Freeport (2,000,000 listed at 149.9 on 2026-10-18 06:16, broker 3.0 M and SCC 1.5 M paid then; 10,000 sold so far), paid for by a 216 M corp withdrawal to Tommy McPhee on 2026-10-18 05:59; month to date the line is −4.1 M because the listing fees come first. The baseline's 2,397 M was the master wallet right after the owner moved 1,559.6 M to another division at 07:08 and 07:27. Divisions 2 (SRP), 3 (LP Buyback), 4 (Working budget) hold 0; 7 (Director only, 3,221.2 M) is left out. The token lacks `esi-markets.read_corporation_orders.v1`, so open corp orders cannot be read yet.
-
-**Also (2026-10-20, 05:00 UTC): Shipyard 0.16.0** (commit `96312ea` pinned, backup `aa-db-2026-10-20-0457.sql.gz`): the **Member shipyards** tab, owner only, shows the ship dashboard as a new member sees it (default facility and market, no character, the corp's blueprint markup, no own blueprints or prices), saving nothing; details in runbook 13 C. The corp roles guide has the limited-director title (hangars 4 to 7, wallet 4, no Director role) built for Hamu; the owner sets it up in game.
-
-**Also (2026-10-20):** Kitten_Kerns (Discord dominikstarz) locked to Family Friend level by the new state `Family Friend (locked)` (priority 150, by character); details and how to undo in `docs/design/membership.md`.
-
-**Also (11:20 UTC):** Hamu added to `Corp Director`; the Discord channels `#oarmi-corp` (corp_OARMI only) and `#oarmi-directors` (new hidden auth group and Discord role `OARMI Director`: the owner and Hamu) created through the bot with the full chat set, details in `docs/design/membership.md`.
-
-**Owner has to do by hand** (runbook 17 A)
-- #zkillboard: let members send messages (replies) in the channel.
-- Fund the SRP wallet (division 2, 0 ISK now); pay SRP from it with the kill id in the reason.
-- Try it: reply `SRP` to a red loss post; the bot answers with the request; the page lists it.
-- Still open: import the corporation fits, the sample doctrine, the landing text, runbook 16 E, the items of the entries below.
-
-### Next — any session
-When the owner reports the token: run `doctrines.services.srp.match_payments()` once from the shell and confirm the journal reads (no 403). If the bot does not answer an SRP reply: `docker compose logs --since 10m allianceauth_discordbot | grep -i srp`.
-
----
 
 ---
 

@@ -51,3 +51,7 @@ For the owner (`shipyard.manage_shipyard`): the **Member shipyards** tab shows t
 ## Finance (0.17)
 
 The directors' balance sheet against the owner's working budget (`services/books.py`), at `/shipyard/finance/` for `manage_shipyard` or `books_access`, with a PDF on demand (`services/books_pdf.py`, reportlab). The baseline and stock batches are edited in the admin (books baseline, stock batches). Settings: `SHIPYARD_BOOKS_DIVISIONS` (default 1 to 6; 7 is the owner's), `SHIPYARD_BOOKS_STRUCTURE_TRANSFER` (reason pattern of structure income moved in, default `raitaru`), `SHIPYARD_BOOKS_FUEL` (structures, blocks per hour, sponsored).
+
+## Direct sales of project goods (0.23.0)
+
+The Finance tab learns of a sale by trade or contract from the deposit of its proceeds: a corp-wallet deposit whose reason reads `direct sale <quantity> <item>, <quantity> <item>, ...`. The named lots leave the goods held (an ore through its minerals); a deposit that names nothing is completed in the admin (Shipyard → direct sales) or with `books.direct_sale(entry_id, items)`. The corp hangar itself is never read.
