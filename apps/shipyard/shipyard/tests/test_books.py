@@ -208,10 +208,10 @@ class BooksTests(TestCase):
         move = next(m for m in d["moves"] if m[0].startswith("Goods sold directly (buyback"))
         self.assertIn("not matched: buyback goods", move[2])
         self.assertIn("0.0 M of stock left", move[2])
-        books.direct_sale(99_402, "Pyerite", note="the rest of the Pyerite")
+        books.direct_sale(99_402, "300,000 Pyerite", note="half of the rest")
         d = books.compute()
-        move = next(m for m in d["moves"] if m[0].startswith("Goods sold directly (600,000 Pyerite)"))
-        self.assertIn("6.0 M of stock left the books", move[2])
+        move = next(m for m in d["moves"] if m[0].startswith("Goods sold directly (300,000 Pyerite)"))
+        self.assertIn("3.0 M of stock left the books", move[2])
         self.assertNotIn("not matched", move[2])
         self.assertLess(abs(d["gap"]), 1.0)
         self.assertEqual(books.parse_direct_sale_items("2,388 Zero-Point Condensate, 373 Crystalline Isogen-10; Pyerite x1.000 and Tritanium"),
@@ -228,6 +228,49 @@ class BooksTests(TestCase):
         move = next(m for m in d["moves"] if m[0].startswith("Goods sold directly (200,000 Pyerite)"))
         self.assertIn("2.0 M of stock left the books", move[2])
         self.assertLess(abs(d["gap"]), 1.0)
+
+    def test_registered_direct_sale_quotes_matches_by_code_and_shows_in_section_3(self):
+        """Register a direct sale on the Finance tab (quote by the rule, a DS code), deposit with the code: the lots leave,
+        section 3 carries one 'Direct sale of goods' line with the profit."""
+        from ..models import MarketLocation, MaterialType, PriceSnapshot
+        from ..services import directsales
+        MaterialType.objects.get_or_create(type_id=35, defaults={"name": "Pyerite"})
+        market = MarketLocation.objects.create(name="Jita", station_id=60003760, is_default=True)
+        PriceSnapshot.objects.create(type_id=35, location=market, sell_min=16.0, buy_max=15.0)
+        p2 = CorpProject.objects.get(project_id="p2")
+        ProjectContribution.objects.create(project=p2, taken_at=at(11), character_id=4242, character_name="Miner", contributed=4_000_000)
+        p1 = CorpProject.objects.get(project_id="p1")
+        p1.reward_remaining -= 10e6
+        p1.save()
+        owner = get_user_model().objects.create_user("owner", password="x")
+        self.assertEqual(directsales.parse_lines("Pyerite\t400000\n373 Crystalline Isogen-10\nZero-Point Condensate x2388\n\nMexallon 10"),
+                         [("Pyerite", 400000, "Pyerite\t400000"), ("Crystalline Isogen-10", 373, "373 Crystalline Isogen-10"),
+                          ("Zero-Point Condensate", 2388, "Zero-Point Condensate x2388"), ("Mexallon", 10, "Mexallon 10")])
+        q = directsales.quote("Pyerite\t400,000\nUnobtainium\t5", owner)
+        self.assertEqual([(ln["name"], ln["qty"], ln["unit"], ln["line"], ln["cost"]) for ln in q["lines"]], [("Pyerite", 400000, 15.0, 6e6, 4e6)])
+        self.assertAlmostEqual(q["profit"], 2e6)
+        self.assertEqual(len(q["problems"]), 1)
+        sale = directsales.register("Pyerite\t400,000", owner)
+        self.assertRegex(sale.code, r"^DS-[A-HJ-NP-Z2-9]{4}$")
+        self.assertEqual([s.code for s in directsales.pending()], [sale.code])
+        before = books.compute()
+        self.assertNotIn("direct", [g["key"] for g in before["project_bb"]["months"][0]["groups"]])
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_501, division=1, date=at(13), ref_type="player_donation", amount=6e6,
+                                        reason=f"{sale.code.lower()} buyer paid", first_party_id=111, second_party_id=CORP)
+        d = books.compute()
+        move = next(m for m in d["moves"] if m[0].startswith("Goods sold directly (400,000 Pyerite)"))
+        self.assertAlmostEqual(move[1], 6e6)
+        self.assertIn("4.0 M of stock left the books", move[2])
+        self.assertLess(abs(d["gap"]), 1.0)
+        sale.refresh_from_db()
+        self.assertEqual((sale.entry_id, sale.matched_at), (99_501, at(13)))
+        self.assertEqual(directsales.pending(), [])
+        group = next(g for g in d["project_bb"]["months"][0]["groups"] if g["key"] == "direct")
+        self.assertEqual(group["label"], "Direct sale of goods")
+        self.assertAlmostEqual(group["revenue"], 6e6)
+        self.assertAlmostEqual(group["cost"], 4e6)
+        self.assertAlmostEqual(group["net"], 2e6)
+        self.assertAlmostEqual(d["project_bb"]["realised"], before["project_bb"]["realised"] + 2e6, places=0)
 
     def test_ignored_lines_leave_the_books(self):
         """An accidental sale and its tax, flagged by id, and the owner's settlement, matched by its reason, net out."""

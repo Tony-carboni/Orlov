@@ -16,6 +16,7 @@
         <form method="post" action="{% url 'shipyard:finance_refresh' %}">{% csrf_token %}
             <button type="submit" class="btn btn-sm btn-outline-secondary" title="Read the projects and the corporation's journal from EVE now (EVE refreshes them hourly)"><i class="fas fa-rotate fa-fw"></i> Read EVE now</button>
         </form>
+        {% if can_manage %}<a class="btn btn-sm btn-outline-light" href="{% url 'shipyard:finance_direct_sale' %}" title="Quote goods you are about to sell by trade or contract, register the sale and get the code for the deposit's reason"><i class="fas fa-handshake fa-fw"></i> Register a direct sale</a>{% endif %}
         <a class="btn btn-sm btn-primary" href="{% url 'shipyard:finance_pdf' %}"><i class="fas fa-file-pdf fa-fw"></i> Download PDF</a>
     </div>
 </div>

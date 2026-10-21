@@ -833,8 +833,15 @@ class BookDirectSale(models.Model):
     Isogen-10") or, when the reason says nothing useful, from this row by the journal entry id."""
 
     corporation_id = models.PositiveIntegerField(db_index=True)
-    entry_id = models.BigIntegerField()
+    entry_id = models.BigIntegerField(null=True, blank=True, help_text="The journal entry of the deposit, once it appeared")
+    code = models.CharField(max_length=10, blank=True, default="", db_index=True, help_text="DS-XXXX: the deposit's reason carries it")
     items = models.CharField(max_length=500, help_text="Comma-separated, a quantity before each name: '2,388 Zero-Point Condensate, 373 Crystalline Isogen-10'. An ore is converted to its minerals as the ledger does; a name without a quantity takes every unit held")
+    lines = models.JSONField(default=list, blank=True, help_text="The quoted lines: type id, name, quantity, unit price, line, cost")
+    quote = models.FloatField(default=0, help_text="ISK the sale was quoted at")
+    cost = models.FloatField(default=0, help_text="What the projects paid for the goods, at registration")
+    created_at = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=150, blank=True)
+    matched_at = models.DateTimeField(null=True, blank=True)
     note = models.CharField(max_length=200, blank=True)
     added_at = models.DateTimeField(auto_now_add=True)
 
@@ -843,8 +850,12 @@ class BookDirectSale(models.Model):
         verbose_name = "direct sale"
         verbose_name_plural = "direct sales"
 
+    @property
+    def profit(self) -> float:
+        return (self.quote or 0.0) - (self.cost or 0.0)
+
     def __str__(self):
-        return f"direct sale {self.entry_id}: {self.items[:60]}"
+        return f"direct sale {self.code or self.entry_id}: {self.items[:60]}"
 
 
 class BookIgnoredEntry(models.Model):

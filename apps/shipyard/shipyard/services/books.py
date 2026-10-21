@@ -31,8 +31,9 @@ from collections import defaultdict, deque
 from django.utils import timezone
 
 from .. import app_settings
-from ..models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, PriceSnapshot
-from . import projectbooks, projects
+from ..models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, Ore, PriceSnapshot
+from .directsales import CODE_RE
+from . import projectbooks, projects, reprocessing
 
 M = 1e6
 FEES = ("brokers_fee", "transaction_tax", "market_provider_tax")
@@ -97,8 +98,18 @@ def _take_until(queue, need, until):
 def _apply_direct_sales(direct_sales, led, cid) -> None:
     """Take the items each direct sale names out of the project-goods lots (an ore through its minerals, as the
     ledger stores them). Writes cost, removed and unmatched into each sale's dict."""
-    overrides = dict(BookDirectSale.objects.filter(corporation_id=cid).values_list("entry_id", "items"))
+    overrides = dict(BookDirectSale.objects.filter(corporation_id=cid, entry_id__isnull=False).exclude(items="").values_list("entry_id", "items"))
+    registered = {s.code.upper(): s for s in BookDirectSale.objects.filter(corporation_id=cid).exclude(code="")}
     lots, names, ores, yields = led["lots"], led["names"], led.get("ores", {}), led.get("yields", {})
+
+    def take_ore(ore, qty, until):
+        batches = qty / float(ore.portion_size or 1)
+        y = yields.get(ore.type_id) or reprocessing.yield_for(ore)
+        cost = 0.0
+        for m, q in (ore.materials or {}).items():
+            c, _ = _take_until(lots[int(m)], batches * float(q) * y, until)
+            cost += c
+        return cost
     by_name = {n.lower(): tid for tid, n in names.items()}
     ore_by_name = {o.name.lower(): o for o in ores.values()}
 
@@ -117,19 +128,34 @@ def _apply_direct_sales(direct_sales, led, cid) -> None:
         return table[min(hits, key=len)]
 
     for d in sorted(direct_sales, key=lambda d: d["t"]):
-        text = overrides.get(d["entry_id"]) or d["item"]
         d["cost"], d["removed"], d["unmatched"] = 0.0, [], []
+        sale = registered.get(d.get("code") or "")
+        if sale is not None:
+            # a sale registered on the Finance tab: its quoted lines are what left the stock
+            if sale.entry_id is None:
+                sale.entry_id, sale.matched_at = d["entry_id"], d["t"]
+                sale.save(update_fields=["entry_id", "matched_at"])
+            for ln in sale.lines or []:
+                tid, qty = int(ln["type_id"]), float(ln["qty"])
+                ore = ores.get(tid) or (Ore.objects.filter(type_id=tid).first() if ln.get("is_ore") else None)
+                if ore is not None and tid not in lots:
+                    d["cost"] += take_ore(ore, qty, d["t"])
+                    d["removed"].append(f"{qty:,.0f} {ln['name']}")
+                else:
+                    cost, taken = _take_until(lots[tid], qty, d["t"])
+                    d["cost"] += cost
+                    d["removed"].append(f"{taken:,.0f} {ln['name']}")
+            d["item"] = d["item"] or sale.code
+            d["registered"] = sale
+            continue
+        text = overrides.get(d["entry_id"]) or d["item"]
         for qty, name in parse_direct_sale_items(text):
             ore = resolve(ore_by_name, name)
             if ore is not None and ore.type_id not in lots:
                 if qty is None:
                     d["unmatched"].append(f"{name} (an ore needs a quantity)")
                     continue
-                batches = qty / float(ore.portion_size or 1)
-                for m, q in (ore.materials or {}).items():
-                    want = batches * float(q) * yields.get(ore.type_id, 1.0)
-                    cost, taken = _take_until(lots[int(m)], want, d["t"])
-                    d["cost"] += cost
+                d["cost"] += take_ore(ore, qty, d["t"])
                 d["removed"].append(f"{qty:,} {ore.name}")
                 continue
             tid = resolve(by_name, name) if ore is None else ore.type_id
@@ -349,8 +375,10 @@ def compute(now=None) -> dict:
             if not inp:
                 continue
             m = DIRECT_SALE.search(e.reason or "")
-            row = {"t": e.date, "who": names.get(e.first_party_id, str(e.first_party_id)), "reason": e.reason, "amount": e.amount, "entry_id": e.entry_id}
-            (direct_sales if m else deposits).append({**row, "item": m.group(1).strip() if m else ""})
+            c = CODE_RE.search(e.reason or "")
+            row = {"t": e.date, "who": names.get(e.first_party_id, str(e.first_party_id)), "reason": e.reason, "amount": e.amount, "entry_id": e.entry_id,
+                   "code": c.group(0).upper() if c else ""}
+            (direct_sales if (m or c) else deposits).append({**row, "item": m.group(1).strip() if m else ""})
         elif rt == "corporation_account_withdrawal":
             if e.first_party_id == cid and e.second_party_id == cid:
                 # between wallet divisions: within 1-6 it nets to zero; to division 7 it leaves the books
@@ -568,7 +596,7 @@ def compute(now=None) -> dict:
         if not t.is_buy:
             sale_prices[t.type_id].add(t.unit_price)
     project_bb = _project_buybacks(cid, base, cut, led, goods_tax_month, _broker_split(broker_lines, orders, sale_prices)[1], stock_types,
-                                   held_items, older_cost, older_value, paid_members)
+                                   held_items, older_cost, older_value, paid_members, direct_sales)
     all_conversions = all_conv
     buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, all_conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices)
     if abs(gap) >= 1.0:
@@ -744,7 +772,7 @@ def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversi
             "active": bool(lp_purchases or conversions)}
 
 
-def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock_types, held_items, older_cost, older_value, paid_members) -> dict:
+def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock_types, held_items, older_cost, older_value, paid_members, direct_sales=()) -> dict:
     """Project buybacks per calendar month (owner, 2026-10-20), condensed: two lines per month, ore and
     ice (asteroid, ice, moon and abyssal ore the projects buy, sold through what they reprocess into) and
     other items (sold as delivered), each with what the projects paid members, what sold with sales tax
@@ -788,7 +816,8 @@ def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock
         if tid not in stock_types:
             fees[(mo, name_of(tid))][1] += fee
 
-    months = sorted({month(e["t"]) for e in pays} | {month(m[0]) for m in matches} | {month(o[0]) for o in others}, reverse=True)
+    direct = [d for d in direct_sales if d["t"] >= since]
+    months = sorted({month(e["t"]) for e in pays} | {month(m[0]) for m in matches} | {month(o[0]) for o in others} | {month(d["t"]) for d in direct}, reverse=True)
     all_tax = sum(v[0] for v in fees.values())
     all_revenue = sum(m[2] for m in matches) + sum(o[2] for o in others)
     tax_rate = (-all_tax / all_revenue) if all_revenue else 0.0
@@ -854,6 +883,16 @@ def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock
                     members |= row["members"]
             groups.append({"key": g, "label": label, "id": f"pb-{key}-{g}", "rows": rows, "members": len(members),
                            "pct": (tot["net"] / tot["cost"]) if tot["cost"] else None, "total": tot["net"] + tot["expected"], **tot})
+        # direct sales of the month (owner, 2026-10-21): one line, the deposits against what the projects paid for the goods
+        sales = [d for d in direct if month(d["t"]) == key]
+        if sales:
+            rows = [{"name": f"{_when(d['t'])}: {', '.join(d.get('removed') or []) or d['item'] or 'items not named'}", "delivered": 0.0, "paid": 0.0, "members": 0,
+                     "sold": 0.0, "revenue": d["amount"], "cost": d.get("cost", 0.0), "tax": 0.0, "broker": 0.0, "fees": 0.0,
+                     "net": d["amount"] - d.get("cost", 0.0), "pct": ((d["amount"] - d.get("cost", 0.0)) / d["cost"]) if d.get("cost") else None,
+                     "unmatched": 0.0, "held_units": 0.0, "held_cost": 0.0, "held_value": 0.0, "expected": 0.0} for d in sales]
+            tot = {k: sum(r[k] for r in rows) for k in ("delivered", "paid", "sold", "revenue", "cost", "tax", "broker", "fees", "net", "unmatched", "held_units", "held_cost", "held_value", "expected")}
+            groups.append({"key": "direct", "label": "Direct sale of goods", "id": f"pb-{key}-direct", "rows": rows, "members": 0,
+                           "pct": (tot["net"] / tot["cost"]) if tot["cost"] else None, "total": tot["net"], **tot})
         paid_total = sum(g["paid"] for g in groups)
         realised = sum(g["net"] for g in groups)
         expected = sum(g["expected"] for g in groups)

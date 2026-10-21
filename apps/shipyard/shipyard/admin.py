@@ -99,8 +99,8 @@ class BooksBaselineAdmin(admin.ModelAdmin):
 
 @admin.register(BookDirectSale)
 class BookDirectSaleAdmin(admin.ModelAdmin):
-    list_display = ("entry_id", "corporation_id", "items", "note", "added_at")
-    search_fields = ("entry_id", "items", "note")
+    list_display = ("code", "entry_id", "quote", "cost", "created_at", "matched_at", "items", "note")
+    search_fields = ("code", "entry_id", "items", "note")
 
 
 @admin.register(BookIgnoredEntry)

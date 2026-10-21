@@ -1,0 +1,86 @@
+{% extends "shipyard/base.html" %}
+{% load shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · Register a direct sale{% endblock %}
+
+{% block shipyard_content %}
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+    <div>
+        <h2 class="h4 mb-1">Register a direct sale</h2>
+        <div class="shipyard-k small">Paste what you are selling, one item per line as the game copies it (name, tab, quantity). The quote follows the rule: {{ rule }}. Then register it and put the code in the deposit's reason.</div>
+    </div>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'shipyard:finance' %}"><i class="fas fa-arrow-left fa-fw"></i> Finance</a>
+</div>
+
+{% if registered %}
+<div class="card border-success mb-4"><div class="card-body">
+    <div class="d-flex flex-wrap align-items-center gap-3">
+        <div><div class="shipyard-k small">Registered, code for the transfer reason</div><div class="display-6 fw-bold font-monospace">{{ registered.code }}</div></div>
+        <div><div class="shipyard-k small">Sale price</div><div class="fs-4 fw-bold">{{ registered.quote|isk_full }} ISK</div></div>
+        <div><div class="shipyard-k small">Net profit over what the projects paid</div><div class="fs-4 fw-bold {% if registered.quote >= registered.cost %}text-success{% else %}text-danger{% endif %}">{{ registered.quote|add:0|floatformat:0 }} − {{ registered.cost|floatformat:0 }} = {{ registered.profit|isk }}</div></div>
+    </div>
+    <div class="small mt-2">Deposit the buyer's ISK into a corporation wallet with <strong>{{ registered.code }}</strong> in the reason (anything else in the reason is fine). The books take these goods out of the stock when the deposit appears in the journal, within about an hour.</div>
+</div></div>
+{% endif %}
+
+<form method="post" class="mb-4">{% csrf_token %}
+    <textarea name="text" class="form-control font-monospace" rows="8" placeholder="Compressed Veldspar&#9;719257&#10;Zero-Point Condensate&#9;2388">{{ text }}</textarea>
+    <div class="d-flex gap-2 mt-2">
+        <button class="btn btn-outline-primary btn-sm" name="action" value="quote"><i class="fas fa-calculator fa-fw"></i> Quote</button>
+        {% if q and q.lines %}<button class="btn btn-primary btn-sm" name="action" value="register"><i class="fas fa-tag fa-fw"></i> Register this sale and get the code</button>{% endif %}
+    </div>
+</form>
+
+{% if q %}
+{% if q.problems %}<div class="alert alert-warning py-2 small">{% for p in q.problems %}<div>{{ p }}</div>{% endfor %}</div>{% endif %}
+{% if q.lines %}
+<div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>Item</th><th class="text-end">Units</th><th class="text-end">Price per unit</th><th>Basis</th><th class="text-end">Line</th><th class="text-end" title="What the projects paid for these units, first in first out">Cost</th><th class="text-end">Profit</th></tr></thead>
+    <tbody>
+    {% for ln in q.lines %}
+        <tr>
+            <td class="text-nowrap"><img src="https://images.evetech.net/types/{{ ln.type_id }}/icon?size=32" width="22" height="22" class="rounded me-1" alt="">{{ ln.name }}</td>
+            <td class="text-end">{{ ln.qty|num:0 }}</td>
+            <td class="text-end">{{ ln.unit|isk_full }}</td>
+            <td class="small shipyard-k">{{ ln.basis }}</td>
+            <td class="text-end fw-semibold">{{ ln.line|isk }}</td>
+            <td class="text-end">{{ ln.cost|isk }}{% if ln.short %} <i class="fas fa-circle-question text-warning" title="Only {{ ln.held|num:0 }} of these are in the goods held from projects; the rest has no project cost"></i>{% endif %}</td>
+            <td class="text-end {{ ln.profit|profit_class }}">{{ ln.profit|isk }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot><tr><th>Total</th><th></th><th></th><th></th><th class="text-end">{{ q.total|isk_full }}</th><th class="text-end">{{ q.cost|isk }}</th><th class="text-end {{ q.profit|profit_class }}">{{ q.profit|isk }}</th></tr></tfoot>
+</table></div>
+<p class="small shipyard-k">Prices at {{ q.market }} as last refreshed; the reprocessing values use your own skills and the alliance's refinery, as on the Reprocessing tab.</p>
+{% endif %}
+{% endif %}
+
+<h3 class="h5 mt-4">Registered sales waiting for their deposit</h3>
+{% if pending %}
+<div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>Code</th><th>Registered</th><th>Items</th><th class="text-end">Quote</th><th class="text-end">Cost</th><th></th></tr></thead>
+    <tbody>
+    {% for s in pending %}
+        <tr>
+            <td class="font-monospace fw-bold">{{ s.code }}</td>
+            <td class="text-nowrap small">{{ s.created_at|date:"Y-m-d H:i" }} · {{ s.created_by }}</td>
+            <td class="small">{{ s.items }}</td>
+            <td class="text-end">{{ s.quote|isk }}</td>
+            <td class="text-end">{{ s.cost|isk }}</td>
+            <td class="text-end"><form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="code" value="{{ s.code }}"><button class="btn btn-outline-danger btn-sm py-0" title="Forget this registration (the sale did not happen)"><i class="fas fa-trash fa-fw"></i></button></form></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table></div>
+{% else %}<p class="small shipyard-k">None.</p>{% endif %}
+
+{% if recent %}
+<h3 class="h5 mt-4">Matched to a deposit</h3>
+<div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>Code</th><th>Deposit seen</th><th>Items</th><th class="text-end">Quote</th><th class="text-end">Cost</th></tr></thead>
+    <tbody>
+    {% for s in recent %}<tr><td class="font-monospace">{{ s.code }}</td><td class="text-nowrap small">{{ s.matched_at|date:"Y-m-d H:i" }}</td><td class="small">{{ s.items }}</td><td class="text-end">{{ s.quote|isk }}</td><td class="text-end">{{ s.cost|isk }}</td></tr>{% endfor %}
+    </tbody>
+</table></div>
+{% endif %}
+{% endblock %}

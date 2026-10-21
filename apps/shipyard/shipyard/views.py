@@ -16,6 +16,7 @@ from esi.models import Token
 from esi.views import sso_redirect
 
 from . import access, app_settings, constants
+from .models import BookDirectSale
 from .models import (
     CorpProject, Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, RefreshRun, Ship,
     ShipConfig, WalletDivision, WalletJournalEntry,
@@ -104,6 +105,38 @@ def finance(request):
         data = None
         messages.error(request, f"The balance sheet could not be built: {exc}")
     return render(request, "shipyard/finance.html", _context(request, d=data, can_manage=request.user.has_perm("shipyard.manage_shipyard")))
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+def finance_direct_sale(request):
+    """Register a direct sale of project goods: paste the items, get the quote, register, get the DS code (0.24.0)."""
+    from .services import directsales
+    text, q, registered = "", None, None
+    if request.method == "POST":
+        action = request.POST.get("action", "quote")
+        text = request.POST.get("text", "")
+        if action == "delete":
+            n, _ = BookDirectSale.objects.filter(corporation_id=directsales.projects.corp_id(), code=request.POST.get("code", ""), entry_id__isnull=True).delete()
+            messages.info(request, "Registration forgotten." if n else "Nothing to forget: that code is unknown or already matched.")
+            return redirect("shipyard:finance_direct_sale")
+        try:
+            if action == "register":
+                registered = directsales.register(text, request.user)
+                messages.success(request, f"Registered as {registered.code}: put that code in the deposit's reason.")
+                text = ""
+            else:
+                q = directsales.quote(text, request.user)
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("direct sale quote by %s failed: %s", request.user, exc)
+            messages.error(request, f"The quote could not be made: {exc}")
+    return render(request, "shipyard/finance_direct_sale.html", _context(
+        request, text=text, q=q, registered=registered, pending=directsales.pending(), recent=directsales.recent(),
+        rule=f"ore and ice at {directsales.ORE_SHARE:.0%} of the reprocessing value, never above Jita buy; other items at Jita buy",
+        can_manage=True,
+    ))
 
 
 @login_required
