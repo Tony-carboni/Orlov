@@ -31,13 +31,100 @@ from collections import defaultdict, deque
 from django.utils import timezone
 
 from .. import app_settings
-from ..models import BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, PriceSnapshot
+from ..models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, PriceSnapshot
 from . import projectbooks, projects
 
 M = 1e6
 FEES = ("brokers_fee", "transaction_tax", "market_provider_tax")
 LP_REASON = re.compile(r"([\d.,]+)\s*LP\b", re.I)
-DIRECT_SALE = re.compile(r"direct\s+sale\s+(.+)", re.I)
+DIRECT_SALE = re.compile(r"direct\s+sale\s*[:\-]?\s*(.*)", re.I)
+ITEM_LEAD_QTY = re.compile(r"^(\d[\d.,]*)\s*[x×]?\s+(.+)$")   # "2,388 Zero-Point Condensate"
+ITEM_TRAIL_QTY = re.compile(r"^(.+?)\s+[x×]\s*(\d[\d.,]*)$")  # "Zero-Point Condensate x2388" (names may end in digits, so only with an x)
+
+
+def parse_direct_sale_items(text) -> list:
+    """'2,388 Zero-Point Condensate, Crystalline Isogen-10' -> [(2388, 'Zero-Point Condensate'), (None, 'Crystalline Isogen-10')].
+    A quantity stands before the name (thousands separators allowed) or after it with an x; without one, every unit held."""
+    out = []
+    for part in re.split(r"\s*[,;]\s*|\s+and\s+", text or ""):
+        part = part.strip().strip(".")
+        if not part:
+            continue
+        m = ITEM_LEAD_QTY.match(part)
+        if m:
+            out.append((int(re.sub(r"[.,]", "", m.group(1))), m.group(2).strip()))
+            continue
+        m = ITEM_TRAIL_QTY.match(part)
+        if m:
+            out.append((int(re.sub(r"[.,]", "", m.group(2))), m.group(1).strip()))
+            continue
+        out.append((None, part))
+    return out
+
+
+def direct_sale(entry_id: int, items: str, note: str = "", cid=None):
+    """Record (or replace) what a direct-sale deposit sold, for a reason that does not name the items."""
+    cid = cid or projects.corp_id()
+    row, _ = BookDirectSale.objects.update_or_create(corporation_id=cid, entry_id=int(entry_id), defaults={"items": items[:500], "note": note[:200]})
+    return row
+
+
+def _take_until(queue, need, until):
+    """Use `need` units from a deque of [t, qty, unit_cost, ...] lots that existed by `until`, oldest first."""
+    cost = taken = 0.0
+    while need > 1e-9 and queue and queue[0][0] <= until:
+        lot = queue[0]
+        take = min(need, lot[1])
+        cost += take * lot[2]
+        taken += take
+        lot[1] -= take
+        need -= take
+        if lot[1] <= 1e-9:
+            queue.popleft()
+    return cost, taken
+
+
+def _apply_direct_sales(direct_sales, led, cid) -> None:
+    """Take the items each direct sale names out of the project-goods lots (an ore through its minerals, as the
+    ledger stores them). Writes cost, removed and unmatched into each sale's dict."""
+    overrides = dict(BookDirectSale.objects.filter(corporation_id=cid).values_list("entry_id", "items"))
+    lots, names, ores, yields = led["lots"], led["names"], led.get("ores", {}), led.get("yields", {})
+    by_name = {n.lower(): tid for tid, n in names.items()}
+    ore_by_name = {o.name.lower(): o for o in ores.values()}
+
+    def resolve(table, name):
+        key = name.lower()
+        if key in table:
+            return table[key]
+        hits = [v for k, v in table.items() if k.startswith(key)]
+        return hits[0] if len(hits) == 1 else None
+
+    for d in sorted(direct_sales, key=lambda d: d["t"]):
+        text = overrides.get(d["entry_id"]) or d["item"]
+        d["cost"], d["removed"], d["unmatched"] = 0.0, [], []
+        for qty, name in parse_direct_sale_items(text):
+            ore = resolve(ore_by_name, name)
+            if ore is not None and ore.type_id not in lots:
+                if qty is None:
+                    d["unmatched"].append(f"{name} (an ore needs a quantity)")
+                    continue
+                batches = qty / float(ore.portion_size or 1)
+                for m, q in (ore.materials or {}).items():
+                    want = batches * float(q) * yields.get(ore.type_id, 1.0)
+                    cost, taken = _take_until(lots[int(m)], want, d["t"])
+                    d["cost"] += cost
+                d["removed"].append(f"{qty:,} {ore.name}")
+                continue
+            tid = resolve(by_name, name) if ore is None else ore.type_id
+            if tid is None or tid not in lots:
+                d["unmatched"].append(name)
+                continue
+            want = float(qty) if qty is not None else sum(r[1] for r in lots[tid] if r[0] <= d["t"])
+            cost, taken = _take_until(lots[tid], want, d["t"])
+            d["cost"] += cost
+            d["removed"].append(f"{taken:,.0f} {names.get(tid, name)}")
+            if qty is not None and taken + 1e-6 < qty:
+                d["unmatched"].append(f"{name}: only {taken:,.0f} of {qty:,} were held")
 FUEL_BLOCKS = {4051: "Nitrogen", 4246: "Hydrogen", 4247: "Helium", 4312: "Oxygen"}
 DIRECTOR_DIVISION = 7
 
@@ -245,7 +332,7 @@ def compute(now=None) -> dict:
             if not inp:
                 continue
             m = DIRECT_SALE.search(e.reason or "")
-            row = {"t": e.date, "who": names.get(e.first_party_id, str(e.first_party_id)), "reason": e.reason, "amount": e.amount}
+            row = {"t": e.date, "who": names.get(e.first_party_id, str(e.first_party_id)), "reason": e.reason, "amount": e.amount, "entry_id": e.entry_id}
             (direct_sales if m else deposits).append({**row, "item": m.group(1).strip() if m else ""})
         elif rt == "corporation_account_withdrawal":
             if e.first_party_id == cid and e.second_party_id == cid:
@@ -349,19 +436,16 @@ def compute(now=None) -> dict:
     # --- project goods still held, split at the baseline -----------------------------------------
     led = projectbooks.ledger(cid, until=cut)
     prices, pnames = led["prices"], led["names"]
-    direct_words = [d["item"].lower().split()[0] for d in direct_sales if d["item"]]
+    _apply_direct_sales(direct_sales, led, cid)  # the lots they sold leave before the count below
     held, held_value, older_cost, older_value = defaultdict(float), 0.0, 0.0, 0.0
     held_items = defaultdict(lambda: [0.0, 0.0, 0.0, "item"])  # item -> [units, cost, value at Jita buy, origin], bought since the baseline
     for tid, queue in led["lots"].items():
         if tid in stock_types:
             continue  # bought on the market or kept as stock: counted above
         name = pnames.get(tid, str(tid))
-        sold_directly = any(name.lower().startswith(w[:6]) for w in direct_words)
         for t, qty, cost, *rest in queue:
             lot_origin = rest[0] if rest else "item"
             if t >= origin:
-                if sold_directly:
-                    continue
                 held[name] += qty * cost
                 held_value += qty * prices.get(tid, 0.0)
                 hi = held_items[name]
@@ -406,7 +490,11 @@ def compute(now=None) -> dict:
             note += ("; " if note else "") + f"{untyped_sales / M:.1f} M whose item types EVE has not listed yet"
         moves.append(["Project goods sold on the market (gross)", sum(goods_sales.values()) + untyped_sales, note])
     for d in direct_sales:
-        moves.append([f"Goods sold directly ({d['item']})", d["amount"], f"Deposited by {d['who']}, {_when(d['t'])}; the lot left the stock"])
+        what = ", ".join(d.get("removed") or []) or (d["item"] or "items not named")
+        note = f"Deposited by {d['who']}, {_when(d['t'])}; {d.get('cost', 0.0) / M:.1f} M of stock left the books"
+        if d.get("unmatched"):
+            note += "; not matched: " + ", ".join(d["unmatched"]) + " (name the items in the reason, or in the admin under Shipyard → direct sales)"
+        moves.append([f"Goods sold directly ({what})", d["amount"], note])
     for tid, (qty, revenue, cost) in sold_period.items():
         if qty:
             moves.append([f"{names.get(tid, tid)} sold, profit over its cost", revenue - cost,

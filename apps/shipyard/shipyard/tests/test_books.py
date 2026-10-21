@@ -178,6 +178,45 @@ class BooksTests(TestCase):
         # the stock position is unchanged
         self.assertAlmostEqual(next(s for s in d["stock"] if s["name"] == "Heavy Water")["units"], 1_990_000)
 
+    def test_direct_sales_take_the_named_lots(self):
+        """A deposit whose reason names the items sold takes them out of the goods held; a reason that does not
+        is completed by an admin row (books.direct_sale)."""
+        from ..models import MaterialType
+        MaterialType.objects.get_or_create(type_id=35, defaults={"name": "Pyerite"})
+        p2 = CorpProject.objects.get(project_id="p2")
+        ProjectContribution.objects.create(project=p2, taken_at=at(12.5), character_id=4242, character_name="Miner", contributed=4_000_000)  # 1,000,000 more at 10
+        p1 = CorpProject.objects.get(project_id="p1")
+        p1.reward_remaining -= 10e6  # the pool paid those 10 M
+        p1.save()
+        before = books.compute()
+        held_before = next(m for m in before["moves"] if m[0].startswith("Goods those rewards bought"))[1]
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_401, division=1, date=at(13), ref_type="player_donation", amount=7e6,
+                                        reason="direct sale 400,000 Pyerite", first_party_id=111, second_party_id=CORP)
+        d = books.compute()
+        move = next(m for m in d["moves"] if m[0].startswith("Goods sold directly"))
+        self.assertEqual(move[0], "Goods sold directly (400,000 Pyerite)")
+        self.assertAlmostEqual(move[1], 7e6)
+        self.assertIn("4.0 M of stock left the books", move[2])
+        held_after = next(m for m in d["moves"] if m[0].startswith("Goods those rewards bought"))[1]
+        self.assertAlmostEqual(held_before - held_after, 4e6, places=0)
+        self.assertAlmostEqual(d["result"], before["result"] + 7e6 - 4e6, places=0)
+        self.assertLess(abs(d["gap"]), 1.0)
+        # a deposit that names nothing: flagged on the page, then completed from the admin
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_402, division=1, date=at(14), ref_type="player_donation", amount=9e6,
+                                        reason="Direct sale buyback goods", first_party_id=111, second_party_id=CORP)
+        d = books.compute()
+        move = next(m for m in d["moves"] if m[0].startswith("Goods sold directly (buyback"))
+        self.assertIn("not matched: buyback goods", move[2])
+        self.assertIn("0.0 M of stock left", move[2])
+        books.direct_sale(99_402, "Pyerite", note="the rest of the Pyerite")
+        d = books.compute()
+        move = next(m for m in d["moves"] if m[0].startswith("Goods sold directly (600,000 Pyerite)"))
+        self.assertIn("6.0 M of stock left the books", move[2])
+        self.assertNotIn("not matched", move[2])
+        self.assertLess(abs(d["gap"]), 1.0)
+        self.assertEqual(books.parse_direct_sale_items("2,388 Zero-Point Condensate, 373 Crystalline Isogen-10; Pyerite x1.000 and Tritanium"),
+                         [(2388, "Zero-Point Condensate"), (373, "Crystalline Isogen-10"), (1000, "Pyerite"), (None, "Tritanium")])
+
     def test_ignored_lines_leave_the_books(self):
         """An accidental sale and its tax, flagged by id, and the owner's settlement, matched by its reason, net out."""
         before = books.compute()

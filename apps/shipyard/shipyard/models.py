@@ -826,6 +826,27 @@ class BookStock(models.Model):
         return f"{self.name}: {self.units:,} at {self.unit_cost:g}"
 
 
+class BookDirectSale(models.Model):
+    """What a direct sale of project goods sold (owner, 2026-10-21), for a deposit whose reason does not
+    name the items. The deposit into the corp wallet carries "direct sale" in its reason; the items are
+    read from the reason after those words ("direct sale 2,388 Zero-Point Condensate, 373 Crystalline
+    Isogen-10") or, when the reason says nothing useful, from this row by the journal entry id."""
+
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    entry_id = models.BigIntegerField()
+    items = models.CharField(max_length=500, help_text="Comma-separated, a quantity before each name: '2,388 Zero-Point Condensate, 373 Crystalline Isogen-10'. An ore is converted to its minerals as the ledger does; a name without a quantity takes every unit held")
+    note = models.CharField(max_length=200, blank=True)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [("corporation_id", "entry_id")]
+        verbose_name = "direct sale"
+        verbose_name_plural = "direct sales"
+
+    def __str__(self):
+        return f"direct sale {self.entry_id}: {self.items[:60]}"
+
+
 class BookIgnoredEntry(models.Model):
     """A corporation journal line the Finance tab leaves out (owner, 2026-10-20): mistakes that will be
     corrected and net to zero, such as sales from orders put up on the corporation by accident and the

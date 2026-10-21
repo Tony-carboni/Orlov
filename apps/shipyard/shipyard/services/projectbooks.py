@@ -197,7 +197,7 @@ def ledger(cid=None, until=None) -> dict:
             others.append([_iso(s.date), names.get(s.type_id, str(s.type_id)), round(need * s.unit_price, 2)])
     stock.sort(key=lambda r: r[0])
     return {"lots": lots, "matches": matches, "others": others, "stock": stock, "payout_rows": payout_rows,
-            "prices": prices, "names": names, "market": market, "sells": sells}
+            "prices": prices, "names": names, "market": market, "sells": sells, "ores": ores, "yields": yields}
 
 
 def books(cid=None) -> dict:
