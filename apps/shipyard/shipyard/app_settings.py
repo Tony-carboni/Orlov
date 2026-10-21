@@ -153,3 +153,25 @@ SHIPYARD_BOOKS_POST_PATTERN = getattr(settings, "SHIPYARD_BOOKS_POST_PATTERN", r
 # Finance tab: journal lines whose reason matches one of these patterns are left out of the books
 # (mistakes being corrected, e.g. the settlement transfers of orders put up on the corporation by accident)
 SHIPYARD_BOOKS_IGNORE_REASONS = getattr(settings, "SHIPYARD_BOOKS_IGNORE_REASONS", [r"accidental"])
+# Direct sales of project goods: EVE's transfer reason holds 40 characters (owner's test, 2026-10-21), so the
+# deposit's reason is "ds <qty> <item>, ..." with these abbreviations (any case) and k / M on the quantities.
+SHIPYARD_BOOKS_ITEM_ALIASES = getattr(settings, "SHIPYARD_BOOKS_ITEM_ALIASES", {
+    "zpc": "Zero-Point Condensate", "ci10": "Crystalline Isogen-10", "ci": "Crystalline Isogen-10",
+    "trit": "Tritanium", "pye": "Pyerite", "mex": "Mexallon", "iso": "Isogen", "noc": "Nocxium", "zyd": "Zydrine", "meg": "Megacyte",
+    "n2": "Nitrogen Isotopes", "nitro": "Nitrogen Isotopes", "he": "Helium Isotopes", "h2": "Hydrogen Isotopes", "o2": "Oxygen Isotopes",
+    "str": "Strontium Clathrates", "lo": "Liquid Ozone", "hw": "Heavy Water", "ag": "Atmospheric Gases", "sil": "Silicates", "hc": "Hydrocarbons",
+    "wg": "Compressed White Glaze", "bg": "Compressed Blue Ice", "cg": "Compressed Clear Icicle", "gg": "Compressed Glacial Mass",
+    "veld": "Compressed Veldspar", "veld2": "Compressed Veldspar II-Grade", "veld3": "Compressed Veldspar III-Grade",
+    "sco": "Compressed Scordite", "sco2": "Compressed Scordite II-Grade", "sco3": "Compressed Scordite III-Grade",
+    "pyro": "Compressed Pyroxeres", "pyro2": "Compressed Pyroxeres II-Grade", "pyro3": "Compressed Pyroxeres III-Grade",
+    "plag": "Compressed Plagioclase", "plag2": "Compressed Plagioclase II-Grade", "plag3": "Compressed Plagioclase III-Grade",
+    "omb": "Compressed Omber", "omb2": "Compressed Omber II-Grade", "omb3": "Compressed Omber III-Grade",
+    "kern": "Compressed Kernite", "kern2": "Compressed Kernite II-Grade", "kern3": "Compressed Kernite III-Grade",
+    "jas": "Compressed Jaspet", "jas2": "Compressed Jaspet II-Grade", "jas3": "Compressed Jaspet III-Grade",
+    "hem": "Compressed Hemorphite", "hem2": "Compressed Hemorphite II-Grade", "hem3": "Compressed Hemorphite III-Grade",
+    "hed": "Compressed Hedbergite", "hed2": "Compressed Hedbergite II-Grade", "hed3": "Compressed Hedbergite III-Grade",
+    "zeo": "Compressed Zeolites", "bzeo": "Compressed Brimful Zeolites", "gzeo": "Compressed Glistening Zeolites",
+    "bit": "Compressed Bitumens", "bbit": "Compressed Brimful Bitumens", "gbit": "Compressed Glistening Bitumens",
+    "coe": "Compressed Coesite", "bcoe": "Compressed Brimful Coesite", "gcoe": "Compressed Glistening Coesite",
+    "syl": "Compressed Sylvite", "bsyl": "Compressed Brimful Sylvite", "gsyl": "Compressed Glistening Sylvite",
+})

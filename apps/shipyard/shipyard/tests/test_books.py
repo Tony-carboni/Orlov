@@ -216,6 +216,18 @@ class BooksTests(TestCase):
         self.assertLess(abs(d["gap"]), 1.0)
         self.assertEqual(books.parse_direct_sale_items("2,388 Zero-Point Condensate, 373 Crystalline Isogen-10; Pyerite x1.000 and Tritanium"),
                          [(2388, "Zero-Point Condensate"), (373, "Crystalline Isogen-10"), (1000, "Pyerite"), (None, "Tritanium")])
+        self.assertEqual(books.parse_direct_sale_items("719k veld, 1.2M trit, 428,000 veld2, 2.5k zpc, 303 wg"),
+                         [(719_000, "veld"), (1_200_000, "trit"), (428_000, "veld2"), (2_500, "zpc"), (303, "wg")])
+        self.assertEqual(books.DIRECT_SALE.search("ds 2,388 zpc, 373 ci10").group(1), "2,388 zpc, 373 ci10")
+        self.assertEqual(books.DIRECT_SALE.search("Direct sale: 300 wg").group(1), "300 wg")
+        self.assertIsNone(books.DIRECT_SALE.search("funds for the fleet"))
+        # the short form takes the lots too: 200,000 Pyerite by its abbreviation
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_403, division=1, date=at(15), ref_type="player_donation", amount=3e6,
+                                        reason="ds 200k pye", first_party_id=111, second_party_id=CORP)
+        d = books.compute()
+        move = next(m for m in d["moves"] if m[0].startswith("Goods sold directly (200,000 Pyerite)"))
+        self.assertIn("2.0 M of stock left the books", move[2])
+        self.assertLess(abs(d["gap"]), 1.0)
 
     def test_ignored_lines_leave_the_books(self):
         """An accidental sale and its tax, flagged by id, and the owner's settlement, matched by its reason, net out."""

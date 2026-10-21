@@ -37,9 +37,18 @@ from . import projectbooks, projects
 M = 1e6
 FEES = ("brokers_fee", "transaction_tax", "market_provider_tax")
 LP_REASON = re.compile(r"([\d.,]+)\s*LP\b", re.I)
-DIRECT_SALE = re.compile(r"direct\s+sale\s*[:\-]?\s*(.*)", re.I)
-ITEM_LEAD_QTY = re.compile(r"^(\d[\d.,]*)\s*[x×]?\s+(.+)$")   # "2,388 Zero-Point Condensate"
-ITEM_TRAIL_QTY = re.compile(r"^(.+?)\s+[x×]\s*(\d[\d.,]*)$")  # "Zero-Point Condensate x2388" (names may end in digits, so only with an x)
+# "direct sale ..." or, since EVE's reason field holds 40 characters, "ds ..." (owner's test, 2026-10-21)
+DIRECT_SALE = re.compile(r"(?:direct\s+sale|^\s*ds\b)\s*[:\-]?\s*(.*)", re.I)
+ITEM_LEAD_QTY = re.compile(r"^(\d[\d.,]*)\s*([kKmM])?\s*[x×]?\s+(.+)$")   # "2,388 Zero-Point Condensate", "719k veld", "1.2M trit"
+ITEM_TRAIL_QTY = re.compile(r"^(.+?)\s+[x×]\s*(\d[\d.,]*)\s*([kKmM])?$")  # "Zero-Point Condensate x2388" (names may end in digits, so only with an x)
+
+
+def _qty(number: str, suffix) -> int:
+    """'2,388' -> 2388; '719k' -> 719000; '1.2M' -> 1200000 (a dot before 1 or 2 digits with k/M is a decimal, else a thousands separator)."""
+    scale = {"k": 1_000, "m": 1_000_000}.get((suffix or "").lower(), 1)
+    if scale > 1 and re.fullmatch(r"\d+[.,]\d{1,2}", number):
+        return int(round(float(number.replace(",", ".")) * scale))
+    return int(re.sub(r"[.,]", "", number)) * scale
 
 
 def parse_direct_sale_items(text) -> list:
@@ -53,11 +62,11 @@ def parse_direct_sale_items(text) -> list:
             continue
         m = ITEM_LEAD_QTY.match(part)
         if m:
-            out.append((int(re.sub(r"[.,]", "", m.group(1))), m.group(2).strip()))
+            out.append((_qty(m.group(1), m.group(2)), m.group(3).strip()))
             continue
         m = ITEM_TRAIL_QTY.match(part)
         if m:
-            out.append((int(re.sub(r"[.,]", "", m.group(2))), m.group(1).strip()))
+            out.append((_qty(m.group(2), m.group(3)), m.group(1).strip()))
             continue
         out.append((None, part))
     return out
@@ -93,12 +102,19 @@ def _apply_direct_sales(direct_sales, led, cid) -> None:
     by_name = {n.lower(): tid for tid, n in names.items()}
     ore_by_name = {o.name.lower(): o for o in ores.values()}
 
+    aliases = {k.lower(): v.lower() for k, v in app_settings.SHIPYARD_BOOKS_ITEM_ALIASES.items()}
+
     def resolve(table, name):
-        key = name.lower()
+        """An exact name, an abbreviation from the settings, a unique prefix, or the shortest name containing the text."""
+        key = aliases.get(name.lower(), name.lower())
         if key in table:
             return table[key]
-        hits = [v for k, v in table.items() if k.startswith(key)]
-        return hits[0] if len(hits) == 1 else None
+        hits = [k for k in table if k.startswith(key)]
+        if not hits:
+            hits = [k for k in table if key in k]
+        if not hits:
+            return None
+        return table[min(hits, key=len)]
 
     for d in sorted(direct_sales, key=lambda d: d["t"]):
         text = overrides.get(d["entry_id"]) or d["item"]
