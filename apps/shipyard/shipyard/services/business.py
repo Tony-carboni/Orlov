@@ -314,11 +314,16 @@ def resolve_installers() -> int:
     return n
 
 
-def production_rows(installer_id=None, since=None) -> list[dict]:
-    """Manufacturing jobs of the production corp for catalog products, as plain dicts (one per job)."""
+def production_rows(installer_id=None, since=None, installer_ids=None) -> list[dict]:
+    """Manufacturing jobs of the production corp for catalog products, as plain dicts (one per job).
+
+    `installer_ids` limits them to jobs installed by any of those characters (the member and their alts);
+    an empty list matches nothing. `installer_id` is the older single-character form."""
     cat = catalog()
     qs = CorpIndustryJob.objects.filter(corporation_id=corp_id(), activity_id=MANUFACTURING, product_type_id__in=list(cat))
-    if installer_id:
+    if installer_ids is not None:
+        qs = qs.filter(installer_id__in=[int(i) for i in installer_ids])
+    elif installer_id:
         qs = qs.filter(installer_id=int(installer_id))
     if since is not None:
         qs = qs.filter(start_date__gte=since)

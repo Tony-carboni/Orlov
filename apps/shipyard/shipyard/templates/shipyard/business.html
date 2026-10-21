@@ -47,7 +47,7 @@
                 <div><span class="shipyard-k">Fuel blocks</span><br><strong class="fs-5">{{ sales.fuel_units|num:0 }}</strong> <span class="shipyard-k">sold ({{ sales.fuel_isk|isk }}), {{ production.fuel_units|num:0 }} produced</span></div>
                 <div><span class="shipyard-k">Wallet{% if days %}, {{ days }} days{% endif %}</span><br><strong class="fs-5 {% if wallet.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ wallet.net|isk }}</strong> <span class="shipyard-k">net: {{ wallet.income|isk }} in, {{ wallet.expenses|isk }} out</span></div>
             </div>
-            <div class="shipyard-k">Sales = market sales of catalog ships by this character (Member Audit's transactions, since {{ ma_since|date:"Y-m-d"|default:"the first read" }}). Production = manufacturing jobs of the production corp{% if installer_only %} installed by this character{% endif %}, grouped as on the dashboard. Fuel blocks are counted apart from ships.</div>
+            <div class="shipyard-k">Sales = market sales of catalog ships by this character (Member Audit's transactions, since {{ ma_since|date:"Y-m-d"|default:"the first read" }}). Production = manufacturing jobs of the production corp{% if installer_only %} installed by any of your {{ my_characters }} character{{ my_characters|pluralize }} on this account{% endif %}, grouped as on the dashboard. Fuel blocks are counted apart from ships.</div>
         </div>
     </div>
 </div>
@@ -71,7 +71,7 @@
     {% if can_manage %}
     <div class="col-auto">
         <div class="btn-group btn-group-sm" role="group" aria-label="Whose jobs">
-            <a class="btn btn-outline-secondary {% if who == 'me' %}active{% endif %}" href="?period={{ period }}&days={{ days }}&who=me" title="Jobs installed by the chosen character">My jobs</a>
+            <a class="btn btn-outline-secondary {% if who == 'me' %}active{% endif %}" href="?period={{ period }}&days={{ days }}&who=me" title="Jobs installed by any character on your auth account (you and your alts)">My jobs</a>
             <a class="btn btn-outline-secondary {% if who == 'corp' %}active{% endif %}" href="?period={{ period }}&days={{ days }}&who=corp" title="Every manufacturing job of the production corp">Whole corp</a>
         </div>
     </div>
@@ -123,7 +123,7 @@
     </div>
 </div>
 
-<h5>Loyalty points used, by faction <span class="small shipyard-k">({{ lp.jobs }} jobs of ships with an LP store blueprint copy{% if installer_only %}, installed by {{ character_name|default:"the chosen character" }}{% else %}, the whole production corp{% endif %}, as the dashboard assumes them)</span></h5>
+<h5>Loyalty points used, by faction <span class="small shipyard-k">({{ lp.jobs }} jobs of ships with an LP store blueprint copy{% if installer_only %}, installed by you and your alts ({{ my_characters }} character{{ my_characters|pluralize }} on this account){% else %}, the whole production corp{% endif %}, as the dashboard assumes them)</span></h5>
 <div class="row g-3 mb-4">
     <div class="col-lg-7">
         <div class="table-responsive">

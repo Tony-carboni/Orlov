@@ -77,6 +77,8 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
+*Release 0.22.2, 2026-10-21: "My jobs" on the My business tab means **every character on the member's auth account** (the owner and his alts; the auth's character ownerships), and is the default again for everyone; "Whole corp" stays for managers. The sales and wallet figures still follow the chosen character in Member Audit.*
+
 *Release 0.22.1, 2026-10-20: the My business tab opens on **Whole corp** for a manager (the owner's production is installed by his other characters; "My jobs" showed 518,000 LP where the corp's jobs are in the millions); members still open on their own jobs. The LP section says whose jobs it counts.*
 
 *Release 0.22.0, 2026-10-20 (desktop session, no migration): **loyalty points used, by faction**, on the My business tab (owner's request). Every manufacturing job of a ship whose blueprint copy the dashboard prices from an LP store (the ship config's LP faction, LP per copy, runs per copy) consumed runs x LP per copy / runs per copy of that faction's LP; the page counts it per faction and per day, week or month (table and stacked chart, the same period and range buttons as the rest of the page), values it at the faction's dashboard rate (Shipyard: LP factions, the ISK per LP the owner pays, the figure to tune), sums the ISK part of the offers, and puts the chosen character's LP balance with that faction next to it (Member Audit's loyalty section, hourly) with the weeks it lasts at the current pace. The LP figure in the top bar is the total for the range. `business.lp_summary` is pure; 108 tests.*

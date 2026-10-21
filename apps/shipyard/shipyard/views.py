@@ -771,17 +771,17 @@ def business_view(request):
     days = _int(request.GET.get("days"), 90, 0, 3650)
     since = timezone.now() - dt.timedelta(days=days) if days else None
     can_manage = request.user.has_perm("shipyard.manage_shipyard")
-    # a manager's business is the whole production corp (the owner's alts install the jobs; 0.22.1), a member's own jobs
-    who = request.GET.get("who", "corp") if can_manage else "me"
+    # "me" = every character on this auth account (the owner's alts install the jobs; 0.22.2); managers may see the whole corp
+    who = request.GET.get("who", "me") if can_manage else "me"
     if who not in ("me", "corp"):
-        who = "corp" if can_manage else "me"
+        who = "me"
+    my_ids = list(CharacterOwnership.objects.filter(user=request.user).values_list("character__character_id", flat=True))
     settings = board.get_user_settings(request.user)
     character_id = settings.skills_character_id
     ma = business.ma_character(character_id)
     journal = business.journal_rows(ma, since) if ma else []
     sales_rows = business.sales_rows(ma, since) if ma else []
-    installer = None if who == "corp" else (character_id or -1)
-    production_rows = business.production_rows(installer_id=installer, since=since)
+    production_rows = business.production_rows(installer_ids=None if who == "corp" else my_ids, since=since)
     sales = business.sales_summary(sales_rows, period)
     production = business.production_summary(production_rows, period)
     wallet_summary = business.wallet_summary(journal, period)
@@ -803,7 +803,7 @@ def business_view(request):
         ma_since=ma_since,
         freshness=business.ma_freshness(ma),
         balance=business.wallet_balance(ma) if ma else None,
-        period=period, periods=business.PERIODS, days=days, who=who, installer_only=who != "corp",
+        period=period, periods=business.PERIODS, days=days, who=who, installer_only=who != "corp", my_characters=len(my_ids),
         corp_id=business.corp_id(), token=business.token(),
         last_run=RefreshRun.objects.filter(step="corp_jobs").order_by("-started_at").first(),
         sales=sales, production=production, wallet=wallet_summary, lp=lp,

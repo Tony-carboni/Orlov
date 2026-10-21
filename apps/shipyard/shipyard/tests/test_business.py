@@ -134,4 +134,7 @@ class ProductionRowsTests(TestCase):
         fuel = next(r for r in rows if r["job_id"] == 2)
         self.assertEqual((fuel["quantity"], fuel["category"], fuel["installer"]), (120, "Fuel", "Someone Else"))
         self.assertEqual([r["job_id"] for r in business.production_rows(installer_id=11)], [1])
+        self.assertEqual(sorted(r["job_id"] for r in business.production_rows(installer_ids=[11, 22])), [1, 2])
+        self.assertEqual([r["job_id"] for r in business.production_rows(installer_ids=[22])], [2])
+        self.assertEqual(business.production_rows(installer_ids=[]), [])
         self.assertEqual([r["job_id"] for r in business.production_rows(since=timezone.now() - dt.timedelta(days=2))], [2])
