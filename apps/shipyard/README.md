@@ -55,3 +55,7 @@ The directors' balance sheet against the owner's working budget (`services/books
 ## Direct sales of project goods (0.23.0)
 
 The Finance tab learns of a sale by trade or contract from the deposit of its proceeds: a corp-wallet deposit whose reason reads `direct sale <quantity> <item>, <quantity> <item>, ...`. The named lots leave the goods held (an ore through its minerals); a deposit that names nothing is completed in the admin (Shipyard → direct sales) or with `books.direct_sale(entry_id, items)`. The corp hangar itself is never read.
+
+## Register a direct sale (0.24.0)
+
+Finance → Register a direct sale: paste the items (name, tab, quantity per line), Quote (ore and ice at 95 % of the Reprocessing tab's value capped at Jita buy, other items at Jita buy, with the projects' cost and the profit per line), Register to get a `DS-XXXX` code. Deposit the buyer's ISK into a corp wallet with the code in the reason: the books take the registered lines out of the goods held when the deposit appears, and section 3 shows the sale as one "Direct sale of goods" line. `services/directsales.py`; the registrations are `BookDirectSale` rows (admin: Shipyard → direct sales).

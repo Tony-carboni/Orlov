@@ -4,6 +4,20 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-21 (19:30 UTC) — desktop session → any session
+
+**Runbook / topic:** **Shipyard 0.24.0: Register a direct sale** (runbook 13 C), replacing the reason-text approach of 0.23.x after the owner found EVE's transfer reason holds 40 characters (his test: the line stopped at the last 0 of 40).
+
+**Done.** Finance → **Register a direct sale**: paste the items as the game copies them, Quote (ore and ice at 95 % of the Reprocessing tab's value, never above Jita buy; other items at Jita buy; the projects' cost and profit per line, first in first out, ores through their minerals), Register → a code `DS-XXXX` for the deposit's reason. When the deposit with the code appears in the journal, the registered lines leave the goods held and the sale is marked matched; pending registrations are listed with a delete button. Section 3 of the sheet has one line per month, **Direct sale of goods** (deposits, cost, profit), inside "Net profit so far"; the sales of 20 October (Atmospheric Gases, 1.7 M against 7.6 M of cost) and 21 October (200.4 M against 179.6 M) are in it. Released: commit `388386d` pinned, backup `aa-db-2026-10-21-1923.sql.gz`, migration 0029, 110 tests, `up -d`, nginx. Note: the rejected 0.23.1 (ds trigger, abbreviations, k/M in the reason) had already been committed and built before the rejection landed; it is harmless and stays underneath.
+
+**Owner's rule from now on.** Before selling project goods by trade or contract: Finance → Register a direct sale, paste the list, Quote, Register, and put the `DS-XXXX` code in the deposit's reason. Nothing else; no items in the reason.
+
+**Owner has to do by hand.** Nothing for this. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
+
+**Next.** Nothing queued.
+
+---
+
 ## 2026-10-21 (19:10 UTC) — desktop session → any session
 
 **Runbook / topic:** **Shipyard 0.23.0: direct sales of project goods** (runbook 13 C), and the owner's direct sale of 21 October.
@@ -74,20 +88,6 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Owner has to do by hand.** Share the sheet with the directors. Look at the seven graphs on the Corp projects tab and say which to keep. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3.
 
 **Next.** Next sheet: movements since the newest State of the Union post; LP from the journal scan.
-
----
-
-## 2026-10-18 (19:00 UTC) — desktop session → any session
-
-**Runbook / topic:** **Shipyard 0.14.0: history graphs on the Corp projects tab** (runbook 13 C release paragraph has the details).
-
-**Done.** Seven graphs with a days / weeks / every-N-days switch and a date range (paid to members, money in and out of projects, paid out against sold, result of sold goods, buyback margin per material, m³ delivered, members taking part); the hourly projects task also copies OARMI's wallet journal and market transactions; sales are matched first in, first out to project deliveries, ores through their minerals. Fixed: "paid out" no longer counts the refunds of closed projects (the tab showed 4.7 B, the members earned 732 M). Released: backup `aa-db-2026-10-18-1832.sql.gz`, migration 0020, build, 91 tests, collectstatic, `up -d`, nginx; first ledger read done by hand (3,601 journal entries, 197 transactions). Verified: page 200, all seven charts draw (Chart.js 4.4.1), 0 gunicorn errors.
-
-**Findings for the books.** Matched so far: 185.2 M of sales against 163.6 M of project cost (Pyerite, Zero-Point Condensate, Mexallon, Crystalline Isogen, Heavy Water from ice, Hydrocarbons, Silicates). Stock from projects not sold: 550.7 M at cost, 640.6 M at Jita buy. Buyback paid between 83 and 106 % of today's Jita value (ice 102 % as delivered but 83 % reprocessed; Omber 106 % as delivered). Unmatched corp sales: one 5,086 M Tritanium sale on 6 Oct (owner's stock, before the baseline) and 96 M of donated Heavy Water.
-
-**Owner has to do by hand.** Look at the seven graphs on /shipyard/projects/ and say which to keep; the rest can go. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3.
-
-**Next.** Trim the graphs to the owner's choice.
 
 ---
 
