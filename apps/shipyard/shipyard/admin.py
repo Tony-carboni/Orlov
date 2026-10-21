@@ -105,7 +105,7 @@ class BookDirectSaleAdmin(admin.ModelAdmin):
 
 @admin.register(BookIgnoredEntry)
 class BookIgnoredEntryAdmin(admin.ModelAdmin):
-    list_display = ("entry_id", "division", "corporation_id", "reason", "added_at")
+    list_display = ("entry_id", "division", "corporation_id", "amount", "reason", "added_at")
     search_fields = ("entry_id", "reason")
 
 

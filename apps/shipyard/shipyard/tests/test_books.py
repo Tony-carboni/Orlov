@@ -300,6 +300,24 @@ class BooksTests(TestCase):
         self.assertLess(abs(d["gap"]), 1.0)
         self.assertNotIn("direct", [g["key"] for g in d["project_bb"]["months"][0]["groups"]])  # not a sale, not in section 3
 
+    def test_a_line_can_be_ignored_in_part(self):
+        """A settlement deposit that also brings real money: only the settling part leaves the books."""
+        before = books.compute()
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_601, division=1, date=at(14), ref_type="manufacturing", amount=-54e6)
+        dep = CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_602, division=1, date=at(15), ref_type="player_donation", amount=62e6,
+                                              reason="correction manufacturing", first_party_id=111, second_party_id=CORP)
+        books.ignore_entries([99_601], "accidental industry jobs")
+        d = books.compute()
+        self.assertAlmostEqual(d["result"], before["result"], places=0)  # the whole deposit leaves by its reason
+        books.ignore_entries([dep.entry_id], "settles the jobs; 8 M stays as cash", amount=54e6)
+        d = books.compute()
+        self.assertAlmostEqual(d["result"], before["result"] + 8e6, places=0)
+        self.assertAlmostEqual(d["ignored"]["net"], 0.0, places=0)
+        self.assertEqual(d["ignored"]["count"], 2)
+        self.assertIn("(54,000,000 of 62,000,000)", d["ignored"]["lines"][-1][3])
+        self.assertLess(abs(d["gap"]), 1.0)
+        self.assertTrue(any(m[0].startswith("Deposit: correction manufacturing") and abs(m[1] - 8e6) < 1 for m in d["moves"]))
+
     def test_ignored_lines_leave_the_books(self):
         """An accidental sale and its tax, flagged by id, and the owner's settlement, matched by its reason, net out."""
         before = books.compute()

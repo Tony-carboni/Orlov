@@ -868,6 +868,7 @@ class BookIgnoredEntry(models.Model):
     division = models.PositiveSmallIntegerField()
     entry_id = models.BigIntegerField()
     reason = models.CharField(max_length=200, blank=True, help_text="Why the line is left out")
+    amount = models.FloatField(null=True, blank=True, help_text="ISK of the line to leave out, as a positive number; empty = the whole line. The rest stays in the books (a deposit that settles a mistake and brings some real money as well)")
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
