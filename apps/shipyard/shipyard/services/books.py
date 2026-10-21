@@ -46,7 +46,8 @@ def parse_direct_sale_items(text) -> list:
     """'2,388 Zero-Point Condensate, Crystalline Isogen-10' -> [(2388, 'Zero-Point Condensate'), (None, 'Crystalline Isogen-10')].
     A quantity stands before the name (thousands separators allowed) or after it with an x; without one, every unit held."""
     out = []
-    for part in re.split(r"\s*[,;]\s*|\s+and\s+", text or ""):
+    # split on ; / and / commas, but not a comma that is a thousands separator (followed by exactly three digits)
+    for part in re.split(r"\s*;\s*|\s+and\s+|\s*,(?!\d{3}(?!\d))\s*", text or ""):
         part = part.strip().strip(".")
         if not part:
             continue
