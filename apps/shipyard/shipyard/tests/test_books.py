@@ -272,6 +272,34 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(group["net"], 2e6)
         self.assertAlmostEqual(d["project_bb"]["realised"], before["project_bb"]["realised"] + 2e6, places=0)
 
+    def test_stock_take_writes_off_everything_held(self):
+        """A stock take clears every project-goods lot at cost, moves no cash, and keeps the sheet reconciled."""
+        from ..models import MaterialType
+        from ..services import directsales
+        MaterialType.objects.get_or_create(type_id=35, defaults={"name": "Pyerite"})
+        p2 = CorpProject.objects.get(project_id="p2")
+        ProjectContribution.objects.create(project=p2, taken_at=at(11), character_id=4242, character_name="Miner", contributed=4_000_000)
+        p1 = CorpProject.objects.get(project_id="p1")
+        p1.reward_remaining -= 10e6
+        p1.save()
+        before = books.compute()
+        held_before = next(m for m in before["moves"] if m[0].startswith("Goods those rewards bought"))[1]
+        self.assertAlmostEqual(held_before, 10e6, places=0)
+        owner = get_user_model().objects.create_user("owner", password="x")
+        wo = directsales.write_off(owner, "sold by direct trade earlier")
+        self.assertTrue(wo.code.startswith("WO-"))
+        self.assertAlmostEqual(wo.cost, 10e6, places=0)
+        self.assertEqual([(ln["name"], ln["qty"]) for ln in wo.lines], [("Pyerite", 1_000_000.0)])
+        d = books.compute()
+        held_after = next(m for m in d["moves"] if m[0].startswith("Goods those rewards bought"))[1]
+        self.assertAlmostEqual(held_after, 0.0, places=0)
+        move = next(m for m in d["moves"] if m[0].startswith("Goods written off"))
+        self.assertEqual(move[1], 0.0)
+        self.assertIn("10.0 M of project goods left the books", move[2])
+        self.assertAlmostEqual(d["result"], before["result"] - 10e6, places=0)
+        self.assertLess(abs(d["gap"]), 1.0)
+        self.assertNotIn("direct", [g["key"] for g in d["project_bb"]["months"][0]["groups"]])  # not a sale, not in section 3
+
     def test_ignored_lines_leave_the_books(self):
         """An accidental sale and its tax, flagged by id, and the owner's settlement, matched by its reason, net out."""
         before = books.compute()

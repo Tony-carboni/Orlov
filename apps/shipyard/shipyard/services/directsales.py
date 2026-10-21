@@ -187,6 +187,32 @@ def register(text: str, user) -> BookDirectSale:
     )
 
 
+def write_off(user, note: str = "") -> BookDirectSale:
+    """Stock take (owner, 2026-10-21): every project-goods lot held right now leaves the books at cost, with
+    no cash movement, because it was sold earlier without a record. Kept as a BookDirectSale with a WO code,
+    no deposit, matched at the moment of the write-off; later deliveries accrue again."""
+    led = projectbooks.ledger(projects.corp_id())
+    now = timezone.now()
+    lines, cost = [], 0.0
+    for tid, queue in led["lots"].items():
+        units = sum(r[1] for r in queue if r[0] <= now)
+        if units <= 0:
+            continue
+        c = sum(r[1] * r[2] for r in queue if r[0] <= now)
+        cost += c
+        lines.append({"type_id": tid, "name": led["names"].get(tid, str(tid)), "qty": round(units, 3), "unit": 0.0, "basis": "written off",
+                      "line": 0.0, "cost": round(c, 2), "held": round(units, 3), "profit": round(-c, 2), "is_ore": False, "short": False})
+    code = "WO-" + now.strftime("%y%m%d") + "-" + "".join(random.choice(CODE_ALPHABET) for _ in range(2))
+    return BookDirectSale.objects.create(
+        corporation_id=projects.corp_id(), code=code, items=("stock take: " + ", ".join(f"{ln['qty']:,.0f} {ln['name']}" for ln in lines))[:500],
+        lines=lines, quote=0.0, cost=cost, created_by=getattr(user, "username", "")[:150], matched_at=now, note=note[:200],
+    )
+
+
+def write_offs():
+    return list(BookDirectSale.objects.filter(corporation_id=projects.corp_id(), code__startswith="WO-").order_by("-matched_at"))
+
+
 def pending():
     return list(BookDirectSale.objects.filter(corporation_id=projects.corp_id(), entry_id__isnull=True).exclude(code="").order_by("-created_at"))
 

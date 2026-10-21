@@ -152,7 +152,7 @@ SHIPYARD_BOOKS_POSTS_URL = getattr(settings, "SHIPYARD_BOOKS_POSTS_URL", "https:
 SHIPYARD_BOOKS_POST_PATTERN = getattr(settings, "SHIPYARD_BOOKS_POST_PATTERN", r"state-of-the-(alliance|union)")
 # Finance tab: journal lines whose reason matches one of these patterns are left out of the books
 # (mistakes being corrected, e.g. the settlement transfers of orders put up on the corporation by accident)
-SHIPYARD_BOOKS_IGNORE_REASONS = getattr(settings, "SHIPYARD_BOOKS_IGNORE_REASONS", [r"accidental"])
+SHIPYARD_BOOKS_IGNORE_REASONS = getattr(settings, "SHIPYARD_BOOKS_IGNORE_REASONS", [r"accidental", r"correction"])  # owner, 2026-10-20 and 2026-10-21
 # Direct sales of project goods: EVE's transfer reason holds 40 characters (owner's test, 2026-10-21), so the
 # deposit's reason is "ds <qty> <item>, ..." with these abbreviations (any case) and k / M on the quantities.
 SHIPYARD_BOOKS_ITEM_ALIASES = getattr(settings, "SHIPYARD_BOOKS_ITEM_ALIASES", {

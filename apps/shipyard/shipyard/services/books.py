@@ -95,11 +95,17 @@ def _take_until(queue, need, until):
     return cost, taken
 
 
-def _apply_direct_sales(direct_sales, led, cid) -> None:
+def _apply_direct_sales(direct_sales, led, cid, until=None) -> None:
     """Take the items each direct sale names out of the project-goods lots (an ore through its minerals, as the
-    ledger stores them). Writes cost, removed and unmatched into each sale's dict."""
+    ledger stores them). Writes cost, removed and unmatched into each sale's dict. Stock-take write-offs (code
+    WO-..., no deposit) are added to the list at their moment with no cash: the lots leave at cost."""
     overrides = dict(BookDirectSale.objects.filter(corporation_id=cid, entry_id__isnull=False).exclude(items="").values_list("entry_id", "items"))
     registered = {s.code.upper(): s for s in BookDirectSale.objects.filter(corporation_id=cid).exclude(code="")}
+    for wo in BookDirectSale.objects.filter(corporation_id=cid, code__startswith="WO-", matched_at__isnull=False):
+        if until is not None and wo.matched_at > until:
+            continue
+        direct_sales.append({"t": wo.matched_at, "who": wo.created_by or "stock take", "reason": wo.note, "amount": 0.0, "entry_id": None,
+                             "code": wo.code, "item": "", "writeoff": True})
     lots, names, ores, yields = led["lots"], led["names"], led.get("ores", {}), led.get("yields", {})
 
     def take_ore(ore, qty, until):
@@ -132,7 +138,7 @@ def _apply_direct_sales(direct_sales, led, cid) -> None:
         sale = registered.get(d.get("code") or "")
         if sale is not None:
             # a sale registered on the Finance tab: its quoted lines are what left the stock
-            if sale.entry_id is None:
+            if sale.entry_id is None and not d.get("writeoff"):
                 sale.entry_id, sale.matched_at = d["entry_id"], d["t"]
                 sale.save(update_fields=["entry_id", "matched_at"])
             for ln in sale.lines or []:
@@ -481,7 +487,7 @@ def compute(now=None) -> dict:
     # --- project goods still held, split at the baseline -----------------------------------------
     led = projectbooks.ledger(cid, until=cut)
     prices, pnames = led["prices"], led["names"]
-    _apply_direct_sales(direct_sales, led, cid)  # the lots they sold leave before the count below
+    _apply_direct_sales(direct_sales, led, cid, until=cut)  # the lots they sold leave before the count below
     held, held_value, older_cost, older_value = defaultdict(float), 0.0, 0.0, 0.0
     held_items = defaultdict(lambda: [0.0, 0.0, 0.0, "item"])  # item -> [units, cost, value at Jita buy, origin], bought since the baseline
     for tid, queue in led["lots"].items():
@@ -535,6 +541,10 @@ def compute(now=None) -> dict:
             note += ("; " if note else "") + f"{untyped_sales / M:.1f} M whose item types EVE has not listed yet"
         moves.append(["Project goods sold on the market (gross)", sum(goods_sales.values()) + untyped_sales, note])
     for d in direct_sales:
+        if d.get("writeoff"):
+            moves.append([f"Goods written off, stock take of {_when(d['t'])}", 0.0,
+                          f"{d.get('cost', 0.0) / M:.1f} M of project goods left the books at cost: sold earlier without a record" + (f"; {d['reason']}" if d.get("reason") else "")])
+            continue
         what = ", ".join(d.get("removed") or []) or (d["item"] or "items not named")
         note = f"Deposited by {d['who']}, {_when(d['t'])}; {d.get('cost', 0.0) / M:.1f} M of stock left the books"
         if d.get("unmatched"):
@@ -816,7 +826,7 @@ def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock
         if tid not in stock_types:
             fees[(mo, name_of(tid))][1] += fee
 
-    direct = [d for d in direct_sales if d["t"] >= since]
+    direct = [d for d in direct_sales if d["t"] >= since and not d.get("writeoff")]
     months = sorted({month(e["t"]) for e in pays} | {month(m[0]) for m in matches} | {month(o[0]) for o in others} | {month(d["t"]) for d in direct}, reverse=True)
     all_tax = sum(v[0] for v in fees.values())
     all_revenue = sum(m[2] for m in matches) + sum(o[2] for o in others)

@@ -234,3 +234,6 @@ CELERYBEAT_SCHEDULE["doctrines_srp_match_payments"] = {
     "task": "doctrines.tasks.srp_match_payments",
     "schedule": crontab(minute="50"),
 }
+
+# Journal lines left out of the Finance tab by their reason (owner, 2026-10-20 "accidental"; 2026-10-21 "correction" too)
+SHIPYARD_BOOKS_IGNORE_REASONS = [r"accidental", r"correction"]

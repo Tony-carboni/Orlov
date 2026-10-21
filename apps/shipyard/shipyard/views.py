@@ -116,6 +116,13 @@ def finance_direct_sale(request):
     if request.method == "POST":
         action = request.POST.get("action", "quote")
         text = request.POST.get("text", "")
+        if action == "writeoff":
+            if request.POST.get("confirm") != "yes":
+                messages.error(request, "Tick the confirmation to write the goods off.")
+                return redirect("shipyard:finance_direct_sale")
+            wo = directsales.write_off(request.user, request.POST.get("note", ""))
+            messages.success(request, f"Stock take {wo.code}: {wo.cost / 1e6:.1f} M of project goods written off; the goods held start again from here.")
+            return redirect("shipyard:finance_direct_sale")
         if action == "delete":
             n, _ = BookDirectSale.objects.filter(corporation_id=directsales.projects.corp_id(), code=request.POST.get("code", ""), entry_id__isnull=True).delete()
             messages.info(request, "Registration forgotten." if n else "Nothing to forget: that code is unknown or already matched.")
@@ -133,7 +140,7 @@ def finance_direct_sale(request):
             logger.warning("direct sale quote by %s failed: %s", request.user, exc)
             messages.error(request, f"The quote could not be made: {exc}")
     return render(request, "shipyard/finance_direct_sale.html", _context(
-        request, text=text, q=q, registered=registered, pending=directsales.pending(), recent=directsales.recent(),
+        request, text=text, q=q, registered=registered, pending=directsales.pending(), recent=directsales.recent(), write_offs=directsales.write_offs(),
         rule=f"ore and ice at {directsales.ORE_SHARE:.0%} of the reprocessing value, never above Jita buy; other items at Jita buy",
         can_manage=True,
     ))

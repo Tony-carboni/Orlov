@@ -74,6 +74,21 @@
 </table></div>
 {% else %}<p class="small shipyard-k">None.</p>{% endif %}
 
+<h3 class="h5 mt-4">Stock take</h3>
+<p class="small shipyard-k">When the goods held from project buybacks no longer exist (sold earlier without a record), write them all off: every lot leaves the books at cost, with no cash movement, and the list starts again from the next delivery.</p>
+<form method="post" class="d-flex flex-wrap align-items-center gap-2 mb-2">{% csrf_token %}
+    <input type="hidden" name="action" value="writeoff">
+    <input type="text" name="note" class="form-control form-control-sm" style="width: 22rem" placeholder="Note, e.g. sold by direct trade before 21 October" maxlength="200">
+    <label class="small d-flex align-items-center gap-1"><input type="checkbox" name="confirm" value="yes"> I confirm: nothing of it is in the hangar</label>
+    <button class="btn btn-outline-danger btn-sm"><i class="fas fa-broom fa-fw"></i> Write off everything held</button>
+</form>
+{% if write_offs %}
+<div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>Code</th><th>When</th><th>Written off</th><th class="text-end">Cost</th><th>Note</th></tr></thead>
+    <tbody>{% for s in write_offs %}<tr><td class="font-monospace">{{ s.code }}</td><td class="text-nowrap small">{{ s.matched_at|date:"Y-m-d H:i" }} · {{ s.created_by }}</td><td class="small">{{ s.items|slice:"12:" }}</td><td class="text-end">{{ s.cost|isk }}</td><td class="small">{{ s.note }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+
 {% if recent %}
 <h3 class="h5 mt-4">Matched to a deposit</h3>
 <div class="table-responsive"><table class="table table-sm align-middle">
