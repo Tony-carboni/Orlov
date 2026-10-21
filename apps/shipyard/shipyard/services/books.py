@@ -487,7 +487,7 @@ def compute(now=None) -> dict:
     # --- project goods still held, split at the baseline -----------------------------------------
     led = projectbooks.ledger(cid, until=cut)
     prices, pnames = led["prices"], led["names"]
-    _apply_direct_sales(direct_sales, led, cid, until=cut)  # the lots they sold leave before the count below
+    _apply_direct_sales(direct_sales, led, cid, until=now)  # the lots they sold leave before the count below; a stock take counts on a live sheet whatever its last journal line
     held, held_value, older_cost, older_value = defaultdict(float), 0.0, 0.0, 0.0
     held_items = defaultdict(lambda: [0.0, 0.0, 0.0, "item"])  # item -> [units, cost, value at Jita buy, origin], bought since the baseline
     for tid, queue in led["lots"].items():
