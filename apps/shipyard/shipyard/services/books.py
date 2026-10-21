@@ -658,6 +658,7 @@ def compute(now=None) -> dict:
         "held": sorted(held.items(), key=lambda kv: -kv[1]), "held_total": held_total, "held_value": held_value,
         "lp_units": lp_units - lp_used, "lp_cost": lp_left, "lp_bought": lp_units, "open_escrow": open_escrow,
         "assets": assets, "result": result, "moves": moves, "explained": explained, "gap": gap,
+        "lots_left": [(tid, pnames.get(tid, str(tid)), sum(r[1] for r in q), sum(r[1] * r[2] for r in q)) for tid, q in led["lots"].items() if sum(r[1] for r in q) > 0],
         "move_groups": move_groups, "asset_groups": asset_groups, "ignored": ignored,
         "director": director, "older": (older_cost, older_value), "structure_income": structure_income,
         "live_books": live_books, "books_now": books_now, "live_ahead": (live_books - books_now) if live_books is not None else None,
