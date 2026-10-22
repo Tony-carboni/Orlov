@@ -4,6 +4,18 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-22 (08:30 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** **Shipyard 0.25.0: the LP log** (runbook 13 C release paragraph). Built in parallel with the other desktop session's 0.23.0 to 0.24.2 of 21 October (direct sales, stock take, partial ignores); rebased on top of them, so the LP log is 0.25.0 with migration 0031.
+
+**Done.** EVE keeps no history of loyalty points, so the plugin keeps its own: the hourly task `shipyard_lp_snapshots` (beat entry at :50, appended to `conf/local.py` and `deploy/conf/local.py.append`) reads every character with a valid token carrying the loyalty scope (Member Audit's registration gives it) and stores a line only when a balance moved: when, character, NPC corporation, change, new balance. A fall that matches a "Payment to LP Store" line in Member Audit's journal is noted with the ISK. Page at /shipyard/lp/log/ (earned and spent per corporation, balance now, chart per day/week/month, the log; "Me and my alts" or, for managers and finance viewers, "Everyone logged"); **Log** button on the Finance tab's Loyalty points line; link from My business. Of the owner's 11 characters, 10 carry the scope; Flapoor Hendrik does not. The log starts with the first reading. Release details (commit, backup) follow below once deployed.
+
+**Owner has to do by hand.** Register Flapoor Hendrik in Member Audit once if that character's LP matters. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
+
+**Next.** Nothing queued.
+
+---
+
 ## 2026-10-21 (19:30 UTC) — desktop session → any session
 
 **Runbook / topic:** **Shipyard 0.24.0: Register a direct sale** (runbook 13 C), replacing the reason-text approach of 0.23.x after the owner found EVE's transfer reason holds 40 characters (his test: the line stopped at the last 0 of 40).
@@ -43,8 +55,6 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Runbook / topic:** **the accidental corporation sell orders of 2026-10-20 and Shipyard 0.21.0** (runbook 13 C release paragraph).
 
 **What happened.** Six sell orders meant for the owner's own wallet were put up on the corporation (Catherine Frey) between 13:30 and 14:13 EVE: Drake Navy Issue 3, Drekavac 2, Prophecy Navy Issue 7, Caracal Navy Issue 10, Omen Navy Issue 8, Helium Fuel Block 20,000. One Drekavac sold at 13:48 for 147,800,000. The corporation paid 39,847,273 in listing fees (Drake 5,782,104, Drekavac 4,319,408, Prophecy 12,806,257, Caracal 6,194,172, Omen 4,999,759, Helium 5,745,573) and 4,988,250 sales tax on the Drekavac. **Net in the master wallet from the mistake: +102,964,477 ISK.** The owner transfers exactly that from the master wallet (division 1) to his own wallet with a reason that contains the word "accidental"; the corporation is then back at zero and the fees are the owner's own cost. The Drake, Drekavac and Prophecy orders were cancelled; Caracal, Omen and Helium were still open at 14:35 EVE, the owner cancels them. Anything that sells before they are cancelled is a new sale and tax line to flag the same way (a local session: `books.ignore_entries`), and the settlement amount grows by the sale minus its tax.
-
-**Also (2026-10-22, 08:10 UTC): Shipyard 0.23.0, the LP log** (COMMIT pinned, backup BACKUP, migration 0028, beat entry `shipyard_lp_snapshots` at :50 appended to `conf/local.py` and `deploy/conf/local.py.append`): hourly readings of every character's loyalty points per NPC corporation, every change kept as a log line, with LP store payments noted from Member Audit's journal; page at /shipyard/lp/log/, Log button on the Finance tab's Loyalty points line, link from My business. Of the owner's 11 characters, 10 have the loyalty scope; Flapoor Hendrik does not (register in Member Audit once). The log starts with the first reading; no history before that. Details in runbook 13 C.
 
 **Also (2026-10-21, 11:00 UTC): industry jobs paid from the master wallet by mistake, again.** 40 manufacturing jobs at the Raitaru between 10:37 and 10:42 EVE (Tommy McPhee 38,293,042; phosphorescent pony, fluorescent pony and carbondnb 8,080,390 each): **62,534,212 ISK**, the owner deposits that into the master wallet with "accidental" in the reason. The journal copy had 30 of the 40 jobs (60 lines, 54,453,822) at 10:52; they are flagged. **Open for a local session:** flag the 20 lines of the last 10 jobs (carbondnb, 10:41 to 10:42 EVE, 8,080,390) once the hourly read has them (`books.ignore_entries`, reason "accidental industry jobs 2026-10-21"), then check the ignored net is 0 after the deposit. Yesterday's settlement withdrawal of 102,964,477 (14:38 EVE) carried the reason "correction buy orders", without the word "accidental", so it was flagged by id; the 279,919,850 deposit of 16:10 said "accidental correction" and dropped out by itself.
 
