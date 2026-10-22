@@ -12,6 +12,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Also:** the 9,000,000 deposit "correction industry orders" (22 Oct 13:13) settles ten private manufacturing jobs of 13:10 charged to the master wallet (20 lines, 8,008,380); the lines are flagged and the deposit is ignored for 8,008,380, so 991,620 stays as cash by the owner's rule of 21 October. Ignored lines now 240, net 0; result **+375.1 M**, gap 0. Still open from earlier: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
 
+**Also (0.25.2, 15:40 UTC):** the owner expected the LP line's Log button to list the corporation wallet's LP change by change with dates; the 0.25.0 log is the member characters' own LP. EVE has no corporation LP route, so the button now opens a page rebuilt from the books (purchases from the journal with EVE's dates, conversions from the stock batches): numbered lines with change and balance after, and the figure the corporation wallet's LP tab should show. Commit `b313603` pinned, backup `aa-db-2026-10-22-1507.sql.gz`, 118 tests.
+
 **Next.** Nothing queued.
 
 ---
