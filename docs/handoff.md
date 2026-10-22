@@ -14,6 +14,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Also (0.25.2, 15:40 UTC):** the owner expected the LP line's Log button to list the corporation wallet's LP change by change with dates; the 0.25.0 log is the member characters' own LP. EVE has no corporation LP route, so the button now opens a page rebuilt from the books (purchases from the journal with EVE's dates, conversions from the stock batches): numbered lines with change and balance after, and the figure the corporation wallet's LP tab should show. Commit `b313603` pinned, backup `aa-db-2026-10-22-1507.sql.gz`, 118 tests.
 
+**Also (runbook 19, 15:15 UTC): the welcome DM.** New cog `orlovbot/cogs/welcome.py` (registered in `orlovbot/auth_hooks.py`, settings `ORLOVBOT_WELCOME` and `ORLOVBOT_WELCOME_CHANNEL_ID` in `conf/local.py`, copy `local.py.pre-welcome`): every member who joins the Discord gets a DM from Orlov auth with the link to #how-to-get-roles and the two-line summary; if their DMs are closed, the same note goes into the channel with a mention. The bot's Members intent was already on (allianceauth-discordbot). Deployed and the cog loads; a test DM with the text was sent to the owner's own account. Not yet seen with a real join: the owner can test with a second account (runbook 19 B).
+
 **Next.** Nothing queued.
 
 ---
