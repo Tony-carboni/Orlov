@@ -34,7 +34,7 @@ def channel_id() -> int:
 def message(member: discord.Member, link: str) -> str:
     return (
         f"Welcome to **{member.guild.name}**, {member.display_name}!\n\n"
-        f"To see the alliance's channels you need your roles. Everything you have to do is in one place: {link}\n\n"
+        f"To see more channels you need your roles. Everything you have to do is in one place: {link}\n\n"
         "In short: log in to auth with your EVE character, link your Discord there, and the roles follow by themselves. "
         "Stuck? Ask in that channel and a director will help."
     )

@@ -11,7 +11,7 @@
 | `ORLOVBOT_WELCOME` | `True` | `False` switches the DM off without removing the cog |
 | `ORLOVBOT_WELCOME_CHANNEL_ID` | `1555292924374417471` | the channel the DM links to (`#how-to-get-roles`) |
 
-The text of the DM is in the cog (`message()`): welcome, the link, "log in to auth with your EVE character, link your Discord there, and the roles follow by themselves", and where to ask. Change it there and restart the bot.
+The text of the DM is in the cog (`message()`): welcome, "To see more channels you need your roles" (the owner's wording of 2026-10-22: the server is not only for alliance members), the link, "log in to auth with your EVE character, link your Discord there, and the roles follow by themselves", and where to ask. Change it there and restart the bot.
 
 ## A. Install (local session, server)
 
