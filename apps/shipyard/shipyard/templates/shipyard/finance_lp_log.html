@@ -1,0 +1,42 @@
+{% extends "shipyard/base.html" %}
+{% load shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · Corporation LP log{% endblock %}
+
+{% block shipyard_content %}
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+    <div>
+        <h2 class="h4 mb-1">Corporation loyalty points, change by change</h2>
+        <div class="shipyard-k small">EVE's API has no route for a corporation's LP wallet, so this log is rebuilt from the books: every LP purchase is a corporation wallet withdrawal whose reason names the LP (EVE's own date), every conversion a stock batch registered in the admin (its date as entered). A conversion that was never registered makes the balance here drift above the wallet.</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'shipyard:lplog' %}?who=all&days=0" title="The hourly readings of every member character's own loyalty points (not the corporation wallet)"><i class="fas fa-users fa-fw"></i> Characters' LP log</a>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'shipyard:finance' %}"><i class="fas fa-arrow-left fa-fw"></i> Finance</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">In the corporation wallet, as the books count it</div><div class="fs-4 fw-bold">{{ balance|num:0 }} LP</div><div class="shipyard-k small">{{ balance_value|mil }} at cost</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Bought</div><div class="fs-4 fw-bold">{{ bought|num:0 }} LP</div><div class="shipyard-k small">{{ bought_isk|mil }}, {{ avg|num:0 }} ISK per LP</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Converted in the LP store</div><div class="fs-4 fw-bold">{{ used|num:0 }} LP</div><div class="shipyard-k small">{{ conversions }} registered conversion{{ conversions|pluralize }}</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Check against the game</div><div class="fs-6">Corporation wallet → the LP tab: the State Protectorate figure should read <strong>{{ balance|num:0 }}</strong>. If it is lower, a conversion is missing from the admin.</div></div></div>
+</div>
+
+<div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>#</th><th>When (EVE)</th><th>What</th><th class="text-end">Change</th><th class="text-end">Balance after</th><th class="text-end">ISK</th></tr></thead>
+    <tbody>
+    {% for e in events %}
+        <tr>
+            <td class="shipyard-k">{{ forloop.counter }}</td>
+            <td class="text-nowrap">{{ e.t|date:"Y-m-d H:i" }}</td>
+            <td>{{ e.what }}</td>
+            <td class="text-end {% if e.lp > 0 %}text-success{% else %}text-danger{% endif %}">{% if e.lp > 0 %}+{% endif %}{{ e.lp|num:0 }}</td>
+            <td class="text-end fw-semibold">{{ e.balance|num:0 }}</td>
+            <td class="text-end shipyard-k">{% if e.isk %}{{ e.isk|mil }}{% else %}–{% endif %}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="6" class="shipyard-k">No LP movement in the books yet.</td></tr>
+    {% endfor %}
+    </tbody>
+</table></div>
+{% endblock %}

@@ -634,6 +634,19 @@ def compute(now=None) -> dict:
     project_bb = _project_buybacks(cid, base, cut, led, goods_tax_month, _broker_split(broker_lines, orders, sale_prices)[1], stock_types,
                                    held_items, older_cost, older_value, paid_members, direct_sales)
     all_conversions = all_conv
+    # the corporation's LP change by change (owner, 2026-10-22): purchases from the journal, conversions from the stock batches
+    lp_events = []
+    for t, units, isk, to in lp_purchases:
+        lp_events.append({"t": t, "lp": units, "isk": isk, "what": f"Bought from {to}: {units:,} LP for {isk / M:.1f} M ({isk / units:,.0f} ISK per LP)" if units else f"Bought from {to}"})
+    for c in all_conv:
+        if c["lp"]:
+            lp_events.append({"t": c["t"], "lp": -c["lp"], "isk": 0.0,
+                              "what": f"Converted into {c['units']:,} {c['name']}" + (f" with {c['input_units']:,.0f} {c['input']}" if c["input_units"] else "")})
+    lp_events.sort(key=lambda e: e["t"])
+    running = 0
+    for e in lp_events:
+        running += e["lp"]
+        e["balance"] = running
     buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, all_conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices)
     if abs(gap) >= 1.0:
         moves.append(["Not explained", gap, "The journal and the position differ: a missing journal page or a new kind of entry"])
@@ -688,7 +701,7 @@ def compute(now=None) -> dict:
         "move_groups": move_groups, "asset_groups": asset_groups, "ignored": ignored,
         "director": director, "older": (older_cost, older_value), "structure_income": structure_income,
         "live_books": live_books, "books_now": books_now, "live_ahead": (live_books - books_now) if live_books is not None else None,
-        "orders": orders, "buyback": buyback, "project_bb": project_bb,
+        "orders": orders, "buyback": buyback, "project_bb": project_bb, "lp_events": lp_events,
         "fuel_price": fuel_price, "fuel_name": fuel_name, "fuel_rows": fuel_rows, "fuel_paying_bph": paying,
         "fuel_burned": round(hours * paying), "fuel_burned_isk": round(hours * paying) * fuel_price,
         "generated": timezone.now(), "market": market.name if market else "",

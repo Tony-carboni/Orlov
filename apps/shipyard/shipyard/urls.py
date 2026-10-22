@@ -25,6 +25,7 @@ urlpatterns = [
     path("finance/pdf/", views.finance_pdf, name="finance_pdf"),
     path("finance/refresh/", views.finance_refresh, name="finance_refresh"),
     path("finance/direct-sale/", views.finance_direct_sale, name="finance_direct_sale"),
+    path("finance/lp/", views.finance_lp_log, name="finance_lp_log"),
     path("member/ship/<int:type_id>/", views.member_ship, name="member_ship"),
     path("income/connect/", views.wallet_connect, name="wallet_connect"),
     path("income/refresh/", views.wallet_refresh, name="wallet_refresh"),

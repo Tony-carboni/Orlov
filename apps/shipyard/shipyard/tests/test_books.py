@@ -327,6 +327,23 @@ class BooksTests(TestCase):
         bb = books.compute()["buyback"]
         self.assertEqual((bb["lp_units"], bb["lp_left"]), (50_000 + 57_000, 26_000 + 57_000))
 
+    def test_corporation_lp_log_change_by_change(self):
+        """The LP page: a purchase from the journal, conversions from the stock batches, a running balance."""
+        events = books.compute()["lp_events"]
+        self.assertEqual([(e["lp"], e["balance"]) for e in events], [(50_000, 50_000), (-24_000, 26_000)])
+        self.assertIn("50,000 LP for 40.0 M (800 ISK per LP)", events[0]["what"])
+        self.assertIn("Converted into 240 Navy Cap Booster 800", events[1]["what"])
+        owner = get_user_model().objects.create_user("tony2", password="x")
+        owner.user_permissions.add(Permission.objects.get(codename="basic_access", content_type__app_label="shipyard"))
+        owner.user_permissions.add(Permission.objects.get(codename="manage_shipyard", content_type__app_label="shipyard"))
+        client = Client()
+        client.force_login(owner)
+        r = client.get(reverse("shipyard:finance_lp_log"))
+        self.assertEqual(r.status_code, 200)
+        html = r.content.decode()
+        self.assertIn("26,000 LP", html)
+        self.assertIn("Converted into 240 Navy Cap Booster 800", html)
+
     def test_ignored_lines_leave_the_books(self):
         """An accidental sale and its tax, flagged by id, and the owner's settlement, matched by its reason, net out."""
         before = books.compute()

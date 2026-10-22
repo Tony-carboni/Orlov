@@ -42,7 +42,7 @@
         {% for g in d.asset_groups %}
         <tr class="fw-semibold" role="button" data-bs-toggle="collapse" data-bs-target=".{{ g.id }}" aria-expanded="false" title="Click for the items">
             <td><i class="fas fa-chevron-right fa-fw shipyard-k small"></i> {{ g.label }} <span class="shipyard-k fw-normal small">{{ g.rows|length }} line{{ g.rows|length|pluralize }}</span></td>
-            <td class="text-end">{{ g.total|mil }}</td><td class="small shipyard-k">{{ g.note|default:"" }}{% if g.key == "lp" %} <a class="btn btn-outline-light btn-sm py-0 ms-1" href="{% url 'shipyard:lplog' %}?who=all&days=0" title="Every logged change of loyalty points, hourly readings"><i class="fas fa-list fa-fw"></i> Log</a>{% endif %}</td>
+            <td class="text-end">{{ g.total|mil }}</td><td class="small shipyard-k">{{ g.note|default:"" }}{% if g.key == "lp" %} <a class="btn btn-outline-light btn-sm py-0 ms-1" href="{% url 'shipyard:finance_lp_log' %}" title="The corporation's LP change by change: purchases from the wallet journal, conversions from the stock batches"><i class="fas fa-list fa-fw"></i> Log</a>{% endif %}</td>
         </tr>
         {% for label, value, note in g.rows %}
         <tr class="collapse {{ g.id }} small shipyard-k"><td class="ps-4">{{ label }}</td><td class="text-end">{{ value|mil }}</td><td>{{ note }}</td></tr>

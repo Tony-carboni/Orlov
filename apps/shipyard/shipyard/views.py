@@ -147,6 +147,25 @@ def finance_direct_sale(request):
 
 
 @login_required
+def finance_lp_log(request):
+    """The corporation's loyalty points change by change, rebuilt from the books (0.25.2); EVE has no corp LP route."""
+    from django.core.exceptions import PermissionDenied
+    from .services import books
+    if not _books_allowed(request.user):
+        raise PermissionDenied
+    d = books.compute()
+    events = d["lp_events"]
+    bought = sum(e["lp"] for e in events if e["lp"] > 0)
+    bought_isk = sum(e["isk"] for e in events if e["lp"] > 0)
+    used = -sum(e["lp"] for e in events if e["lp"] < 0)
+    return render(request, "shipyard/finance_lp_log.html", _context(
+        request, events=list(reversed(events)), balance=bought - used, balance_value=d["buyback"]["lp_left_value"], bought=bought, bought_isk=bought_isk,
+        avg=(bought_isk / bought) if bought else 0, used=used, conversions=sum(1 for e in events if e["lp"] < 0),
+        can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+    ))
+
+
+@login_required
 def finance_pdf(request):
     from django.core.exceptions import PermissionDenied
     from django.http import HttpResponse
