@@ -254,3 +254,7 @@ CELERYBEAT_SCHEDULE["doctrines_srp_match_payments"] = {
 
 # Journal lines left out of the Finance tab by their reason (owner, 2026-10-20 "accidental"; 2026-10-21 "correction" too)
 SHIPYARD_BOOKS_IGNORE_REASONS = [r"accidental", r"correction"]
+
+# --- Welcome DM (runbook 19): every new Discord member gets the link to #how-to-get-roles ---
+ORLOVBOT_WELCOME = True
+ORLOVBOT_WELCOME_CHANNEL_ID = 1555292924374417471   # #how-to-get-roles

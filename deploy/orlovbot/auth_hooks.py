@@ -10,4 +10,5 @@ def register_cogs():
         "orlovbot.cogs.killfeed",
         "orlovbot.cogs.jfwatch",
         "orlovbot.cogs.juicy",
+        "orlovbot.cogs.welcome",
     ]
