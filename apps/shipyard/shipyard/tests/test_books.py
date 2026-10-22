@@ -333,7 +333,9 @@ class BooksTests(TestCase):
         self.assertEqual([(e["lp"], e["balance"]) for e in events], [(50_000, 50_000), (-24_000, 26_000)])
         self.assertIn("50,000 LP for 40.0 M (800 ISK per LP)", events[0]["what"])
         self.assertIn("Converted into 240 Navy Cap Booster 800", events[1]["what"])
+        from allianceauth.tests.auth_utils import AuthUtils
         owner = get_user_model().objects.create_user("tony2", password="x")
+        AuthUtils.add_main_character_2(owner, "tony2 main", 9003, corp_id=CORP, corp_name="OARMI", alliance_id=None, alliance_name="")
         owner.user_permissions.add(Permission.objects.get(codename="basic_access", content_type__app_label="shipyard"))
         owner.user_permissions.add(Permission.objects.get(codename="manage_shipyard", content_type__app_label="shipyard"))
         client = Client()
