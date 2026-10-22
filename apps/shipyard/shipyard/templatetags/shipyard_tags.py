@@ -193,3 +193,9 @@ def mil(value, sign=False):
     except (TypeError, ValueError):
         return "–"
     return f"{v:+,.1f} M" if sign else f"{v:,.1f} M"
+
+
+@register.filter
+def split(value, sep=" "):
+    """"7 14 30"|split -> ["7", "14", "30"]."""
+    return str(value).split(sep)

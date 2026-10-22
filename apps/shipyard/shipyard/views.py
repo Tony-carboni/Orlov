@@ -21,7 +21,7 @@ from .models import (
     CorpProject, Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, RefreshRun, Ship,
     ShipConfig, WalletDivision, WalletJournalEntry,
 )
-from .services import board, business, characters, industry, ledger, lpstore, projectbooks, projects, reprocessing, scrapmetal, wallet
+from .services import board, business, characters, industry, ledger, lplog, lpstore, projectbooks, projects, reprocessing, scrapmetal, wallet
 from .services.pricing import tax_rates
 
 logger = logging.getLogger(__name__)
@@ -862,6 +862,36 @@ def business_view(request):
         can_manage=can_manage,
     )
     return render(request, "shipyard/business.html", context)
+
+
+@login_required
+@access.allows("lplog")
+def lplog_view(request):
+    """The LP log: hourly readings of loyalty points, the changes per character and NPC corporation (0.23.0)."""
+    period = request.GET.get("period", "day")
+    if period not in lplog.PERIODS:
+        period = "day"
+    days = _int(request.GET.get("days"), 30, 0, 3650)
+    since = timezone.now() - dt.timedelta(days=days) if days else None
+    can_all = request.user.has_perm("shipyard.manage_shipyard") or request.user.has_perm("shipyard.books_access")
+    who = request.GET.get("who", "me")
+    if who not in ("me", "all") or (who == "all" and not can_all):
+        who = "me"
+    my_ids = list(CharacterOwnership.objects.filter(user=request.user).values_list("character__character_id", flat=True))
+    ids = None if who == "all" else my_ids
+    corp = _int(request.GET.get("corp"), 0, 0, 2_000_000_000) or None
+    rows = lplog.log(ids, since, corp, limit=2000)
+    bal = lplog.balances(ids)
+    summary = lplog.summary(rows, period, bal)
+    context = _context(
+        request,
+        rows=rows, summary=summary, period=period, periods=lplog.PERIODS, days=days, who=who, can_all=can_all, corp=corp,
+        corp_name=next((c["corporation"] for c in summary["corporations"] if c["corporation_id"] == corp), None) if corp else None,
+        coverage=lplog.coverage(my_ids),
+        last_run=RefreshRun.objects.filter(step="lp_snapshots").order_by("-started_at").first(),
+        charts={"lp": summary["chart"]},
+    )
+    return render(request, "shipyard/lplog.html", context)
 
 
 @login_required

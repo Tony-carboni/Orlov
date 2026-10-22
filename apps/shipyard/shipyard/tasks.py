@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun,
     ScrapItem, Ship, ShipConfig, ShipMarketStats,
 )
-from .services import business, contracts, esi, everef, fuzzwork, industry, ledger, lpstore, nearbuy, projects, reprocessing, scrapmetal, wallet
+from .services import business, contracts, esi, everef, fuzzwork, industry, ledger, lplog, lpstore, nearbuy, projects, reprocessing, scrapmetal, wallet
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -249,6 +249,22 @@ def refresh_corp_industry_jobs():
         _done(run, False, 0, str(exc))
         return
     _done(run, True, result["added"], f"{result['added']} new jobs, {result['updated']} updated, {result['total']} kept")
+
+
+@shared_task
+def snapshot_lp():
+    """Every character's loyalty points per NPC corporation, the changes kept as the LP log (beat entry shipyard_lp_snapshots, hourly)."""
+    run = _run("lp_snapshots")
+    try:
+        result = lplog.snapshot()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("LP snapshot failed: %s", exc)
+        _done(run, False, 0, str(exc))
+        return
+    message = f"{result['read']} of {result['characters']} characters read, {result['written']} changes logged"
+    if result["errors"]:
+        message += "; " + "; ".join(result["errors"][:5])
+    _done(run, result["read"] > 0 or not result["characters"], result["written"], message)
 
 
 @shared_task

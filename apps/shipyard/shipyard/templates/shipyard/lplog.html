@@ -1,0 +1,98 @@
+{% extends "shipyard/base.html" %}
+{% load static shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · LP log{% endblock %}
+
+{% block shipyard_content %}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+    <h4 class="mb-0"><i class="fas fa-medal fa-fw text-info"></i> LP log</h4>
+    <span class="shipyard-k small">loyalty points read once an hour (EVE hands them out no faster); every change is a line</span>
+</div>
+
+<div class="shipyard-infobar mb-3">
+    <div class="d-flex flex-wrap gap-4">
+        <div><span class="shipyard-k">Earned{% if days %}, {{ days }} days{% else %}, all{% endif %}</span><br><strong class="fs-5 text-success">{{ summary.earned|num:0 }}</strong> <span class="shipyard-k">LP</span></div>
+        <div><span class="shipyard-k">Spent</span><br><strong class="fs-5 text-danger">{{ summary.spent|num:0 }}</strong> <span class="shipyard-k">LP</span></div>
+        <div><span class="shipyard-k">Changes logged</span><br><strong class="fs-5">{{ summary.changes }}</strong></div>
+        <div><span class="shipyard-k">Last reading</span><br><strong class="fs-6">{% if last_run %}{{ last_run.started_at|date:"Y-m-d H:i" }} EVE{% if not last_run.ok %} <span class="text-danger">failed</span>{% endif %}{% else %}none yet{% endif %}</strong> <span class="shipyard-k">hourly</span></div>
+        <div><span class="shipyard-k">Your characters</span><br><strong class="fs-6">{{ coverage.logged|length }} logged</strong>{% if coverage.missing %} <span class="shipyard-k">, not readable: {{ coverage.missing|join:", " }} (log them in once under My settings or in Member Audit)</span>{% endif %}</div>
+    </div>
+    {% if last_run and not last_run.ok %}<div class="small text-danger">{{ last_run.message }}</div>{% endif %}
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-center">
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Period">
+            {% for p in periods %}<a class="btn btn-outline-secondary {% if p == period %}active{% endif %}" href="?period={{ p }}&days={{ days }}&who={{ who }}{% if corp %}&corp={{ corp }}{% endif %}">{{ p|capfirst }}</a>{% endfor %}
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Range">
+            {% for d in "7 14 30 90 365"|split %}<a class="btn btn-outline-secondary {% if days == d|add:0 %}active{% endif %}" href="?period={{ period }}&days={{ d }}&who={{ who }}{% if corp %}&corp={{ corp }}{% endif %}">{{ d }} days</a>{% endfor %}
+            <a class="btn btn-outline-secondary {% if not days %}active{% endif %}" href="?period={{ period }}&days=0&who={{ who }}{% if corp %}&corp={{ corp }}{% endif %}">All</a>
+        </div>
+    </div>
+    {% if can_all %}
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Whose">
+            <a class="btn btn-outline-secondary {% if who == 'me' %}active{% endif %}" href="?period={{ period }}&days={{ days }}&who=me{% if corp %}&corp={{ corp }}{% endif %}" title="Every character on your auth account">Me and my alts</a>
+            <a class="btn btn-outline-secondary {% if who == 'all' %}active{% endif %}" href="?period={{ period }}&days={{ days }}&who=all{% if corp %}&corp={{ corp }}{% endif %}" title="Every character the log can read">Everyone logged</a>
+        </div>
+    </div>
+    {% endif %}
+    {% if corp %}<div class="col-auto"><a class="btn btn-sm btn-outline-warning" href="?period={{ period }}&days={{ days }}&who={{ who }}"><i class="fas fa-xmark fa-fw"></i> Only {{ corp_name|default:corp }}: show all corporations</a></div>{% endif %}
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="table-responsive">
+        <table class="table table-sm table-hover table-striped align-middle w-100">
+            <thead><tr><th>Corporation</th><th class="text-end">Earned</th><th class="text-end">Spent</th><th class="text-end">Net</th><th class="text-end" title="The newest reading of every character, summed">Balance now</th><th class="text-end">Characters</th></tr></thead>
+            <tbody>
+            {% for c in summary.corporations %}
+                <tr>
+                    <td class="text-nowrap"><a href="?period={{ period }}&days={{ days }}&who={{ who }}&corp={{ c.corporation_id }}" title="Only this corporation">{{ c.corporation }}</a></td>
+                    <td class="text-end text-success">{% if c.earned %}+{{ c.earned|num:0 }}{% else %}<span class="shipyard-k">0</span>{% endif %}</td>
+                    <td class="text-end text-danger">{% if c.spent %}-{{ c.spent|num:0 }}{% else %}<span class="shipyard-k">0</span>{% endif %}</td>
+                    <td class="text-end fw-semibold">{{ c.net|num:0 }}</td>
+                    <td class="text-end">{% if c.balance is not None %}{{ c.balance|num:0 }}{% else %}<span class="shipyard-k">-</span>{% endif %}</td>
+                    <td class="text-end">{{ c.characters }}</td>
+                </tr>
+            {% empty %}<tr><td colspan="6" class="shipyard-k">Nothing logged yet{% if not last_run %}: the first reading comes with the next hour{% endif %}.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body py-2">
+            <div class="fw-semibold mb-1">LP earned and spent per {{ period }}, by corporation</div>
+            <canvas id="chart-lp" height="150"></canvas>
+        </div></div>
+    </div>
+</div>
+
+<h5>Log <span class="small shipyard-k">({{ rows|length }} reading{{ rows|length|pluralize }}, newest first; a change is the difference to the previous hourly reading of that character with that corporation)</span></h5>
+<div class="table-responsive mb-4">
+<table id="lp-log" class="table table-sm table-hover table-striped align-middle w-100">
+    <thead><tr><th>Read at (EVE)</th><th>Character</th><th>Corporation</th><th class="text-end">Change</th><th class="text-end">Balance</th><th>Note</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+        <tr{% if r.first %} class="shipyard-k"{% endif %}>
+            <td class="text-nowrap">{{ r.at|date:"Y-m-d H:i" }}</td>
+            <td class="text-nowrap"><img src="https://images.evetech.net/characters/{{ r.character_id }}/portrait?size=32" width="20" height="20" class="rounded me-1" alt="">{{ r.character }}</td>
+            <td class="text-nowrap"><img src="https://images.evetech.net/corporations/{{ r.corporation_id }}/logo?size=32" width="20" height="20" class="rounded me-1" alt="">{{ r.corporation }}</td>
+            <td class="text-end fw-semibold {% if r.change > 0 %}text-success{% elif r.change < 0 %}text-danger{% endif %}">{% if r.change > 0 %}+{% endif %}{{ r.change|num:0 }}</td>
+            <td class="text-end">{{ r.balance|num:0 }}</td>
+            <td class="small shipyard-k">{{ r.note }}</td>
+        </tr>
+    {% empty %}<tr><td colspan="6" class="shipyard-k">No readings in this range.</td></tr>{% endfor %}
+    </tbody>
+</table>
+</div>
+{{ charts|json_script:"lplog-charts" }}
+{% endblock %}
+
+{% block shipyard_js %}
+{% include "bundles/chart-js.html" %}
+<script src="{% static 'shipyard/lplog.js' %}"></script>
+{% endblock %}

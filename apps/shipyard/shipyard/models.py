@@ -878,3 +878,30 @@ class BookIgnoredEntry(models.Model):
 
     def __str__(self):
         return f"ignore {self.entry_id} ({self.reason})"
+
+
+class LpSnapshot(models.Model):
+    """The LP log (owner, 2026-10-22): a reading of one character's loyalty points with one NPC corporation.
+
+    The hourly task reads every character's balances (ESI, cached an hour) and keeps a row only when a
+    balance changed since the previous reading, so the rows are the log: when, who, which corporation,
+    by how much. The first reading of a character stores every balance with change 0."""
+
+    character_id = models.PositiveIntegerField(db_index=True)
+    character_name = models.CharField(max_length=100, blank=True)
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    corporation_name = models.CharField(max_length=100, blank=True)
+    loyalty_points = models.BigIntegerField(help_text="The balance at this reading")
+    change = models.BigIntegerField(default=0, help_text="Against the previous reading; 0 on the first reading")
+    previous_at = models.DateTimeField(null=True, blank=True, help_text="When the previous reading of this pair was taken")
+    is_first = models.BooleanField(default=False)
+    taken_at = models.DateTimeField(db_index=True)
+
+    class Meta:
+        ordering = ["-taken_at"]
+        indexes = [models.Index(fields=["character_id", "corporation_id", "taken_at"])]
+        verbose_name = "LP log reading"
+        verbose_name_plural = "LP log readings"
+
+    def __str__(self):
+        return f"{self.character_name} {self.corporation_name} {self.change:+} -> {self.loyalty_points} at {self.taken_at:%Y-%m-%d %H:%M}"
