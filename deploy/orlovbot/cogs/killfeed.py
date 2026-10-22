@@ -317,18 +317,20 @@ def fetch_sequence(sequence: int) -> dict | None:
 
 def stream_round(next_sequence: int, alliances: set, corporations: set) -> tuple:
     """Read files from next_sequence on, up to STREAM_MAX_PER_ROUND or the first 404.
-    HTTP only, no cache or database. Returns (next sequence to read, our killmails, idle):
-    idle is True when the feed has nothing newer yet."""
-    ours = []
+    HTTP only, no cache or database. Returns (next sequence to read, our killmails, idle, every
+    killmail read): idle is True when the feed has nothing newer yet; the last list is for the
+    other cogs that watch all of EVE (cogs/juicy.py)."""
+    ours, everything = [], []
     for _ in range(STREAM_MAX_PER_ROUND):
         killmail = fetch_sequence(next_sequence)
         if killmail is None:
-            return next_sequence, ours, True
+            return next_sequence, ours, True, everything
         next_sequence += 1
+        everything.append(killmail)
         if involves_us(killmail, alliances, corporations):
             ours.append(killmail)
         time.sleep(STREAM_STEP_PAUSE)
-    return next_sequence, ours, False
+    return next_sequence, ours, False, everything
 
 
 def involves_us(killmail: dict, alliances: set, corporations: set) -> bool:
@@ -474,7 +476,7 @@ class Killfeed(commands.Cog):
             # database thread the other cogs share
             try:
                 next_sequence = await self._next_sequence()
-                next_sequence, ours, idle = await sync_to_async(stream_round, thread_sensitive=False)(
+                next_sequence, ours, idle, everything = await sync_to_async(stream_round, thread_sensitive=False)(
                     next_sequence, alliances, corporations
                 )
             except Exception as ex:
@@ -485,6 +487,12 @@ class Killfeed(commands.Cog):
             if self.stream_failing_since is not None:
                 logger.info("%s: live feed is back", FEED_NAME)
                 self.stream_failing_since = self.stream_last_warned = None
+            # every killmail of EVE goes to the cogs that listen for it (cogs/juicy.py); each
+            # listener runs as its own task, so a slow one never holds up this loop
+            for killmail in everything:
+                self.bot.dispatch("zkill_killmail", killmail)
+            if idle:
+                self.bot.dispatch("zkill_idle")
             for killmail in ours:
                 embed = await sync_to_async(prepare_stream)(killmail)
                 if embed is None:

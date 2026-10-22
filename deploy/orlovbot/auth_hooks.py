@@ -9,4 +9,5 @@ def register_cogs():
         "orlovbot.cogs.structures",
         "orlovbot.cogs.killfeed",
         "orlovbot.cogs.jfwatch",
+        "orlovbot.cogs.juicy",
     ]

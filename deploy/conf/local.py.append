@@ -135,6 +135,17 @@ ORLOVBOT_STRUCTURE_REINFORCE_HOUR = 21
 ORLOVBOT_JFWATCH_CHANNEL = "jf-gank-board"       # channel name; "" switches the watch off
 ORLOVBOT_JFWATCH_SPACE = ["highsec", "lowsec"]   # also possible: "nullsec", "wormhole"
 
+# --- Juicy killmails: the expensive and rare losses of all EVE in #juicy-killmails (runbook 18) ---
+# Fed by the kill feed's live reader (ORLOVBOT_KILLFEED_STREAM must stay True). Thresholds in billions.
+ORLOVBOT_JUICY_CHANNEL = "juicy-killmails"   # channel name; "" switches the feed off
+ORLOVBOT_JUICY_FACTION_B = 20                # faction hulls (navy, pirate, CONCORD)
+ORLOVBOT_JUICY_JUMP_FREIGHTER_B = 15
+ORLOVBOT_JUICY_FREIGHTER_B = 8               # freighters, Bowhead, Orca, Porpoise
+ORLOVBOT_JUICY_HAULER_B = 10                 # T1 haulers, blockade runners, deep space transports
+ORLOVBOT_JUICY_BLACK_OPS_B = 12
+ORLOVBOT_JUICY_SHIP_B = 10                   # any other non-capital ship
+ORLOVBOT_JUICY_EXTRA_TYPE_IDS = []           # more hulls to post whatever their value, by type id
+
 # --- Shipyard (ship-building dashboard, runbook 13) ------------------------
 INSTALLED_APPS += ["shipyard"]
 CELERYBEAT_SCHEDULE["shipyard_refresh_all"] = {

@@ -4,6 +4,18 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-22 (10:30 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** **runbook 18, juicy killmails in #juicy-killmails** (owner's request).
+
+**Done.** New channel `#juicy-killmails` under *Member channels* (permissions synced with the category, so members post, react and send GIFs; one overwrite lets the bot's role *Orlov auth* post). New bot cog `orlovbot/cogs/juicy.py`: the kill feed's live reader now hands every killmail in EVE to the other cogs (`zkill_killmail` event, `cogs/killfeed.py`), and the juicy cog posts the ones that meet the owner's rules (supercarriers and titans always; alliance tournament and limited edition hulls always; faction hulls above 20 B; jump freighters above 15 B; freighters, Bowhead, Orca, Porpoise above 8 B; haulers above 10 B; black ops above 12 B; any other non-capital ship above 10 B), reason in the footer, gold embed with the ship render. Thresholds are settings (`ORLOVBOT_JUICY_*_B`, appended to `conf/local.py` and in `deploy/conf/local.py.append`). Released 10:11 UTC: old bot folder kept as `~/backups/orlovbot.pre-juicy-*`, dry run in a fresh bot container (23 rule cases right, real titan and supercarrier losses rendered), bot container restarted, `orlovbot.cogs.juicy` listed, test post of a Nyx loss (killmail 139319386) in the channel at 10:12 UTC. A test post later: set the cache key `orlovbot:juicy:test` to a killmail id.
+
+**Owner has to do by hand.** Look at the channel; say if a rule should move. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
+
+**Next.** Nothing queued.
+
+---
+
 ## 2026-10-22 (08:30 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** **Shipyard 0.25.0: the LP log** (runbook 13 C release paragraph). Built in parallel with the other desktop session's 0.23.0 to 0.24.2 of 21 October (direct sales, stock take, partial ignores); rebased on top of them, so the LP log is 0.25.0 with migration 0031.
