@@ -318,6 +318,15 @@ class BooksTests(TestCase):
         self.assertLess(abs(d["gap"]), 1.0)
         self.assertTrue(any(m[0].startswith("Deposit: correction manufacturing") and abs(m[1] - 8e6) < 1 for m in d["moves"]))
 
+    def test_lp_reasons_in_the_owners_spellings(self):
+        for reason, units in (("50.000 LP", 50_000), ("15000 LP", 15_000), ("57k State protectorate LP", 57_000), ("11k State Protectorate LP", 11_000),
+                              ("1.2M LP", 1_200_000), ("LP 16000", 16_000), ("correction LP withdrawl", None), ("raitaru tax income", None), ("", None)):
+            self.assertEqual(books.lp_units_from(reason), units, reason)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_701, division=1, date=at(16), ref_type="corporation_account_withdrawal", amount=-45.6e6,
+                                        reason="57k State protectorate LP", first_party_id=CORP, second_party_id=222)
+        bb = books.compute()["buyback"]
+        self.assertEqual((bb["lp_units"], bb["lp_left"]), (50_000 + 57_000, 26_000 + 57_000))
+
     def test_ignored_lines_leave_the_books(self):
         """An accidental sale and its tax, flagged by id, and the owner's settlement, matched by its reason, net out."""
         before = books.compute()
@@ -388,6 +397,11 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(row["net"], revenue - 30e6 - 1.7e6, places=2)
         self.assertAlmostEqual(month["realised"], revenue - 30e6 - 1.7e6, places=2)
         self.assertAlmostEqual(pb["paid_total"], 30e6)
+        self.assertAlmostEqual(pb["margin"], (revenue - 30e6) / 30e6, places=6)  # the sale price against the cost, before fees
+        bb = books.compute()["buyback"]
+        self.assertAlmostEqual(bb["sold_value"], 10 * 211_100)
+        self.assertGreater(bb["cost_sold"], 0)
+        self.assertAlmostEqual(bb["margin"], (bb["sold_value"] - bb["cost_sold"]) / bb["cost_sold"], places=6)
 
     def test_page_and_pdf_for_the_owner_only(self):
         owner = get_user_model().objects.create_user("tony", password="x")

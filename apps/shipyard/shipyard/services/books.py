@@ -37,7 +37,20 @@ from . import projectbooks, projects, reprocessing
 
 M = 1e6
 FEES = ("brokers_fee", "transaction_tax", "market_provider_tax")
-LP_REASON = re.compile(r"([\d.,]+)\s*LP\b", re.I)
+# an LP purchase: "50.000 LP", "15000 LP", "57k State protectorate LP", "1.2M LP", or "LP 16000" (the owner's reasons, 2026-10-19 to -22)
+LP_REASON = re.compile(r"(\d[\d.,]*)\s*([kKmM])?(?:\s+[A-Za-z][^\d]*?)?\s*\bLP\b|\bLP\b\s*(\d[\d.,]*)\s*([kKmM])?", re.I)
+
+
+def lp_units_from(reason) -> int | None:
+    """The LP a withdrawal's reason names, or None when it names none."""
+    m = LP_REASON.search(reason or "")
+    if not m:
+        return None
+    number, suffix = (m.group(1) or m.group(3)), (m.group(2) or m.group(4) or "")
+    scale = {"k": 1_000, "m": 1_000_000}.get(suffix.lower(), 1)
+    if scale > 1 and re.fullmatch(r"\d+[.,]\d{1,2}", number):
+        return int(round(float(number.replace(",", ".")) * scale))
+    return int(re.sub(r"[.,]", "", number)) * scale
 # "direct sale ..." or, since EVE's reason field holds 40 characters, "ds ..." (owner's test, 2026-10-21)
 DIRECT_SALE = re.compile(r"(?:direct\s+sale|^\s*ds\b)\s*[:\-]?\s*(.*)", re.I)
 ITEM_LEAD_QTY = re.compile(r"^(\d[\d.,]*)\s*([kKmM])?\s*[x×]?\s+(.+)$")   # "2,388 Zero-Point Condensate", "719k veld", "1.2M trit"
@@ -405,9 +418,8 @@ def compute(now=None) -> dict:
                 if inp:
                     transfers_out += e.amount
                 continue
-            lp = LP_REASON.search(e.reason or "")
-            if lp and e.amount < 0:
-                units = int(re.sub(r"[.,]", "", lp.group(1)))
+            units = lp_units_from(e.reason) if e.amount < 0 else None
+            if units:
                 lp_purchases.append([e.date, units, -e.amount, names.get(e.second_party_id, str(e.second_party_id))])
                 if inp:
                     lp_units += units
@@ -778,6 +790,7 @@ def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversi
         realised = sum(x["net"] for x in sales)
         expected = sum(v["expected"] for v in still)
         sold_value = sum(x["revenue"] for x in sales)
+        cost_sold = sum(x["cost"] for x in sales)
         listed_value = sum(v["value"] for v in still)
         lp_b = sum(p[1] for p in bought)
         isk_b = sum(p[2] for p in bought)
@@ -786,13 +799,17 @@ def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversi
                     "purchases": bought, "lp_converted": sum(c["lp"] for c in made), "converted": conv,
                     "converted_cost": sum(c["cost"] for c in conv), "sales": sales, "still": still,
                     "realised": realised, "expected": expected, "total": realised + expected,
-                    "sold_value": sold_value, "listed_value": listed_value, "output_value": sold_value + listed_value, "latest": latest})
+                    "sold_value": sold_value, "cost_sold": cost_sold, "listed_value": listed_value, "output_value": sold_value + listed_value, "latest": latest})
     buying = [o for o in orders if o["is_buy"]]
     realised = sum(m["realised"] for m in out)
     expected = sum(m["expected"] for m in out)
+    sold_value = sum(m["sold_value"] for m in out)
+    cost_sold = sum(m["cost_sold"] for m in out)
     return {"months": out, "lp_units": lp_units, "lp_cost": lp_cost, "lp_avg": lp_avg, "lp_used": lp_used,
             "lp_left": lp_units - lp_used, "lp_left_value": lp_left, "buying": buying,
             "realised": realised, "expected": expected, "total": realised + expected,
+            # margin on what sold (owner, 2026-10-22): the sale price against what the conversion cost, nothing held counted
+            "sold_value": sold_value, "cost_sold": cost_sold, "margin": ((sold_value - cost_sold) / cost_sold) if cost_sold else None,
             "outside": sum(c["isk"] for c in conversions if c["outside"]),
             "active": bool(lp_purchases or conversions)}
 
@@ -935,9 +952,12 @@ def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock
     realised = sum(m["realised"] for m in out)
     expected = sum(m["expected"] for m in out)
     cost_sold = sum(m["cost_sold"] for m in out)
+    sold_value = sum(m["sold_value"] for m in out)
     return {"months": out, "paid_total": sum(m["paid_total"] for m in out), "paid_pool": paid_members,
             "realised": realised, "expected": expected, "total": realised + expected,
             "pct": (realised / cost_sold) if cost_sold else None,
+            # margin on what sold (owner, 2026-10-22): the sale price, market or direct, against what the projects paid; nothing held counted
+            "sold_value": sold_value, "cost_sold": cost_sold, "margin": ((sold_value - cost_sold) / cost_sold) if cost_sold else None,
             "held": sum(v[1] for v in held_items.values()), "held_value": sum(v[2] for v in held_items.values()),
             "older": older_cost, "older_value": older_value, "tax_rate": tax_rate,
             "active": bool(out)}
