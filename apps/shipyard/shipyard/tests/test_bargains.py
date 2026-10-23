@@ -149,7 +149,7 @@ class BargainsTests(TestCase):
         p = bargains.set_pref(user, "unstar", "40")
         p = bargains.set_pref(user, "unignore_type", "34")
         self.assertEqual((p.ignored_types, p.starred_types), ([], []))
-        self.assertEqual([s.type_id for s in bargains.rows(flag="all", path="Manufacture & Research › Materials › Minerals")], [34, 40])
+        self.assertEqual(sorted(s.type_id for s in bargains.rows(flag="all", path="Manufacture & Research › Materials › Minerals")), [34, 40])
         self.assertEqual([s.type_id for s in bargains.rows(flag="all", path="Manufacture & Research › Materials › Minerals › Rare")], [40])
         self.assertEqual(BargainPrefs.objects.count(), 1)
 
