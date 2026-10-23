@@ -149,9 +149,21 @@ def _apply_direct_sales(direct_sales, led, cid, until=None) -> None:
     for d in sorted(direct_sales, key=lambda d: d["t"]):
         d["cost"], d["removed"], d["unmatched"] = 0.0, [], []
         sale = registered.get(d.get("code") or "")
+        if sale is not None and d.get("writeoff"):
+            # a stock take clears every lot that existed at its moment (0.26.3): its stored lines are the record of
+            # what the sheet listed then, but a delivery read after the sheet's cut-off and before the stock take
+            # was not in that list and must leave as well
+            for tid, queue in list(lots.items()):
+                cost, taken = _take_until(queue, float("inf"), d["t"])
+                if taken > 1e-9:
+                    d["cost"] += cost
+                    d["removed"].append(f"{taken:,.0f} {names.get(tid, tid)}")
+            d["item"] = d["item"] or sale.code
+            d["registered"] = sale
+            continue
         if sale is not None:
             # a sale registered on the Finance tab: its quoted lines are what left the stock
-            if sale.entry_id is None and not d.get("writeoff"):
+            if sale.entry_id is None:
                 sale.entry_id, sale.matched_at = d["entry_id"], d["t"]
                 sale.save(update_fields=["entry_id", "matched_at"])
             for ln in sale.lines or []:
