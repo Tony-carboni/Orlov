@@ -202,6 +202,9 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_hangar"] = {
     "task": "shipyard.tasks.refresh_hangar",
     "schedule": crontab(minute="35"),
 }
+# The projects hangar (owner, 2026-10-23): structure 1055529310484, hangar division 2. Only its contents count as goods held from project buybacks.
+SHIPYARD_BOOKS_HANGAR_LOCATIONS = [1055529310484]
+SHIPYARD_BOOKS_HANGAR_FLAGS = ["CorpSAG2"]
 
 # Shipyard: the LP log, every character's loyalty points read once an hour (0.23.0)
 CELERYBEAT_SCHEDULE["shipyard_lp_snapshots"] = {

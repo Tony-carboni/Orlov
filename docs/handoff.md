@@ -17,7 +17,9 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Owner has to do by hand.** Finance → Connect the hangar, log in with Catherine Frey (CEO; the assets scope needs a Director), accept the scopes. Then say which office and hangar division is the projects hangar (the page lists the divisions the read found) so a local session sets `SHIPYARD_BOOKS_HANGAR_LOCATIONS` and `SHIPYARD_BOOKS_HANGAR_FLAGS`. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
 
-**Next (local session, after the login).** Read the hangar now, check the divisions table on the Finance tab with the owner, append the two settings to `conf/local.py` and the deploy template, restart gunicorn and the workers, confirm the goods held equal the hangar and the gap is 0.
+**Also (05:55 UTC): the hangar is connected and pinned.** The owner logged in with Catherine Frey and read the hangar; the first count took every corp hangar division everywhere (29 lines, 9.4 B, the owner's own mineral stock included). The projects hangar is **structure 1055529310484, hangar division 2** (40 item types): `SHIPYARD_BOOKS_HANGAR_LOCATIONS = [1055529310484]`, `SHIPYARD_BOOKS_HANGAR_FLAGS = ["CorpSAG2"]` appended to `conf/local.py` and the deploy template, app containers restarted. Goods held now: 18 lines, 109.7 M at project cost, gap 0, result +405.7 M. Not in that hangar although bought by projects: 600 Zero-Point Condensate and 36 Crystalline Isogen-10 (they sit in structure 1055543898857, division 1, with the owner's own 14,931 ZPC and 13,156 CI-10), so the sheet counts them out and shows "Hangar count against the ledger" −21.0 M; the owner decides whether to move them into the projects hangar. 22 types in the projects hangar were never bought by a project (moon ores, Compressed Scordite and the like) and are listed, not counted.
+
+**Next.** Nothing queued.
 
 ---
 
