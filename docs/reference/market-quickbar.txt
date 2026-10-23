@@ -1,11 +1,9 @@
 + cataclysmic filament
 - Cataclysmic Dark Filament
-- Cataclysmic Electrical Filament
 - Cataclysmic Exotic Filament
 - Cataclysmic Firestorm Filament
 - Cataclysmic Gamma Filament
 + chaotic filament
-- Chaotic Dark Filament
 - Chaotic Electrical Filament
 - Chaotic Exotic Filament
 - Chaotic Firestorm Filament
@@ -19,6 +17,9 @@
 - Minmatar UUC Nexus Chip
 - Shadow Serpentis Crystal Tag
 - True Sansha Crystal Tag
++ Fluctuators
+- Caldari Navy Admiral Insignia I
+- Plasmoids
 + Fuel blocks
 - Compressed Blue Ice
 - Compressed Blue Ice IV-Grade
@@ -60,6 +61,18 @@
 - Fullerite-C70
 - Fullerite-C72
 - Fullerite-C84
++ investments
+- Agency 'Hardshell' TB7 Dose III
+- Agency 'Hardshell' TB9 Dose IV
+- Agency 'Overclocker' SB7 Dose III
+- Agency 'Overclocker' SB9 Dose IV
+- Cataclysmic Electrical Filament
+- Chaotic Dark Filament
+- Compressed Lime Mykoserocin
+- Drone Mutaplasmid Residue
+- Mid-grade Ascendancy Gamma
+- ORE Mining Director Mindlink
+- Raging Electrical Filament
 + life support
 - Chiral Structures
 - Nanites
@@ -120,7 +133,6 @@
 - Compressed Zeolites
 + Raging filament
 - Raging Dark Filament
-- Raging Electrical Filament
 - Raging Exotic Filament
 - Raging Firestorm Filament
 - Raging Gamma Filament
