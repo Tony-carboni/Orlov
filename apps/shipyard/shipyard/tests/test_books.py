@@ -375,11 +375,14 @@ class BooksTests(TestCase):
         """0.27.3: ore delivered before the stock take sits in the books as minerals, ore delivered after it as ore. A direct
         sale dated before the stock take must take the minerals even when a later delivery gave the ore a lot of its own;
         before the fix it took nothing and the stock take wrote the goods off, which overstated the sale's margin."""
-        from ..models import MaterialType, Ore
+        from ..models import MarketLocation, MaterialType, Ore, PriceSnapshot
         from ..services import directsales, projectbooks
         for tid, name in ((62536, "Compressed Kernite"), (36, "Tritanium"), (37, "Pyerite")):
             MaterialType.objects.get_or_create(type_id=tid, defaults={"name": name})
         Ore.objects.create(type_id=62536, name="Compressed Kernite", group_id=450, kind="ore", family="Kernite", variant="base", portion_size=100, materials={"36": 60, "37": 120}, volume=0.19)
+        market = MarketLocation.objects.create(name="Jita", station_id=60003760, is_default=True)
+        for tid, price in ((36, 5.0), (37, 10.0), (62536, 200.0)):
+            PriceSnapshot.objects.create(type_id=tid, location=market, sell_min=price, buy_max=price)  # the split of an ore's cost over its minerals goes by value
         owner = get_user_model().objects.create_user("owner", password="x")
         p3 = CorpProject.objects.create(project_id="p3", corporation_id=CORP, name="kernite", state="Active", reward_per_contribution=165.0,
                                         reward_initial=30e6, reward_remaining=30e6 - 2 * 14_406 * 165.0,
