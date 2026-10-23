@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, LpSnapshot
+from .models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, HangarItem, LpSnapshot
 from .models import (
     ScrapItem,
     BuildSnapshot, CharacterSync, Facility, IndustryJob, LocationName, LpFaction, MarketLocation, RefreshRun,
@@ -101,6 +101,13 @@ class BooksBaselineAdmin(admin.ModelAdmin):
 class BookDirectSaleAdmin(admin.ModelAdmin):
     list_display = ("code", "entry_id", "quote", "cost", "created_at", "matched_at", "items", "note")
     search_fields = ("code", "entry_id", "items", "note")
+
+
+@admin.register(HangarItem)
+class HangarItemAdmin(admin.ModelAdmin):
+    list_display = ("name", "quantity", "location_flag", "location_id", "read_at")
+    list_filter = ("location_flag",)
+    search_fields = ("name",)
 
 
 @admin.register(LpSnapshot)

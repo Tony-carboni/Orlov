@@ -80,6 +80,11 @@ def render(d: dict) -> bytes:
              "were never part of the budget; they count when they sell.")
     if d["structure_income"] is not None:
         text += f" Structure income earned since the last transfer to the corporation, {d['structure_income'] / M:.1f} M, still sits in the structure corporation's wallet."
+    hg = d.get("hangar") or {}
+    if hg.get("read_at"):
+        text += f" The goods held from project buybacks are the projects hangar as read from EVE at {hg['read_at']:%Y-%m-%d %H:%M} EVE ({hg.get('types', 0)} item types), at what the projects paid."
+    else:
+        text += " The goods held from project buybacks follow the ledger (the hangar has not been read from EVE yet)."
     ign = d.get("ignored") or {}
     if ign.get("count"):
         text += f" {ign['count']} journal lines are left out of the books ({_m(ign['net'], True)} together): mistakes being corrected, which net to zero once the corrections land."

@@ -333,6 +333,43 @@ class BooksTests(TestCase):
         self.assertEqual((l2["held"], l2["short"], l2["cost_unit"]), (4_406.0, True, 165.0))
         self.assertAlmostEqual(l2["cost"], 10_000 * 165.0)
 
+    def test_goods_held_follow_the_hangar_once_read(self):
+        """Owner's rule (2026-10-23): with a hangar read, the goods held are what is in the projects hangar, at the projects'
+        prices; what the ledger expects but the hangar lacks shows as the hangar count against the ledger; the sheet reconciles."""
+        from ..models import HangarItem, MaterialType
+        MaterialType.objects.get_or_create(type_id=35, defaults={"name": "Pyerite"})
+        p2 = CorpProject.objects.get(project_id="p2")
+        ProjectContribution.objects.create(project=p2, taken_at=at(11), character_id=4242, character_name="Miner", contributed=4_000_000)
+        p1 = CorpProject.objects.get(project_id="p1")
+        p1.reward_remaining -= 10e6
+        p1.save()
+        before = books.compute()
+        self.assertIsNone(before["hangar"]["read_at"])
+        held_ledger = next(m for m in before["moves"] if m[0].startswith("Goods those rewards bought"))[1]
+        self.assertAlmostEqual(held_ledger, 10e6, places=0)
+        # the hangar holds 600,000 of the 1,000,000 Pyerite the ledger expects, plus Heavy Water (stock, ledger-style) and a stray item
+        HangarItem.objects.create(corporation_id=CORP, type_id=35, name="Pyerite", quantity=600_000, location_id=1, location_flag="CorpSAG2", read_at=at(12))
+        HangarItem.objects.create(corporation_id=CORP, type_id=16272, name="Heavy Water", quantity=5, location_id=1, location_flag="CorpSAG2", read_at=at(12))
+        HangarItem.objects.create(corporation_id=CORP, type_id=99999, name="Stray", quantity=1, location_id=1, location_flag="CorpSAG2", read_at=at(12))
+        d = books.compute()
+        self.assertEqual(d["hangar"]["types"], 1)
+        self.assertEqual(d["hangar"]["extra"], ["Stray"])
+        self.assertAlmostEqual(dict(d["held"])["Pyerite"], 6e6, places=0)
+        self.assertAlmostEqual(d["held_total"], 6e6, places=0)
+        diff = next(m for m in d["moves"] if m[0] == "Hangar count against the ledger")
+        self.assertAlmostEqual(diff[1], -4e6, places=0)
+        self.assertAlmostEqual(next(m for m in d["moves"] if m[0].startswith("Goods those rewards bought"))[1], 10e6, places=0)
+        self.assertAlmostEqual(d["result"], before["result"] - 4e6, places=0)
+        self.assertLess(abs(d["gap"]), 1.0)
+        held_row = next(g for g in d["asset_groups"] if g["key"] == "held")
+        self.assertAlmostEqual(held_row["total"], 6e6, places=0)
+        # more in the hangar than the ledger: the excess at the newest lot's price
+        HangarItem.objects.filter(type_id=35).update(quantity=1_200_000)
+        d = books.compute()
+        self.assertAlmostEqual(dict(d["held"])["Pyerite"], 12e6, places=0)
+        self.assertAlmostEqual(next(m for m in d["moves"] if m[0] == "Hangar count against the ledger")[1], 2e6, places=0)
+        self.assertLess(abs(d["gap"]), 1.0)
+
     def test_stock_take_writes_off_everything_held(self):
         """A stock take clears every project-goods lot at cost, moves no cash, and keeps the sheet reconciled."""
         from ..models import MaterialType

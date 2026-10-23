@@ -16,6 +16,13 @@
         <form method="post" action="{% url 'shipyard:finance_refresh' %}">{% csrf_token %}
             <button type="submit" class="btn btn-sm btn-outline-secondary" title="Read the projects and the corporation's journal from EVE now (EVE refreshes them hourly)"><i class="fas fa-rotate fa-fw"></i> Read EVE now</button>
         </form>
+        {% if hangar_token %}
+        <form method="post" action="{% url 'shipyard:hangar_refresh' %}">{% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Read the corporation's hangars from EVE now: the goods held are what is in the projects hangar"><i class="fas fa-warehouse fa-fw"></i> Read the hangar now</button>
+        </form>
+        {% elif can_manage %}
+        <a class="btn btn-sm btn-primary" href="{% url 'shipyard:hangar_connect' %}" title="EVE's login once with the CEO or a Director: the corporation assets scope lets the sheet count the projects hangar"><i class="fas fa-key fa-fw"></i> Connect the hangar</a>
+        {% endif %}
         {% if can_manage %}<a class="btn btn-sm btn-outline-light" href="{% url 'shipyard:finance_direct_sale' %}" title="Quote goods you are about to sell by trade or contract, register the sale and get the code for the deposit's reason"><i class="fas fa-handshake fa-fw"></i> Register a direct sale</a>{% endif %}
         <a class="btn btn-sm btn-primary" href="{% url 'shipyard:finance_pdf' %}"><i class="fas fa-file-pdf fa-fw"></i> Download PDF</a>
     </div>
@@ -35,6 +42,18 @@
 <div class="alert alert-secondary py-2 small"><i class="fas fa-eye-slash fa-fw"></i> {{ d.ignored.count }} journal line{{ d.ignored.count|pluralize }} left out of the books ({{ d.ignored.net|mil:True }} together): mistakes being corrected, flagged in the admin under Shipyard → ignored journal lines, or with a reason matching the ignore patterns. The real wallet differs from the one shown by that net until the corrections land.</div>
 {% endif %}
 <h3 class="h5 mt-4">1. Position against the baseline</h3>
+{% if d.hangar.read_at %}
+<p class="small shipyard-k mb-1"><i class="fas fa-warehouse fa-fw"></i> Goods held from project buybacks = the projects hangar as read from EVE at {{ d.hangar.read_at|date:"Y-m-d H:i" }} EVE ({{ d.hangar.types }} item type{{ d.hangar.types|pluralize }}), at what the projects paid.{% if d.hangar.missing %} Bought by projects but not in the hangar: {{ d.hangar.missing|join:", " }}.{% endif %}{% if d.hangar.extra %} In the hangar but never bought by a project (not counted): {{ d.hangar.extra|join:", " }}.{% endif %}</p>
+{% elif can_manage %}
+<p class="small text-warning mb-1"><i class="fas fa-triangle-exclamation fa-fw"></i> The hangar has not been read from EVE yet: the goods held follow the ledger. Connect the hangar (button above) with the CEO once.</p>
+{% endif %}
+{% if can_manage and hangar_divisions %}
+<details class="small mb-2"><summary class="shipyard-k">Hangar divisions found at the last read ({{ hangar_divisions|length }}); the ones counted are marked</summary>
+<table class="table table-sm w-auto small mb-0"><thead><tr><th>Office</th><th>Division</th><th class="text-end">Types</th><th class="text-end">Units</th><th>Counted</th><th>Biggest</th></tr></thead><tbody>
+{% for h in hangar_divisions %}<tr><td>{{ h.location_id }}</td><td>{{ h.division }} ({{ h.flag }})</td><td class="text-end">{{ h.types }}</td><td class="text-end">{{ h.units|num:0 }}</td><td>{% if h.wanted %}<i class="fas fa-check text-success"></i>{% else %}<span class="shipyard-k">no</span>{% endif %}</td><td class="shipyard-k">{{ h.sample|join:", " }}</td></tr>{% endfor %}
+</tbody></table>
+<div class="shipyard-k">Narrow the count to the projects hangar with SHIPYARD_BOOKS_HANGAR_LOCATIONS and SHIPYARD_BOOKS_HANGAR_FLAGS in the settings.</div></details>
+{% endif %}
 <p class="small shipyard-k mb-2">The owner lent the corporation a working budget of {{ d.loan|mil }}, interest-free and without a repayment date. That loan counts as nothing: the corporation's result is everything above or below it. Click a line for its items.</p>
 <div class="table-responsive"><table class="table table-sm align-middle shipyard-collapsing">
     <thead><tr><th>Assets</th><th class="text-end">ISK</th><th>How it is valued</th></tr></thead>

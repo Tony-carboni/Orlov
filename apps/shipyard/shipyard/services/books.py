@@ -33,7 +33,7 @@ from django.utils import timezone
 from .. import app_settings
 from ..models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, Ore, PriceSnapshot
 from .directsales import CODE_RE
-from . import projectbooks, projects, reprocessing
+from . import hangar, projectbooks, projects, reprocessing
 
 M = 1e6
 FEES = ("brokers_fee", "transaction_tax", "market_provider_tax")
@@ -545,6 +545,55 @@ def compute(now=None) -> dict:
             else:
                 older_cost += qty * cost
                 older_value += qty * prices.get(tid, 0.0)
+    held_ledger_total = sum(held.values())
+    # Owner's rule (2026-10-23): the goods held are what is physically in the projects hangar, read from EVE. Each
+    # type in the hangar is valued at what the projects paid for it (the lots, oldest first; units beyond the lots at
+    # the newest lot's price, or Jita buy when no lot exists). What the ledger expected but the hangar lacks is gone:
+    # it shows in section 2 as the hangar count against the ledger. The stock batches stay ledger-style.
+    hangar_units, hangar_names, hangar_read = hangar.stock(cid)
+    hangar_info = {"read_at": hangar_read, "types": 0, "missing": [], "extra": []}
+    if hangar_read is not None:
+        ledger_units = {tid: sum(r[1] for r in q) for tid, q in led["lots"].items() if tid not in stock_types}
+        held, held_value, older_cost, older_value = defaultdict(float), 0.0, 0.0, 0.0
+        held_items = defaultdict(lambda: [0.0, 0.0, 0.0, "item"])
+        for tid, units in hangar_units.items():
+            if tid in stock_types or units <= 0:
+                continue
+            queue = list(led["lots"].get(tid) or [])
+            if not queue and tid not in ledger_units:
+                hangar_info["extra"].append(hangar_names.get(tid, pnames.get(tid, str(tid))))
+                continue  # in the hangar but never bought by a project: not buyback goods
+            name = pnames.get(tid) or hangar_names.get(tid, str(tid))
+            hangar_info["types"] += 1
+            left = float(units)
+            last_price = queue[-1][2] if queue else prices.get(tid, 0.0)
+            lot_origin = queue[-1][3] if queue and len(queue[-1]) > 3 else "item"
+            for t, qty, cost, *rest in queue:
+                take = min(left, qty)
+                if take <= 0:
+                    break
+                if t >= origin:
+                    held[name] += take * cost
+                    hi = held_items[name]
+                    hi[0] += take
+                    hi[1] += take * cost
+                    hi[2] += take * prices.get(tid, 0.0)
+                    hi[3] = rest[0] if rest else "item"
+                else:
+                    older_cost += take * cost
+                    older_value += take * prices.get(tid, 0.0)
+                left -= take
+            if left > 1e-9:  # more in the hangar than the lots: at the newest lot's price
+                held[name] += left * last_price
+                hi = held_items[name]
+                hi[0] += left
+                hi[1] += left * last_price
+                hi[2] += left * prices.get(tid, 0.0)
+                hi[3] = lot_origin
+            held_value += units * prices.get(tid, 0.0)
+        for tid, units in ledger_units.items():
+            if units > 1e-9 and hangar_units.get(tid, 0) <= 0:
+                hangar_info["missing"].append(pnames.get(tid, str(tid)))
     held_total = sum(held.values())
 
     # --- open orders (EVE now) ---------------------------------------------------------------------
@@ -611,7 +660,11 @@ def compute(now=None) -> dict:
     for rt, amount in sorted(others.items()):
         moves.append([f"Other: {rt.replace('_', ' ')}", amount, ""])
     moves.append(["Project rewards paid to members", -paid_members, "Fall of the active projects' pool, corrected for ISK put into new projects and refunds of closed ones"])
-    moves.append(["Goods those rewards bought, still held", held_total - b.held, "At cost, as in section 1" + (f"; {b.held / M:.1f} M of it was already held at the period's start" if b.held else "")])
+    moves.append(["Goods those rewards bought, still held", (held_ledger_total if hangar_read is not None else held_total) - b.held, "At cost, as the ledger expects it" + (f"; {b.held / M:.1f} M of it was already held at the period's start" if b.held else "")])
+    if hangar_read is not None:
+        moves.append(["Hangar count against the ledger", held_total - held_ledger_total,
+                      f"The projects hangar as read at {hangar_read:%H:%M} EVE, at the projects' prices, minus what the ledger expects: negative = sold or moved without a record"
+                      + (f"; not in the hangar: {', '.join(hangar_info['missing'][:8])}" if hangar_info["missing"] else "")])
     if market_bought:
         bought_names = sorted({names.get(tid, str(tid)) for _, tid, _, _, inp in market_buys if inp})
         moves.append(["Bought on the market", 0.0, f"{market_bought / M:.1f} M paid for {', '.join(bought_names)}, held as stock at cost or used below"])
@@ -706,7 +759,7 @@ def compute(now=None) -> dict:
         "since_label": b.source or f"the working-budget baseline of {origin.day} {origin:%B}, {origin:%H:%M} EVE",
         "period_result": result - b.opening_result, "wallet": wallet, "other_divs": other_divs, "pool": pool, "n_projects": n_projects,
         "stock": stock_lines, "stock_now": stock_now, "stock_base": stock_base,
-        "held": sorted(held.items(), key=lambda kv: -kv[1]), "held_total": held_total, "held_value": held_value,
+        "held": sorted(held.items(), key=lambda kv: -kv[1]), "held_total": held_total, "held_value": held_value, "hangar": hangar_info,
         "lp_units": lp_units - lp_used, "lp_cost": lp_left, "lp_bought": lp_units, "open_escrow": open_escrow,
         "assets": assets, "result": result, "moves": moves, "explained": explained, "gap": gap,
         "lots_left": [(tid, pnames.get(tid, str(tid)), sum(r[1] for r in q), sum(r[1] * r[2] for r in q)) for tid, q in led["lots"].items() if sum(r[1] for r in q) > 0],
@@ -1028,7 +1081,7 @@ def _group_moves(moves, outputs) -> list:
     def key(label):
         if label.startswith("Project goods sold") or label.startswith("Goods sold directly"):
             return "project_sales"
-        if label.startswith("Project rewards paid") or label.startswith("Goods those rewards bought"):
+        if label.startswith("Project rewards paid") or label.startswith("Goods those rewards bought") or label.startswith("Hangar count"):
             return "project_rewards"
         if label.startswith("LP store:") or label.startswith("Paid in the LP store") or label == "LP bought":
             return "lp"

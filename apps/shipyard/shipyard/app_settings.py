@@ -175,3 +175,11 @@ SHIPYARD_BOOKS_ITEM_ALIASES = getattr(settings, "SHIPYARD_BOOKS_ITEM_ALIASES", {
     "coe": "Compressed Coesite", "bcoe": "Compressed Brimful Coesite", "gcoe": "Compressed Glistening Coesite",
     "syl": "Compressed Sylvite", "bsyl": "Compressed Brimful Sylvite", "gsyl": "Compressed Glistening Sylvite",
 })
+
+# --- The projects hangar (owner's rule, 2026-10-23): the goods held from project buybacks are what is physically in the
+# corporation's projects hangar, read from EVE every hour. Which offices and hangar divisions count: empty lists = every
+# office, every corp hangar division (CorpSAG1 to 7) and the deliveries hangar. Stock kept outside it (cap boosters,
+# Heavy Water: the stock batches) stays ledger-style.
+SHIPYARD_HANGAR_SCOPES = getattr(settings, "SHIPYARD_HANGAR_SCOPES", ["esi-assets.read_corporation_assets.v1"])
+SHIPYARD_BOOKS_HANGAR_LOCATIONS = getattr(settings, "SHIPYARD_BOOKS_HANGAR_LOCATIONS", [])  # station or structure ids
+SHIPYARD_BOOKS_HANGAR_FLAGS = getattr(settings, "SHIPYARD_BOOKS_HANGAR_FLAGS", [])            # e.g. ["CorpSAG2"]

@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun,
     ScrapItem, Ship, ShipConfig, ShipMarketStats,
 )
-from .services import business, contracts, esi, everef, fuzzwork, industry, ledger, lplog, lpstore, nearbuy, projects, reprocessing, scrapmetal, wallet
+from .services import business, contracts, esi, everef, fuzzwork, hangar, industry, ledger, lplog, lpstore, nearbuy, projects, reprocessing, scrapmetal, wallet
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -249,6 +249,19 @@ def refresh_corp_industry_jobs():
         _done(run, False, 0, str(exc))
         return
     _done(run, True, result["added"], f"{result['added']} new jobs, {result['updated']} updated, {result['total']} kept")
+
+
+@shared_task
+def refresh_hangar():
+    """The corporation's hangars from EVE, for the goods held on the Finance tab (beat entry shipyard_refresh_hangar, hourly)."""
+    run = _run("hangar")
+    try:
+        result = hangar.refresh()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("hangar refresh failed: %s", exc)
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, True, result["rows"], f"{result['types']} item types in {result['rows']} hangar rows, read with {result['character']}")
 
 
 @shared_task

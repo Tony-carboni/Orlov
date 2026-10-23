@@ -905,3 +905,24 @@ class LpSnapshot(models.Model):
 
     def __str__(self):
         return f"{self.character_name} {self.corporation_name} {self.change:+} -> {self.loyalty_points} at {self.taken_at:%Y-%m-%d %H:%M}"
+
+
+class HangarItem(models.Model):
+    """The corporation's hangars as EVE shows them (owner's rule, 2026-10-23): the goods held from project buybacks
+    are what is physically in the projects hangar, nothing else. One row per item type, office and hangar division
+    at the last read (hourly task, ESI corporation assets); every read replaces the rows."""
+
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    type_id = models.PositiveIntegerField(db_index=True)
+    name = models.CharField(max_length=100, blank=True)
+    quantity = models.BigIntegerField(default=0)
+    location_id = models.BigIntegerField(help_text="The office's station or structure")
+    location_flag = models.CharField(max_length=40, help_text="CorpSAG1 to CorpSAG7 (hangar divisions 1 to 7) or CorpDeliveries")
+    read_at = models.DateTimeField()
+
+    class Meta:
+        verbose_name = "hangar item"
+        verbose_name_plural = "hangar items (last read)"
+
+    def __str__(self):
+        return f"{self.quantity:,} {self.name or self.type_id} in {self.location_flag} at {self.location_id}"

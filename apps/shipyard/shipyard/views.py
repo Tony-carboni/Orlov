@@ -104,7 +104,9 @@ def finance(request):
         logger.warning("balance sheet failed: %s", exc)
         data = None
         messages.error(request, f"The balance sheet could not be built: {exc}")
-    return render(request, "shipyard/finance.html", _context(request, d=data, can_manage=request.user.has_perm("shipyard.manage_shipyard")))
+    from .services import hangar as hangar_service
+    return render(request, "shipyard/finance.html", _context(request, d=data, can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+                                                               hangar_token=hangar_service.token(), hangar_divisions=hangar_service.divisions()))
 
 
 @login_required
@@ -184,6 +186,36 @@ def finance_pdf(request):
     response = HttpResponse(pdf, content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="oarmi-balance-sheet-{data["cut"]:%Y-%m-%d-%H%M}.pdf"'
     return response
+
+
+HANGAR_SSO_KEY = "shipyard_hangar_sso"
+
+
+@login_required
+@permission_required("shipyard.manage_shipyard")
+def hangar_connect(request):
+    """Grant the corporation assets scope (with the production scopes) once, with the CEO or a Director (EVE's login)."""
+    from .services import hangar
+    if request.session.pop(HANGAR_SSO_KEY, None):
+        messages.error(request, "EVE's login did not give the corporation assets scope for a character of the corporation. Log in with the CEO or a Director and accept every scope.")
+        return redirect("shipyard:finance")
+    request.session[HANGAR_SSO_KEY] = True
+    return sso_redirect(request, scopes=hangar.scopes())
+
+
+@login_required
+@require_POST
+def hangar_refresh(request):
+    from django.core.exceptions import PermissionDenied
+    from .services import hangar
+    if not _books_allowed(request.user):
+        raise PermissionDenied
+    try:
+        r = hangar.refresh()
+        messages.success(request, f"Hangar read with {r['character']}: {r['types']} item types in {r['rows']} rows (EVE refreshes the assets about hourly).")
+    except Exception as exc:  # noqa: BLE001
+        messages.error(request, f"The hangar could not be read: {exc}")
+    return redirect("shipyard:finance")
 
 
 @login_required
