@@ -140,7 +140,7 @@ SHIPYARD_BUYBACK_SHARE = float(getattr(settings, "SHIPYARD_BUYBACK_SHARE", 0.85)
 # --- Finance tab (owner, 2026-10-20): the directors' balance sheet ----------------------------------
 SHIPYARD_BOOKS_DIVISIONS = getattr(settings, "SHIPYARD_BOOKS_DIVISIONS", [1, 2, 3, 4, 5, 6])  # 7 is the owner's shared wallet
 # A deposit whose reason matches this is structure income moved into the corporation
-SHIPYARD_BOOKS_STRUCTURE_TRANSFER = getattr(settings, "SHIPYARD_BOOKS_STRUCTURE_TRANSFER", r"raitaru")
+SHIPYARD_BOOKS_STRUCTURE_TRANSFER = getattr(settings, "SHIPYARD_BOOKS_STRUCTURE_TRANSFER", r"raitaru|structure income")
 # Fuel need of the online service modules, per structure
 SHIPYARD_BOOKS_FUEL = getattr(settings, "SHIPYARD_BOOKS_FUEL", [
     {"name": "Orlov Family Facilities (Raitaru)", "blocks_per_hour": 28, "sponsored": True},

@@ -10,6 +10,10 @@
 <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
     <div>
         <h2 class="h4 mb-1">Orlov Arms International · simplified balance sheet</h2>
+        <div class="btn-group btn-group-sm mb-1" role="group" aria-label="Period">
+            <span class="btn btn-sm btn-outline-secondary disabled shipyard-k">Since</span>
+            {% for key, label in periods %}<a class="btn btn-outline-secondary {% if key == period %}active{% endif %}" href="?period={{ key }}" title="{% if key == 'report' %}The period opened by the newest State of the Alliance post{% else %}Section 2 counts from {{ label|lower }}s ago; the opening is the position then{% endif %}">{{ label }}</a>{% endfor %}
+        </div>
         <div class="shipyard-k small">As of {{ d.cut|date:"j F Y, H:i" }} EVE (the corporation's last journal line). Movements since {{ d.since_label }}{% if d.period.source %} ({{ d.base|date:"j F, H:i" }} EVE){% endif %}. All amounts in millions of ISK.</div>
     </div>
     <div class="d-flex gap-2">
@@ -24,7 +28,7 @@
         <a class="btn btn-sm btn-primary" href="{% url 'shipyard:hangar_connect' %}" title="EVE's login once with the CEO or a Director: the corporation assets scope lets the sheet count the projects hangar"><i class="fas fa-key fa-fw"></i> Connect the hangar</a>
         {% endif %}
         {% if can_manage %}<a class="btn btn-sm btn-outline-light" href="{% url 'shipyard:finance_direct_sale' %}" title="Quote goods you are about to sell by trade or contract, register the sale and get the code for the deposit's reason"><i class="fas fa-handshake fa-fw"></i> Register a direct sale</a>{% endif %}
-        <a class="btn btn-sm btn-primary" href="{% url 'shipyard:finance_pdf' %}"><i class="fas fa-file-pdf fa-fw"></i> Download PDF</a>
+        <a class="btn btn-sm btn-primary" href="{% url 'shipyard:finance_pdf' %}?period={{ period }}"><i class="fas fa-file-pdf fa-fw"></i> Download PDF</a>
     </div>
 </div>
 

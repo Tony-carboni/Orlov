@@ -135,6 +135,44 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(labels["LP store: 240 Navy Cap Booster 800"], 0.0)
         self.assertNotIn("Paid in the LP store, not entered as stock", labels)
 
+    def test_structure_income_is_one_line_in_its_own_category(self):
+        """Two transfers of structure income (one by the old 'raitaru' wording, one saying 'structure income') make one
+        movement under the Structure income category (owner, 2026-10-23)."""
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_601, division=1, date=at(12.5), ref_type="player_donation", amount=59.9e6,
+                                        reason="structure income", first_party_id=111, second_party_id=CORP)
+        d = books.compute()
+        lines = [m for m in d["moves"] if m[0].startswith("Structure income transferred")]
+        self.assertEqual(len(lines), 1)
+        self.assertAlmostEqual(lines[0][1], 77e6 + 59.9e6)
+        self.assertIn("77.0 M by", lines[0][2])
+        self.assertIn("59.9 M by", lines[0][2])
+        group = next(g for g in d["move_groups"] if g["key"] == "structure")
+        self.assertEqual(group["label"], "Structure income")
+        self.assertAlmostEqual(group["total"], 136.9e6)
+        self.assertEqual(len(group["rows"]), 1)
+        self.assertLess(abs(d["gap"]), 1.0)
+
+    def test_the_period_menu_opens_a_period_on_the_fly(self):
+        """Day, Week and Month on the Finance tab: section 2 counts from that moment, the opening is the position then,
+        nothing is stored, and the sheet still reconciles."""
+        p1 = CorpProject.objects.get(project_id="p1")
+        ProjectSnapshot.objects.create(project=p1, taken_at=at(0.5), state="Active", reward_remaining=2387e6)
+        ProjectSnapshot.objects.create(project=p1, taken_at=at(11), state="Active", reward_remaining=2350e6)
+        whole = books.compute()
+        past = books.compute(now=at(6) - dt.timedelta(microseconds=1))  # the opening holds what came before the start
+        d = books.compute(since=at(6), since_label="the last day")
+        self.assertEqual(d["since_label"], "the last day")
+        self.assertAlmostEqual(d["opening_result"], past["result"], places=0)
+        self.assertAlmostEqual(d["result"], whole["result"], places=0)
+        self.assertAlmostEqual(d["period_result"], whole["result"] - past["result"], places=0)
+        self.assertLess(abs(d["gap"]), 1.0)
+        self.assertEqual(BooksBaseline.objects.count(), 1)  # nothing stored
+        start, label = books.period_start("week", now=at(10))
+        self.assertEqual(start, at(10) - dt.timedelta(days=7))
+        self.assertIn("the last 7 days", label)
+        self.assertEqual(books.period_start("report"), (None, None))
+        self.assertEqual(books.period_start("nonsense"), (None, None))
+
     def test_a_new_period_opens_at_a_state_of_the_alliance_post(self):
         """A post dated after the budget baseline opens a period: section 2 then counts from there and adds
         up to the result minus the opening; stock, LP and goods keep counting from the budget baseline."""
@@ -351,6 +389,11 @@ class BooksTests(TestCase):
         HangarItem.objects.create(corporation_id=CORP, type_id=35, name="Pyerite", quantity=600_000, location_id=1, location_flag="CorpSAG2", read_at=at(12))
         HangarItem.objects.create(corporation_id=CORP, type_id=16272, name="Heavy Water", quantity=5, location_id=1, location_flag="CorpSAG2", read_at=at(12))
         HangarItem.objects.create(corporation_id=CORP, type_id=99999, name="Stray", quantity=1, location_id=1, location_flag="CorpSAG2", read_at=at(12))
+        from ..services import hangar
+        for name in ("SHIPYARD_BOOKS_HANGAR_LOCATIONS", "SHIPYARD_BOOKS_HANGAR_FLAGS"):  # the live settings pin the count to the real hangar
+            patch = mock.patch.object(hangar.app_settings, name, [])
+            patch.start()
+            self.addCleanup(patch.stop)
         d = books.compute()
         self.assertEqual(d["hangar"]["types"], 1)
         self.assertEqual(d["hangar"]["extra"], ["Stray"])

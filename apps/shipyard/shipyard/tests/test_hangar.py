@@ -35,6 +35,10 @@ class HangarTests(TestCase):
             r = hangar.refresh()
         self.assertEqual((r["rows"], r["types"], r["character"]), (3, 3, "Catherine Frey"))
         self.assertEqual(HangarItem.objects.filter(corporation_id=CID).count(), 3)
+        for name in ("SHIPYARD_BOOKS_HANGAR_LOCATIONS", "SHIPYARD_BOOKS_HANGAR_FLAGS"):  # the live settings pin the count to the real hangar
+            patch = mock.patch.object(hangar.app_settings, name, [])
+            patch.start()
+            self.addCleanup(patch.stop)
         units, names, read_at = hangar.stock(CID)
         self.assertEqual(units, {62536: 14406, 48112: 600, 35: 5})
         self.assertEqual(names[62536], "Compressed Kernite")

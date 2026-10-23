@@ -25,6 +25,7 @@ Every journal line since the baseline lands in exactly one movement, so the move
 to the result; a difference would show as "not explained" (and is a bug).
 """
 
+import datetime as dt
 import re
 from collections import defaultdict, deque
 
@@ -326,8 +327,28 @@ def _take(queue, need):
     return cost, taken
 
 
-def compute(now=None) -> dict:
-    """The sheet as plain numbers and labels (the page and the PDF draw it). None when there is no baseline."""
+PERIODS = {  # the menu on the Finance tab (owner, 2026-10-23): section 2 counts from here
+    "report": ("Last alliance report", None),
+    "day": ("Day", 1),
+    "week": ("Week", 7),
+    "month": ("Month", 30),
+}
+
+
+def period_start(period: str, now=None):
+    """(start moment, label) for a menu choice; (None, None) for the last alliance report (the stored period)."""
+    days = PERIODS.get(period, PERIODS["report"])[1]
+    if not days:
+        return None, None
+    now = now or timezone.now()
+    start = now - dt.timedelta(days=days)
+    return start, f"{start:%-d %B, %H:%M} EVE (the last {'24 hours' if days == 1 else f'{days} days'})"
+
+
+def compute(now=None, since=None, since_label: str = "") -> dict:
+    """The sheet as plain numbers and labels (the page and the PDF draw it). None when there is no baseline.
+    `since` opens a period on the fly at that moment (the Day, Week and Month choices of the menu): the position
+    then becomes the opening, nothing is stored."""
     b = baseline()
     if b is None:
         return None
@@ -335,6 +356,11 @@ def compute(now=None) -> dict:
     if now is not None:
         # the position at a past moment: the period in force then
         b = BooksBaseline.objects.filter(taken_at__lte=now).order_by("-taken_at").first() or first
+    elif since is not None and since > first.taken_at:
+        past = compute(now=since - dt.timedelta(microseconds=1))  # the opening holds what came before the start; the start itself counts in the period
+        b = BooksBaseline(taken_at=since, loan=first.loan, wallet=past["wallet"], other_divs=past["other_divs"], pool=past["pool"], held=past["held_total"],
+                          open_escrow=past["open_escrow"], lp_units=int(past["lp_units"]), lp_cost=past["lp_cost"], opening_result=past["result"],
+                          source=(since_label or f"{since:%-d %B, %H:%M} EVE")[:200])
     cid = projects.corp_id()
     base = b.taken_at          # the period's start: movements count from here
     origin = first.taken_at    # the budget baseline: stock and goods count from here (position)
@@ -550,7 +576,8 @@ def compute(now=None) -> dict:
     # type in the hangar is valued at what the projects paid for it (the lots, oldest first; units beyond the lots at
     # the newest lot's price, or Jita buy when no lot exists). What the ledger expected but the hangar lacks is gone:
     # it shows in section 2 as the hangar count against the ledger. The stock batches stay ledger-style.
-    hangar_units, hangar_names, hangar_read = hangar.stock(cid)
+    # the hangar has no history: a past moment (an opening) uses the ledger's lots
+    hangar_units, hangar_names, hangar_read = hangar.stock(cid) if now is None else ({}, {}, None)
     hangar_info = {"read_at": hangar_read, "types": 0, "missing": [], "extra": []}
     if hangar_read is not None:
         ledger_units = {tid: sum(r[1] for r in q) for tid, q in led["lots"].items() if tid not in stock_types}
@@ -645,10 +672,15 @@ def compute(now=None) -> dict:
         moves.append(["Escrow of corporation buy orders", escrow, "Set aside (−) for open buy orders or returned (+); an order placed before the period was not part of its opening"])
     if abs(open_escrow - b.open_escrow) >= 1:
         moves.append(["ISK still in open buy orders", open_escrow - b.open_escrow, "Corporation money waiting in buy orders (section 1), against the period's opening"])
+    rule = app_settings.SHIPYARD_BOOKS_STRUCTURE_TRANSFER
+    structure_transfers = [d for d in deposits if rule and re.search(rule, d["reason"] or "", re.I)]
+    if structure_transfers:  # one line, its own category (owner, 2026-10-23)
+        moves.append(["Structure income transferred to the corporation", sum(d["amount"] for d in structure_transfers),
+                      "; ".join(f"{d['amount'] / M:.1f} M by {d['who']}, {_when(d['t'])}" for d in structure_transfers)])
     for d in deposits:
-        rule = app_settings.SHIPYARD_BOOKS_STRUCTURE_TRANSFER
-        label = "Structure income transferred to the corporation" if rule and re.search(rule, d["reason"] or "", re.I) else f"Deposit: {d['reason'] or 'no reason given'}"
-        moves.append([label, d["amount"], f"{d['who']}, {_when(d['t'])}"])
+        if d in structure_transfers:
+            continue
+        moves.append([f"Deposit: {d['reason'] or 'no reason given'}", d["amount"], f"{d['who']}, {_when(d['t'])}"])
     if fees:
         moves.append(["Broker fees and sales tax", fees, ""])
     for p in payouts:
@@ -1071,6 +1103,7 @@ MOVE_GROUPS = [
     ("lp", "LP conversion", "LP bought, what the LP store gave for it, and the sales of those items"),
     ("stock", "Stock sales", "Stock bought to sell on (Heavy Water), and its sales"),
     ("market", "Market orders and fees", "Escrow of buy orders, items bought on the market, broker fees and sales tax"),
+    ("structure", "Structure income", "Industry tax of the Raitaru, moved from the structure corporation to the corporation"),
     ("transfers", "Transfers, deposits and payouts", "ISK moved into or out of the corporation's wallets by hand"),
     ("gap", "Not explained", ""),
 ]
@@ -1093,6 +1126,8 @@ def _group_moves(moves, outputs) -> list:
             return "market"
         if label == "Not explained":
             return "gap"
+        if label.startswith("Structure income transferred"):
+            return "structure"
         return "transfers"
     groups = {k: {"key": k, "label": label, "note": note, "id": f"mv-{k}", "rows": [], "total": 0.0} for k, label, note in MOVE_GROUPS}
     for m in moves:

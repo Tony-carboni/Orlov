@@ -98,14 +98,19 @@ def finance(request):
     from .services import books
     if not _books_allowed(request.user):
         raise PermissionDenied
+    period = request.GET.get("period", "report")
+    if period not in books.PERIODS:
+        period = "report"
     try:
-        data = books.compute()
+        since, since_label = books.period_start(period)
+        data = books.compute(since=since, since_label=since_label)
     except Exception as exc:  # noqa: BLE001
         logger.warning("balance sheet failed: %s", exc)
         data = None
         messages.error(request, f"The balance sheet could not be built: {exc}")
     from .services import hangar as hangar_service
     return render(request, "shipyard/finance.html", _context(request, d=data, can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+                                                               period=period, periods=[(k, v[0]) for k, v in books.PERIODS.items()],
                                                                hangar_token=hangar_service.token(), hangar_divisions=hangar_service.divisions()))
 
 
@@ -174,7 +179,9 @@ def finance_pdf(request):
     from .services import books, books_pdf
     if not _books_allowed(request.user):
         raise PermissionDenied
-    data = books.compute()
+    period = request.GET.get("period", "report")
+    since, since_label = books.period_start(period if period in books.PERIODS else "report")
+    data = books.compute(since=since, since_label=since_label)
     if data is None:
         messages.error(request, "No baseline yet: add one in the admin (Shipyard → books baseline).")
         return redirect("shipyard:finance")
