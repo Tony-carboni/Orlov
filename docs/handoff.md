@@ -18,6 +18,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 - **0.28.1** (commit `379bc77` pinned, no migration, 128 tests): the owner sold the corporation's 69,750 LP to his own character (61.4 M deposit, reason "LP Purchase 69750") and it did not show. The books read LP out of withdrawals only. A deposit whose reason names LP is now a sale of LP: the units leave at average cost, the profit (+5.6 M) is a movement in the LP conversion category, section 4 lists it per month inside the net profit and margin, the LP log shows "Sold to …". LP held now 0.
 
+- **0.28.2** (commit `2048c9e` pinned, no migration, collectstatic run): a **No 0-Grade** button on the Reprocessing board that hides the half-yield ores whatever else is ticked, remembered per browser.
+
 **Owner has to do by hand.** Look at the new row on Finance → section 3. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep, test the welcome DM with a real join.
 
 **Next.** Nothing queued.
