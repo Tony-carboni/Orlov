@@ -4,6 +4,23 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-23 (05:35 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** **Shipyard 0.26.2, 0.26.3 and 0.27.0: the goods held are the projects hangar, as raw ore** (runbook 13 C), three owner's rules of this morning (saved in memory as well).
+
+**Owner's rules.** (1) Buyback goods are raw compressed ore sold in bulk: nothing is converted to minerals unless he asks. (2) The goods held from project buybacks are what is physically in the corporation's projects hangar, read from EVE; if it is not there it is not in stock. (3) Stock kept elsewhere (cap boosters, Heavy Water) stays ledger-style as stock batches.
+
+**Done.**
+- **0.26.2** (commit `e601e8f`, backup `aa-db-2026-10-23-0515.sql.gz`): ore delivered after the last stock take stays an ore lot at what the project paid (the Kernite project buy is 165, not 180.6 through older mineral lots); the quote costs goods from the lots since the stock take only and skips what earlier registrations sold.
+- **0.26.3** (commit `17f1e0e`, backup `aa-db-2026-10-23-0521.sql.gz`): a stock take clears every lot that existed at its moment. The stock take of 21 October had stored the sheet's lines at its journal cut-off, so the deliveries of 21 October 15:25 to 17:27 EVE (about 72 M as minerals) were never written off and reappeared. Goods held now: exactly the 20 items of the owner's list, 130.6 M at project cost, all as ore; gap 0.
+- **0.27.0** (commit `04b1df4` pinned, backup `aa-db-2026-10-23-0529.sql.gz`, migration 0032, beat entry `shipyard_refresh_hangar` at :35 appended to `conf/local.py` and `deploy/conf/local.py.append`, 123 tests): the hourly task reads the corporation's assets (scope `esi-assets.read_corporation_assets.v1`) into `HangarItem` rows; the sheet values what is in the hangar at the projects' prices (lots oldest first, excess at the newest lot's price), lists items never bought by a project without counting them, names types the ledger expects but the hangar lacks, and section 2 adds "Hangar count against the ledger" so the sheet still reconciles. Until the first read the goods held follow the ledger and the page says so. Finance tab: **Connect the hangar** (manager; asks for the production scopes plus the assets scope, one token for all) and **Read the hangar now**.
+
+**Owner has to do by hand.** Finance → Connect the hangar, log in with Catherine Frey (CEO; the assets scope needs a Director), accept the scopes. Then say which office and hangar division is the projects hangar (the page lists the divisions the read found) so a local session sets `SHIPYARD_BOOKS_HANGAR_LOCATIONS` and `SHIPYARD_BOOKS_HANGAR_FLAGS`. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
+
+**Next (local session, after the login).** Read the hangar now, check the divisions table on the Finance tab with the owner, append the two settings to `conf/local.py` and the deploy template, restart gunicorn and the workers, confirm the goods held equal the hangar and the gap is 0.
+
+---
+
 ## 2026-10-23 (05:00 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** **Shipyard 0.26.0: Register a direct sale values the list six ways** (runbook 13 C), after the owner checked a quote by hand.
@@ -53,40 +70,3 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Owner has to do by hand.** Register Flapoor Hendrik in Member Audit once if that character's LP matters. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
 
 **Next.** Nothing queued.
-
----
-
-## 2026-10-21 (19:30 UTC) — desktop session → any session
-
-**Runbook / topic:** **Shipyard 0.24.0: Register a direct sale** (runbook 13 C), replacing the reason-text approach of 0.23.x after the owner found EVE's transfer reason holds 40 characters (his test: the line stopped at the last 0 of 40).
-
-**Done.** Finance → **Register a direct sale**: paste the items as the game copies them, Quote (ore and ice at 95 % of the Reprocessing tab's value, never above Jita buy; other items at Jita buy; the projects' cost and profit per line, first in first out, ores through their minerals), Register → a code `DS-XXXX` for the deposit's reason. When the deposit with the code appears in the journal, the registered lines leave the goods held and the sale is marked matched; pending registrations are listed with a delete button. Section 3 of the sheet has one line per month, **Direct sale of goods** (deposits, cost, profit), inside "Net profit so far"; the sales of 20 October (Atmospheric Gases, 1.7 M against 7.6 M of cost) and 21 October (200.4 M against 179.6 M) are in it. Released: commit `388386d` pinned, backup `aa-db-2026-10-21-1923.sql.gz`, migration 0029, 110 tests, `up -d`, nginx. Note: the rejected 0.23.1 (ds trigger, abbreviations, k/M in the reason) had already been committed and built before the rejection landed; it is harmless and stays underneath.
-
-**Also (20:00 UTC): Shipyard 0.24.1** (commit `6c5ac7e` pinned, backup `aa-db-2026-10-21-1946.sql.gz`, no migration, 111 tests): the quote caps ores at **Jita sell** (owner's correction); a **stock take** button writes off every project-goods lot held (the owner: nothing of the buyback inventory exists beyond what is in the projects hangar; the old lots were sold by direct trade without a record), run once today; and **"correction" joins "accidental"** as an ignore reason (server `conf/local.py`, deploy template, code default). The evening's 12 manufacturing jobs (16,615,908: ten at 19:29 of 830,899 each, two at 19:27 of 4,153,459 each) were private builds charged to the corporation; the owner deposited with "correction" in the reason; their 24 journal lines are flagged by id once the hourly read has them (see the end of this entry).
-
-**Figures after all of it (21 Oct, 20:00 UTC):** stock take `WO-261021C` wrote off **522.0 M** at cost (153.9 M of goods held since the baseline and 368.1 M of older lots: Nitrogen Isotopes 228.9, Pyerite 106.2, Tritanium 78.8, Mexallon 56.5, Zero-Point Condensate 22.2, Isogen 18.6, the rest small); goods held now 0; result **+376.5 M** (593.0 before, minus 153.9 written off, minus the 62.5 M "correction manufacturing" deposit that the new pattern now leaves out as it should); gap 0; section 3 net profit so far 47.1 M (the two direct sales in it). Ignored lines: 219, net +8,080,389: the owner's 62,534,212 deposit of the morning also covers carbondnb's ten jobs (8,080,390), but those were paid from the **Director division (7)**, outside the corporation's books, so the master wallet holds 8,080,390 too much. **Owner:** move 8,080,390 ISK from the master wallet to the Director division with "correction" in the reason; the line then leaves the books and the ignored net is 0; the evening's 24 job lines and the 19:03 broker fee are flagged against his 16,642,608 "correction" deposit. Commit `bfb3923` pinned.
-
-**Owner's rule from now on.** Before selling project goods by trade or contract: Finance → Register a direct sale, paste the list, Quote, Register, and put the `DS-XXXX` code in the deposit's reason. Nothing else; no items in the reason.
-
-**Owner has to do by hand.** Nothing for this. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
-
-**Next.** Nothing queued.
-
----
-
-## 2026-10-21 (19:10 UTC) — desktop session → any session
-
-**Runbook / topic:** **Shipyard 0.23.0: direct sales of project goods** (runbook 13 C), and the owner's direct sale of 21 October.
-
-**What happened.** The owner sold nine kinds of project goods by direct trade for 200,415,238 ISK (quote by this session: ores at 95 % of the Reprocessing tab's value capped at Jita sell, White Glaze at Jita buy, Crystalline Isogen-10 and Zero-Point Condensate at Jita buy) and deposited the ISK into the master wallet at 18:34 EVE with the reason "Direct sale buyback goods". The Finance tab counted the cash and still held the goods: the old rule matched lots by the first six letters of the first word after "direct sale", and "buyback" matched nothing. The books never read the corp hangar (no assets scope), so nothing corrects itself when stock leaves it.
-
-**Done.** Shipyard 0.23.0 (commit `fe1cdbe` pinned, backup `aa-db-2026-10-21-1858.sql.gz`, migration 0028, 109 tests): the reason names the items with quantities (`direct sale 2,388 Zero-Point Condensate, 373 Crystalline Isogen-10, ...`; an ore is converted to its minerals as the ledger holds them; a name without a quantity takes every unit held); a deposit that names nothing shows "not matched" on the sheet and is completed in the admin under Shipyard → direct sales (`BookDirectSale`: journal entry id, items) or with `books.direct_sale(entry_id, items)`. Both open cases were recorded that way: entry 26177244778 (today, the nine items: 179.6 M of stock left the books at cost) and the 20 October deposit "Atmospheric Gasses" (typo; recorded as every Atmospheric Gases unit held).
-
-**Owner's rule from now on.** When selling project goods directly, deposit the ISK with a reason like `direct sale 2,388 Zero-Point Condensate, 373 Crystalline Isogen-10` (quantity, then the name, a comma between items; a space after each comma). Ores by their compressed name and units as delivered. Nothing else is needed.
-
-**Owner has to do by hand.** Nothing for this. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
-
-**Next.** Nothing queued.
-
----
-
