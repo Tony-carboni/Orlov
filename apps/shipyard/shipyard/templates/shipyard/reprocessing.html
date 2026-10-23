@@ -86,6 +86,10 @@
             {% endfor %}
         </div>
     </div>
+    <div class="col-auto">
+        <input type="checkbox" class="btn-check" id="repro-no-zero" autocomplete="off">
+        <label class="btn btn-outline-warning btn-sm" for="repro-no-zero" title="Hide the 0-Grade ores (half the minerals) whatever the grade buttons say; remembered on this browser"><i class="fas fa-ban fa-fw"></i> No 0-Grade</label>
+    </div>
     {% if areas %}
     <div class="col-auto">
         <div class="btn-group btn-group-sm" role="group" id="repro-area" aria-label="Area (tick any; none ticked shows all)">
@@ -123,7 +127,7 @@
             {% endfor %}
         </div>
         {% endif %}{% endwith %}{% endfor %}
-        <div class="small shipyard-k">Tick any number of ore types; none ticked shows all. Combine with the kind and grade buttons above (II/III/IV-Grade = +5/+10/+15 % minerals on asteroid ore, 0-Grade = half, X-Grade = a stand-alone rich ore; moon ore +15 % and +100 %).</div>
+        <div class="small shipyard-k">Tick any number of ore types; none ticked shows all. "No 0-Grade" hides the half-yield ores whatever else is ticked. Combine with the kind and grade buttons above (II/III/IV-Grade = +5/+10/+15 % minerals on asteroid ore, 0-Grade = half, X-Grade = a stand-alone rich ore; moon ore +15 % and +100 %).</div>
     </div>
 </div>
 

@@ -36,6 +36,13 @@
         remember("#repro-family", "shipyard.repro.families");
         remember("#repro-rarity", "shipyard.repro.rarities");
         remember("#repro-area", "shipyard.repro.areas");
+        // "No 0-Grade" (owner, 2026-10-23): hides the half-yield ores whatever the grade buttons say
+        var noZero = $("#repro-no-zero");
+        try { noZero.prop("checked", window.localStorage.getItem("shipyard.repro.noZero") === "1"); } catch (e) { /* storage unavailable */ }
+        noZero.on("change", function () {
+            try { window.localStorage.setItem("shipyard.repro.noZero", this.checked ? "1" : "0"); } catch (e) { /* ignore */ }
+            table.draw();
+        });
 
         $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
             if (settings.nTable.id !== "repro-table") { return true; }
@@ -43,6 +50,7 @@
             var kinds = selected("#repro-kind"), variants = selected("#repro-variant"), families = selected("#repro-family");
             if (kinds.length && kinds.indexOf(row.dataset.kind) < 0) { return false; }
             if (variants.length && variants.indexOf(row.dataset.variant) < 0) { return false; }
+            if (noZero.prop("checked") && row.dataset.variant === "0") { return false; }
             if (families.length && families.indexOf(row.dataset.family) < 0) { return false; }
             var rarities = selected("#repro-rarity"), areas = selected("#repro-area");
             // moon ore answers to the rarity buttons, everything else to the area buttons
