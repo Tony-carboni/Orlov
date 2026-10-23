@@ -111,8 +111,12 @@ class BargainsTests(TestCase):
         bargains.compute_stats()
         MarketTypeStat.objects.filter(type_id=34).update(name="Tritanium", sell_min=4.0, buy_max=3.9, group_path="Minerals", top_group="Manufacture & Research")
         bargains.apply_flags()
-        user = get_user_model().objects.create_user("buyer", password="x")
+        from allianceauth.tests.auth_utils import AuthUtils
+        user = AuthUtils.create_user("buyer")
+        AuthUtils.add_main_character_2(user, "Buyer", 1001, corp_id=98843356, corp_name="OARMI", alliance_id=None, alliance_name="")
+        user = get_user_model().objects.get(pk=user.pk)
         user.user_permissions.add(Permission.objects.get(codename="basic_access", content_type__app_label="shipyard"))
+        user = get_user_model().objects.get(pk=user.pk)
         client = Client()
         client.force_login(user)
         r = client.get(reverse("shipyard:bargains") + "?flag=all&min=0")

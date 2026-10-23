@@ -319,7 +319,7 @@ def apply_flags() -> int:
         s.vs90 = (sell / s.avg90 - 1) if s.avg90 else None
         s.vs365 = (sell / s.avg365 - 1) if s.avg365 else None
         s.flag_low = bool(s.low52 and sell <= s.low52 * (1 + low_pct))
-        s.flag_dip = bool(s.vs90 is not None and s.vs90 <= -dip_pct)
+        s.flag_dip = bool(s.vs90 is not None and s.vs90 <= -dip_pct + 1e-9)
     MarketTypeStat.objects.bulk_update(rows, ["pos52", "vs90", "vs365", "flag_low", "flag_dip"], batch_size=1000)
     return len(rows)
 
