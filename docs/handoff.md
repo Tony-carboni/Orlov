@@ -4,6 +4,20 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-23 (07:45 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** **Shipyard 0.27.2 and 0.27.3: all-time cards in section 3, and a fix to how a direct sale of ore takes its lots** (runbook 13 C).
+
+**Done.**
+- **0.27.2** (commit `47079ff`, backup `aa-db-2026-10-23-0714.sql.gz`, no migration): section 3 has a second row of cards, "since the first project": paid to members since the first payout the books know (4 October 2026, 13 members, 1,237.6 M), net profit on what sold and the margin on sold stock, across every reporting period; the PDF has the same as one line. Direct sales of earlier periods keep taking their lots once a new period opens (they were only matched when inside the period).
+- **0.27.3** (commit `965827e` pinned, no migration, 126 tests): found while checking the new cards. Since 0.26.2 an ore delivered after the stock take has a lot of its own, and a direct sale took only from that lot: the 21 October sale (18:34, before the stock take) found nothing for its seven ore lines, the stock take wrote those goods off instead (605.9 M), and the sale showed 95.4 M cost and a 37 % margin. An ore now leaves from its own lots first and the rest through its minerals. Live: the sale costs 179.5 M with every line matched, the write-off 521.8 M (the stock take page says 522.0 M), margin on what sold 13.1 %, all-time net profit 46.9 M on 537.1 M sold, gap 0.
+
+**Owner has to do by hand.** Look at the new row on Finance → section 3. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep, test the welcome DM with a real join.
+
+**Next.** Nothing queued.
+
+---
+
 ## 2026-10-23 (05:35 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** **Shipyard 0.26.2, 0.26.3 and 0.27.0: the goods held are the projects hangar, as raw ore** (runbook 13 C), three owner's rules of this morning (saved in memory as well).
@@ -60,17 +74,5 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Done.** New channel `#juicy-killmails` under *Member channels* (permissions synced with the category, so members post, react and send GIFs; one overwrite lets the bot's role *Orlov auth* post). New bot cog `orlovbot/cogs/juicy.py`: the kill feed's live reader now hands every killmail in EVE to the other cogs (`zkill_killmail` event, `cogs/killfeed.py`), and the juicy cog posts the ones that meet the owner's rules (supercarriers and titans always; alliance tournament and limited edition hulls always; faction hulls above 20 B; jump freighters above 15 B; freighters, Bowhead, Orca, Porpoise above 8 B; haulers above 10 B; black ops above 12 B; any other non-capital ship above 10 B), reason in the footer, gold embed with the ship render. Thresholds are settings (`ORLOVBOT_JUICY_*_B`, appended to `conf/local.py` and in `deploy/conf/local.py.append`). Released 10:11 UTC: old bot folder kept as `~/backups/orlovbot.pre-juicy-*`, dry run in a fresh bot container (23 rule cases right, real titan and supercarrier losses rendered), bot container restarted, `orlovbot.cogs.juicy` listed, test post of a Nyx loss (killmail 139319386) in the channel at 10:12 UTC. A test post later: set the cache key `orlovbot:juicy:test` to a killmail id.
 
 **Owner has to do by hand.** Look at the channel; say if a rule should move. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
-
-**Next.** Nothing queued.
-
----
-
-## 2026-10-22 (08:30 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** **Shipyard 0.25.0: the LP log** (runbook 13 C release paragraph). Built in parallel with the other desktop session's 0.23.0 to 0.24.2 of 21 October (direct sales, stock take, partial ignores); rebased on top of them, so the LP log is 0.25.0 with migration 0031.
-
-**Done.** EVE keeps no history of loyalty points, so the plugin keeps its own: the hourly task `shipyard_lp_snapshots` (beat entry at :50, appended to `conf/local.py` and `deploy/conf/local.py.append`) reads every character with a valid token carrying the loyalty scope (Member Audit's registration gives it) and stores a line only when a balance moved: when, character, NPC corporation, change, new balance. A fall that matches a "Payment to LP Store" line in Member Audit's journal is noted with the ISK. Page at /shipyard/lp/log/ (earned and spent per corporation, balance now, chart per day/week/month, the log; "Me and my alts" or, for managers and finance viewers, "Everyone logged"); **Log** button on the Finance tab's Loyalty points line; link from My business. Of the owner's 11 characters, 10 carry the scope; Flapoor Hendrik does not. The log starts with the first reading. **Released:** commit `9bc391e` pinned, backup `aa-db-2026-10-22-0748.sql.gz` (copies `requirements.txt.pre-0.25.0`, `local.py.pre-0.25.0`), migrations 0030 and 0031, all images built, beat entry appended, `up -d`, nginx, 116 tests. First reading by hand at 07:52 EVE: 45 characters read, 365 balances stored (the owner's 10 characters: 53 lines). Note: the other session had pinned 0.24.2 (`bd3b5f6`, migration 0030, the amount on an ignored line) at 20:00 UTC on 21 October but the running containers were still 0.24.1 and 0030 unapplied; this release carries it live.
-
-**Owner has to do by hand.** Register Flapoor Hendrik in Member Audit once if that character's LP matters. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
 
 **Next.** Nothing queued.
