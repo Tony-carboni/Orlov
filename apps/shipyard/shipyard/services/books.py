@@ -130,6 +130,16 @@ def _apply_direct_sales(direct_sales, led, cid, until=None) -> None:
             c, _ = _take_until(lots[int(m)], batches * float(q) * y, until)
             cost += c
         return cost
+    def take_any_ore(ore, qty, until):
+        """An ore leaves from its own lots first (deliveries since the last stock take are held as ore, 0.26.2) and the
+        rest through the minerals it was split into (deliveries before it). 0.27.3: before, an ore with any lot of its
+        own was taken from that lot only, so a sale dated before the stock take took nothing and the stock take wrote
+        the goods off instead, which overstated the sale's margin."""
+        cost, taken = _take_until(lots[ore.type_id], qty, until) if ore.type_id in lots else (0.0, 0.0)
+        if qty - taken > 1e-9:
+            cost += take_ore(ore, qty - taken, until)
+        return cost
+
     by_name = {n.lower(): tid for tid, n in names.items()}
     ore_by_name = {o.name.lower(): o for o in ores.values()}
 
@@ -170,8 +180,8 @@ def _apply_direct_sales(direct_sales, led, cid, until=None) -> None:
             for ln in sale.lines or []:
                 tid, qty = int(ln["type_id"]), float(ln["qty"])
                 ore = ores.get(tid) or (Ore.objects.filter(type_id=tid).first() if ln.get("is_ore") else None)
-                if ore is not None and tid not in lots:
-                    d["cost"] += take_ore(ore, qty, d["t"])
+                if ore is not None:
+                    d["cost"] += take_any_ore(ore, qty, d["t"])
                     d["removed"].append(f"{qty:,.0f} {ln['name']}")
                 else:
                     cost, taken = _take_until(lots[tid], qty, d["t"])
@@ -183,14 +193,14 @@ def _apply_direct_sales(direct_sales, led, cid, until=None) -> None:
         text = overrides.get(d["entry_id"]) or d["item"]
         for qty, name in parse_direct_sale_items(text):
             ore = resolve(ore_by_name, name)
-            if ore is not None and ore.type_id not in lots:
+            if ore is not None:
                 if qty is None:
                     d["unmatched"].append(f"{name} (an ore needs a quantity)")
                     continue
-                d["cost"] += take_ore(ore, qty, d["t"])
+                d["cost"] += take_any_ore(ore, qty, d["t"])
                 d["removed"].append(f"{qty:,} {ore.name}")
                 continue
-            tid = resolve(by_name, name) if ore is None else ore.type_id
+            tid = resolve(by_name, name)
             if tid is None or tid not in lots:
                 d["unmatched"].append(name)
                 continue

@@ -371,6 +371,37 @@ class BooksTests(TestCase):
         self.assertEqual((l2["held"], l2["short"], l2["cost_unit"]), (4_406.0, True, 165.0))
         self.assertAlmostEqual(l2["cost"], 10_000 * 165.0)
 
+    def test_direct_sale_of_ore_before_the_stock_take_takes_its_minerals(self):
+        """0.27.3: ore delivered before the stock take sits in the books as minerals, ore delivered after it as ore. A direct
+        sale dated before the stock take must take the minerals even when a later delivery gave the ore a lot of its own;
+        before the fix it took nothing and the stock take wrote the goods off, which overstated the sale's margin."""
+        from ..models import MaterialType, Ore
+        from ..services import directsales, projectbooks
+        for tid, name in ((62536, "Compressed Kernite"), (36, "Tritanium"), (37, "Pyerite")):
+            MaterialType.objects.get_or_create(type_id=tid, defaults={"name": name})
+        Ore.objects.create(type_id=62536, name="Compressed Kernite", group_id=450, kind="ore", family="Kernite", variant="base", portion_size=100, materials={"36": 60, "37": 120}, volume=0.19)
+        owner = get_user_model().objects.create_user("owner", password="x")
+        p3 = CorpProject.objects.create(project_id="p3", corporation_id=CORP, name="kernite", state="Active", reward_per_contribution=165.0,
+                                        reward_initial=30e6, reward_remaining=30e6 - 2 * 14_406 * 165.0,
+                                        details={"configuration": [{"deliver_item": {"items": [{"type_id": 62536}]}}]})
+        ProjectContribution.objects.create(project=p3, taken_at=at(10), character_id=4242, character_name="Miner", contributed=14_406)
+        sale = directsales.register("Compressed Kernite	14,406", owner)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_601, division=1, date=at(11), ref_type="player_donation", amount=3e6,
+                                        reason=f"{sale.code} ore sold", first_party_id=111, second_party_id=CORP)
+        wo = directsales.write_off(owner, "stock take")
+        wo.matched_at = at(11.5)
+        wo.save(update_fields=["matched_at"])
+        ProjectContribution.objects.create(project=p3, taken_at=at(12), character_id=4242, character_name="Miner", contributed=14_406)
+        led = projectbooks.ledger(CORP)
+        self.assertEqual([lot[3] for lot in led["lots"][62536]], ["ore"])  # the second delivery, held as ore
+        self.assertIn(36, led["lots"])  # the first, as minerals
+        d = books.compute()
+        group = next(g for g in d["project_bb"]["months"][0]["groups"] if g["key"] == "direct")
+        self.assertAlmostEqual(group["cost"], 14_406 * 165.0, places=0)  # the minerals of the first delivery, not nothing
+        self.assertAlmostEqual(dict(d["held"])["Compressed Kernite"], 14_406 * 165.0, places=0)  # the second delivery untouched
+        move = next(m for m in d["moves"] if m[0].startswith("Goods written off"))
+        self.assertIn("0.0 M of project goods left the books", move[2])  # nothing was left for the stock take
+
     def test_goods_held_follow_the_hangar_once_read(self):
         """Owner's rule (2026-10-23): with a hangar read, the goods held are what is in the projects hangar, at the projects'
         prices; what the ledger expects but the hangar lacks shows as the hangar count against the ledger; the sheet reconciles."""
@@ -563,7 +594,6 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(at["sold"], revenue, places=2)
         self.assertAlmostEqual(at["net"], revenue - 30e6 - 1.7e6, places=2)
         self.assertAlmostEqual(at["margin"], (revenue - 30e6) / 30e6, places=6)
-        self.assertEqual(at["first"], at(0.5) if False else at["first"])  # a date is present
         self.assertIsNotNone(at["first"])
         bb = books.compute()["buyback"]
         self.assertAlmostEqual(bb["sold_value"], 10 * 211_100)
