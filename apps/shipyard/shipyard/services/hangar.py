@@ -3,7 +3,7 @@
 The goods held from project buybacks are what is physically in the corporation's projects hangar: if it is not
 in that hangar it is not in stock. The hourly task reads the corporation's assets (ESI, scope
 `esi-assets.read_corporation_assets.v1`, a Director's token: the CEO's), keeps the corp hangar divisions
-(CorpSAG1 to CorpSAG7) and the deliveries hangar, and stores one row per item type, office and division.
+(CorpSAG1 to CorpSAG7), the deliveries hangar and the Projects hangar (CorporationGoalDeliveries), and stores one row per item type, office and division.
 The balance sheet (services/books.py) then counts the goods from these rows, at what the projects paid for
 them (the ledger's lots, oldest first); the stock batches (cap boosters, Heavy Water) are not in this hangar
 and stay ledger-style. The projects hangar is, by default, the office the corporation projects deliver to (EVE
@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 DIVISIONS = {f"CorpSAG{i}": f"hangar division {i}" for i in range(1, 8)}
 DIVISIONS["CorpDeliveries"] = "deliveries"
+PROJECTS_FLAG = "CorporationGoalDeliveries"  # the game's "Projects" hangar under Corporation hangars (0.31.1), where project deliveries land
+DIVISIONS[PROJECTS_FLAG] = "projects hangar"
 
 
 def corp_id() -> int:
@@ -94,10 +96,11 @@ def project_offices(cid=None) -> set:
 
 
 def scope(cid=None) -> tuple:
-    """(location ids, flags) that count as the projects hangar: the settings when set, else the projects' delivery
-    offices and their hangar divisions (not the deliveries hangar)."""
+    """(location ids, flags) that count as the projects hangar: the settings when set, else the game's own Projects
+    hangar (flag CorporationGoalDeliveries) at the offices the projects deliver to. 0.31.1: until then every hangar
+    division at the office counted, which took the DIRECTOR-REPROCESS tab for the projects hangar."""
     locs = {int(x) for x in app_settings.SHIPYARD_BOOKS_HANGAR_LOCATIONS or []} or project_offices(cid)
-    flags = set(app_settings.SHIPYARD_BOOKS_HANGAR_FLAGS or []) or {f for f in DIVISIONS if f != "CorpDeliveries"}
+    flags = set(app_settings.SHIPYARD_BOOKS_HANGAR_FLAGS or []) or {PROJECTS_FLAG}
     return locs, flags
 
 

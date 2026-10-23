@@ -29,18 +29,19 @@ class HangarTests(TestCase):
             {"type_id": 62536, "quantity": 14406, "location_id": RAITARU, "location_flag": "CorpSAG2"},
             {"type_id": 48112, "quantity": 600, "location_id": RAITARU, "location_flag": "CorpDeliveries"},
             {"type_id": 35, "quantity": 5, "location_id": 60003760, "location_flag": "CorpSAG1"},
+            {"type_id": 62536, "quantity": 100, "location_id": RAITARU, "location_flag": "CorporationGoalDeliveries"},  # the game's Projects hangar
         ]
         with mock.patch.object(hangar, "token", return_value=tok), mock.patch.object(hangar.esi, "_authed_pages", return_value=rows), \
              mock.patch.object(hangar.projects, "corp_id", return_value=CID), mock.patch("shipyard.services.projectbooks._names", return_value={62536: "Compressed Kernite"}):
             r = hangar.refresh()
-        self.assertEqual((r["rows"], r["types"], r["character"]), (3, 3, "Catherine Frey"))
-        self.assertEqual(HangarItem.objects.filter(corporation_id=CID).count(), 3)
+        self.assertEqual((r["rows"], r["types"], r["character"]), (4, 3, "Catherine Frey"))
+        self.assertEqual(HangarItem.objects.filter(corporation_id=CID).count(), 4)
         for name in ("SHIPYARD_BOOKS_HANGAR_LOCATIONS", "SHIPYARD_BOOKS_HANGAR_FLAGS"):  # the live settings pin the count to the real hangar
             patch = mock.patch.object(hangar.app_settings, name, [])
             patch.start()
             self.addCleanup(patch.stop)
         units, names, read_at = hangar.stock(CID)
-        self.assertEqual(units, {62536: 14406, 35: 5})  # no pin and no project office known: every hangar division, never the deliveries hangar (0.28.0)
+        self.assertEqual(units, {62536: 100})  # no pin: the game's Projects hangar only (0.31.1)
         self.assertEqual(names[62536], "Compressed Kernite")
         self.assertIsNotNone(read_at)
         with override_settings(SHIPYARD_BOOKS_HANGAR_LOCATIONS=[RAITARU], SHIPYARD_BOOKS_HANGAR_FLAGS=["CorpSAG2"]):
@@ -48,7 +49,7 @@ class HangarTests(TestCase):
                 units, _, _ = hangar.stock(CID)
                 self.assertEqual(units, {62536: 14406})
                 divs = hangar.divisions(CID)
-        self.assertEqual([(d["flag"], d["wanted"]) for d in divs], [("CorpSAG1", False), ("CorpDeliveries", False), ("CorpSAG2", True)])
+        self.assertEqual([(d["flag"], d["wanted"]) for d in divs], [("CorpSAG1", False), ("CorpDeliveries", False), ("CorpSAG2", True), ("CorporationGoalDeliveries", False)])
         # a second read replaces everything
         with mock.patch.object(hangar, "token", return_value=tok), mock.patch.object(hangar.esi, "_authed_pages", return_value=rows[:1]), \
              mock.patch.object(hangar.projects, "corp_id", return_value=CID), mock.patch("shipyard.services.projectbooks._names", return_value={}):
@@ -61,14 +62,14 @@ class HangarTests(TestCase):
         from ..models import CorpProject, HangarItem
         CorpProject.objects.create(project_id="px", corporation_id=CID, name="veldspar", state="Active",
                                    details={"configuration": {"deliver_item": {"items": [{"type_id": 62516}], "office_id": 1055911110036}}})
-        for loc, flag, qty in ((1055911110036, "CorpSAG3", 500), (1055911110036, "CorpDeliveries", 7), (1055529310484, "CorpSAG2", 9000)):
+        for loc, flag, qty in ((1055911110036, "CorporationGoalDeliveries", 500), (1055911110036, "CorpSAG3", 300), (1055911110036, "CorpDeliveries", 7), (1055529310484, "CorpSAG2", 9000)):
             HangarItem.objects.create(corporation_id=CID, type_id=62516, name="Compressed Veldspar", quantity=qty, location_id=loc, location_flag=flag, read_at=dt.datetime(2026, 10, 23, 9, tzinfo=dt.timezone.utc))
         with mock.patch.object(hangar.app_settings, "SHIPYARD_BOOKS_HANGAR_LOCATIONS", []), mock.patch.object(hangar.app_settings, "SHIPYARD_BOOKS_HANGAR_FLAGS", []):
             self.assertEqual(hangar.project_offices(CID), {1055911110036})
             units, names, _ = hangar.stock(CID)
             self.assertEqual(units, {62516: 500})
             self.assertEqual([(d["location_id"], d["flag"], d["wanted"]) for d in hangar.divisions(CID)],
-                             [(1055529310484, "CorpSAG2", False), (1055911110036, "CorpDeliveries", False), (1055911110036, "CorpSAG3", True)])
+                             [(1055529310484, "CorpSAG2", False), (1055911110036, "CorpDeliveries", False), (1055911110036, "CorpSAG3", False), (1055911110036, "CorporationGoalDeliveries", True)])
 
     def test_refresh_without_a_token_fails_cleanly(self):
         with mock.patch.object(hangar, "token", return_value=None):
