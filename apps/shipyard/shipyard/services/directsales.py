@@ -226,13 +226,18 @@ def quote(text: str, user) -> dict:
             cost, taken = _take(lots[tid], float(qty), now)
         line = unit * qty
         total += line
-        cost_total += cost
         s = float(row.sell_price) if ore is not None and row and row.sell_price else sells.get(tid)
+        short = taken + 1e-6 < qty if (o is None and ore is None) or (ore is not None and tid in lots) else False
+        # the project buy price per unit; units beyond the goods held are priced at it too, so the profit
+        # covers every unit sold (owner, 2026-10-23); `cost` stays what the books take out of the lots
+        cost_unit = cost / taken if taken else None
+        cost_all = cost + (qty - taken) * cost_unit if short and cost_unit else cost
+        cost_total += cost_all
         lines.append({"type_id": tid, "name": full, "qty": qty, "unit": round(unit, 2), "basis": basis, "line": round(line, 2),
-                      "cost": round(cost, 2), "held": round(taken, 3), "profit": round(line - cost, 2), "is_ore": ore is not None,
-                      "short": taken + 1e-6 < qty if (o is None and ore is None) or (ore is not None and tid in lots) else False,
-                      "buy": round(b, 2) if b else None, "sell": round(s, 2) if s else None, "repro": round(repro, 2) if repro else None,
-                      "flags": flags(unit, b, s, repro), "pct": _pct(line, cost)})
+                      "cost": round(cost_all, 2), "cost_lots": round(cost, 2), "held": round(taken, 3), "profit": round(line - cost_all, 2), "is_ore": ore is not None,
+                      "short": short, "buy": round(b, 2) if b else None, "sell": round(s, 2) if s else None, "repro": round(repro, 2) if repro else None,
+                      "flags": flags(unit, b, s, repro), "pct": _pct(line, cost_all),
+                      "cost_unit": round(cost_unit, 2) if cost_unit else None})
     vals = valuations(lines)
     return {"lines": lines, "problems": problems, "total": round(total, 2), "cost": round(cost_total, 2), "profit": round(total - cost_total, 2),
             "pct": _pct(total, cost_total), "valuations": vals, "flagged": sum(1 for ln in lines if ln["flags"]),
@@ -267,7 +272,7 @@ def register(text: str, user) -> BookDirectSale:
         raise ValueError("; ".join(q["problems"]) or "nothing to sell")
     items = ", ".join(f"{ln['qty']:,} {ln['name']}" for ln in q["lines"])
     return BookDirectSale.objects.create(
-        corporation_id=projects.corp_id(), code=new_code(), items=items[:500], lines=q["lines"], quote=q["total"], cost=q["cost"],
+        corporation_id=projects.corp_id(), code=new_code(), items=items[:500], lines=q["lines"], quote=q["total"], cost=sum(ln["cost_lots"] for ln in q["lines"]),
         created_by=getattr(user, "username", "")[:150], note=("; ".join(q["problems"]))[:200],
     )
 

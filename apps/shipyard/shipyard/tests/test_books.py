@@ -251,7 +251,16 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(q["profit"], 2e6)
         # the six valuations with their margin against the project cost, and the sanity flags (0.26.0)
         ln = q["lines"][0]
-        self.assertEqual((ln["buy"], ln["sell"], ln["repro"], ln["flags"]), (15.0, 16.0, None, []))
+        self.assertEqual((ln["buy"], ln["sell"], ln["repro"], ln["flags"], ln["cost_unit"], ln["cost_lots"]), (15.0, 16.0, None, [], 10.0, 4e6))
+        # units beyond the goods held are priced at the project buy price, so the profit covers every unit
+        q2 = directsales.quote("Pyerite	50,000,000", owner)
+        l2 = q2["lines"][0]
+        self.assertTrue(l2["short"])
+        self.assertLess(l2["held"], 50_000_000)
+        self.assertAlmostEqual(l2["cost_unit"], l2["cost_lots"] / l2["held"], places=2)
+        self.assertAlmostEqual(l2["cost"], l2["cost_lots"] + (50_000_000 - l2["held"]) * l2["cost_unit"], delta=50_000_000 * 0.005)
+        self.assertAlmostEqual(l2["profit"], l2["line"] - l2["cost"], places=2)
+        self.assertAlmostEqual(q2["cost"], l2["cost"], places=2)
         self.assertAlmostEqual(ln["pct"], 0.5)
         self.assertAlmostEqual(q["pct"], 0.5)
         self.assertEqual([round(v["total"]) for v in q["valuations"]], [6_000_000, 4_000_000, 6_000_000, 6_400_000, 6_000_000, 6_000_000])
