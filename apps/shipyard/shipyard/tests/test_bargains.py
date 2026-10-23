@@ -78,6 +78,12 @@ class BargainsTests(TestCase):
         self.assertEqual([s.type_id for s in bargains.rows(flag="dip")], [40, 34])  # the deeper dip first
         self.assertEqual([s.type_id for s in bargains.rows(flag="any", min_isk=1e9)], [34])
         self.assertEqual(bargains.rows(flag="all", q="zzz"), [])
+        # range filters (0.30.0): typed in the columns' units, applied in the database
+        self.assertEqual(bargains.parse_ranges({"vs90_max": "-15", "isk_min": "1,000", "vol_min": "", "days_min": "x"}), {"vs90": (None, -0.15), "isk30": (1e9, None)})
+        self.assertEqual([s.type_id for s in bargains.rows(flag="all", ranges={"vslow": (0.3, None)})], [34])  # Tritanium at 4 is 33 % above its low of 3
+        self.assertEqual([s.type_id for s in bargains.rows(flag="all", ranges={"vol30": (1e6, None)})], [34])
+        self.assertEqual([s.type_id for s in bargains.rows(flag="all", ranges={"sell_min": (None, 500.0), "vs90": (-0.3, -0.1)})], [34])
+        self.assertEqual(bargains.rows(flag="all", ranges={"pos52": (0.9, None)}), [])
 
     def test_sync_history_fetches_new_and_completed_days_only(self):
         MarketHistoryDay.objects.all().delete()
@@ -137,3 +143,6 @@ class BargainsTests(TestCase):
         self.assertIn("under 90 d", html)
         r = client.get(reverse("shipyard:bargains") + "?flag=low&min=0")
         self.assertNotIn("Tritanium", r.content.decode())
+        r = client.get(reverse("shipyard:bargains") + "?flag=all&min=0&vol_min=2000000000")
+        self.assertNotIn("Tritanium", r.content.decode())
+        self.assertIn("Ranges (1)", r.content.decode())

@@ -605,14 +605,19 @@ def bargains_view(request):
     top = request.GET.get("group", "")[:100]
     q = request.GET.get("q", "")[:60]
     limit = 600
-    rows = bargains.rows(min_isk=min_m * 1e6, top=top, flag=flag, q=q, limit=limit)
+    ranges = bargains.parse_ranges(request.GET)
+    rows = bargains.rows(min_isk=min_m * 1e6, top=top, flag=flag, q=q, limit=limit, ranges=ranges)
+    range_fields = [{"key": k, "label": label, "unit": unit, "min": request.GET.get(f"{k}_min", ""), "max": request.GET.get(f"{k}_max", "")}
+                    for k, _, _, label, unit in bargains.RANGES]
     for r in rows:
-        r.vslow = (r.sell_min / r.low52 - 1) if r.low52 else None
+        if r.vslow is None:
+            r.vslow = (r.sell_min / r.low52 - 1) if r.low52 else None
         r.vslow_pct = round(r.vslow * 100) if r.vslow is not None else None
         r.vs90_pct = round(r.vs90 * 100) if r.vs90 is not None else None
         r.pos_pct = round((r.pos52 or 0) * 100)
     return render(request, "shipyard/bargains.html", _context(
         request, rows=rows, groups=bargains.top_groups(), min_m=int(min_m) if min_m == int(min_m) else min_m, top=top, flag=flag, q=q, limit=limit,
+        range_fields=range_fields, ranges_active=len(ranges),
         fresh=bargains.freshness(), low_pct=app_settings.SHIPYARD_BARGAIN_LOW_PCT, dip_pct=app_settings.SHIPYARD_BARGAIN_DIP_PCT,
         can_manage=request.user.has_perm("shipyard.manage_shipyard"),
     ))

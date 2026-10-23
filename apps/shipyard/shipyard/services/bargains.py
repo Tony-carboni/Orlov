@@ -319,18 +319,53 @@ def apply_flags() -> int:
         sell = s.sell_min
         span = (s.high52 or 0) - (s.low52 or 0)
         s.pos52 = ((sell - s.low52) / span) if span > 0 else 0.0
+        s.vslow = (sell / s.low52 - 1) if s.low52 else None
         s.vs90 = (sell / s.avg90 - 1) if s.avg90 else None
         s.vs365 = (sell / s.avg365 - 1) if s.avg365 else None
         s.flag_low = bool(s.low52 and sell <= s.low52 * (1 + low_pct))
         s.flag_dip = bool(s.vs90 is not None and s.vs90 <= -dip_pct + 1e-9)
-    MarketTypeStat.objects.bulk_update(rows, ["pos52", "vs90", "vs365", "flag_low", "flag_dip"], batch_size=1000)
+    MarketTypeStat.objects.bulk_update(rows, ["pos52", "vslow", "vs90", "vs365", "flag_low", "flag_dip"], batch_size=1000)
     return len(rows)
 
 
 # --- the page -------------------------------------------------------------------------------------
 
-def rows(min_isk: float = 0.0, top: str = "", flag: str = "any", q: str = "", limit: int = 600) -> list:
+# the page's range filters (owner, 2026-10-23): key in the form, model field, what one unit typed means in the field
+RANGES = [
+    ("sell", "sell_min", 1.0, "Jita sell", "ISK"),
+    ("buy", "buy_max", 1.0, "Jita buy", "ISK"),
+    ("vslow", "vslow", 0.01, "vs low", "%"),
+    ("vs90", "vs90", 0.01, "vs 90 d", "%"),
+    ("pos", "pos52", 0.01, "range position", "%"),
+    ("isk", "isk30", 1e6, "ISK/day", "M"),
+    ("vol", "vol30", 1.0, "units/day", ""),
+    ("days", "days365", 1.0, "days traded", "of 365"),
+]
+
+
+def parse_ranges(params) -> dict:
+    """{field: (lo, hi)} in the fields' own units out of the form's <key>_min / <key>_max, blanks and junk ignored."""
+    out = {}
+    for key, field, scale, _, _ in RANGES:
+        lo_hi = []
+        for side in ("min", "max"):
+            raw = (params.get(f"{key}_{side}") or "").strip().replace(",", "")
+            try:
+                lo_hi.append(float(raw) * scale if raw else None)
+            except ValueError:
+                lo_hi.append(None)
+        if lo_hi[0] is not None or lo_hi[1] is not None:
+            out[field] = (lo_hi[0], lo_hi[1])
+    return out
+
+
+def rows(min_isk: float = 0.0, top: str = "", flag: str = "any", q: str = "", limit: int = 600, ranges: dict | None = None) -> list:
     qs = MarketTypeStat.objects.exclude(sell_min=None).exclude(low52=None).filter(isk30__gte=min_isk)
+    for field, (lo, hi) in (ranges or {}).items():
+        if lo is not None:
+            qs = qs.filter(**{f"{field}__gte": lo})
+        if hi is not None:
+            qs = qs.filter(**{f"{field}__lte": hi})
     if top:
         qs = qs.filter(top_group=top)
     if q:

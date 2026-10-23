@@ -55,7 +55,27 @@
             <input type="radio" class="btn-check" name="flag" id="flag-all" value="all" autocomplete="off" {% if flag == "all" %}checked{% endif %}><label class="btn btn-outline-secondary" for="flag-all" title="Everything above the ISK/day minimum, flagged or not">All</label>
         </div>
     </div>
+    <div class="col-auto">
+        <button type="button" class="btn btn-sm {% if ranges_active %}btn-warning{% else %}btn-outline-secondary{% endif %}" data-bs-toggle="collapse" data-bs-target="#bargains-ranges" aria-expanded="{% if ranges_active %}true{% else %}false{% endif %}" title="Minimum and maximum per column"><i class="fas fa-sliders fa-fw"></i> Ranges{% if ranges_active %} ({{ ranges_active }}){% endif %}</button>
+    </div>
     <div class="col-auto"><button class="btn btn-sm btn-primary"><i class="fas fa-filter fa-fw"></i> Apply</button></div>
+    <div class="col-12 collapse {% if ranges_active %}show{% endif %}" id="bargains-ranges">
+        <div class="shipyard-infobar py-2">
+            <div class="small shipyard-k mb-1">Ranges, in the column's own units (percentages as plain numbers: −20 for 20 % under; ISK/day in millions). Leave a side blank for no limit. Apply with the button.</div>
+            <div class="row g-2">
+            {% for f in range_fields %}
+                <div class="col-6 col-md-3 col-xl-auto">
+                    <label class="small d-block">{{ f.label }}{% if f.unit %} <span class="shipyard-k">({{ f.unit }})</span>{% endif %}</label>
+                    <div class="input-group input-group-sm" style="max-width: 15rem">
+                        <input type="text" inputmode="decimal" name="{{ f.key }}_min" value="{{ f.min }}" class="form-control" placeholder="min" autocomplete="off">
+                        <span class="input-group-text">–</span>
+                        <input type="text" inputmode="decimal" name="{{ f.key }}_max" value="{{ f.max }}" class="form-control" placeholder="max" autocomplete="off">
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
     <div class="col-auto shipyard-k small">{{ rows|length }} item{{ rows|length|pluralize }}{% if rows|length == limit %} (the first {{ limit }}; narrow the filters for the rest){% endif %}</div>
     <div class="col-auto" id="bargains-columns" title="Choose which columns to show; remembered in this browser"></div>
 </form>

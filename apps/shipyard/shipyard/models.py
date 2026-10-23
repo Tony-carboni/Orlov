@@ -973,6 +973,7 @@ class MarketTypeStat(models.Model):
     sell_orders = models.PositiveIntegerField(default=0)
     prices_at = models.DateTimeField(null=True, blank=True)
     pos52 = models.FloatField(null=True, blank=True)
+    vslow = models.FloatField(null=True, blank=True, help_text="Today's sell above the 52-week low, as a fraction (0.30.0)")
     vs90 = models.FloatField(null=True, blank=True)
     vs365 = models.FloatField(null=True, blank=True)
     flag_low = models.BooleanField(default=False, db_index=True)
