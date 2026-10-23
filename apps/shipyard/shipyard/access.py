@@ -14,7 +14,7 @@ from django.core.exceptions import PermissionDenied
 FULL = "shipyard.basic_access"
 LIMITED = {
     "shipyard.dashboard_access": {"index", "ship_detail", "api_simulate", "settings", "use_character", "set_facility", "set_bpc_price", "go"},
-    "shipyard.reprocessing_access": {"reprocessing", "reprocessing_skills", "bargains", "use_character", "go"},
+    "shipyard.reprocessing_access": {"reprocessing", "reprocessing_skills", "bargains", "bargains_pref", "use_character", "go"},
     "shipyard.books_access": {"finance", "finance_pdf", "finance_refresh", "hangar_refresh", "lplog", "go"},
 }
 # the tab a limited member lands on, in order of preference

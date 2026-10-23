@@ -124,6 +124,62 @@ class BargainsTests(TestCase):
 
     @override_settings(STORAGES={"default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
                                  "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}})
+    def test_prefs_ignore_and_flag(self):
+        """0.31.0: ignore a category at any level of the path, ignore or flag an item; the rows follow, the ignored can be shown again."""
+        from ..models import BargainPrefs
+        bargains.compute_stats()
+        MarketTypeStat.objects.filter(type_id=34).update(name="Tritanium", sell_min=4.0, group_path="Manufacture & Research › Materials › Minerals", top_group="Manufacture & Research")
+        MarketTypeStat.objects.filter(type_id=40).update(name="Megacyte", sell_min=800.0, group_path="Manufacture & Research › Materials › Minerals › Rare", top_group="Manufacture & Research")
+        bargains.apply_flags()
+        user = get_user_model().objects.create_user("picky", password="x")
+        p = bargains.set_pref(user, "ignore_path", "Manufacture & Research › Materials › Minerals › Rare")
+        self.assertEqual([s.type_id for s in bargains.rows(flag="all", pref=p)], [34])
+        p = bargains.set_pref(user, "ignore_path", "Manufacture & Research › Materials")
+        self.assertEqual(bargains.rows(flag="all", pref=p), [])
+        self.assertEqual(len(bargains.rows(flag="all", pref=p, show_ignored=True)), 2)
+        p = bargains.set_pref(user, "unignore_path", "Manufacture & Research › Materials")
+        p = bargains.set_pref(user, "unignore_path", "Manufacture & Research › Materials › Minerals › Rare")
+        self.assertEqual(p.ignored_paths, [])
+        p = bargains.set_pref(user, "ignore_type", "34")
+        self.assertEqual([s.type_id for s in bargains.rows(flag="all", pref=p)], [40])
+        p = bargains.set_pref(user, "star", "40")
+        p = bargains.set_pref(user, "star", "40")  # twice is once
+        self.assertEqual((p.ignored_types, p.starred_types), ([34], [40]))
+        self.assertEqual([s.type_id for s in bargains.rows(flag="starred", pref=p)], [40])
+        p = bargains.set_pref(user, "unstar", "40")
+        p = bargains.set_pref(user, "unignore_type", "34")
+        self.assertEqual((p.ignored_types, p.starred_types), ([], []))
+        self.assertEqual([s.type_id for s in bargains.rows(flag="all", path="Manufacture & Research › Materials › Minerals")], [34, 40])
+        self.assertEqual([s.type_id for s in bargains.rows(flag="all", path="Manufacture & Research › Materials › Minerals › Rare")], [40])
+        self.assertEqual(BargainPrefs.objects.count(), 1)
+
+    @override_settings(STORAGES={"default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+                                 "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}})
+    def test_pref_endpoint(self):
+        from allianceauth.tests.auth_utils import AuthUtils
+        bargains.compute_stats()
+        MarketTypeStat.objects.filter(type_id=34).update(name="Tritanium", sell_min=4.0, group_path="Minerals", top_group="Manufacture & Research")
+        bargains.apply_flags()
+        user = AuthUtils.create_user("clicker")
+        AuthUtils.add_main_character_2(user, "Clicker", 1002, corp_id=98843356, corp_name="OARMI", alliance_id=None, alliance_name="")
+        user = get_user_model().objects.get(pk=user.pk)
+        user.user_permissions.add(Permission.objects.get(codename="basic_access", content_type__app_label="shipyard"))
+        user = get_user_model().objects.get(pk=user.pk)
+        client = Client()
+        client.force_login(user)
+        r = client.post(reverse("shipyard:bargains_pref"), {"action": "ignore_path", "value": "Minerals"})
+        self.assertEqual((r.status_code, r.json()["ignored_paths"]), (200, ["Minerals"]))
+        html = client.get(reverse("shipyard:bargains") + "?flag=all&min=0").content.decode()
+        self.assertNotIn("Tritanium</span>", html)
+        self.assertIn("Ignoring: Minerals", html)
+        html = client.get(reverse("shipyard:bargains") + "?flag=all&min=0&ignored=1").content.decode()
+        self.assertIn("Tritanium</span>", html)
+        r = client.post(reverse("shipyard:bargains_pref"), {"action": "star", "value": "34"})
+        self.assertEqual(r.json()["starred_types"], [34])
+        html = client.get(reverse("shipyard:bargains") + "?flag=starred&min=0&ignored=1").content.decode()
+        self.assertIn("Flagged by you", html)
+        self.assertEqual(client.post(reverse("shipyard:bargains_pref"), {"action": "nope", "value": "1"}).status_code, 400)
+
     def test_page(self):
         bargains.compute_stats()
         MarketTypeStat.objects.filter(type_id=34).update(name="Tritanium", sell_min=4.0, buy_max=3.9, group_path="Minerals", top_group="Manufacture & Research")

@@ -53,8 +53,11 @@
             <input type="radio" class="btn-check" name="flag" id="flag-dip" value="dip" autocomplete="off" {% if flag == "dip" %}checked{% endif %}><label class="btn btn-outline-info" for="flag-dip">Under 90 d</label>
             <input type="radio" class="btn-check" name="flag" id="flag-both" value="both" autocomplete="off" {% if flag == "both" %}checked{% endif %}><label class="btn btn-outline-warning" for="flag-both">Both</label>
             <input type="radio" class="btn-check" name="flag" id="flag-all" value="all" autocomplete="off" {% if flag == "all" %}checked{% endif %}><label class="btn btn-outline-secondary" for="flag-all" title="Everything above the ISK/day minimum, flagged or not">All</label>
+            <input type="radio" class="btn-check" name="flag" id="flag-starred" value="starred" autocomplete="off" {% if flag == "starred" %}checked{% endif %}><label class="btn btn-outline-warning" for="flag-starred" title="The items you flagged with a right-click"><i class="fas fa-star fa-fw"></i> Mine</label>
         </div>
     </div>
+    {% if path %}<input type="hidden" name="path" value="{{ path }}">{% endif %}
+    {% if show_ignored %}<input type="hidden" name="ignored" value="1">{% endif %}
     <div class="col-auto">
         <button type="button" class="btn btn-sm {% if ranges_active %}btn-warning{% else %}btn-outline-secondary{% endif %}" data-bs-toggle="collapse" data-bs-target="#bargains-ranges" aria-expanded="{% if ranges_active %}true{% else %}false{% endif %}" title="Minimum and maximum per column"><i class="fas fa-sliders fa-fw"></i> Ranges{% if ranges_active %} ({{ ranges_active }}){% endif %}</button>
     </div>
@@ -76,7 +79,15 @@
             </div>
         </div>
     </div>
-    <div class="col-auto shipyard-k small">{{ rows|length }} item{{ rows|length|pluralize }}{% if rows|length == limit %} (the first {{ limit }}; narrow the filters for the rest){% endif %}</div>
+    <div class="col-auto shipyard-k small">{{ rows|length }} item{{ rows|length|pluralize }}{% if rows|length == limit %} (the first {{ limit }}; narrow the filters for the rest){% endif %} · <span title="Right-click a row to filter or ignore its category, flag or ignore the item"><i class="fas fa-computer-mouse fa-fw"></i> right-click a row</span></div>
+    {% if path or pref.ignored_paths or pref.ignored_types %}
+    <div class="col-12 d-flex flex-wrap align-items-center gap-1 small" id="bargains-chips">
+        {% if path %}<span class="badge bg-primary">Category: {{ path }} <a href="#" class="text-white text-decoration-none ms-1" data-chip="path" title="Show every category">×</a></span>{% endif %}
+        {% for p in pref.ignored_paths %}<span class="badge bg-secondary">Ignoring: {{ p }} <a href="#" class="text-white text-decoration-none ms-1" data-pref="unignore_path" data-value="{{ p }}" title="Show this category again">×</a></span>{% endfor %}
+        {% for tid, name in ignored_items %}<span class="badge bg-secondary">Ignoring: {{ name|default:tid }} <a href="#" class="text-white text-decoration-none ms-1" data-pref="unignore_type" data-value="{{ tid }}" title="Show this item again">×</a></span>{% endfor %}
+        {% if pref.ignored_paths or pref.ignored_types %}<a href="#" class="ms-1" data-chip="ignored">{% if show_ignored %}hide the ignored again{% else %}show the ignored too{% endif %}</a>{% endif %}
+    </div>
+    {% endif %}
     <div class="col-auto" id="bargains-columns" title="Choose which columns to show; remembered in this browser"></div>
 </form>
 
@@ -102,8 +113,8 @@
     </thead>
     <tbody>
     {% for r in rows %}
-        <tr data-type="{{ r.type_id }}">
-            <td><span class="fw-semibold">{{ r.name|default:r.type_id }}</span></td>
+        <tr data-type="{{ r.type_id }}" data-name="{{ r.name|default:r.type_id }}" data-path="{{ r.group_path }}" data-starred="{% if r.starred %}1{% endif %}" data-ignored="{% if r.ignored %}1{% endif %}"{% if r.ignored %} class="opacity-50"{% endif %}>
+            <td>{% if r.starred %}<i class="fas fa-star text-warning fa-fw" title="Flagged by you"></i> {% endif %}<span class="fw-semibold">{{ r.name|default:r.type_id }}</span></td>
             <td class="small shipyard-k" title="{{ r.group_path }}">{{ r.group_path|default:"–"|truncatechars:48 }}</td>
             <td class="text-end" data-order="{{ r.sell_min }}">{{ r.sell_min|isk_auto }}</td>
             <td class="text-end shipyard-k" data-order="{{ r.buy_max|default:0 }}">{% if r.buy_max %}{{ r.buy_max|isk_auto }}{% else %}–{% endif %}</td>
@@ -121,6 +132,8 @@
     {% endfor %}
     </tbody>
 </table>
+<form id="bargains-pref-form" method="post" action="{% url 'shipyard:bargains_pref' %}" class="d-none">{% csrf_token %}</form>
+<div id="bargains-menu" class="dropdown-menu shadow" style="position: absolute; display: none; z-index: 1060"></div>
 {% if not rows %}<p class="shipyard-k small mt-2">{% if fresh.types %}Nothing matches these filters.{% else %}No history yet: the archive import has not finished.{% endif %}</p>{% endif %}
 </div>
 <style>

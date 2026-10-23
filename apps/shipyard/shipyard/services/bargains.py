@@ -32,7 +32,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .. import app_settings, constants
-from ..models import MarketHistoryDay, MarketTypeStat
+from ..models import BargainPrefs, MarketHistoryDay, MarketTypeStat
 from . import fuzzwork
 from .http import get_json, session
 
@@ -359,8 +359,53 @@ def parse_ranges(params) -> dict:
     return out
 
 
-def rows(min_isk: float = 0.0, top: str = "", flag: str = "any", q: str = "", limit: int = 600, ranges: dict | None = None) -> list:
+def prefs(user) -> BargainPrefs:
+    p, _ = BargainPrefs.objects.get_or_create(user=user)
+    return p
+
+
+PREF_ACTIONS = ("ignore_path", "unignore_path", "ignore_type", "unignore_type", "star", "unstar")
+
+
+def set_pref(user, action: str, value: str) -> BargainPrefs:
+    """One right-click choice (0.31.0). A path is any level of the market-group path, 'Ships › Capital Ships' hides every capital."""
+    p = prefs(user)
+    if action in ("ignore_path", "unignore_path"):
+        v = value.strip()[:300]
+        paths = [x for x in p.ignored_paths if x != v]
+        if action == "ignore_path" and v:
+            paths.append(v)
+        p.ignored_paths = paths
+    else:
+        tid = int(value)
+        for attr, on in (("ignored_types", action == "ignore_type"), ("starred_types", action == "star")):
+            if action.endswith("_type") and attr == "starred_types" or action in ("star", "unstar") and attr == "ignored_types":
+                continue
+            ids = [x for x in getattr(p, attr) if x != tid]
+            if on:
+                ids.append(tid)
+            setattr(p, attr, ids)
+    p.save()
+    return p
+
+
+def _path_q(path: str):
+    from django.db.models import Q
+    return Q(group_path=path) | Q(group_path__startswith=path + " › ")
+
+
+def rows(min_isk: float = 0.0, top: str = "", flag: str = "any", q: str = "", limit: int = 600, ranges: dict | None = None,
+         path: str = "", pref: BargainPrefs | None = None, show_ignored: bool = False) -> list:
     qs = MarketTypeStat.objects.exclude(sell_min=None).exclude(low52=None).filter(isk30__gte=min_isk)
+    if path:
+        qs = qs.filter(_path_q(path))
+    if pref is not None and not show_ignored:
+        for p in pref.ignored_paths:
+            qs = qs.exclude(_path_q(p))
+        if pref.ignored_types:
+            qs = qs.exclude(type_id__in=pref.ignored_types)
+    if flag == "starred":
+        qs = qs.filter(type_id__in=(pref.starred_types if pref is not None else []))
     for field, (lo, hi) in (ranges or {}).items():
         if lo is not None:
             qs = qs.filter(**{f"{field}__gte": lo})

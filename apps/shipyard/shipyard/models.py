@@ -986,3 +986,21 @@ class MarketTypeStat(models.Model):
 
     def __str__(self):
         return f"{self.name or self.type_id}: low {self.low52} high {self.high52}"
+
+
+class BargainPrefs(models.Model):
+    """A member's own view of the Bargains tab (0.31.0): categories and items ignored, items flagged. Kept on the server
+    so it follows the member to every device."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="shipyard_bargain_prefs")
+    ignored_paths = models.JSONField(default=list, blank=True, help_text="Market-group paths (any level) whose items are hidden")
+    ignored_types = models.JSONField(default=list, blank=True, help_text="Type ids hidden")
+    starred_types = models.JSONField(default=list, blank=True, help_text="Type ids flagged by the member")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "bargain preferences"
+        verbose_name_plural = "bargain preferences"
+
+    def __str__(self):
+        return f"{self.user}: {len(self.ignored_paths)} paths, {len(self.ignored_types)} items ignored, {len(self.starred_types)} flagged"

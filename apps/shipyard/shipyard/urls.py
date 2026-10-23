@@ -15,6 +15,7 @@ urlpatterns = [
     path("scrapmetal/", views.scrapmetal_view, name="scrapmetal"),
     path("bargains/", views.bargains_view, name="bargains"),
     path("bargains/refresh/", views.bargains_refresh, name="bargains_refresh"),
+    path("bargains/pref/", views.bargains_pref, name="bargains_pref"),
     path("lp/", views.lp_view, name="lp"),
     path("lp/refresh/", views.lp_refresh, name="lp_refresh"),
     path("settings/", views.settings_view, name="settings"),

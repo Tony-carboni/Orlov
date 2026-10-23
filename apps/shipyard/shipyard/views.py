@@ -600,13 +600,22 @@ def bargains_view(request):
     except (TypeError, ValueError):
         min_m = app_settings.SHIPYARD_BARGAIN_MIN_ISK_DAY / 1e6
     flag = request.GET.get("flag", "any")
-    if flag not in ("any", "low", "dip", "both", "all"):
+    if flag not in ("any", "low", "dip", "both", "all", "starred"):
         flag = "any"
     top = request.GET.get("group", "")[:100]
     q = request.GET.get("q", "")[:60]
+    path = request.GET.get("path", "")[:300]
+    show_ignored = request.GET.get("ignored") == "1"
+    pref = bargains.prefs(request.user)
     limit = 600
     ranges = bargains.parse_ranges(request.GET)
-    rows = bargains.rows(min_isk=min_m * 1e6, top=top, flag=flag, q=q, limit=limit, ranges=ranges)
+    rows = bargains.rows(min_isk=min_m * 1e6, top=top, flag=flag, q=q, limit=limit, ranges=ranges, path=path, pref=pref, show_ignored=show_ignored)
+    starred = set(pref.starred_types)
+    ignored_types = set(pref.ignored_types)
+    for r in rows:
+        r.starred = r.type_id in starred
+        r.ignored = r.type_id in ignored_types
+    ignored_items = list(MarketTypeStat.objects.filter(type_id__in=pref.ignored_types).values_list("type_id", "name")) if pref.ignored_types else []
     range_fields = [{"key": k, "label": label, "unit": unit, "min": request.GET.get(f"{k}_min", ""), "max": request.GET.get(f"{k}_max", "")}
                     for k, _, _, label, unit in bargains.RANGES]
     for r in rows:
@@ -617,10 +626,27 @@ def bargains_view(request):
         r.pos_pct = round((r.pos52 or 0) * 100)
     return render(request, "shipyard/bargains.html", _context(
         request, rows=rows, groups=bargains.top_groups(), min_m=int(min_m) if min_m == int(min_m) else min_m, top=top, flag=flag, q=q, limit=limit,
-        range_fields=range_fields, ranges_active=len(ranges),
+        range_fields=range_fields, ranges_active=len(ranges), path=path, show_ignored=show_ignored, pref=pref, ignored_items=ignored_items,
         fresh=bargains.freshness(), low_pct=app_settings.SHIPYARD_BARGAIN_LOW_PCT, dip_pct=app_settings.SHIPYARD_BARGAIN_DIP_PCT,
         can_manage=request.user.has_perm("shipyard.manage_shipyard"),
     ))
+
+
+@login_required
+@require_POST
+@access.allows("bargains")
+def bargains_pref(request):
+    """A right-click choice on the Bargains tab (0.31.0): ignore or un-ignore a category or an item, flag or unflag an item."""
+    from .services import bargains
+    action = request.POST.get("action", "")
+    value = request.POST.get("value", "")
+    if action not in bargains.PREF_ACTIONS or not value:
+        return JsonResponse({"ok": False, "error": "unknown action"}, status=400)
+    try:
+        p = bargains.set_pref(request.user, action, value)
+    except (TypeError, ValueError):
+        return JsonResponse({"ok": False, "error": "bad value"}, status=400)
+    return JsonResponse({"ok": True, "ignored_paths": p.ignored_paths, "ignored_types": p.ignored_types, "starred_types": p.starred_types})
 
 
 @login_required
