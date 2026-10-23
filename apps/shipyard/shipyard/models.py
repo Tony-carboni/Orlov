@@ -926,3 +926,62 @@ class HangarItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity:,} {self.name or self.type_id} in {self.location_flag} at {self.location_id}"
+
+
+class MarketHistoryDay(models.Model):
+    """One day of EVE Ref's market-history archive, The Forge rows only, compressed (the Bargains tab, 0.29.0)."""
+
+    day = models.DateField(primary_key=True)
+    total = models.PositiveIntegerField(help_text="Records for the day in EVE Ref's totals.json when fetched; a change means the archive was completed and is fetched again")
+    rows = models.PositiveIntegerField(default=0)
+    data = models.BinaryField(help_text="zlib-compressed lines: type_id,average,lowest,highest,volume,order_count (The Forge only)")
+    fetched_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "market history day"
+        verbose_name_plural = "market history days (The Forge)"
+
+    def __str__(self):
+        return f"{self.day}: {self.rows:,} types"
+
+
+class MarketTypeStat(models.Model):
+    """Every type traded in The Forge against its own year (the Bargains tab, 0.29.0)."""
+
+    type_id = models.PositiveIntegerField(primary_key=True)
+    name = models.CharField(max_length=100, blank=True)
+    market_group_id = models.PositiveIntegerField(null=True, blank=True)
+    group_path = models.CharField(max_length=300, blank=True)
+    top_group = models.CharField(max_length=100, blank=True, db_index=True)
+    as_of = models.DateField(null=True, blank=True)
+    last_date = models.DateField(null=True, blank=True)
+    last_avg = models.FloatField(null=True, blank=True)
+    last_low = models.FloatField(null=True, blank=True)
+    low52 = models.FloatField(null=True, blank=True)
+    low52_date = models.DateField(null=True, blank=True)
+    high52 = models.FloatField(null=True, blank=True)
+    high52_date = models.DateField(null=True, blank=True)
+    avg30 = models.FloatField(null=True, blank=True)
+    avg90 = models.FloatField(null=True, blank=True)
+    avg365 = models.FloatField(null=True, blank=True)
+    days365 = models.PositiveIntegerField(default=0)
+    vol30 = models.FloatField(default=0)
+    isk30 = models.FloatField(default=0, db_index=True)
+    sell_min = models.FloatField(null=True, blank=True)
+    buy_max = models.FloatField(null=True, blank=True)
+    sell_volume = models.FloatField(default=0)
+    sell_orders = models.PositiveIntegerField(default=0)
+    prices_at = models.DateTimeField(null=True, blank=True)
+    pos52 = models.FloatField(null=True, blank=True)
+    vs90 = models.FloatField(null=True, blank=True)
+    vs365 = models.FloatField(null=True, blank=True)
+    flag_low = models.BooleanField(default=False, db_index=True)
+    flag_dip = models.BooleanField(default=False, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "market type statistics"
+        verbose_name_plural = "market type statistics (bargains)"
+
+    def __str__(self):
+        return f"{self.name or self.type_id}: low {self.low52} high {self.high52}"

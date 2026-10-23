@@ -1,0 +1,116 @@
+{% extends "shipyard/base.html" %}
+{% load static shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · Bargains{% endblock %}
+
+{% block shipyard_content %}
+<div class="row g-3 mb-3 align-items-stretch">
+    <div class="col-lg-5 col-xl-4">
+        <div class="card shipyard-facility h-100">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-tags fa-2x text-info"></i>
+                    <div>
+                        <div class="fw-semibold">Jita against its own year</div>
+                        <div class="small shipyard-k">{{ fresh.types|num:0 }} types traded in The Forge · {{ fresh.priced|num:0 }} priced · {{ fresh.flag_low|num:0 }} at a 52-week low · {{ fresh.flag_dip|num:0 }} under their 90-day average</div>
+                    </div>
+                </div>
+                <div class="small mt-2 d-flex align-items-center flex-wrap gap-2">
+                    {% if can_manage %}
+                    <form method="post" action="{% url 'shipyard:bargains_refresh' %}" class="d-inline">{% csrf_token %}<button class="btn btn-outline-light btn-sm py-0" title="Read Jita's prices for every traded type now (a minute in the background)"><i class="fas fa-rotate fa-fw"></i> Read prices now</button></form>
+                    {% endif %}
+                    <span class="shipyard-k">history to {{ fresh.history_day|date:"Y-m-d"|default:"never" }} ({{ fresh.days }} days kept) · prices {{ fresh.prices_at|date:"Y-m-d H:i"|default:"never" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7 col-xl-8">
+        <div class="shipyard-infobar h-100">
+            <div><span class="shipyard-k">Reading the table:</span> every type that traded in The Forge in the last year, with Jita 4-4's lowest sell and highest buy right now against the <strong>52-week low and high</strong> (the lowest and highest daily price of the last 365 days) and the <strong>90-day average</strong> (volume-weighted). <strong>vs low</strong> is how far today's sell sits above the year's low, <strong>vs 90 d</strong> how far below or above the average. The bar shows where today sits in the year's range.</div>
+            <div class="mt-1"><span class="badge bg-success">52-week low</span> sell within {{ low_pct|pct:0 }} of the year's low · <span class="badge bg-info text-dark">under 90 d</span> sell {{ dip_pct|pct:0 }} or more below the 90-day average. <span class="shipyard-k">ISK/day</span> is the ISK The Forge traded per day over 30 days: raise the minimum to keep thin markets out, since a thin market's "low" is one lucky order.</div>
+            <div class="shipyard-k small mt-1">History: EVE Ref's daily archive of EVE's market history, one file a day. Prices: Fuzzwork's Jita 4-4 aggregates, every two hours. Nothing here calls EVE's API per item.</div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-2 align-items-center" id="bargains-filters">
+    <div class="col-auto">
+        <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Search item…" autocomplete="off" style="width: 14rem">
+    </div>
+    <div class="col-auto">
+        <label class="small d-flex align-items-center gap-1">min ISK/day <input type="number" name="min" value="{{ min_m }}" min="0" step="1" class="form-control form-control-sm" style="width: 6rem" autocomplete="off"> M</label>
+    </div>
+    <div class="col-auto">
+        <select name="group" class="form-select form-select-sm" style="width: 16rem" title="Market group">
+            <option value="">All market groups</option>
+            {% for g, n in groups %}<option value="{{ g }}" {% if g == top %}selected{% endif %}>{{ g }} ({{ n }})</option>{% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Which flags">
+            <input type="radio" class="btn-check" name="flag" id="flag-any" value="any" autocomplete="off" {% if flag == "any" %}checked{% endif %}><label class="btn btn-outline-secondary" for="flag-any" title="Either flag">Flagged</label>
+            <input type="radio" class="btn-check" name="flag" id="flag-low" value="low" autocomplete="off" {% if flag == "low" %}checked{% endif %}><label class="btn btn-outline-success" for="flag-low">52-week low</label>
+            <input type="radio" class="btn-check" name="flag" id="flag-dip" value="dip" autocomplete="off" {% if flag == "dip" %}checked{% endif %}><label class="btn btn-outline-info" for="flag-dip">Under 90 d</label>
+            <input type="radio" class="btn-check" name="flag" id="flag-both" value="both" autocomplete="off" {% if flag == "both" %}checked{% endif %}><label class="btn btn-outline-warning" for="flag-both">Both</label>
+            <input type="radio" class="btn-check" name="flag" id="flag-all" value="all" autocomplete="off" {% if flag == "all" %}checked{% endif %}><label class="btn btn-outline-secondary" for="flag-all" title="Everything above the ISK/day minimum, flagged or not">All</label>
+        </div>
+    </div>
+    <div class="col-auto"><button class="btn btn-sm btn-primary"><i class="fas fa-filter fa-fw"></i> Apply</button></div>
+    <div class="col-auto shipyard-k small">{{ rows|length }} item{{ rows|length|pluralize }}{% if rows|length == limit %} (the first {{ limit }}; narrow the filters for the rest){% endif %}</div>
+    <div class="col-auto" id="bargains-columns" title="Choose which columns to show; remembered in this browser"></div>
+</form>
+
+<div class="table-responsive">
+<table id="bargains-table" class="table table-sm table-hover table-striped align-middle w-100" data-num-from="2" data-num-to="12">
+    <thead>
+        <tr>
+            <th data-key="name">Item</th>
+            <th data-key="group">Market group</th>
+            <th class="text-end" data-key="sell">Jita sell</th>
+            <th class="text-end" data-key="buy">Jita buy</th>
+            <th class="text-end" data-key="low52">52-wk low</th>
+            <th class="text-end" data-key="high52">52-wk high</th>
+            <th class="text-end" data-key="avg90">90-d avg</th>
+            <th class="text-end" data-key="vslow" title="Today's sell above the year's low">vs low</th>
+            <th class="text-end" data-key="vs90" title="Today's sell against the 90-day average">vs 90 d</th>
+            <th data-key="range" title="Where today's sell sits between the year's low (left) and high (right)">Range</th>
+            <th class="text-end" data-key="isk" title="ISK traded per day in The Forge, 30-day average">ISK/day</th>
+            <th class="text-end" data-key="vol" title="Units traded per day in The Forge, 30-day average">Units/day</th>
+            <th class="text-end" data-key="days" title="Days with trades in the last 365">Days</th>
+            <th data-key="flags">Flags</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+        <tr data-type="{{ r.type_id }}">
+            <td><span class="fw-semibold">{{ r.name|default:r.type_id }}</span></td>
+            <td class="small shipyard-k" title="{{ r.group_path }}">{{ r.group_path|default:"–"|truncatechars:48 }}</td>
+            <td class="text-end" data-order="{{ r.sell_min }}">{{ r.sell_min|isk_auto }}</td>
+            <td class="text-end shipyard-k" data-order="{{ r.buy_max|default:0 }}">{% if r.buy_max %}{{ r.buy_max|isk_auto }}{% else %}–{% endif %}</td>
+            <td class="text-end" data-order="{{ r.low52 }}" title="on {{ r.low52_date|date:'Y-m-d' }}">{{ r.low52|isk_auto }} <span class="shipyard-k small">{{ r.low52_date|date:"d M" }}</span></td>
+            <td class="text-end shipyard-k" data-order="{{ r.high52 }}" title="on {{ r.high52_date|date:'Y-m-d' }}">{{ r.high52|isk_auto }}</td>
+            <td class="text-end" data-order="{{ r.avg90|default:0 }}">{% if r.avg90 %}{{ r.avg90|isk_auto }}{% else %}–{% endif %}</td>
+            <td class="text-end {% if r.flag_low %}text-success{% endif %}" data-order="{{ r.vslow_pct|default:0 }}">{% if r.vslow_pct is not None %}+{{ r.vslow_pct }} %{% else %}–{% endif %}</td>
+            <td class="text-end {% if r.vs90 is not None and r.vs90 < 0 %}text-success{% elif r.vs90 is not None %}text-danger{% endif %}" data-order="{{ r.vs90|default:0 }}">{% if r.vs90_pct is not None %}{{ r.vs90_pct }} %{% else %}–{% endif %}</td>
+            <td data-order="{{ r.pos52|default:0 }}"><div class="bargains-range" title="{{ r.pos_pct }} % of the way from the year's low to its high"><span style="left: {{ r.pos_pct }}%"></span></div></td>
+            <td class="text-end" data-order="{{ r.isk30 }}">{{ r.isk30|mil }}</td>
+            <td class="text-end shipyard-k" data-order="{{ r.vol30 }}">{{ r.vol30|num:0 }}</td>
+            <td class="text-end shipyard-k" data-order="{{ r.days365 }}">{{ r.days365 }}</td>
+            <td>{% if r.flag_low %}<span class="badge bg-success">52-week low</span>{% endif %} {% if r.flag_dip %}<span class="badge bg-info text-dark">under 90 d</span>{% endif %}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="14" class="shipyard-k">{% if fresh.types %}Nothing matches these filters.{% else %}No history yet: the nightly archive import has not run.{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+<style>
+.bargains-range { position: relative; height: 8px; width: 90px; background: linear-gradient(90deg, #2e8b57 0%, #7a7a3a 50%, #b04545 100%); border-radius: 4px; opacity: .85; }
+.bargains-range span { position: absolute; top: -3px; width: 3px; height: 14px; margin-left: -1px; background: #fff; border-radius: 2px; }
+</style>
+{% endblock %}
+
+{% block shipyard_js %}
+<script src="{% static 'shipyard/columns.js' %}"></script>
+<script src="{% static 'shipyard/bargains.js' %}"></script>
+{% endblock %}

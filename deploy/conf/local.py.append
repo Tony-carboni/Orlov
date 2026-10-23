@@ -202,6 +202,15 @@ CELERYBEAT_SCHEDULE["shipyard_refresh_hangar"] = {
     "task": "shipyard.tasks.refresh_hangar",
     "schedule": crontab(minute="35"),
 }
+# Shipyard 0.29.0, the Bargains tab: EVE Ref's daily market-history archive (one small file a day, no ESI history calls) and Jita prices via Fuzzwork.
+CELERYBEAT_SCHEDULE["shipyard_refresh_market_history"] = {
+    "task": "shipyard.tasks.refresh_market_history",
+    "schedule": crontab(minute="30", hour="13"),
+}
+CELERYBEAT_SCHEDULE["shipyard_refresh_bargain_prices"] = {
+    "task": "shipyard.tasks.refresh_bargain_prices",
+    "schedule": crontab(minute="5", hour="*/2"),
+}
 # The projects hangar (0.28.0): by default the office the corporation projects deliver to (EVE records it per project), every hangar
 # division there. Leave both empty; set them only to override (the pin of 2026-10-23 to structure 1055529310484, division 2, was the
 # reprocessing hangar the owner moves goods to, not the projects hangar).

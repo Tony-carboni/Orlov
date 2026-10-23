@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun,
     ScrapItem, Ship, ShipConfig, ShipMarketStats,
 )
-from .services import business, contracts, esi, everef, fuzzwork, hangar, industry, ledger, lplog, lpstore, nearbuy, projects, reprocessing, scrapmetal, wallet
+from .services import bargains, business, contracts, esi, everef, fuzzwork, hangar, industry, ledger, lplog, lpstore, nearbuy, projects, reprocessing, scrapmetal, wallet
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -385,3 +385,33 @@ def books_check_periods():
         _done(run, False, 0, str(exc)[:300])
         return
     _done(run, True, 1 if period else 0, f"period opened: {period.source}" if period else "no newer State of the Alliance post")
+
+
+@shared_task
+def refresh_market_history():
+    """Bargains: the new or completed days of EVE Ref's market-history archive, then the year per type, names and market
+    groups (beat entry shipyard_refresh_market_history, daily 13:30 UTC; EVE Ref publishes a day the next morning)."""
+    run = _run("history")
+    try:
+        r = bargains.sync_history()
+        types = bargains.compute_stats()
+        named = bargains.fill_names()
+        grouped = bargains.fill_groups()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("market history refresh failed: %s", exc)
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, True, types, f"{r['downloaded']} day archives fetched ({r['days']} kept), {types} types, {named} named, {grouped} grouped")
+
+
+@shared_task
+def refresh_bargain_prices():
+    """Bargains: Jita 4-4 prices of every type that traded in the last 30 days (beat entry shipyard_refresh_bargain_prices, every two hours)."""
+    run = _run("bargain_prices")
+    try:
+        r = bargains.refresh_prices()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("bargain price refresh failed: %s", exc)
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, True, r["types"], f"{r['types']} of {r['asked']} types priced")

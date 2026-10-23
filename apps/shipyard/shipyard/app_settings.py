@@ -181,5 +181,11 @@ SHIPYARD_BOOKS_ITEM_ALIASES = getattr(settings, "SHIPYARD_BOOKS_ITEM_ALIASES", {
 # office, every corp hangar division (CorpSAG1 to 7) and the deliveries hangar. Stock kept outside it (cap boosters,
 # Heavy Water: the stock batches) stays ledger-style.
 SHIPYARD_HANGAR_SCOPES = getattr(settings, "SHIPYARD_HANGAR_SCOPES", ["esi-assets.read_corporation_assets.v1"])
+
+# The Bargains tab (0.29.0): days of EVE Ref's market-history archive kept, the two flag thresholds, the page's default ISK/day floor
+SHIPYARD_BARGAIN_DAYS = getattr(settings, "SHIPYARD_BARGAIN_DAYS", 400)
+SHIPYARD_BARGAIN_LOW_PCT = getattr(settings, "SHIPYARD_BARGAIN_LOW_PCT", 0.05)    # sell within 5 % of the 52-week low
+SHIPYARD_BARGAIN_DIP_PCT = getattr(settings, "SHIPYARD_BARGAIN_DIP_PCT", 0.20)    # sell 20 % or more under the 90-day average
+SHIPYARD_BARGAIN_MIN_ISK_DAY = getattr(settings, "SHIPYARD_BARGAIN_MIN_ISK_DAY", 50e6)
 SHIPYARD_BOOKS_HANGAR_LOCATIONS = getattr(settings, "SHIPYARD_BOOKS_HANGAR_LOCATIONS", [])  # station or structure ids
 SHIPYARD_BOOKS_HANGAR_FLAGS = getattr(settings, "SHIPYARD_BOOKS_HANGAR_FLAGS", [])            # e.g. ["CorpSAG2"]

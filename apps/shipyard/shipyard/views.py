@@ -591,6 +591,47 @@ def reprocessing_skills(request):
 
 
 @login_required
+@access.allows("bargains")
+def bargains_view(request):
+    """Bargains tab (0.29.0): every type traded in The Forge against its own year, Jita's price now flagged at a 52-week low or under its 90-day average."""
+    from .services import bargains
+    try:
+        min_m = max(0.0, float(request.GET.get("min", app_settings.SHIPYARD_BARGAIN_MIN_ISK_DAY / 1e6)))
+    except (TypeError, ValueError):
+        min_m = app_settings.SHIPYARD_BARGAIN_MIN_ISK_DAY / 1e6
+    flag = request.GET.get("flag", "any")
+    if flag not in ("any", "low", "dip", "both", "all"):
+        flag = "any"
+    top = request.GET.get("group", "")[:100]
+    q = request.GET.get("q", "")[:60]
+    limit = 600
+    rows = bargains.rows(min_isk=min_m * 1e6, top=top, flag=flag, q=q, limit=limit)
+    for r in rows:
+        r.vslow = (r.sell_min / r.low52 - 1) if r.low52 else None
+        r.vslow_pct = round(r.vslow * 100) if r.vslow is not None else None
+        r.vs90_pct = round(r.vs90 * 100) if r.vs90 is not None else None
+        r.pos_pct = round((r.pos52 or 0) * 100)
+    return render(request, "shipyard/bargains.html", _context(
+        request, rows=rows, groups=bargains.top_groups(), min_m=int(min_m) if min_m == int(min_m) else min_m, top=top, flag=flag, q=q, limit=limit,
+        fresh=bargains.freshness(), low_pct=app_settings.SHIPYARD_BARGAIN_LOW_PCT, dip_pct=app_settings.SHIPYARD_BARGAIN_DIP_PCT,
+        can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+    ))
+
+
+@login_required
+@require_POST
+def bargains_refresh(request):
+    """Read Jita's prices for the bargains now (manager): a minute of Fuzzwork calls, run in the background."""
+    from django.core.exceptions import PermissionDenied
+    from .tasks import refresh_bargain_prices
+    if not request.user.has_perm("shipyard.manage_shipyard"):
+        raise PermissionDenied
+    refresh_bargain_prices.delay()
+    messages.success(request, "Reading Jita's prices for every traded type in the background; reload in a minute.")
+    return redirect("shipyard:bargains")
+
+
+@login_required
 @access.allows("reprocessing")
 def reprocessing_view(request):
     """Reprocessing tab: compressed ore and ice worth buying at Jita to reprocess."""
