@@ -1,0 +1,221 @@
++ cataclysmic filament
+- Cataclysmic Dark Filament
+- Cataclysmic Electrical Filament
+- Cataclysmic Exotic Filament
+- Cataclysmic Firestorm Filament
+- Cataclysmic Gamma Filament
++ chaotic filament
+- Chaotic Dark Filament
+- Chaotic Electrical Filament
+- Chaotic Exotic Filament
+- Chaotic Firestorm Filament
+- Chaotic Gamma Filament
++ faction tags
+- Amarr TIL-1 Nexus Chip
+- Caldari AZ-1 Nexus Chip
+- Domination Crystal Tag
+- Dread Guristas Crystal Tag
+- Gallente Alpha Nexus Chip
+- Minmatar UUC Nexus Chip
+- Shadow Serpentis Crystal Tag
+- True Sansha Crystal Tag
++ Fuel blocks
+- Compressed Blue Ice
+- Compressed Blue Ice IV-Grade
+- Compressed Clear Icicle IV-Grade
+- Compressed Dark Glitter
+- Compressed Gelidus
+- Compressed Glacial Mass
+- Compressed Glacial Mass IV-Grade
+- Compressed Glare Crust
+- Compressed Krystallos
+- Compressed White Glaze
+- Compressed White Glaze IV-Grade
+- Coolant
+- Enriched Uranium
+- Heavy Water
+- Hydrogen Isotopes
+- Liquid Ozone
+- Mechanical Parts
+- Oxygen
+- Oxygen Isotopes
+- Robotics
+- Strontium Clathrates
++ fullerides
+- Compressed Fullerite-C28
+- Compressed Fullerite-C32
+- Compressed Fullerite-C320
+- Compressed Fullerite-C50
+- Compressed Fullerite-C540
+- Compressed Fullerite-C60
+- Compressed Fullerite-C70
+- Compressed Fullerite-C72
+- Compressed Fullerite-C84
+- Fullerite-C28
+- Fullerite-C32
+- Fullerite-C320
+- Fullerite-C50
+- Fullerite-C540
+- Fullerite-C60
+- Fullerite-C70
+- Fullerite-C72
+- Fullerite-C84
++ life support
+- Chiral Structures
+- Nanites
+- Pressurized Oxidizers
+- Reinforced Carbon Fiber
+- Supertensile Plastics
+- Test Cultures
+- Viral Agent
+- Water
++ minerals
+- Isogen
+- Megacyte
+- Mexallon
+- Nocxium
+- Pyerite
+- Tritanium
+- Zydrine
++ net
+- Angel NET Resonator
+- Blood Raider NET Resonator
+- Guristas NET Resonator
+- Mordu NET Resonator
+- Sansha NET Resonator
+- Serpentis NET Resonator
+- SoE NET Resonator
++ ores
+- Compressed Bitumens
+- Compressed Brimful Bitumens
+- Compressed Brimful Coesite
+- Compressed Brimful Sylvite
+- Compressed Brimful Zeolites
+- Compressed Coesite
+- Compressed Glistening Bitumens
+- Compressed Glistening Coesite
+- Compressed Glistening Sylvite
+- Compressed Glistening Zeolites
+- Compressed Omber
+- Compressed Omber II-Grade
+- Compressed Omber III-Grade
+- Compressed Omber IV-Grade
+- Compressed Plagioclase II-Grade
+- Compressed Plagioclase III-Grade
+- Compressed Plagioclase IV-Grade
+- Compressed Pyroxeres II-Grade
+- Compressed Pyroxeres III-Grade
+- Compressed Pyroxeres IV-Grade
+- Compressed Scordite
+- Compressed Scordite 0-Grade
+- Compressed Scordite II-Grade
+- Compressed Scordite III-Grade
+- Compressed Scordite IV-Grade
+- Compressed Sylvite
+- Compressed Veldspar
+- Compressed Veldspar 0-Grade
+- Compressed Veldspar II-Grade
+- Compressed Veldspar III-Grade
+- Compressed Veldspar IV-Grade
+- Compressed Zeolites
++ Raging filament
+- Raging Dark Filament
+- Raging Electrical Filament
+- Raging Exotic Filament
+- Raging Firestorm Filament
+- Raging Gamma Filament
++ repro
+++ 100mn
+-- 100MN Monopropellant Enduring Afterburner
+-- 100MN Y-S8 Compact Afterburner
+++ 1600
+-- 1600mm Crystalline Carbonide Restrained Plates
+-- 1600mm Rolled Tungsten Compact Plates
+++ 500mn
+-- 500MN Cold-Gas Enduring Microwarpdrive
+-- 500MN Quad LiF Restrained Microwarpdrive
+-- 500MN Y-T8 Compact Microwarpdrive
+++ 800mm
+-- 800mm Crystalline Carbonide Restrained Plates
+-- 800mm Rolled Tungsten Compact Plates
+++ clutch
+-- Clutch Restrained Warp Disruption Field Generator
+-- M-36 Enduring Warp Disruption Field Generator
+-- Pitfall Compact Warp Disruption Field Generator
+++ EM hard
+-- Experimental Enduring EM Armor Hardener I
+-- Prototype Compact EM Armor Hardener I
+++ EXP hard
+-- Experimental Enduring Explosive Armor Hardener I
+-- Prototype Compact Explosive Armor Hardener I
+++ grapple
+-- Heavy Gunnar Compact Stasis Grappler
+-- Heavy Jigoro Enduring Stasis Grappler
+-- Heavy Karelin Scoped Stasis Grappler
+++ hull
+-- Large 'Hope' Hull Reconstructor I
+-- Large Automated Structural Restoration
+-- Large I-b Polarized Structural Regenerator
+-- Large Inefficient Hull Repair Unit
+++ kin hard
+-- Experimental Enduring Kinetic Armor Hardener I
+-- Prototype Compact Kinetic Armor Hardener I
+++ large guns
+-- 1400mm Carbine Howitzer I
+-- 1400mm Gallium Cannon
+-- 1400mm Prototype Siege Cannon
+-- 425mm 'Scout' Accelerator Cannon
+-- 425mm Carbide Railgun I
+-- 425mm Compressed Coil Gun I
+-- 425mm Prototype Gauss Gun
+-- Tachyon Afocal Laser I
+-- Tachyon Anode Particle Stream I
+-- Tachyon Modal Laser I
+++ mega electron
+-- Anode Mega Electron Particle Cannon I
+-- Limited Electron Blaster Cannon I
+-- Modal Mega Electron Particle Accelerator I
+-- Regulated Mega Electron Phase Cannon I
+++ mega ion
+-- Limited Mega Ion Blaster I
+-- Modal Mega Ion Particle Accelerator I
+-- Regulated Mega Ion Phase Cannon I
+++ mega neutron
+-- Anode Mega Neutron Particle Cannon I
+-- Limited Mega Neutron Blaster I
+-- Modal Mega Neutron Particle Accelerator I
+-- Regulated Mega Neutron Phase Cannon I
+++ neut
+-- Heavy Gremlin Compact Energy Neutralizer
+-- Heavy Infectious Scoped Energy Neutralizer
+++ nos
+-- Heavy Ghoul Compact Energy Nosferatu
+-- Heavy Knave Scoped Energy Nosferatu
+++ pulse
+-- Mega Afocal Pulse Laser I
+-- Mega Anode Pulse Particle Stream I
+-- Mega Modal Pulse Laser I
+++ remote shiebo
+-- Large Asymmetric Enduring Remote Shield Booster
+-- Large Murky Compact Remote Shield Booster
+-- Large S95a Scoped Remote Shield Booster
+++ SCRAPS
+-- Metal Scraps
+-- Reinforced Metal Scraps
+++ smartbomb
+-- 'Concussion' Compact Large Graviton Smartbomb
+-- 'Concussion' Compact Medium Graviton Smartbomb
+-- 'Notos' Compact Large Proton Smartbomb
+-- 'Notos' Compact Medium Proton Smartbomb
+-- 'Vehemence' Compact Large EMP Smartbomb
+-- 'Vehemence' Compact Medium EMP Smartbomb
+-- 'YF-12a' Compact Large Plasma Smartbomb
+-- 'YF-12a' Compact Medium Plasma Smartbomb
+++ therm hard
+-- Experimental Enduring Thermal Armor Hardener I
+-- Prototype Compact Thermal Armor Hardener I
++ Trig
+- Auto-Integrity Preservation Seal
+- Crystalline Isogen-10
+- Life Support Backup Unit
+- Zero-Point Condensate
