@@ -300,6 +300,39 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(group["net"], 2e6)
         self.assertAlmostEqual(d["project_bb"]["realised"], before["project_bb"]["realised"] + 2e6, places=0)
 
+    def test_after_a_stock_take_ore_is_held_as_ore(self):
+        """Owner's rule (2026-10-23): ore delivered after the last stock take stays compressed ore in the books, at what
+        the project paid; a quote prices it from its own deliveries, and what an earlier registration sold is gone."""
+        from ..models import MaterialType, Ore
+        from ..services import directsales, projectbooks
+        for tid, name in ((62536, "Compressed Kernite"), (36, "Tritanium"), (37, "Pyerite")):
+            MaterialType.objects.get_or_create(type_id=tid, defaults={"name": name})
+        Ore.objects.create(type_id=62536, name="Compressed Kernite", group_id=450, kind="ore", family="Kernite", variant="base", portion_size=100, materials={"36": 60, "37": 120}, volume=0.19)
+        owner = get_user_model().objects.create_user("owner", password="x")
+        wo = directsales.write_off(owner, "nothing held")
+        wo.matched_at = at(11.5)
+        wo.save(update_fields=["matched_at"])
+        p3 = CorpProject.objects.create(project_id="p3", corporation_id=CORP, name="kernite", state="Active", reward_per_contribution=165.0,
+                                        reward_initial=30e6, reward_remaining=30e6 - 14_406 * 165.0,
+                                        details={"configuration": [{"deliver_item": {"items": [{"type_id": 62536}]}}]})
+        ProjectContribution.objects.create(project=p3, taken_at=at(12), character_id=4242, character_name="Miner", contributed=14_406)
+        led = projectbooks.ledger(CORP)
+        self.assertIn(62536, led["lots"])
+        self.assertEqual([(lot[1], lot[2], lot[3]) for lot in led["lots"][62536]], [(14_406.0, 165.0, "ore")])
+        self.assertNotIn(36, led["lots"])
+        q = directsales.quote("Compressed Kernite\t14,406", owner)
+        ln = q["lines"][0]
+        self.assertEqual((ln["cost_unit"], ln["cost"], ln["cost_lots"], ln["short"]), (165.0, 14_406 * 165.0, 14_406 * 165.0, False))
+        held = dict(books.compute()["held"])
+        self.assertAlmostEqual(held["Compressed Kernite"], 14_406 * 165.0, places=0)
+        self.assertNotIn("Tritanium", held)
+        # a registration already sold 10,000 of them: the next quote has 4,406 left at the project price
+        directsales.register("Compressed Kernite\t10,000", owner)
+        q2 = directsales.quote("Compressed Kernite\t10,000", owner)
+        l2 = q2["lines"][0]
+        self.assertEqual((l2["held"], l2["short"], l2["cost_unit"]), (4_406.0, True, 165.0))
+        self.assertAlmostEqual(l2["cost"], 10_000 * 165.0)
+
     def test_stock_take_writes_off_everything_held(self):
         """A stock take clears every project-goods lot at cost, moves no cash, and keeps the sheet reconciled."""
         from ..models import MaterialType

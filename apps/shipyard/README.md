@@ -54,7 +54,7 @@ The directors' balance sheet against the owner's working budget (`services/books
 
 ## Direct sales of project goods (0.23.0)
 
-The Finance tab learns of a sale by trade or contract from the deposit of its proceeds: a corp-wallet deposit whose reason reads `direct sale <quantity> <item>, <quantity> <item>, ...`. The named lots leave the goods held (an ore through its minerals); a deposit that names nothing is completed in the admin (Shipyard → direct sales) or with `books.direct_sale(entry_id, items)`. The corp hangar itself is never read.
+The Finance tab learns of a sale by trade or contract from the deposit of its proceeds: a corp-wallet deposit whose reason reads `direct sale <quantity> <item>, <quantity> <item>, ...`. The named lots leave the goods held (an ore through its minerals before the last stock take; since then ore is held as ore, the owner's rule of 2026-10-23); a deposit that names nothing is completed in the admin (Shipyard → direct sales) or with `books.direct_sale(entry_id, items)`. The corp hangar itself is never read.
 
 ## Register a direct sale (0.24.0)
 

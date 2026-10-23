@@ -13,7 +13,7 @@ EVE's transfer reason holds 40 characters, which is why the code and not the ite
 
 import random
 import re
-from collections import deque
+from collections import defaultdict, deque
 
 from django.utils import timezone
 
@@ -149,6 +149,33 @@ def _pct(total, cost):
     return (total - cost) / cost if cost else None
 
 
+def _consumed_since(since) -> dict:
+    """{type_id: units} registered in direct sales since the last stock take: units already sold, whether or not
+    the deposit has appeared yet; the quote skips them before costing."""
+    out = defaultdict(float)
+    qs = BookDirectSale.objects.filter(corporation_id=projects.corp_id(), code__startswith="DS-")
+    if since is not None:
+        qs = qs.filter(created_at__gt=since)
+    for sale in qs:
+        for ln in sale.lines or []:
+            try:
+                out[int(ln["type_id"])] += float(ln["qty"])
+            except (KeyError, TypeError, ValueError):
+                continue
+    return out
+
+
+def _drain(queue, units: float) -> None:
+    """Take `units` off the front of a lot queue, oldest first, without caring about the cost."""
+    while units > 1e-9 and queue:
+        lot = queue[0]
+        take = min(units, lot[1])
+        lot[1] -= take
+        units -= take
+        if lot[1] <= 1e-9:
+            queue.popleft()
+
+
 def valuations(lines: list) -> list:
     """The six ways to value the pasted list, each with its margin against the projects' cost (owner, 2026-10-23).
     Pure. A line carries unit (the quote), buy, sell, repro (95 % of the reprocessing value, ores only), qty, cost."""
@@ -180,6 +207,13 @@ def quote(text: str, user) -> dict:
     ore_rows = {r.ore.type_id: r for r in reprocessing.dashboard_rows(market, settings)}
     led = projectbooks.ledger(projects.corp_id())
     lots, yields, led_ores = led["lots"], led["yields"], led["ores"]
+    # the lots as the sheet sees them (0.26.2): a stock take wrote the older ones off, and what earlier
+    # registrations sold is gone, deposit seen or not
+    since = led.get("raw_since")
+    if since is not None:
+        lots = defaultdict(deque, {tid: deque(lot for lot in q if lot[0] > since) for tid, q in lots.items()})
+    for tid, units in _consumed_since(since).items():
+        _drain(lots[tid], units)
     wanted = [resolve(n, cat)[0] for n, _, _ in parsed if resolve(n, cat)]
     buy = _buy_prices(wanted, market)
     sells = _sell_prices([t for t in wanted if t not in ore_rows], market)

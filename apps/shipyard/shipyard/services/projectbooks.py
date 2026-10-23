@@ -24,7 +24,7 @@ import datetime as dt
 import math
 from collections import defaultdict, deque
 
-from ..models import CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, MaterialType, Ore, PriceSnapshot
+from ..models import BookDirectSale, CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, MaterialType, Ore, PriceSnapshot
 from . import projects, reprocessing
 
 ESTIMATE_GAP = dt.timedelta(hours=6)  # a first read this long after the project started holds a backlog
@@ -132,6 +132,10 @@ def ledger(cid=None, until=None) -> dict:
         sells_qs = sells_qs.filter(date__lte=until)
     sells = list(sells_qs.order_by("date"))
     sold_types = {t.type_id for t in sells}
+    # Owner's rule (2026-10-23): the goods held are raw compressed ore, sold in bulk as ore; nothing is converted
+    # to minerals unless he asks. Ore delivered after the last stock take stays an ore lot. Deliveries before it
+    # keep the mineral split, because the sales of that time were matched that way.
+    raw_since = BookDirectSale.objects.filter(corporation_id=cid, code__startswith="WO-", matched_at__isnull=False).order_by("-matched_at").values_list("matched_at", flat=True).first()
     universe = project_types | outputs
     prices = _prices(universe, market)
     names = _names(universe | sold_types)
@@ -159,7 +163,7 @@ def ledger(cid=None, until=None) -> dict:
                             round(m3, 2), 1 if e["est"] else 0, round(asis, 2), round(reproc, 2), names.get(tid, e["project"])])
         if not tid or e["isk"] <= 0:
             continue
-        if o is None or tid in sold_types:
+        if o is None or tid in sold_types or (raw_since is not None and e["t"] > raw_since):
             lots[tid].append([e["t"], e["units"], e["isk"] / e["units"] if e["units"] else 0.0, "ore" if o is not None else "item"])
         else:
             batches = e["units"] / float(o.portion_size or 1)
@@ -196,7 +200,7 @@ def ledger(cid=None, until=None) -> dict:
         if need > 1e-9:
             others.append([_iso(s.date), names.get(s.type_id, str(s.type_id)), round(need * s.unit_price, 2)])
     stock.sort(key=lambda r: r[0])
-    return {"lots": lots, "matches": matches, "others": others, "stock": stock, "payout_rows": payout_rows,
+    return {"lots": lots, "matches": matches, "others": others, "stock": stock, "payout_rows": payout_rows, "raw_since": raw_since,
             "prices": prices, "names": names, "market": market, "sells": sells, "ores": ores, "yields": yields}
 
 
