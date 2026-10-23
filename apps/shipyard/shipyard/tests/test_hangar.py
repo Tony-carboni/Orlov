@@ -55,6 +55,21 @@ class HangarTests(TestCase):
             hangar.refresh()
         self.assertEqual(HangarItem.objects.filter(corporation_id=CID).count(), 1)
 
+    def test_the_projects_hangar_follows_the_delivery_office_by_default(self):
+        """0.28.0: with no pin in the settings, the hangar that counts is the office the projects deliver to (every hangar
+        division there, not the deliveries hangar); goods moved to another structure are not goods held."""
+        from ..models import CorpProject, HangarItem
+        CorpProject.objects.create(project_id="px", corporation_id=CID, name="veldspar", state="Active",
+                                   details={"configuration": {"deliver_item": {"items": [{"type_id": 62516}], "office_id": 1055911110036}}})
+        for loc, flag, qty in ((1055911110036, "CorpSAG3", 500), (1055911110036, "CorpDeliveries", 7), (1055529310484, "CorpSAG2", 9000)):
+            HangarItem.objects.create(corporation_id=CID, type_id=62516, name="Compressed Veldspar", quantity=qty, location_id=loc, location_flag=flag, read_at=dt.datetime(2026, 10, 23, 9, tzinfo=dt.timezone.utc))
+        with mock.patch.object(hangar.app_settings, "SHIPYARD_BOOKS_HANGAR_LOCATIONS", []), mock.patch.object(hangar.app_settings, "SHIPYARD_BOOKS_HANGAR_FLAGS", []):
+            self.assertEqual(hangar.project_offices(CID), {1055911110036})
+            units, names, _ = hangar.stock(CID)
+            self.assertEqual(units, {62516: 500})
+            self.assertEqual([(d["location_id"], d["flag"], d["wanted"]) for d in hangar.divisions(CID)],
+                             [(1055529310484, "CorpSAG2", False), (1055911110036, "CorpDeliveries", False), (1055911110036, "CorpSAG3", True)])
+
     def test_refresh_without_a_token_fails_cleanly(self):
         with mock.patch.object(hangar, "token", return_value=None):
             with self.assertRaises(RuntimeError):

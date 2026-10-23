@@ -6,8 +6,10 @@ in that hangar it is not in stock. The hourly task reads the corporation's asset
 (CorpSAG1 to CorpSAG7) and the deliveries hangar, and stores one row per item type, office and division.
 The balance sheet (services/books.py) then counts the goods from these rows, at what the projects paid for
 them (the ledger's lots, oldest first); the stock batches (cap boosters, Heavy Water) are not in this hangar
-and stay ledger-style. SHIPYARD_BOOKS_HANGAR_LOCATIONS and SHIPYARD_BOOKS_HANGAR_FLAGS narrow the count to
-the projects hangar once the owner has said which office and division it is.
+and stay ledger-style. The projects hangar is, by default, the office the corporation projects deliver to (EVE
+records it in each project's configuration, `deliver_item.office_id`), every hangar division there (0.28.0;
+the owner's rule: section 1 counts the actual content of the projects hangar and nothing else). The settings
+SHIPYARD_BOOKS_HANGAR_LOCATIONS and SHIPYARD_BOOKS_HANGAR_FLAGS override that when set.
 """
 
 import logging
@@ -19,7 +21,7 @@ from django.utils import timezone
 from esi.models import Token
 
 from .. import app_settings
-from ..models import HangarItem
+from ..models import CorpProject, HangarItem
 from . import esi, projects
 
 logger = logging.getLogger(__name__)
@@ -79,9 +81,28 @@ def refresh() -> dict:
     return {"assets": len(rows), "rows": len(items), "types": len({t for t, _, _ in agg}), "read_at": now, "character": tok.character_name}
 
 
-def _wanted(location_id, flag) -> bool:
-    locs = [int(x) for x in app_settings.SHIPYARD_BOOKS_HANGAR_LOCATIONS or []]
-    flags = list(app_settings.SHIPYARD_BOOKS_HANGAR_FLAGS or [])
+def project_offices(cid=None) -> set:
+    """The offices the corporation projects deliver to: the projects hangar by EVE's own record."""
+    cid = cid or corp_id()
+    out = set()
+    for details in CorpProject.objects.filter(corporation_id=cid).exclude(details=None).values_list("details", flat=True):
+        cfg = (details or {}).get("configuration") or {}
+        di = cfg.get("deliver_item") if isinstance(cfg, dict) else None
+        if di and di.get("office_id"):
+            out.add(int(di["office_id"]))
+    return out
+
+
+def scope(cid=None) -> tuple:
+    """(location ids, flags) that count as the projects hangar: the settings when set, else the projects' delivery
+    offices and their hangar divisions (not the deliveries hangar)."""
+    locs = {int(x) for x in app_settings.SHIPYARD_BOOKS_HANGAR_LOCATIONS or []} or project_offices(cid)
+    flags = set(app_settings.SHIPYARD_BOOKS_HANGAR_FLAGS or []) or {f for f in DIVISIONS if f != "CorpDeliveries"}
+    return locs, flags
+
+
+def _wanted(location_id, flag, scope_=None) -> bool:
+    locs, flags = scope_ or scope()
     return (not locs or int(location_id) in locs) and (not flags or flag in flags)
 
 
@@ -89,9 +110,10 @@ def stock(cid=None) -> tuple:
     """({type_id: units} in the projects hangar, {type_id: name}, read_at or None when never read)."""
     cid = cid or corp_id()
     units, names, read_at = defaultdict(int), {}, None
+    sc = scope(cid)
     for h in HangarItem.objects.filter(corporation_id=cid):
         read_at = h.read_at
-        if _wanted(h.location_id, h.location_flag):
+        if _wanted(h.location_id, h.location_flag, sc):
             units[h.type_id] += h.quantity
             if h.name:
                 names[h.type_id] = h.name
@@ -102,11 +124,12 @@ def divisions(cid=None) -> list:
     """What the last read found, per office and division: for choosing the projects hangar."""
     cid = cid or corp_id()
     rows = defaultdict(lambda: {"types": 0, "units": 0, "wanted": False, "sample": []})
+    sc = scope(cid)
     for h in HangarItem.objects.filter(corporation_id=cid).order_by("-quantity"):
         r = rows[(h.location_id, h.location_flag)]
         r["types"] += 1
         r["units"] += h.quantity
-        r["wanted"] = _wanted(h.location_id, h.location_flag)
+        r["wanted"] = _wanted(h.location_id, h.location_flag, sc)
         if len(r["sample"]) < 4:
             r["sample"].append(h.name or str(h.type_id))
     return [{"location_id": loc, "flag": flag, "division": DIVISIONS.get(flag, flag), **r} for (loc, flag), r in sorted(rows.items())]
