@@ -61,7 +61,7 @@
 </form>
 
 <div class="table-responsive">
-<table id="bargains-table" class="table table-sm table-hover table-striped align-middle w-100" data-num-from="2" data-num-to="12">
+<table id="bargains-table" class="table table-sm table-hover table-striped align-middle w-100" data-num-from="2" data-num-to="12"{% if not rows %} data-empty="1"{% endif %}>
     <thead>
         <tr>
             <th data-key="name">Item</th>
@@ -98,11 +98,10 @@
             <td class="text-end shipyard-k" data-order="{{ r.days365 }}">{{ r.days365 }}</td>
             <td>{% if r.flag_low %}<span class="badge bg-success">52-week low</span>{% endif %} {% if r.flag_dip %}<span class="badge bg-info text-dark">under 90 d</span>{% endif %}</td>
         </tr>
-    {% empty %}
-        <tr><td colspan="14" class="shipyard-k">{% if fresh.types %}Nothing matches these filters.{% else %}No history yet: the nightly archive import has not run.{% endif %}</td></tr>
     {% endfor %}
     </tbody>
 </table>
+{% if not rows %}<p class="shipyard-k small mt-2">{% if fresh.types %}Nothing matches these filters.{% else %}No history yet: the archive import has not finished.{% endif %}</p>{% endif %}
 </div>
 <style>
 .bargains-range { position: relative; height: 8px; width: 90px; background: linear-gradient(90deg, #2e8b57 0%, #7a7a3a 50%, #b04545 100%); border-radius: 4px; opacity: .85; }

@@ -4,7 +4,7 @@
 
     $(function () {
         var el = document.getElementById("bargains-table");
-        if (!el) { return; }
+        if (!el || el.dataset.empty) { return; }
         var numCols = [];
         for (var i = parseInt(el.dataset.numFrom, 10); i <= parseInt(el.dataset.numTo, 10); i++) { numCols.push(i); }
         var table = $("#bargains-table").DataTable({
