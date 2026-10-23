@@ -60,6 +60,8 @@ The Finance tab learns of a sale by trade or contract from the deposit of its pr
 
 Finance → Register a direct sale: paste the items (name, tab, quantity per line), Quote (ore and ice at 95 % of the Reprocessing tab's value capped at Jita sell, other items at Jita buy, with the projects' cost and the profit per line), Register to get a `DS-XXXX` code. Deposit the buyer's ISK into a corp wallet with the code in the reason: the books take the registered lines out of the goods held when the deposit appears, and section 3 shows the sale as one "Direct sale of goods" line. `services/directsales.py`; the registrations are `BookDirectSale` rows (admin: Shipyard → direct sales).
 
+Since 0.26.0 the quote also values the list six ways, each with its margin against the projects' cost: the quote itself, the project cost, Jita buy on everything, Jita sell on everything, 95 % of the reprocessing value with the abyssal materials at Jita buy, and the same capped at Jita sell (which is the rule). Every line shows Jita buy, Jita sell and the uncapped reprocessing value next to the price used, and a sanity check flags a line when an odd Jita order could be behind the number: buy above sell, a spread over 20 %, a quote under 85 % of Jita buy, a quote above Jita sell, or a reprocessing value more than 1.25x Jita sell. `directsales.valuations`, `directsales.flags`.
+
 ## Stock take (0.24.1)
 
 On the Register a direct sale page: write off every project-goods lot held when none of it is in the hangar any more (sold earlier without a record). No cash moves; the lots leave at cost; later deliveries accrue again. `directsales.write_off`.

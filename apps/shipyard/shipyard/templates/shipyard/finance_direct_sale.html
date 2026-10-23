@@ -34,22 +34,41 @@
 {% if q %}
 {% if q.problems %}<div class="alert alert-warning py-2 small">{% for p in q.problems %}<div>{{ p }}</div>{% endfor %}</div>{% endif %}
 {% if q.lines %}
-<div class="table-responsive"><table class="table table-sm align-middle">
-    <thead><tr><th>Item</th><th class="text-end">Units</th><th class="text-end">Price per unit</th><th>Basis</th><th class="text-end">Line</th><th class="text-end" title="What the projects paid for these units, first in first out">Cost</th><th class="text-end">Profit</th></tr></thead>
+<h6 class="mt-3">The list valued six ways <span class="small shipyard-k fw-normal">(the quote is the first line; the margin is against what the projects paid)</span></h6>
+<div class="table-responsive"><table class="table table-sm align-middle w-auto">
+    <thead><tr><th>Valuation</th><th class="text-end">Total</th><th class="text-end" title="Total minus what the projects paid, first in first out">Margin vs project cost</th></tr></thead>
     <tbody>
-    {% for ln in q.lines %}
-        <tr>
-            <td class="text-nowrap"><img src="https://images.evetech.net/types/{{ ln.type_id }}/icon?size=32" width="22" height="22" class="rounded me-1" alt="">{{ ln.name }}</td>
-            <td class="text-end">{{ ln.qty|num:0 }}</td>
-            <td class="text-end">{{ ln.unit|isk_full }}</td>
-            <td class="small shipyard-k">{{ ln.basis }}</td>
-            <td class="text-end fw-semibold">{{ ln.line|isk }}</td>
-            <td class="text-end">{{ ln.cost|isk }}{% if ln.short %} <i class="fas fa-circle-question text-warning" title="Only {{ ln.held|num:0 }} of these are in the goods held from projects; the rest has no project cost"></i>{% endif %}</td>
-            <td class="text-end {{ ln.profit|profit_class }}">{{ ln.profit|isk }}</td>
+    {% for v in q.valuations %}
+        <tr{% if forloop.first %} class="fw-semibold"{% endif %}>
+            <td>{{ v.label }}</td>
+            <td class="text-end">{{ v.total|isk_full }}</td>
+            <td class="text-end {% if not v.is_cost %}{{ v.margin|profit_class }}{% endif %}">{% if v.is_cost %}<span class="shipyard-k">the cost itself</span>{% elif v.pct is not None %}{{ v.margin|isk }} ({{ v.pct|pct:1 }})
+            {% else %}{{ v.margin|isk }} <span class="shipyard-k">(no project cost)</span>{% endif %}</td>
         </tr>
     {% endfor %}
     </tbody>
-    <tfoot><tr><th>Total</th><th></th><th></th><th></th><th class="text-end">{{ q.total|isk_full }}</th><th class="text-end">{{ q.cost|isk }}</th><th class="text-end {{ q.profit|profit_class }}">{{ q.profit|isk }}</th></tr></tfoot>
+</table></div>
+{% if q.flagged %}<div class="alert alert-warning py-2 small"><i class="fas fa-triangle-exclamation fa-fw"></i> {{ q.flagged }} line{{ q.flagged|pluralize }} with a price worth a second look (marked below): the quote still follows the rule, but check that an odd Jita order is not behind the number.</div>
+{% else %}<div class="small text-success mb-2"><i class="fas fa-circle-check fa-fw"></i> Sanity checks: Jita buy and sell agree on every line, no quote under 85 % of Jita buy, no reprocessing value far above Jita sell.</div>{% endif %}
+<div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>Item</th><th class="text-end">Units</th><th class="text-end" title="Jita highest buy order">Jita buy</th><th class="text-end" title="Jita lowest sell order">Jita sell</th><th class="text-end" title="95 % of the Reprocessing tab's value, before the cap (ores and ice)">95 % repro</th><th class="text-end">Price per unit</th><th>Basis</th><th class="text-end">Line</th><th class="text-end" title="What the projects paid for these units, first in first out">Cost</th><th class="text-end" title="Line minus cost, and as a share of the cost">Profit</th></tr></thead>
+    <tbody>
+    {% for ln in q.lines %}
+        <tr{% if ln.flags %} class="table-warning"{% endif %}>
+            <td class="text-nowrap"><img src="https://images.evetech.net/types/{{ ln.type_id }}/icon?size=32" width="22" height="22" class="rounded me-1" alt="">{{ ln.name }}{% if ln.flags %} <i class="fas fa-triangle-exclamation text-warning" title="{{ ln.flags|join:'; ' }}"></i>{% endif %}</td>
+            <td class="text-end">{{ ln.qty|num:0 }}</td>
+            <td class="text-end small">{% if ln.buy %}{{ ln.buy|isk_full }}{% else %}<span class="shipyard-k">-</span>{% endif %}</td>
+            <td class="text-end small">{% if ln.sell %}{{ ln.sell|isk_full }}{% else %}<span class="shipyard-k">-</span>{% endif %}</td>
+            <td class="text-end small">{% if ln.repro %}{{ ln.repro|isk_full }}{% else %}<span class="shipyard-k">-</span>{% endif %}</td>
+            <td class="text-end fw-semibold">{{ ln.unit|isk_full }}</td>
+            <td class="small shipyard-k">{{ ln.basis }}{% if ln.flags %}<br><span class="text-warning">{{ ln.flags|join:"; " }}</span>{% endif %}</td>
+            <td class="text-end fw-semibold">{{ ln.line|isk }}</td>
+            <td class="text-end">{{ ln.cost|isk }}{% if ln.short %} <i class="fas fa-circle-question text-warning" title="Only {{ ln.held|num:0 }} of these are in the goods held from projects; the rest has no project cost"></i>{% endif %}</td>
+            <td class="text-end {{ ln.profit|profit_class }}">{{ ln.profit|isk }}{% if ln.pct is not None %} <span class="small">({{ ln.pct|pct:0 }})</span>{% endif %}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot><tr><th>Total</th><th></th><th></th><th></th><th></th><th></th><th></th><th class="text-end">{{ q.total|isk_full }}</th><th class="text-end">{{ q.cost|isk }}</th><th class="text-end {{ q.profit|profit_class }}">{{ q.profit|isk }}{% if q.pct is not None %} ({{ q.pct|pct:1 }}){% endif %}</th></tr></tfoot>
 </table></div>
 <p class="small shipyard-k">Prices at {{ q.market }} as last refreshed; the reprocessing values use your own skills and the alliance's refinery, as on the Reprocessing tab.</p>
 {% endif %}

@@ -96,6 +96,81 @@ def _buy_prices(type_ids, market) -> dict:
     return out
 
 
+def _sell_prices(type_ids, market) -> dict:
+    """Jita lowest sell per type: the price table, then the LP store's table, then Fuzzwork for the rest."""
+    ids = {int(t) for t in type_ids}
+    out = {}
+    if market is not None:
+        for p in PriceSnapshot.objects.filter(location=market, type_id__in=list(ids)):
+            if p.sell_min:
+                out[p.type_id] = float(p.sell_min)
+    for m in LpTypeMarket.objects.filter(type_id__in=[t for t in ids if t not in out]):
+        if m.sell_min:
+            out[m.type_id] = float(m.sell_min)
+    missing = [t for t in ids if t not in out]
+    if missing:
+        try:
+            station = int(market.station_id) if market is not None else 60003760
+            for tid, a in fuzzwork.station_aggregates(station, missing).items():
+                if a.get("sell_min"):
+                    out[tid] = float(a["sell_min"])
+        except Exception:  # noqa: BLE001
+            pass
+    return out
+
+
+# Sanity checks on the Jita prices behind a quote (owner, 2026-10-23): a line gets a flag when
+SPREAD_FLAG = 0.20       # the gap between Jita sell and buy is more than this share of sell (thin or odd market)
+UNDER_BUY_FLAG = 0.85    # the quote is below this share of Jita buy (the buyer could get more from Jita's buy orders)
+REPRO_OVER_SELL_FLAG = 1.25  # the reprocessing value is above this multiple of Jita sell (minerals or the sell price look off)
+
+
+def flags(unit, buy, sell, repro) -> list:
+    """Why a line's prices deserve a second look. Pure; empty when nothing is odd."""
+    out = []
+    if not buy:
+        out.append("no Jita buy order")
+    if not sell:
+        out.append("no Jita sell order")
+    if buy and sell and buy > sell:
+        out.append(f"Jita buy {buy:,.2f} above sell {sell:,.2f}")
+    elif buy and sell and (sell - buy) / sell > SPREAD_FLAG:
+        out.append(f"Jita spread {(sell - buy) / sell:.0%} (sell {sell:,.2f}, buy {buy:,.2f})")
+    if buy and unit < buy * UNDER_BUY_FLAG:
+        out.append(f"quote {1 - unit / buy:.0%} under Jita buy")
+    if sell and unit > sell * 1.0001:
+        out.append("quote above Jita sell")
+    if repro and sell and repro > sell * REPRO_OVER_SELL_FLAG:
+        out.append(f"reprocessing value {repro / sell:.2f}x Jita sell")
+    return out
+
+
+def _pct(total, cost):
+    return (total - cost) / cost if cost else None
+
+
+def valuations(lines: list) -> list:
+    """The six ways to value the pasted list, each with its margin against the projects' cost (owner, 2026-10-23).
+    Pure. A line carries unit (the quote), buy, sell, repro (95 % of the reprocessing value, ores only), qty, cost."""
+    cost = sum(ln["cost"] for ln in lines)
+
+    def total(key):
+        return sum(key(ln) * ln["qty"] for ln in lines)
+
+    def ore_or_buy(ln, ore_value):
+        return ore_value(ln) if ln["is_ore"] and ln.get("repro") is not None else (ln.get("buy") or ln["unit"])
+
+    rows = [
+        ("Direct-sale quote (the rule)", total(lambda ln: ln["unit"])),
+        ("Paid via projects, first in first out", cost),
+        ("Jita buy on everything", total(lambda ln: ln.get("buy") or 0)),
+        ("Jita sell on everything", total(lambda ln: ln.get("sell") or 0)),
+        ("95 % reprocessing on ores and ice, Jita buy on the rest, no cap", total(lambda ln: ore_or_buy(ln, lambda l: l["repro"]))),
+        ("95 % reprocessing capped at Jita sell, Jita buy on the rest", total(lambda ln: ore_or_buy(ln, lambda l: min(l["repro"], l["sell"]) if l.get("sell") else l["repro"]))),
+    ]
+    return [{"label": label, "total": round(v, 2), "margin": round(v - cost, 2), "pct": _pct(v, cost), "is_cost": label.startswith("Paid")} for label, v in rows]
+
+
 def quote(text: str, user) -> dict:
     """Price the pasted items by the rule and work out what the projects paid for them. Changes nothing."""
     settings = board.get_user_settings(user)
@@ -105,7 +180,9 @@ def quote(text: str, user) -> dict:
     ore_rows = {r.ore.type_id: r for r in reprocessing.dashboard_rows(market, settings)}
     led = projectbooks.ledger(projects.corp_id())
     lots, yields, led_ores = led["lots"], led["yields"], led["ores"]
-    buy = _buy_prices([resolve(n, cat)[0] for n, _, _ in parsed if resolve(n, cat)], market)
+    wanted = [resolve(n, cat)[0] for n, _, _ in parsed if resolve(n, cat)]
+    buy = _buy_prices(wanted, market)
+    sells = _sell_prices([t for t in wanted if t not in ore_rows], market)
     now = timezone.now()
     lines, problems, total, cost_total = [], [], 0.0, 0.0
     for name, qty, raw in parsed:
@@ -118,10 +195,13 @@ def quote(text: str, user) -> dict:
             continue
         tid, full, ore = hit
         b = buy.get(tid)
+        repro = None
         if ore is not None:
             row = ore_rows.get(tid)
             repro = row.net_value * ORE_SHARE if row else None
             cap = row.sell_price if row and row.sell_price else None
+            if b is None and row and row.buy_price:
+                b = float(row.buy_price)
             if repro is None and cap is None:
                 problems.append(f"{full}: no reprocessing value and no Jita sell")
                 continue
@@ -147,10 +227,15 @@ def quote(text: str, user) -> dict:
         line = unit * qty
         total += line
         cost_total += cost
+        s = float(row.sell_price) if ore is not None and row and row.sell_price else sells.get(tid)
         lines.append({"type_id": tid, "name": full, "qty": qty, "unit": round(unit, 2), "basis": basis, "line": round(line, 2),
                       "cost": round(cost, 2), "held": round(taken, 3), "profit": round(line - cost, 2), "is_ore": ore is not None,
-                      "short": taken + 1e-6 < qty if (o is None and ore is None) or (ore is not None and tid in lots) else False})
+                      "short": taken + 1e-6 < qty if (o is None and ore is None) or (ore is not None and tid in lots) else False,
+                      "buy": round(b, 2) if b else None, "sell": round(s, 2) if s else None, "repro": round(repro, 2) if repro else None,
+                      "flags": flags(unit, b, s, repro), "pct": _pct(line, cost)})
+    vals = valuations(lines)
     return {"lines": lines, "problems": problems, "total": round(total, 2), "cost": round(cost_total, 2), "profit": round(total - cost_total, 2),
+            "pct": _pct(total, cost_total), "valuations": vals, "flagged": sum(1 for ln in lines if ln["flags"]),
             "market": market.name if market else "", "rule": f"ore and ice at {ORE_SHARE:.0%} of the reprocessing value, never above Jita sell; other items at Jita buy"}
 
 
