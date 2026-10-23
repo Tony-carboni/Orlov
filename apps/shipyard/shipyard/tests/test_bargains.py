@@ -59,6 +59,15 @@ class BargainsTests(TestCase):
                 40: {"sell_min": 800.0, "sell_percentile": 805.0, "sell_volume": 1e5, "sell_orders": 3, "buy_max": 790.0}}):
             r = bargains.refresh_prices()
         self.assertEqual(r["types"], 2)
+        # a type with no sell order at Jita comes back at 0 from Fuzzwork: no price, never a bargain
+        with mock.patch.object(bargains.fuzzwork, "station_aggregates", return_value={
+                40: {"sell_min": 0.0, "sell_percentile": 0.0, "sell_volume": 0.0, "sell_orders": 0, "buy_max": 0.0}}):
+            bargains.refresh_prices()
+        self.assertIsNone(MarketTypeStat.objects.get(type_id=40).sell_min)
+        self.assertEqual(bargains.rows(flag="all"), [MarketTypeStat.objects.get(type_id=34)])
+        with mock.patch.object(bargains.fuzzwork, "station_aggregates", return_value={
+                40: {"sell_min": 800.0, "sell_percentile": 805.0, "sell_volume": 1e5, "sell_orders": 3, "buy_max": 790.0}}):
+            bargains.refresh_prices()
         t.refresh_from_db()
         m.refresh_from_db()
         self.assertEqual((t.flag_low, t.flag_dip), (False, True))

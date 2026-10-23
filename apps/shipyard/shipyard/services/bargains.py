@@ -302,7 +302,10 @@ def refresh_prices() -> dict:
     now = timezone.now()
     n = 0
     for tid, a in agg.items():
-        n += MarketTypeStat.objects.filter(type_id=tid).update(sell_min=a["sell_min"], buy_max=a["buy_max"], sell_volume=a["sell_volume"],
+        # no sell order at Jita 4-4 comes back as a price of 0: that is no price, not a bargain (0.29.2)
+        sell = a["sell_min"] if (a["sell_min"] and a["sell_orders"]) else None
+        buy = a["buy_max"] if a["buy_max"] else None
+        n += MarketTypeStat.objects.filter(type_id=tid).update(sell_min=sell, buy_max=buy, sell_volume=a["sell_volume"],
                                                                sell_orders=a["sell_orders"], prices_at=now)
     apply_flags()
     return {"types": n, "asked": len(ids)}
