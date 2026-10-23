@@ -391,7 +391,7 @@ class BooksTests(TestCase):
         wo = directsales.write_off(owner, "stock take")
         wo.matched_at = at(11.5)
         wo.save(update_fields=["matched_at"])
-        ProjectContribution.objects.create(project=p3, taken_at=at(12), character_id=4242, character_name="Miner", contributed=14_406)
+        ProjectContribution.objects.create(project=p3, taken_at=at(12), character_id=4242, character_name="Miner", contributed=2 * 14_406)  # cumulative, as EVE reports it
         led = projectbooks.ledger(CORP)
         self.assertEqual([lot[3] for lot in led["lots"][62536]], ["ore"])  # the second delivery, held as ore
         self.assertIn(36, led["lots"])  # the first, as minerals
