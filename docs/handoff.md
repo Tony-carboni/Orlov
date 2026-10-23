@@ -20,6 +20,9 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 - **0.28.2** (commit `2048c9e` pinned, no migration, collectstatic run): a **No 0-Grade** button on the Reprocessing board that hides the half-yield ores whatever else is ticked, remembered per browser.
 
+- **0.29.0** (commit `0b8dfc9` pinned, backup `aa-db-2026-10-23-1303.sql.gz`, migration 0033, beat entries `shipyard_refresh_market_history` 13:30 UTC daily and `shipyard_refresh_bargain_prices` every two hours appended to `conf/local.py` (copy `local.py.pre-bargains`) and the deploy template, 132 tests): the **Bargains** tab, every type traded in The Forge against its own year (52-week low and high, 90-day average, Jita sell and buy now, ISK a day), flags "52-week low" and "under 90 d", ISK-per-day floor against thin markets. History from EVE Ref's daily market-history archive (one ~600 KB file a day, 400 days kept compressed in the database), names from ESI's names route, market groups from EVE Ref's reference data, prices from Fuzzwork: no ESI history calls at all, which answers the owner's question about ESI good practice. First backfill run from the shell after the release.
+- The owner's market quickbar was replaced by a newer version (14 folders) in `docs/reference/market-quickbar.txt`.
+
 **Owner has to do by hand.** Look at the new row on Finance → section 3. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep, test the welcome DM with a real join.
 
 **Next.** Nothing queued.
