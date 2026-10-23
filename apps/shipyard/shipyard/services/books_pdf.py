@@ -172,7 +172,9 @@ def render(d: dict) -> bytes:
         for mo in bb["months"]:
             block = [Paragraph(f"<b>{e(mo['label'])}</b>", p)]
             lp_line = (f"{mo['lp_bought']:,} LP for {_m(mo['lp_isk'])} ({mo['lp_avg']:,.0f} ISK per LP)" if mo["lp_bought"] else "none")
-            block.append(Paragraph(f"LP bought: {lp_line}. LP converted: {mo['lp_converted']:,} LP.", p))
+            sold_line = (f" LP sold directly: {mo['lp_sold']:,} LP for {_m(mo['lp_sold_isk'])} ({mo['lp_sold_avg']:,.0f} ISK per LP), {_m(mo['lp_sold_cost'])} at cost, "
+                         f"profit {_m(mo['lp_sold_net'], True)}." if mo.get("lp_sold") else "")
+            block.append(Paragraph(f"LP bought: {lp_line}. LP converted: {mo['lp_converted']:,} LP.{sold_line}", p))
             if mo["converted"]:
                 crows = []
                 for c in mo["converted"]:

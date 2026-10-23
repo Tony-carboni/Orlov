@@ -521,6 +521,33 @@ class BooksTests(TestCase):
         self.assertIn("26,000 LP", html)
         self.assertIn("Converted into 240 Navy Cap Booster 800", html)
 
+    def test_lp_sold_directly(self):
+        """0.28.1: a deposit whose reason names LP is a direct sale of LP (owner, 2026-10-23: "LP Purchase 69750"): the LP leave at
+        average cost, the profit is one movement in the LP category and part of section 4, and the LP log shows the sale."""
+        self.assertEqual(books.lp_units_from("LP Purchase 69750"), 69_750)
+        before = books.compute()
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_701, division=1, date=at(13), ref_type="player_donation", amount=8.8e6,
+                                        reason="LP Purchase 10000", first_party_id=111, second_party_id=CORP)
+        d = books.compute()
+        self.assertEqual((d["lp_units"], round(d["lp_cost"]), d["lp_sold"]), (16_000, 16_000 * 800, 10_000))
+        move = next(m for m in d["moves"] if m[0].startswith("LP sold directly"))
+        self.assertEqual(move[0], "LP sold directly: 10,000 LP")
+        self.assertAlmostEqual(move[1], 0.8e6, places=0)
+        self.assertIn("880 ISK per LP); 8.0 M at cost left the books", move[2])
+        self.assertIn(move, next(g for g in d["move_groups"] if g["key"] == "lp")["rows"])
+        self.assertNotIn("Deposit: LP Purchase 10000", [m[0] for m in d["moves"]])
+        self.assertAlmostEqual(d["result"], before["result"] + 0.8e6, places=0)
+        self.assertLess(abs(d["gap"]), 1.0)
+        bb = d["buyback"]
+        self.assertEqual((bb["lp_left"], bb["lp_sold"]), (16_000, 10_000))
+        self.assertAlmostEqual(bb["realised"], before["buyback"]["realised"] + 0.8e6, places=0)
+        month = bb["months"][0]
+        self.assertEqual((month["lp_sold"], round(month["lp_sold_net"])), (10_000, 800_000))
+        last = d["lp_events"][-1]
+        self.assertEqual((last["lp"], last["balance"], last["kind"]), (-10_000, 16_000, "sold"))
+        self.assertIn("Sold to", last["what"])
+        self.assertEqual(next(g for g in d["asset_groups"] if g["key"] == "lp")["rows"][0][0], "16,000 LP not converted yet")
+
     def test_ignored_lines_leave_the_books(self):
         """An accidental sale and its tax, flagged by id, and the owner's settlement, matched by its reason, net out."""
         before = books.compute()

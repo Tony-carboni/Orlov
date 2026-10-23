@@ -38,8 +38,9 @@ from . import hangar, projectbooks, projects, reprocessing
 
 M = 1e6
 FEES = ("brokers_fee", "transaction_tax", "market_provider_tax")
-# an LP purchase: "50.000 LP", "15000 LP", "57k State protectorate LP", "1.2M LP", or "LP 16000" (the owner's reasons, 2026-10-19 to -22)
-LP_REASON = re.compile(r"(\d[\d.,]*)\s*([kKmM])?(?:\s+[A-Za-z][^\d]*?)?\s*\bLP\b|\bLP\b\s*(\d[\d.,]*)\s*([kKmM])?", re.I)
+# an LP purchase or sale: "50.000 LP", "15000 LP", "57k State protectorate LP", "1.2M LP", "LP 16000" or "LP Purchase 69750"
+# (the owner's reasons, 2026-10-19 to -23); on a withdrawal the corporation bought the LP, on a deposit it sold them (0.28.1)
+LP_REASON = re.compile(r"(\d[\d.,]*)\s*([kKmM])?(?:\s+[A-Za-z][^\d]*?)?\s*\bLP\b|\bLP\b(?:\s+[A-Za-z][^\d]*?)?\s*(\d[\d.,]*)\s*([kKmM])?", re.I)
 
 
 def lp_units_from(reason) -> int | None:
@@ -402,6 +403,8 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
     tax_by_entry = {}  # transaction_tax lines by entry id: a sale's tax is the line next to it
     broker_lines = []  # [t, amount]
     lp_purchases = []  # [t, units, isk, to]
+    lp_sales = []  # [t, units, isk, from]: a deposit whose reason names LP, the corporation sold them (0.28.1)
+    lp_sold = 0  # units sold in the period
     goods_sale_entries = []  # [journal entry id, type_id] of project-goods sales, to find their sales tax
     market_buys = []  # [t, type_id, qty, cost]
     other_buys = 0.0
@@ -460,8 +463,13 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
             c = CODE_RE.search(e.reason or "")
             row = {"t": e.date, "who": names.get(e.first_party_id, str(e.first_party_id)), "reason": e.reason, "amount": e.amount, "entry_id": e.entry_id,
                    "code": c.group(0).upper() if c else ""}
+            units = None if (m or c) else lp_units_from(e.reason)
             if m or c:
                 direct_sales_all.append({**row, "item": m.group(1).strip() if m else ""})
+            elif units:
+                lp_sales.append([e.date, units, e.amount, row["who"]])
+                if inp:
+                    lp_sold += units
             elif inp:
                 deposits.append({**row, "item": ""})
         elif rt == "corporation_account_withdrawal":
@@ -560,7 +568,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
                                 "list_price": last.list_price if last else None, "location": last.location_name if last else ""})
     bought_since = sum(s.units * (s.unit_cost or 0) for s in batches if s.bought_at > base and not _is_conversion(s))
     market_bought = sum(c for _, _, _, c, inp in market_buys if inp)
-    lp_left = lp_cost - lp_used * lp_avg
+    lp_left = lp_cost - (lp_used + lp_sold) * lp_avg
 
     # --- project goods still held, split at the baseline -----------------------------------------
     led = projectbooks.ledger(cid, until=cut)
@@ -734,6 +742,11 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
                       + (f"; {(bought_since - paid_in_books) / M:.1f} M of it not paid from a corporation wallet" if abs(bought_since - paid_in_books) >= 1 else "")])
     if lp_cost - b.lp_cost:
         moves.append(["LP bought", 0.0, f"{(lp_cost - b.lp_cost) / M:.1f} M paid for {lp_units - b.lp_units:,} LP, held at cost until used"])
+    for t, units, isk, who in lp_sales:
+        if t >= base:
+            cost = units * lp_avg
+            moves.append([f"LP sold directly: {units:,} LP", isk - cost,
+                          f"Sold to {who}, {_when(t)}, for {isk / M:.1f} M ({isk / units:,.0f} ISK per LP); {cost / M:.1f} M at cost left the books"])
     explained = sum(m[1] for m in moves)
     gap = (result - b.opening_result) - explained
     goods_tax_month = defaultdict(float)  # (YYYY-MM, type) -> sales tax of project-goods sales
@@ -749,22 +762,25 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
     # the corporation's LP change by change (owner, 2026-10-22): purchases from the journal, conversions from the stock batches
     lp_events = []
     for t, units, isk, to in lp_purchases:
-        lp_events.append({"t": t, "lp": units, "isk": isk, "what": f"Bought from {to}: {units:,} LP for {isk / M:.1f} M ({isk / units:,.0f} ISK per LP)" if units else f"Bought from {to}"})
+        lp_events.append({"t": t, "lp": units, "isk": isk, "kind": "bought", "what": f"Bought from {to}: {units:,} LP for {isk / M:.1f} M ({isk / units:,.0f} ISK per LP)" if units else f"Bought from {to}"})
+    for t, units, isk, who in lp_sales:
+        lp_events.append({"t": t, "lp": -units, "isk": isk, "kind": "sold", "what": f"Sold to {who}: {units:,} LP for {isk / M:.1f} M ({isk / units:,.0f} ISK per LP)"})
     for c in all_conv:
         if c["lp"]:
-            lp_events.append({"t": c["t"], "lp": -c["lp"], "isk": 0.0,
+            lp_events.append({"t": c["t"], "lp": -c["lp"], "isk": 0.0, "kind": "converted",
                               "what": f"Converted into {c['units']:,} {c['name']}" + (f" with {c['input_units']:,.0f} {c['input']}" if c["input_units"] else "")})
     lp_events.sort(key=lambda e: e["t"])
     running = 0
     for e in lp_events:
         running += e["lp"]
         e["balance"] = running
-    buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, all_conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices)
+    buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, all_conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices,
+                       lp_sales=lp_sales, lp_sold=lp_sold)
     if abs(gap) >= 1.0:
         moves.append(["Not explained", gap, "The journal and the position differ: a missing journal page or a new kind of entry"])
     outputs = {c["name"] for c in conversions}
     move_groups = _group_moves(moves, outputs)
-    asset_groups = _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held, held_value, lp_units - lp_used, lp_left)
+    asset_groups = _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held, held_value, lp_units - lp_used - lp_sold, lp_left)
 
     # --- outside the books -----------------------------------------------------------------------
     live = live_wallets()
@@ -807,7 +823,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         "period_result": result - b.opening_result, "wallet": wallet, "other_divs": other_divs, "pool": pool, "n_projects": n_projects,
         "stock": stock_lines, "stock_now": stock_now, "stock_base": stock_base,
         "held": sorted(held.items(), key=lambda kv: -kv[1]), "held_total": held_total, "held_value": held_value, "hangar": hangar_info,
-        "lp_units": lp_units - lp_used, "lp_cost": lp_left, "lp_bought": lp_units, "open_escrow": open_escrow,
+        "lp_units": lp_units - lp_used - lp_sold, "lp_cost": lp_left, "lp_bought": lp_units, "lp_sold": lp_sold, "open_escrow": open_escrow,
         "assets": assets, "result": result, "moves": moves, "explained": explained, "gap": gap,
         "lots_left": [(tid, pnames.get(tid, str(tid)), sum(r[1] for r in q), sum(r[1] * r[2] for r in q)) for tid, q in led["lots"].items() if sum(r[1] for r in q) > 0],
         "move_groups": move_groups, "asset_groups": asset_groups, "ignored": ignored,
@@ -860,7 +876,8 @@ def _broker_split(broker_lines, orders, sale_prices=None):
     return by_type, by_month
 
 
-def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices=None) -> dict:
+def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices=None,
+             lp_sales=(), lp_sold=0) -> dict:
     """LP buybacks and conversions per calendar month (owner, 2026-10-20): LP bought and converted, what it
     was converted into, what those items sold for with their sales tax and broker fees, the net profit,
     and what is still on sell orders with its projected net. Items bought to convert that are not
@@ -887,7 +904,7 @@ def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversi
         listed[tid] = {"name": names.get(tid, f"type {tid}"), "units": units, "value": value, "price": (value / units) if units else None,
                        "cost": cost_listed, "expected": value * (1 - tax_rate[tid]) - cost_listed, "left": left_units, "left_cost": left_cost}
 
-    months = sorted({t.strftime("%Y-%m") for t, *_ in lp_purchases} | {c["t"].strftime("%Y-%m") for c in conversions}
+    months = sorted({t.strftime("%Y-%m") for t, *_ in lp_purchases} | {c["t"].strftime("%Y-%m") for c in conversions} | {t.strftime("%Y-%m") for t, *_ in lp_sales}
                     | {m for m, tid in sold_month if tid in products} | {m for m, tid in by_month if tid in products}, reverse=True)
     out = []
     for i, key in enumerate(months):
@@ -912,16 +929,22 @@ def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversi
                               "net": revenue - cost + tax + broker})
         latest = i == 0
         still = [v for v in listed.values() if v["units"]] if latest else []
-        realised = sum(x["net"] for x in sales)
+        # LP sold directly (0.28.1): the ISK against the LP at average cost, no store, no fees
+        sold_lp = [s for s in lp_sales if s[0].strftime("%Y-%m") == key]
+        lp_s = sum(s[1] for s in sold_lp)
+        lp_s_isk = sum(s[2] for s in sold_lp)
+        lp_s_cost = lp_s * lp_avg
+        realised = sum(x["net"] for x in sales) + lp_s_isk - lp_s_cost
         expected = sum(v["expected"] for v in still)
-        sold_value = sum(x["revenue"] for x in sales)
-        cost_sold = sum(x["cost"] for x in sales)
+        sold_value = sum(x["revenue"] for x in sales) + lp_s_isk
+        cost_sold = sum(x["cost"] for x in sales) + lp_s_cost
         listed_value = sum(v["value"] for v in still)
         lp_b = sum(p[1] for p in bought)
         isk_b = sum(p[2] for p in bought)
         first = dt.datetime.strptime(key, "%Y-%m")
         out.append({"key": key, "label": f"{first:%B %Y}", "lp_bought": lp_b, "lp_isk": isk_b, "lp_avg": (isk_b / lp_b) if lp_b else None,
                     "purchases": bought, "lp_converted": sum(c["lp"] for c in made), "converted": conv,
+                    "lp_sold": lp_s, "lp_sold_isk": lp_s_isk, "lp_sold_cost": lp_s_cost, "lp_sold_net": lp_s_isk - lp_s_cost, "lp_sold_avg": (lp_s_isk / lp_s) if lp_s else None,
                     "converted_cost": sum(c["cost"] for c in conv), "sales": sales, "still": still,
                     "realised": realised, "expected": expected, "total": realised + expected,
                     "sold_value": sold_value, "cost_sold": cost_sold, "listed_value": listed_value, "output_value": sold_value + listed_value, "latest": latest})
@@ -931,12 +954,12 @@ def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversi
     sold_value = sum(m["sold_value"] for m in out)
     cost_sold = sum(m["cost_sold"] for m in out)
     return {"months": out, "lp_units": lp_units, "lp_cost": lp_cost, "lp_avg": lp_avg, "lp_used": lp_used,
-            "lp_left": lp_units - lp_used, "lp_left_value": lp_left, "buying": buying,
+            "lp_left": lp_units - lp_used - lp_sold, "lp_left_value": lp_left, "buying": buying, "lp_sold": lp_sold,
             "realised": realised, "expected": expected, "total": realised + expected,
             # margin on what sold (owner, 2026-10-22): the sale price against what the conversion cost, nothing held counted
             "sold_value": sold_value, "cost_sold": cost_sold, "margin": ((sold_value - cost_sold) / cost_sold) if cost_sold else None,
             "outside": sum(c["isk"] for c in conversions if c["outside"]),
-            "active": bool(lp_purchases or conversions)}
+            "active": bool(lp_purchases or conversions or lp_sales)}
 
 
 def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock_types, held_items, older_cost, older_value, paid_members, direct_sales=()) -> dict:
@@ -1127,7 +1150,7 @@ def order_history() -> list:
 MOVE_GROUPS = [
     ("project_sales", "Project buyback sales", "What the corporation sold of the goods its projects bought from members"),
     ("project_rewards", "Project buyback rewards to members", "ISK the projects paid members, and the goods those rewards bought that are still held"),
-    ("lp", "LP conversion", "LP bought, what the LP store gave for it, and the sales of those items"),
+    ("lp", "LP conversion", "LP bought, what the LP store gave for it, the sales of those items, and LP sold directly"),
     ("stock", "Stock sales", "Stock bought to sell on (Heavy Water), and its sales"),
     ("market", "Market orders and fees", "Escrow of buy orders, items bought on the market, broker fees and sales tax"),
     ("structure", "Structure income", "Industry tax of the Raitaru, moved from the structure corporation to the corporation"),
@@ -1143,7 +1166,7 @@ def _group_moves(moves, outputs) -> list:
             return "project_sales"
         if label.startswith("Project rewards paid") or label.startswith("Goods those rewards bought") or label.startswith("Hangar count"):
             return "project_rewards"
-        if label.startswith("LP store:") or label.startswith("Paid in the LP store") or label == "LP bought":
+        if label.startswith("LP store:") or label.startswith("Paid in the LP store") or label == "LP bought" or label.startswith("LP sold directly"):
             return "lp"
         if label.endswith("sold, profit over its cost"):
             return "lp" if label[: -len(" sold, profit over its cost")] in outputs else "stock"
