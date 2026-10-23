@@ -112,6 +112,13 @@ def render(d: dict) -> bytes:
                 Paragraph("Per month: what the corporation projects paid members, what the corporation sold of those goods at what the projects paid for them "
                           "(first in, first out; ores count through the minerals they reprocess into), with sales tax and broker fees, and what is still held.", p),
                 Spacer(1, 4)]
+        at = pb.get("all_time") or {}
+        if at.get("first"):
+            margin = f"{at['margin'] * 100:.0f} %" if at.get("margin") is not None else "–"
+            part.append(Paragraph(f"<b>Since the first project ({at['first']:%-d %B %Y}):</b> {_m(at['paid'])} paid to {at['members']} members; "
+                                  f"net profit {_m(at['net'], True)} on what sold ({_m(at['sold'])} sold against {_m(at['cost'])} paid and {_m(at['fees'])} of fees), margin {margin}, sold stock only"
+                                  + (f"; {_m(at['written_off'])} written off on the stock take left out" if at.get("written_off") else "") + ".", p))
+            part.append(Spacer(1, 4))
         first = True
         for mo in pb["months"]:
             block = [Paragraph(f"<b>{e(mo['label'])}</b>", p)]

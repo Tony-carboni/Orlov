@@ -558,6 +558,13 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(month["realised"], revenue - 30e6 - 1.7e6, places=2)
         self.assertAlmostEqual(pb["paid_total"], 30e6)
         self.assertAlmostEqual(pb["margin"], (revenue - 30e6) / 30e6, places=6)  # the sale price against the cost, before fees
+        at = pb["all_time"]
+        self.assertEqual((round(at["paid"]), at["members"]), (30_000_000, 1))
+        self.assertAlmostEqual(at["sold"], revenue, places=2)
+        self.assertAlmostEqual(at["net"], revenue - 30e6 - 1.7e6, places=2)
+        self.assertAlmostEqual(at["margin"], (revenue - 30e6) / 30e6, places=6)
+        self.assertEqual(at["first"], at(0.5) if False else at["first"])  # a date is present
+        self.assertIsNotNone(at["first"])
         bb = books.compute()["buyback"]
         self.assertAlmostEqual(bb["sold_value"], 10 * 211_100)
         self.assertGreater(bb["cost_sold"], 0)

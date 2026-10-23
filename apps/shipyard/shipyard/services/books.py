@@ -395,6 +395,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
     other_buys = 0.0
     fees = escrow = project_net = lp_store_paid = 0.0
     deposits, direct_sales, payouts, others = [], [], [], defaultdict(float)
+    direct_sales_all = []  # every direct sale since the budget baseline: the lots leave whatever the period; the period's own are picked below
     lp_units, lp_cost = 0, 0.0
     stock_paid = []  # withdrawals that paid for a stock batch: [batch id, amount]
     transfers_out = 0.0
@@ -443,13 +444,14 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
             if inp:
                 lp_store_paid += e.amount
         elif rt == "player_donation" and e.amount > 0:
-            if not inp:
-                continue
             m = DIRECT_SALE.search(e.reason or "")
             c = CODE_RE.search(e.reason or "")
             row = {"t": e.date, "who": names.get(e.first_party_id, str(e.first_party_id)), "reason": e.reason, "amount": e.amount, "entry_id": e.entry_id,
                    "code": c.group(0).upper() if c else ""}
-            (direct_sales if (m or c) else deposits).append({**row, "item": m.group(1).strip() if m else ""})
+            if m or c:
+                direct_sales_all.append({**row, "item": m.group(1).strip() if m else ""})
+            elif inp:
+                deposits.append({**row, "item": ""})
         elif rt == "corporation_account_withdrawal":
             if e.first_party_id == cid and e.second_party_id == cid:
                 # between wallet divisions: within 1-6 it nets to zero; to division 7 it leaves the books
@@ -551,7 +553,8 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
     # --- project goods still held, split at the baseline -----------------------------------------
     led = projectbooks.ledger(cid, until=cut)
     prices, pnames = led["prices"], led["names"]
-    _apply_direct_sales(direct_sales, led, cid, until=now)  # the lots they sold leave before the count below; a stock take counts on a live sheet whatever its last journal line
+    _apply_direct_sales(direct_sales_all, led, cid, until=now)  # the lots they sold leave before the count below; a stock take counts on a live sheet whatever its last journal line
+    direct_sales = [d for d in direct_sales_all if d["t"] >= base]  # the period's own, for the movements
     held, held_value, older_cost, older_value = defaultdict(float), 0.0, 0.0, 0.0
     held_items = defaultdict(lambda: [0.0, 0.0, 0.0, "item"])  # item -> [units, cost, value at Jita buy, origin], bought since the baseline
     for tid, queue in led["lots"].items():
@@ -729,7 +732,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         if not t.is_buy:
             sale_prices[t.type_id].add(t.unit_price)
     project_bb = _project_buybacks(cid, base, cut, led, goods_tax_month, _broker_split(broker_lines, orders, sale_prices)[1], stock_types,
-                                   held_items, older_cost, older_value, paid_members, direct_sales)
+                                   held_items, older_cost, older_value, paid_members, direct_sales_all)
     all_conversions = all_conv
     # the corporation's LP change by change (owner, 2026-10-22): purchases from the journal, conversions from the stock batches
     lp_events = []
@@ -1063,7 +1066,19 @@ def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock
     expected = sum(m["expected"] for m in out)
     cost_sold = sum(m["cost_sold"] for m in out)
     sold_value = sum(m["sold_value"] for m in out)
-    return {"months": out, "paid_total": sum(m["paid_total"] for m in out), "paid_pool": paid_members,
+    # all time, since the first project (owner, 2026-10-23): a number for the members, across the reporting periods.
+    # Sold stock only: market sales matched to deliveries, direct sales; stock written off (sold before the books) is left out.
+    pays_all = [e for e in projectbooks.payout_events(cid) if e["t"] <= cut]
+    matches_all = [m for m in led["matches"] if clean(m[1]) not in stock_names]
+    direct_all = [d for d in direct_sales if not d.get("writeoff")]
+    written_off = sum(d.get("cost", 0.0) for d in direct_sales if d.get("writeoff"))
+    at_sold = sum(m[2] for m in matches_all) + sum(d["amount"] for d in direct_all)
+    at_cost = sum(m[3] for m in matches_all) + sum(d.get("cost", 0.0) for d in direct_all)
+    at_fees = sum(v[0] + v[1] for v in fees.values())
+    all_time = {"first": min((e["t"] for e in pays_all), default=None), "paid": sum(e["isk"] for e in pays_all),
+                "members": len({e["member"] for e in pays_all}), "sold": at_sold, "cost": at_cost, "fees": at_fees,
+                "net": at_sold - at_cost + at_fees, "margin": ((at_sold - at_cost) / at_cost) if at_cost else None, "written_off": written_off}
+    return {"months": out, "paid_total": sum(m["paid_total"] for m in out), "paid_pool": paid_members, "all_time": all_time,
             "realised": realised, "expected": expected, "total": realised + expected,
             "pct": (realised / cost_sold) if cost_sold else None,
             # margin on what sold (owner, 2026-10-22): the sale price, market or direct, against what the projects paid; nothing held counted
