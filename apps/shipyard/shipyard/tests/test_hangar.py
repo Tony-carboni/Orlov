@@ -40,7 +40,7 @@ class HangarTests(TestCase):
             patch.start()
             self.addCleanup(patch.stop)
         units, names, read_at = hangar.stock(CID)
-        self.assertEqual(units, {62536: 14406, 48112: 600, 35: 5})
+        self.assertEqual(units, {62536: 14406, 35: 5})  # no pin and no project office known: every hangar division, never the deliveries hangar (0.28.0)
         self.assertEqual(names[62536], "Compressed Kernite")
         self.assertIsNotNone(read_at)
         with override_settings(SHIPYARD_BOOKS_HANGAR_LOCATIONS=[RAITARU], SHIPYARD_BOOKS_HANGAR_FLAGS=["CorpSAG2"]):
