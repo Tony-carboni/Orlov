@@ -14,7 +14,7 @@
             <span class="btn btn-sm btn-outline-secondary disabled shipyard-k">Since</span>
             {% for key, label in periods %}<a class="btn btn-outline-secondary {% if key == period %}active{% endif %}" href="?period={{ key }}" title="{% if key == 'report' %}The period opened by the newest State of the Alliance post{% else %}Section 2 counts from {{ label|lower }}s ago; the opening is the position then{% endif %}">{{ label }}</a>{% endfor %}
         </div>
-        <div class="shipyard-k small">As of {{ d.cut|date:"j F Y, H:i" }} EVE (the corporation's last journal line). Movements since {{ d.since_label }}{% if d.period.source %} ({{ d.base|date:"j F, H:i" }} EVE){% endif %}.{% if d.period_fallback %} <span class="text-warning">The books begin at that baseline, so the choice "{{ d.period_fallback }}" counts from there until it fits.</span>{% endif %} All amounts in millions of ISK.</div>
+        <div class="shipyard-k small">As of {{ d.cut|date:"j F Y, H:i" }} EVE (the corporation's last journal line). Movements since {{ d.since_label }}{% if d.period.source %} ({{ d.base|date:"j F, H:i" }} EVE){% endif %}.{% if d.period_fallback %} <span class="text-warning">The chosen period would start on {{ d.period_fallback }}, before the books begin, so it counts from the baseline until it fits.</span>{% endif %} All amounts in millions of ISK.</div>
     </div>
     <div class="d-flex gap-2">
         <form method="post" action="{% url 'shipyard:finance_refresh' %}">{% csrf_token %}
