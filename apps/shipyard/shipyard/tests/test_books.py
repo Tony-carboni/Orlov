@@ -420,9 +420,9 @@ class BooksTests(TestCase):
         held_ledger = next(m for m in before["moves"] if m[0].startswith("Goods those rewards bought"))[1]
         self.assertAlmostEqual(held_ledger, 10e6, places=0)
         # the hangar holds 600,000 of the 1,000,000 Pyerite the ledger expects, plus Heavy Water (stock, ledger-style) and a stray item
-        HangarItem.objects.create(corporation_id=CORP, type_id=35, name="Pyerite", quantity=600_000, location_id=1, location_flag="CorpSAG2", read_at=at(12))
-        HangarItem.objects.create(corporation_id=CORP, type_id=16272, name="Heavy Water", quantity=5, location_id=1, location_flag="CorpSAG2", read_at=at(12))
-        HangarItem.objects.create(corporation_id=CORP, type_id=99999, name="Stray", quantity=1, location_id=1, location_flag="CorpSAG2", read_at=at(12))
+        HangarItem.objects.create(corporation_id=CORP, type_id=35, name="Pyerite", quantity=600_000, location_id=1, location_flag="CorporationGoalDeliveries", read_at=at(12))
+        HangarItem.objects.create(corporation_id=CORP, type_id=16272, name="Heavy Water", quantity=5, location_id=1, location_flag="CorporationGoalDeliveries", read_at=at(12))
+        HangarItem.objects.create(corporation_id=CORP, type_id=99999, name="Stray", quantity=1, location_id=1, location_flag="CorporationGoalDeliveries", read_at=at(12))
         from ..services import hangar
         for name in ("SHIPYARD_BOOKS_HANGAR_LOCATIONS", "SHIPYARD_BOOKS_HANGAR_FLAGS"):  # the live settings pin the count to the real hangar
             patch = mock.patch.object(hangar.app_settings, name, [])
