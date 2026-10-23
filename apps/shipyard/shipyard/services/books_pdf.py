@@ -116,7 +116,7 @@ def render(d: dict) -> bytes:
         if at.get("first"):
             margin = f"{at['margin'] * 100:.0f} %" if at.get("margin") is not None else "–"
             part.append(Paragraph(f"<b>Since the first project ({at['first']:%-d %B %Y}):</b> {_m(at['paid'])} paid to {at['members']} members; "
-                                  f"net profit {_m(at['net'], True)} on what sold ({_m(at['sold'])} sold against {_m(at['cost'])} paid and {_m(at['fees'])} of fees), margin {margin}, sold stock only"
+                                  f"net profit {_m(at['net'], True)} on what sold ({_m(at['sold'])} sold against {_m(at['cost'])} paid and {_m(abs(at['fees']))} of fees), margin {margin}, sold stock only"
                                   + (f"; {_m(at['written_off'])} written off on the stock take left out" if at.get("written_off") else "") + ".", p))
             part.append(Spacer(1, 4))
         first = True

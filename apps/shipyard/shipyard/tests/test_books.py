@@ -598,6 +598,8 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(at["net"], revenue - 30e6 - 1.7e6, places=2)
         self.assertAlmostEqual(at["margin"], (revenue - 30e6) / 30e6, places=6)
         self.assertIsNotNone(at["first"])
+        self.assertEqual(books.compute(since=BASE - dt.timedelta(days=7), since_label="Week")["period_fallback"], "Week")  # before the books begin: counts from the baseline, says so
+        self.assertEqual(books.compute()["period_fallback"], "")
         bb = books.compute()["buyback"]
         self.assertAlmostEqual(bb["sold_value"], 10 * 211_100)
         self.assertGreater(bb["cost_sold"], 0)

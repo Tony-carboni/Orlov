@@ -371,6 +371,8 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         b = BooksBaseline(taken_at=since, loan=first.loan, wallet=past["wallet"], other_divs=past["other_divs"], pool=past["pool"], held=past["held_total"],
                           open_escrow=past["open_escrow"], lp_units=int(past["lp_units"]), lp_cost=past["lp_cost"], opening_result=past["result"],
                           source=(since_label or f"{since:%-d %B, %H:%M} EVE")[:200])
+    # a menu choice that starts before the books begin (Week until 25 October, Month until 17 November) counts from the baseline; the page says so (0.27.4)
+    period_fallback = since_label if (since is not None and now is None and since <= first.taken_at) else ""
     cid = projects.corp_id()
     base = b.taken_at          # the period's start: movements count from here
     origin = first.taken_at    # the budget baseline: stock and goods count from here (position)
@@ -801,7 +803,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
 
     return {
         "cut": cut, "base": base, "origin": origin, "loan": loan, "period": b, "opening_result": b.opening_result,
-        "since_label": b.source or f"the working-budget baseline of {origin.day} {origin:%B}, {origin:%H:%M} EVE",
+        "since_label": b.source or f"the working-budget baseline of {origin.day} {origin:%B}, {origin:%H:%M} EVE", "period_fallback": period_fallback,
         "period_result": result - b.opening_result, "wallet": wallet, "other_divs": other_divs, "pool": pool, "n_projects": n_projects,
         "stock": stock_lines, "stock_now": stock_now, "stock_base": stock_base,
         "held": sorted(held.items(), key=lambda kv: -kv[1]), "held_total": held_total, "held_value": held_value, "hangar": hangar_info,
@@ -1087,7 +1089,7 @@ def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock
     at_fees = sum(v[0] + v[1] for v in fees.values())
     all_time = {"first": min((e["t"] for e in pays_all), default=None), "paid": sum(e["isk"] for e in pays_all),
                 "members": len({e["member"] for e in pays_all}), "sold": at_sold, "cost": at_cost, "fees": at_fees,
-                "net": at_sold - at_cost + at_fees, "margin": ((at_sold - at_cost) / at_cost) if at_cost else None, "written_off": written_off}
+                "net": at_sold - at_cost + at_fees, "margin": ((at_sold - at_cost) / at_cost) if at_cost else None, "written_off": written_off, "fees_abs": abs(at_fees)}
     return {"months": out, "paid_total": sum(m["paid_total"] for m in out), "paid_pool": paid_members, "all_time": all_time,
             "realised": realised, "expected": expected, "total": realised + expected,
             "pct": (realised / cost_sold) if cost_sold else None,
