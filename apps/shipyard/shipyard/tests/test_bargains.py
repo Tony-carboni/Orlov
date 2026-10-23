@@ -53,10 +53,10 @@ class BargainsTests(TestCase):
         m = MarketTypeStat.objects.get(type_id=40)
         self.assertEqual((m.low52, m.low52_date), (991.0, TODAY - dt.timedelta(days=1)))
         self.assertEqual(m.high52, 1375.0)
-        # prices arrive: Tritanium at 4 is 20 % under its 90-day average but not at its year's low; Megacyte at 980 is both
+        # prices arrive: Tritanium at 4 is 20 % under its 90-day average but not at its year's low; Megacyte at 800 is both (its 90-day average is 1,045.5)
         with mock.patch.object(bargains.fuzzwork, "station_aggregates", return_value={
                 34: {"sell_min": 4.0, "sell_percentile": 4.0, "sell_volume": 1e9, "sell_orders": 10, "buy_max": 3.9},
-                40: {"sell_min": 980.0, "sell_percentile": 985.0, "sell_volume": 1e5, "sell_orders": 3, "buy_max": 970.0}}):
+                40: {"sell_min": 800.0, "sell_percentile": 805.0, "sell_volume": 1e5, "sell_orders": 3, "buy_max": 790.0}}):
             r = bargains.refresh_prices()
         self.assertEqual(r["types"], 2)
         t.refresh_from_db()
@@ -107,6 +107,8 @@ class BargainsTests(TestCase):
         self.assertEqual(MarketTypeStat.objects.get(type_id=40).name, "Megacyte")
         self.assertEqual(bargains.top_groups(), [("Manufacture & Research", 1)])
 
+    @override_settings(STORAGES={"default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+                                 "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}})
     def test_page(self):
         bargains.compute_stats()
         MarketTypeStat.objects.filter(type_id=34).update(name="Tritanium", sell_min=4.0, buy_max=3.9, group_path="Minerals", top_group="Manufacture & Research")
