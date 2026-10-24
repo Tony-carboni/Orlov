@@ -26,25 +26,25 @@ def _pictures(d: dict):
     muted, ink = colors.HexColor("#5b6b82"), colors.HexColor("#1f2a44")
     legend_names = {"cash": "Liquid ISK", "pool": "Reward ISK in projects", "held": "Goods held", "listed": "Stock listed", "physical": "Physical stock", "lp": "Loyalty points"}
     bar_names = {"project_sales": "Sales", "project_rewards": "Rewards", "lp": "LP", "stock": "Stock", "market": "Market", "structure": "Structure", "transfers": "Transfers", "gap": "Gap", "opening": "Opening", "result": "Result"}
-    # the donut: 60 x 60 mm, legend to its right
-    left = Drawing(84 * mm, 60 * mm)
-    cx, cy, r = 24 * mm, 30 * mm, 22 * mm
+    # the donut: 54 x 54 mm, legend to its right (42 mm wide: the longest name, 23 mm, and a five-digit figure fit without touching)
+    left = Drawing(87 * mm, 60 * mm)
+    cx, cy, r = 21 * mm, 30 * mm, 19 * mm
     for sg in dn["segments"]:
         left.add(Wedge(cx, cy, r, sg["end"], sg["start"], radius1=r * 0.62, fillColor=colors.HexColor(sg["colour"]), strokeColor=colors.white, strokeWidth=0.6))
     left.add(String(cx, cy + 1 * mm, f"{d['assets'] / M:,.0f}", textAnchor="middle", fontName="Helvetica-Bold", fontSize=10, fillColor=ink))
     left.add(String(cx, cy - 3 * mm, "M ISK", textAnchor="middle", fontName="Helvetica", fontSize=6, fillColor=muted))
     y = 56 * mm
     for sg in dn["segments"]:
-        left.add(Rect(50 * mm, y - 1.4 * mm, 2.6 * mm, 2.6 * mm, fillColor=colors.HexColor(sg["colour"]), strokeColor=None))
-        left.add(String(54 * mm, y - 1 * mm, legend_names.get(sg["key"], sg["label"])[:24], fontName="Helvetica", fontSize=6.5, fillColor=ink))
-        left.add(String(84 * mm, y - 1 * mm, f"{sg['total'] / M:,.1f}", textAnchor="end", fontName="Helvetica", fontSize=6.5, fillColor=ink))
+        left.add(Rect(44 * mm, y - 1.4 * mm, 2.6 * mm, 2.6 * mm, fillColor=colors.HexColor(sg["colour"]), strokeColor=None))
+        left.add(String(48 * mm, y - 1 * mm, legend_names.get(sg["key"], sg["label"])[:24], fontName="Helvetica", fontSize=6.5, fillColor=ink))
+        left.add(String(86 * mm, y - 1 * mm, f"{sg['total'] / M:,.1f}", textAnchor="end", fontName="Helvetica", fontSize=6.5, fillColor=ink))
         y -= 5.2 * mm
-    left.add(Line(50 * mm, y + 1.5 * mm, 84 * mm, y + 1.5 * mm, strokeColor=colors.HexColor("#c9d2e0"), strokeWidth=0.4))
-    left.add(String(54 * mm, y - 1 * mm, "Owner's budget", fontName="Helvetica", fontSize=6.5, fillColor=muted))
-    left.add(String(84 * mm, y - 1 * mm, f"{d['loan'] / M:,.1f}", textAnchor="end", fontName="Helvetica", fontSize=6.5, fillColor=muted))
+    left.add(Line(44 * mm, y + 1.5 * mm, 86 * mm, y + 1.5 * mm, strokeColor=colors.HexColor("#c9d2e0"), strokeWidth=0.4))
+    left.add(String(48 * mm, y - 1 * mm, "Owner's budget", fontName="Helvetica", fontSize=6.5, fillColor=muted))
+    left.add(String(86 * mm, y - 1 * mm, f"{d['loan'] / M:,.1f}", textAnchor="end", fontName="Helvetica", fontSize=6.5, fillColor=muted))
     y -= 5.2 * mm
-    left.add(String(54 * mm, y - 1 * mm, "Result", fontName="Helvetica-Bold", fontSize=6.5, fillColor=ink))
-    left.add(String(84 * mm, y - 1 * mm, f"{d['result'] / M:+,.1f}", textAnchor="end", fontName="Helvetica-Bold", fontSize=6.5, fillColor=colors.HexColor("#2e7d32")))
+    left.add(String(48 * mm, y - 1 * mm, "Result", fontName="Helvetica-Bold", fontSize=6.5, fillColor=ink))
+    left.add(String(86 * mm, y - 1 * mm, f"{d['result'] / M:+,.1f}", textAnchor="end", fontName="Helvetica-Bold", fontSize=6.5, fillColor=colors.HexColor("#2e7d32")))
     # the waterfall: 84 x 60 mm, the SVG geometry scaled from 300 x 150
     sx, sy = (84 * mm) / wf["width"], (60 * mm) / wf["height"]
     right = Drawing(84 * mm, 60 * mm)

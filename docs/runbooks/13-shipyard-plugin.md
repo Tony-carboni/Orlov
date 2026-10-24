@@ -77,6 +77,8 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
+*Release 0.33.7, 2026-10-24: the PDF's donut legend no longer runs into its figures (the label Reward ISK in projects touched 2,211.7): the donut is a little smaller and the legend 42 mm wide instead of 30.*
+
 *Release 0.33.6, 2026-10-24: section 1 opens with four tiles (Liquid ISK, Reward ISK in active projects, Stock, Goods held from project buybacks) and section 5 with three (fuel blocks per month, their cost per month, total structure income since the budget baseline), on the page and in the PDF.*
 
 *Release 0.33.5, 2026-10-24: section 5 opens with four tiles on the page and in the PDF: fuel burned since the baseline, its cost, fuel per 30 days, and the structure income of the period (the Structure income category of section 2).*
