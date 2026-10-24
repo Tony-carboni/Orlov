@@ -4,6 +4,18 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-24 (04:45 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** **Shipyard 0.31.2: a clock for the next hangar read** (runbook 13 C), after the owner's direct sale DS-H3BV of 04:21 EVE.
+
+**Done.** The owner registered DS-H3BV (450.7 M quote, 390.2 M project cost) and deposited at 04:22; the hourly journal read had not run yet when he looked, a read by hand matched the deposit (profit 60.5 M). The goods still showed in the hangar because EVE caches the assets: the read of 04:31 carried the old contents, "Hangar count against the ledger" stands at +460 M until a read after EVE renews its copy. Released 0.31.2 (commit `dd02bff` pinned, backup `aa-db-2026-10-24-0438.sql.gz`, no migration, 136 tests): under section 1 the Finance tab now shows when the next automatic hangar read runs (the beat minute, `SHIPYARD_HANGAR_BEAT_MINUTE` 35) with a live countdown, and when EVE renews its copy (the Expires header of the last read, cached), naming the first read that can show a change. Read by hand at 04:40: 173 types, EVE renews at 04:48, next automatic read 05:35.
+
+**Owner has to do by hand.** Nothing. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
+
+**Next.** Nothing queued.
+
+---
+
 ## 2026-10-23 (07:45 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** **Shipyard 0.27.2 and 0.27.3: all-time cards in section 3, and a fix to how a direct sale of ore takes its lots** (runbook 13 C).
@@ -78,17 +90,5 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Also (0.25.2, 15:40 UTC):** the owner expected the LP line's Log button to list the corporation wallet's LP change by change with dates; the 0.25.0 log is the member characters' own LP. EVE has no corporation LP route, so the button now opens a page rebuilt from the books (purchases from the journal with EVE's dates, conversions from the stock batches): numbered lines with change and balance after, and the figure the corporation wallet's LP tab should show. Commit `b313603` pinned, backup `aa-db-2026-10-22-1507.sql.gz`, 118 tests.
 
 **Also (runbook 19, 15:15 UTC): the welcome DM.** New cog `orlovbot/cogs/welcome.py` (registered in `orlovbot/auth_hooks.py`, settings `ORLOVBOT_WELCOME` and `ORLOVBOT_WELCOME_CHANNEL_ID` in `conf/local.py`, copy `local.py.pre-welcome`): every member who joins the Discord gets a DM from Orlov auth with the link to #how-to-get-roles and the two-line summary; if their DMs are closed, the same note goes into the channel with a mention. The bot's Members intent was already on (allianceauth-discordbot). Deployed and the cog loads; a test DM with the text was sent to the owner's own account. Not yet seen with a real join: the owner can test with a second account (runbook 19 B).
-
-**Next.** Nothing queued.
-
----
-
-## 2026-10-22 (10:30 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** **runbook 18, juicy killmails in #juicy-killmails** (owner's request).
-
-**Done.** New channel `#juicy-killmails` under *Member channels* (permissions synced with the category, so members post, react and send GIFs; one overwrite lets the bot's role *Orlov auth* post). New bot cog `orlovbot/cogs/juicy.py`: the kill feed's live reader now hands every killmail in EVE to the other cogs (`zkill_killmail` event, `cogs/killfeed.py`), and the juicy cog posts the ones that meet the owner's rules (supercarriers and titans always; alliance tournament and limited edition hulls always; faction hulls above 20 B; jump freighters above 15 B; freighters, Bowhead, Orca, Porpoise above 8 B; haulers above 10 B; black ops above 12 B; any other non-capital ship above 10 B), reason in the footer, gold embed with the ship render. Thresholds are settings (`ORLOVBOT_JUICY_*_B`, appended to `conf/local.py` and in `deploy/conf/local.py.append`). Released 10:11 UTC: old bot folder kept as `~/backups/orlovbot.pre-juicy-*`, dry run in a fresh bot container (23 rule cases right, real titan and supercarrier losses rendered), bot container restarted, `orlovbot.cogs.juicy` listed, test post of a Nyx loss (killmail 139319386) in the channel at 10:12 UTC. A test post later: set the cache key `orlovbot:juicy:test` to a killmail id.
-
-**Owner has to do by hand.** Look at the channel; say if a rule should move. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
 
 **Next.** Nothing queued.
