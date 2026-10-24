@@ -12,6 +12,53 @@ def _m(v, sign=False):
     return f"{v / M:+,.1f} M" if sign else f"{v / M:,.1f} M"
 
 
+def _pictures(d: dict):
+    """The donut and the waterfall side by side (look "C", owner's pick 2026-10-24), from finance_charts."""
+    from reportlab.graphics.shapes import Drawing, Line, Rect, String, Wedge
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.platypus import Table, TableStyle
+
+    from . import finance_charts as fc
+
+    opening = d["opening_result"] if d.get("period") is not None and d["period"].source else 0.0
+    dn, wf = fc.donut(d["asset_groups"]), fc.waterfall(d["move_groups"], opening, width=300, height=150)
+    muted, ink = colors.HexColor("#5b6b82"), colors.HexColor("#1f2a44")
+    # the donut: 60 x 60 mm, legend to its right
+    left = Drawing(84 * mm, 60 * mm)
+    cx, cy, r = 24 * mm, 30 * mm, 22 * mm
+    for sg in dn["segments"]:
+        left.add(Wedge(cx, cy, r, sg["end"], sg["start"], radius1=r * 0.62, fillColor=colors.HexColor(sg["colour"]), strokeColor=colors.white, strokeWidth=0.6))
+    left.add(String(cx, cy + 1 * mm, f"{d['assets'] / M:,.0f}", textAnchor="middle", fontName="Helvetica-Bold", fontSize=10, fillColor=ink))
+    left.add(String(cx, cy - 3 * mm, "M ISK", textAnchor="middle", fontName="Helvetica", fontSize=6, fillColor=muted))
+    y = 56 * mm
+    for sg in dn["segments"]:
+        left.add(Rect(50 * mm, y - 1.4 * mm, 2.6 * mm, 2.6 * mm, fillColor=colors.HexColor(sg["colour"]), strokeColor=None))
+        left.add(String(54 * mm, y - 1 * mm, sg["label"][:30], fontName="Helvetica", fontSize=6.5, fillColor=ink))
+        left.add(String(84 * mm, y - 1 * mm, f"{sg['total'] / M:,.1f}", textAnchor="end", fontName="Helvetica", fontSize=6.5, fillColor=ink))
+        y -= 5.2 * mm
+    left.add(Line(50 * mm, y + 1.5 * mm, 84 * mm, y + 1.5 * mm, strokeColor=colors.HexColor("#c9d2e0"), strokeWidth=0.4))
+    left.add(String(54 * mm, y - 1 * mm, "Owner's budget", fontName="Helvetica", fontSize=6.5, fillColor=muted))
+    left.add(String(84 * mm, y - 1 * mm, f"{d['loan'] / M:,.1f}", textAnchor="end", fontName="Helvetica", fontSize=6.5, fillColor=muted))
+    y -= 5.2 * mm
+    left.add(String(54 * mm, y - 1 * mm, "Result", fontName="Helvetica-Bold", fontSize=6.5, fillColor=ink))
+    left.add(String(84 * mm, y - 1 * mm, f"{d['result'] / M:+,.1f}", textAnchor="end", fontName="Helvetica-Bold", fontSize=6.5, fillColor=colors.HexColor("#2e7d32")))
+    # the waterfall: 84 x 60 mm, the SVG geometry scaled from 300 x 150
+    sx, sy = (84 * mm) / wf["width"], (60 * mm) / wf["height"]
+    right = Drawing(84 * mm, 60 * mm)
+    H = wf["height"]
+    right.add(Line(0, (H - wf["zero"]) * sy, 84 * mm, (H - wf["zero"]) * sy, strokeColor=colors.HexColor("#c9d2e0"), strokeWidth=0.5))
+    shades = {fc.POS: "#2e9e5b", fc.NEG: "#c84a57", fc.RESULT: "#2a8fc4", fc.OPENING: "#8da2c0"}
+    for b in wf["bars"]:
+        c = colors.HexColor(shades.get(b["colour"], b["colour"]))
+        right.add(Rect(b["x"] * sx, (H - b["y"] - b["h"]) * sy, b["w"] * sx, b["h"] * sy, fillColor=c, strokeColor=None))
+        right.add(String(b["cx"] * sx, (H - b["text_y"]) * sy, b["text"], textAnchor="middle", fontName="Helvetica-Bold", fontSize=6, fillColor=c))
+        right.add(String(b["cx"] * sx, (H - b["label_y"]) * sy, b["label"], textAnchor="middle", fontName="Helvetica", fontSize=5.5, fillColor=muted))
+    t = Table([[left, right]], colWidths=[87 * mm, 87 * mm])
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+    return t
+
+
 def render(d: dict) -> bytes:
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_RIGHT
@@ -61,8 +108,9 @@ def render(d: dict) -> bytes:
     kpis.append([Paragraph("<b>Total assets</b>", cell), Paragraph(f"<b>{_m(d['assets'])}</b>", num), Paragraph("", note)])
     kpis.append([Paragraph("<b>Master wallet</b>", cell), Paragraph(f"<b>{_m(d['wallet'])}</b>", num), Paragraph(f"{_m(d['pool'])} in {d['n_projects']} active projects", note)])
     kt = Table(kpis, colWidths=[40 * mm, 30 * mm, 104 * mm])
-    kt.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), shade), ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3), ("LEFTPADDING", (0, 0), (-1, -1), 5)]))
-    story += [kt, Paragraph("1. Position", h2), Spacer(1, 2)]
+    kt.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), shade), ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#4cc3ff")),
+                            ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3), ("LEFTPADDING", (0, 0), (-1, -1), 5)]))
+    story += [kt, Spacer(1, 6), _pictures(d), Paragraph("1. Position", h2), Spacer(1, 2)]
     shade_rows = []
     rows = []
     for g in d["asset_groups"]:

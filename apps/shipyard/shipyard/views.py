@@ -108,8 +108,10 @@ def finance(request):
         logger.warning("balance sheet failed: %s", exc)
         data = None
         messages.error(request, f"The balance sheet could not be built: {exc}")
-    from .services import hangar as hangar_service
-    return render(request, "shipyard/finance.html", _context(request, d=data, can_manage=request.user.has_perm("shipyard.manage_shipyard"),
+    from .services import finance_charts, hangar as hangar_service
+    charts = {"donut": finance_charts.donut(data["asset_groups"]),
+              "waterfall": finance_charts.waterfall(data["move_groups"], data["opening_result"] if data.get("period") is not None and data["period"].source else 0.0)} if data else None
+    return render(request, "shipyard/finance.html", _context(request, d=data, charts=charts, can_manage=request.user.has_perm("shipyard.manage_shipyard"),
                                                                period=period, periods=[(k, v[0]) for k, v in books.PERIODS.items()],
                                                                hangar_token=hangar_service.token(), hangar_divisions=hangar_service.divisions(), hangar_schedule=hangar_service.schedule()))
 

@@ -37,11 +37,42 @@
     </div>
 </div>
 
-<div class="row g-3 mb-3">
-    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Result</div><div class="fs-3 fw-bold {% if d.result >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.result|mil:True }}</div><div class="shipyard-k small">above the {{ d.loan|mil }} budget</div></div></div>
-    {% if d.period.source %}<div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Since {{ d.since_label }}</div><div class="fs-3 fw-bold {% if d.period_result >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.period_result|mil:True }}</div><div class="shipyard-k small">opening {{ d.opening_result|mil:True }}</div></div></div>{% endif %}
-    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Total assets</div><div class="fs-3 fw-bold">{{ d.assets|mil }}</div></div></div>
-    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Master wallet</div><div class="fs-3 fw-bold">{{ d.wallet|mil }}</div><div class="shipyard-k small">{{ d.pool|mil }} in {{ d.n_projects }} active projects</div></div></div>
+<div class="sy-fin-cards mb-3">
+    <div class="sy-fin-card lead"><span class="l">Result</span><span class="v {% if d.result >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.result|mil:True }}</span><span class="s">above the {{ d.loan|mil }} budget</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+    {% if d.period.source %}<div class="sy-fin-card"><span class="l">Since {{ d.since_label }}</span><span class="v {% if d.period_result >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.period_result|mil:True }}</span><span class="s">opening {{ d.opening_result|mil:True }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>{% endif %}
+    <div class="sy-fin-card"><span class="l">Total assets</span><span class="v">{{ d.assets|mil }}</span><span class="s">&nbsp;</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 11h18M8 7V5h8v2"/></svg></div>
+    <div class="sy-fin-card"><span class="l">Master wallet</span><span class="v">{{ d.wallet|mil }}</span><span class="s">{{ d.pool|mil }} in {{ d.n_projects }} active projects</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h11v4"/><circle cx="17" cy="14" r="1.2"/></svg></div>
+    <div class="sy-fin-card"><span class="l">Goods held</span><span class="v">{{ d.held_total|mil }}</span><span class="s">{% if d.hangar.read_at %}projects hangar, read {{ d.hangar.read_at|date:"H:i" }}{% else %}from the ledger{% endif %}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10l9-5 9 5v10H3z"/><path d="M8 20v-6h8v6"/></svg></div>
+</div>
+
+<div class="sy-fin-grid mb-3">
+    <div class="sy-fin-panel">
+        <h3>1 · Position <small>what the {{ d.assets|mil }} is in</small></h3>
+        <div class="sy-fin-donut">
+            <svg viewBox="0 0 42 42" role="img" aria-label="Assets by kind">
+                <circle cx="21" cy="21" r="15.9" fill="none" stroke="#172b4a" stroke-width="6"/>
+                {% for sg in charts.donut.segments %}<circle cx="21" cy="21" r="15.9" fill="none" stroke="{{ sg.colour }}" stroke-width="6" stroke-dasharray="{{ sg.dash }}" stroke-dashoffset="{{ sg.offset }}"><title>{{ sg.label }}: {{ sg.total|mil }}</title></circle>{% endfor %}
+                <text x="21" y="20" text-anchor="middle" font-size="5" font-weight="600" fill="#d7dfea">{{ d.assets|mil }}</text>
+                <text x="21" y="26" text-anchor="middle" font-size="3" fill="#8da2c0">assets</text>
+            </svg>
+            <div class="sy-fin-leg">
+                {% for sg in charts.donut.segments %}<div><span><i style="background:{{ sg.colour }}"></i>{{ sg.label }}</span><span class="num">{{ sg.total|mil }}</span></div>{% endfor %}
+                <div class="sep"><span><i></i>Owner's budget</span><span class="num">{{ d.loan|mil }}</span></div>
+                <div><span><i></i><strong>Result</strong></span><span class="num {% if d.result >= 0 %}text-success{% else %}text-danger{% endif %}"><strong>{{ d.result|mil:True }}</strong></span></div>
+            </div>
+        </div>
+    </div>
+    <div class="sy-fin-panel">
+        <h3>2 · Movements <small>since {{ d.since_label }}</small></h3>
+        {% with w=charts.waterfall %}
+        <svg class="sy-fin-wf" viewBox="0 0 {{ w.width }} {{ w.height }}" preserveAspectRatio="none" role="img" aria-label="From the opening through the categories to the result">
+            <line x1="0" y1="{{ w.zero }}" x2="{{ w.width }}" y2="{{ w.zero }}" stroke="#233a5e"/>
+            {% for b in w.bars %}<rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" fill="{{ b.colour }}"{% if b.kind == "result" %} opacity=".6" stroke="#4cc3ff"{% endif %}><title>{{ b.label }}: {{ b.value|mil:True }}</title></rect>
+            <text x="{{ b.cx }}" y="{{ b.text_y }}" text-anchor="middle" font-size="9.5" font-weight="600" fill="{{ b.colour }}">{{ b.text }}</text>
+            <text x="{{ b.cx }}" y="{{ b.label_y }}" text-anchor="middle" font-size="9" fill="#8da2c0">{{ b.label }}</text>{% endfor %}
+        </svg>
+        {% endwith %}
+    </div>
 </div>
 
 <h3 class="h5 mt-4">1. Position</h3>

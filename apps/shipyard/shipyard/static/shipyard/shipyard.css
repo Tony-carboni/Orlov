@@ -117,3 +117,26 @@ body.shipyard-resizing, body.shipyard-resizing * { cursor: col-resize !important
 .shipyard-collapsing tr[data-bs-toggle="collapse"] { cursor: pointer; }
 .shipyard-collapsing tr[data-bs-toggle="collapse"][aria-expanded="true"] .fa-chevron-right { transform: rotate(90deg); }
 .shipyard-collapsing .fa-chevron-right { transition: transform .15s ease; }
+
+/* Finance tab, look "C" (owner's pick, 2026-10-24): cards with icons, a donut and a waterfall */
+.sy-fin-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .75rem; }
+.sy-fin-card { background: var(--sy-panel); border: 1px solid var(--sy-line); border-radius: .6rem; padding: .7rem .9rem; display: grid; grid-template-columns: 1fr auto; gap: .1rem .6rem; align-items: center; min-width: 0; }
+.sy-fin-card .l { font-size: .8rem; color: var(--sy-muted); grid-column: 1; }
+.sy-fin-card .v { font-size: 1.45rem; font-weight: 700; line-height: 1.1; grid-column: 1; font-variant-numeric: tabular-nums; }
+.sy-fin-card .s { font-size: .78rem; color: var(--sy-muted); grid-column: 1; }
+.sy-fin-card .ic { grid-column: 2; grid-row: 1 / span 3; width: 34px; height: 34px; color: var(--sy-accent); opacity: .9; }
+.sy-fin-card.lead { border-color: rgba(76,195,255,.6); background: linear-gradient(135deg, rgba(76,195,255,.14), var(--sy-panel) 60%); }
+.sy-fin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 860px) { .sy-fin-grid { grid-template-columns: 1fr; } }
+.sy-fin-panel { background: var(--sy-panel); border: 1px solid var(--sy-line); border-radius: .6rem; padding: .75rem .9rem; min-width: 0; }
+.sy-fin-panel h3 { margin: 0 0 .5rem; font-size: .9rem; font-weight: 700; display: flex; align-items: baseline; gap: .5rem; }
+.sy-fin-panel h3 small { color: var(--sy-muted); font-weight: 400; font-size: .78rem; }
+.sy-fin-donut { display: grid; grid-template-columns: 150px 1fr; gap: .75rem; align-items: center; }
+@media (max-width: 480px) { .sy-fin-donut { grid-template-columns: 1fr; } }
+.sy-fin-donut svg { width: 150px; height: 150px; max-width: 100%; }
+.sy-fin-leg { display: grid; gap: .3rem; font-size: .82rem; }
+.sy-fin-leg div { display: flex; justify-content: space-between; gap: .6rem; }
+.sy-fin-leg div.sep { border-top: 1px solid var(--sy-line); padding-top: .3rem; }
+.sy-fin-leg i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: .5rem; vertical-align: 0; }
+.sy-fin-leg .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sy-fin-wf { width: 100%; height: 200px; display: block; }
