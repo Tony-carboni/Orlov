@@ -77,6 +77,8 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
+*Release 0.33.5, 2026-10-24: section 5 opens with four tiles on the page and in the PDF: fuel burned since the baseline, its cost, fuel per 30 days, and the structure income of the period (the Structure income category of section 2).*
+
 *Release 0.33.4, 2026-10-24: the PDF's section 3 keeps one row of tiles (this period); the all-time row is gone; the tiles of sections 3 and 4 show the label and the figure only, no small text.*
 
 *Release 0.33.3, 2026-10-24: the PDF loses the note line under section 1 (the page keeps those as chips with hover text); sections 3 and 4 open with **stat tiles** as on the page instead of sentences (section 3: net profit, margin, projected, paid this period, then the all-time tiles; section 4: net profit, margin, projected, LP not converted, and per month LP bought, converted, sold directly, net profit); the "Converted into" table is gone (a sale implies the conversion) and **LP sold directly** is a row of the month's sales table, counted in its total.*

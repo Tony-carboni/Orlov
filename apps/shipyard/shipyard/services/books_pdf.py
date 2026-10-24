@@ -256,6 +256,11 @@ def render(d: dict) -> bytes:
         story.append(KeepTogether([
             Paragraph(f"5. Structure fuel <font size='8' color='#5b6b82'>{e(d['fuel_name'])} {d['fuel_price']:,.0f} ISK at {e(d['market'])}</font>", h2),
             Spacer(1, 2),
+            tiles([("Fuel burned since the baseline", f"{d['fuel_burned']:,} blocks", "", None),
+                   ("Fuel cost since the baseline", _m(d["fuel_burned_isk"]), "", "#c62828"),
+                   ("Fuel per 30 days", _m(d["fuel_month_isk"]), "", None),
+                   ("Structure income, this period", _m(d.get("structure_income_period", 0.0), True), "", "#2e7d32")]),
+            Spacer(1, 4),
             table(["Structure", "Blocks / hour", "Blocks / day", "ISK / day", "ISK / 30 days"], frows, [74 * mm, 22 * mm, 24 * mm, 26 * mm, 28 * mm],
                   total_rows=(len(frows),), numeric=(1, 2, 3, 4)),
             Paragraph(f"Burned since the baseline: {d['fuel_burned']:,} blocks, {d['fuel_burned_isk'] / M:.1f} M.", note),

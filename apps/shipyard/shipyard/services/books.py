@@ -831,6 +831,8 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         "live_books": live_books, "books_now": books_now, "live_ahead": (live_books - books_now) if live_books is not None else None,
         "orders": orders, "buyback": buyback, "project_bb": project_bb, "lp_events": lp_events,
         "fuel_price": fuel_price, "fuel_name": fuel_name, "fuel_rows": fuel_rows, "fuel_paying_bph": paying,
+        "structure_income_period": sum(g["total"] for g in move_groups if g["key"] == "structure"),
+        "fuel_month_isk": paying * 24 * 30 * fuel_price,
         "fuel_burned": round(hours * paying), "fuel_burned_isk": round(hours * paying) * fuel_price,
         "generated": timezone.now(), "market": market.name if market else "",
     }
