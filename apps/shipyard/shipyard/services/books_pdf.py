@@ -24,6 +24,8 @@ def _pictures(d: dict):
     opening = d["opening_result"] if d.get("period") is not None and d["period"].source else 0.0
     dn, wf = fc.donut(d["asset_groups"]), fc.waterfall(d["move_groups"], opening, width=300, height=150)
     muted, ink = colors.HexColor("#5b6b82"), colors.HexColor("#1f2a44")
+    legend_names = {"cash": "Liquid ISK", "pool": "Reward ISK in projects", "held": "Goods held", "listed": "Stock listed", "physical": "Physical stock", "lp": "Loyalty points"}
+    bar_names = {"project_sales": "Sales", "project_rewards": "Rewards", "lp": "LP", "stock": "Stock", "market": "Market", "structure": "Structure", "transfers": "Transfers", "gap": "Gap", "opening": "Opening", "result": "Result"}
     # the donut: 60 x 60 mm, legend to its right
     left = Drawing(84 * mm, 60 * mm)
     cx, cy, r = 24 * mm, 30 * mm, 22 * mm
@@ -34,7 +36,7 @@ def _pictures(d: dict):
     y = 56 * mm
     for sg in dn["segments"]:
         left.add(Rect(50 * mm, y - 1.4 * mm, 2.6 * mm, 2.6 * mm, fillColor=colors.HexColor(sg["colour"]), strokeColor=None))
-        left.add(String(54 * mm, y - 1 * mm, sg["label"][:30], fontName="Helvetica", fontSize=6.5, fillColor=ink))
+        left.add(String(54 * mm, y - 1 * mm, legend_names.get(sg["key"], sg["label"])[:24], fontName="Helvetica", fontSize=6.5, fillColor=ink))
         left.add(String(84 * mm, y - 1 * mm, f"{sg['total'] / M:,.1f}", textAnchor="end", fontName="Helvetica", fontSize=6.5, fillColor=ink))
         y -= 5.2 * mm
     left.add(Line(50 * mm, y + 1.5 * mm, 84 * mm, y + 1.5 * mm, strokeColor=colors.HexColor("#c9d2e0"), strokeWidth=0.4))
@@ -53,7 +55,7 @@ def _pictures(d: dict):
         c = colors.HexColor(shades.get(b["colour"], b["colour"]))
         right.add(Rect(b["x"] * sx, (H - b["y"] - b["h"]) * sy, b["w"] * sx, b["h"] * sy, fillColor=c, strokeColor=None))
         right.add(String(b["cx"] * sx, (H - b["text_y"]) * sy, b["text"], textAnchor="middle", fontName="Helvetica-Bold", fontSize=6, fillColor=c))
-        right.add(String(b["cx"] * sx, (H - b["label_y"]) * sy, b["label"], textAnchor="middle", fontName="Helvetica", fontSize=5.5, fillColor=muted))
+        right.add(String(b["cx"] * sx, (H - b["label_y"]) * sy, bar_names.get(b["key"], b["label"]), textAnchor="middle", fontName="Helvetica", fontSize=5.5, fillColor=muted))
     t = Table([[left, right]], colWidths=[87 * mm, 87 * mm])
     t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
     return t

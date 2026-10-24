@@ -77,7 +77,7 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
-*Release 0.33.1, 2026-10-24: the waterfall keeps its proportions (it had been stretched to the panel, which stretched its labels); drawn 820 x 200 with larger labels.*
+*Release 0.33.1, 2026-10-24: the waterfall keeps its proportions on the page (it had been stretched to the panel, which stretched its labels); in the PDF the donut legend uses short names (the long "Reward ISK in active corporation projects" ran into the figures) and the waterfall labels are one word each.*
 
 *Release 0.33.0, 2026-10-24: **the Finance tab in look "C"** (the owner's pick from three mock-ups: an industrial dashboard on the front door's navy and blue). Four cards with icons (Result, Total assets, Master wallet, Goods held; a Since card when a period is open), then two panels: a **donut** of what the assets are in, with the budget and the result under its legend, and a **waterfall** from the opening through every category to the result. The tables follow unchanged. The PDF draws the same two pictures under its headline block (the result cell in blue). Geometry in `services/finance_charts.py`, pure and tested; the page renders it as inline SVG, the PDF with reportlab shapes.*
 
