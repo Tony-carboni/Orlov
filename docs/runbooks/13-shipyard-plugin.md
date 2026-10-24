@@ -77,7 +77,7 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
-*Release 0.33.3, 2026-10-24: the PDF loses the note line under section 1 (not counted, hangar read, ignored lines); the page keeps those as chips with hover text.*
+*Release 0.33.3, 2026-10-24: the PDF loses the note line under section 1 (the page keeps those as chips with hover text); sections 3 and 4 open with **stat tiles** as on the page instead of sentences (section 3: net profit, margin, projected, paid this period, then the all-time tiles; section 4: net profit, margin, projected, LP not converted, and per month LP bought, converted, sold directly, net profit); the "Converted into" table is gone (a sale implies the conversion) and **LP sold directly** is a row of the month's sales table, counted in its total.*
 
 *Release 0.33.2, 2026-10-24: **the PDF trimmed to figures** (owner): the tables of sections 1 and 2 are label and amount only (no notes), section 3 loses its footnote, section 4 closes every sales table with a total row (sold, revenue, tax, broker, cost, net profit, the projected amount beside it) instead of a sentence, and the sheet uses the page's blue (headings, table heads, category tints, total rows). Also, on the page and in the PDF, the **Direct sale of goods** row shows what the projects paid for the goods sold under "Paid to members" (the value its margin is against; the month's paid total still counts deliveries only, since those goods were paid for in the delivery rows).*
 

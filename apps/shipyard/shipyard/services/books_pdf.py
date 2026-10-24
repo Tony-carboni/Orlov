@@ -97,6 +97,25 @@ def render(d: dict) -> bytes:
         t.setStyle(TableStyle(st))
         return t
 
+    tile_l = ParagraphStyle("tl", parent=note, fontSize=7, leading=8.5)
+    tile_v = ParagraphStyle("tv", parent=cell, fontSize=11, leading=13)
+
+    def tiles(items, per_row=4):
+        """Stat tiles as on the page: (label, value, sub, colour) each; a shaded cell per tile."""
+        cells = [[Paragraph(e(l), tile_l), Paragraph(f"<font color='{c or '#1f2a44'}'><b>{e(v)}</b></font>", tile_v), Paragraph(e(sub), tile_l)] for l, v, sub, c in items]
+        data = [[cells[i] if i < len(cells) else "" for i in range(r, r + per_row)] for r in range(0, len(cells), per_row)]
+        width = (174 * mm) / per_row
+        t = Table(data, colWidths=[width] * per_row)
+        t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), tint), ("BOX", (0, 0), (-1, -1), 0.4, colors.white), ("INNERGRID", (0, 0), (-1, -1), 1.2, colors.white),
+                               ("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 5), ("LEFTPADDING", (0, 0), (-1, -1), 6)]))
+        return t
+
+    def pct_(v):
+        return f"{v * 100:.0f} %" if v is not None else "–"
+
+    def sign_colour(v):
+        return "#2e7d32" if (v or 0) >= 0 else "#c62828"
+
     cut, base = d["cut"], d["base"]
     story = [
         Paragraph("Orlov Arms International · balance sheet", h1),
@@ -158,14 +177,16 @@ def render(d: dict) -> bytes:
 
     pb = d.get("project_bb") or {}
     if pb.get("active"):
-        part = [Paragraph("3. Project buybacks", h2), Spacer(1, 2)]
+        part = [Paragraph("3. Project buybacks", h2), Spacer(1, 2),
+                tiles([("Net profit, this period", _m(pb["realised"], True), "after cost, tax and fees", sign_colour(pb["realised"])),
+                       ("Margin on what sold", pct_(pb.get("margin")), f"{_m(pb['sold_value'])} sold, {_m(pb['cost_sold'])} paid for it", sign_colour(pb.get("margin"))),
+                       ("Projected on goods held", _m(pb["expected"], True), f"{_m(pb['held'])} at cost, {_m(pb['held_value'])} at Jita buy", None),
+                       ("Paid to members, this period", _m(pb["paid_total"]), "", None)]), Spacer(1, 3)]
         at = pb.get("all_time") or {}
         if at.get("first"):
-            margin = f"{at['margin'] * 100:.0f} %" if at.get("margin") is not None else "–"
-            part.append(Paragraph(f"<b>Since the first project ({at['first']:%-d %B %Y}):</b> {_m(at['paid'])} paid to {at['members']} members; "
-                                  f"net profit {_m(at['net'], True)} on what sold ({_m(at['sold'])} sold against {_m(at['cost'])} paid and {_m(abs(at['fees']))} of fees), margin {margin}, sold stock only"
-                                  + (f"; {_m(at['written_off'])} written off on the stock take left out" if at.get("written_off") else "") + ".", p))
-            part.append(Spacer(1, 4))
+            part += [tiles([(f"Paid to members since {at['first']:%-d %b %Y}", _m(at["paid"]), f"{at['members']} members", None),
+                            (f"Net profit since {at['first']:%-d %b}", _m(at["net"], True), f"{_m(at['sold'])} sold, {_m(at['cost'])} paid, {_m(at['fees_abs'])} fees" + (f"; {_m(at['written_off'])} written off not counted" if at.get("written_off") else ""), sign_colour(at["net"])),
+                            (f"Margin since {at['first']:%-d %b}", pct_(at.get("margin")), "before fees", sign_colour(at.get("margin")))], per_row=3), Spacer(1, 4)]
         first = True
         for mo in pb["months"]:
             block = [Paragraph(f"<b>{e(mo['label'])}</b>", p)]
@@ -194,33 +215,32 @@ def render(d: dict) -> bytes:
 
     bb = d.get("buyback") or {}
     if bb.get("active"):
-        part = [Paragraph("4. LP buybacks and conversions", h2), Spacer(1, 2)]
+        part = [Paragraph("4. LP buybacks and conversions", h2), Spacer(1, 2),
+                tiles([("Net profit", _m(bb["realised"], True), "after cost, tax and fees", sign_colour(bb["realised"])),
+                       ("Margin on what sold", pct_(bb.get("margin")), f"{_m(bb['sold_value'])} sold, {_m(bb['cost_sold'])} of LP, inputs and ISK", sign_colour(bb.get("margin"))),
+                       ("Projected on what is listed", _m(bb["expected"], True), "at list price, after sales tax", None),
+                       ("LP not converted", f"{bb['lp_left']:,.0f} LP", f"{_m(bb['lp_left_value'])} at cost", None)]), Spacer(1, 4)]
         first = True
         for mo in bb["months"]:
-            block = [Paragraph(f"<b>{e(mo['label'])}</b>", p)]
-            lp_line = (f"{mo['lp_bought']:,} LP for {_m(mo['lp_isk'])} ({mo['lp_avg']:,.0f} ISK per LP)" if mo["lp_bought"] else "none")
-            sold_line = (f" LP sold directly: {mo['lp_sold']:,} LP for {_m(mo['lp_sold_isk'])} ({mo['lp_sold_avg']:,.0f} ISK per LP), {_m(mo['lp_sold_cost'])} at cost, "
-                         f"profit {_m(mo['lp_sold_net'], True)}." if mo.get("lp_sold") else "")
-            block.append(Paragraph(f"LP bought: {lp_line}. LP converted: {mo['lp_converted']:,} LP.{sold_line}", p))
-            if mo["converted"]:
-                crows = []
-                for c in mo["converted"]:
-                    inputs = f" + {c['input_units']:,.0f} {e(c['input'])} ({_m(c['input_cost'])})" if c["input_units"] else ""
-                    crows.append([e(c["name"]), f"{c['units']:,.0f}", _m(c["cost"]), f"{c['unit_cost']:,.0f}",
-                                  f"<font size='7'>{c['lp']:,} LP ({_m(c['lp_value'])}){inputs} + LP store ISK {_m(c['isk'])}</font>"])
-                block += [Spacer(1, 3), table(["Converted into", "Units", "Cost", "Cost each", "Made of"], crows, [48 * mm, 16 * mm, 20 * mm, 20 * mm, 70 * mm], numeric=(1, 2, 3))]
-            if mo["sales"] or mo["still"]:
+            block = [Paragraph(f"<b>{e(mo['label'])}</b>", p),
+                     tiles([("LP bought", f"{mo['lp_bought']:,} LP" if mo["lp_bought"] else "none", f"{_m(mo['lp_isk'])}, {mo['lp_avg']:,.0f} ISK per LP" if mo["lp_bought"] else "", None),
+                            ("LP converted", f"{mo['lp_converted']:,} LP", "", None),
+                            ("LP sold directly", f"{mo['lp_sold']:,} LP" if mo.get("lp_sold") else "none", f"{_m(mo['lp_sold_isk'])}, {mo['lp_sold_avg']:,.0f} ISK per LP" if mo.get("lp_sold") else "", None),
+                            ("Net profit", _m(mo["realised"], True), f"{_m(mo['expected'], True)} projected" if mo["expected"] else "", sign_colour(mo["realised"]))])]
+            if mo["sales"] or mo["still"] or mo.get("lp_sold"):
                 srows = [[e(x["name"]), f"{x['sold']:,.0f}", _m(x["revenue"]), _m(x["tax"]), _m(x["broker"]), _m(x["cost"]), f"<b>{_m(x['net'], True)}</b>"] for x in mo["sales"]]
+                if mo.get("lp_sold"):
+                    srows.append(["LP sold directly", f"{mo['lp_sold']:,}", _m(mo["lp_sold_isk"]), "", "", _m(mo["lp_sold_cost"]), f"<b>{_m(mo['lp_sold_net'], True)}</b>"])
                 for v in mo["still"]:
                     srows.append([f"{e(v['name'])}, listed", f"{v['units']:,}", _m(v["value"]), "", "", _m(v["cost"]), f"{_m(v['expected'], True)} projected"])
-                sold = sum(x["sold"] for x in mo["sales"])
-                srows.append(["<b>Total</b>", f"<b>{sold:,.0f}</b>", f"<b>{_m(sum(x['revenue'] for x in mo['sales']))}</b>", f"<b>{_m(sum(x['tax'] for x in mo['sales']))}</b>",
-                              f"<b>{_m(sum(x['broker'] for x in mo['sales']))}</b>", f"<b>{_m(sum(x['cost'] for x in mo['sales']))}</b>",
+                sold = sum(x["sold"] for x in mo["sales"]) + (mo.get("lp_sold") or 0)
+                revenue = sum(x["revenue"] for x in mo["sales"]) + (mo.get("lp_sold_isk") or 0)
+                cost = sum(x["cost"] for x in mo["sales"]) + (mo.get("lp_sold_cost") or 0)
+                srows.append(["<b>Total</b>", f"<b>{sold:,.0f}</b>", f"<b>{_m(revenue)}</b>", f"<b>{_m(sum(x['tax'] for x in mo['sales']))}</b>",
+                              f"<b>{_m(sum(x['broker'] for x in mo['sales']))}</b>", f"<b>{_m(cost)}</b>",
                               f"<font color='#2e7d32'><b>{_m(mo['realised'], True)}</b></font>" + (f" <font size='6.5' color='#5b6b82'>{_m(mo['expected'], True)} projected</font>" if mo["expected"] else "")])
                 block += [Spacer(1, 3), table(["Sales", "Sold", "Revenue", "Sales tax", "Broker", "Cost", "Net profit"], srows,
                                               [56 * mm, 14 * mm, 24 * mm, 18 * mm, 16 * mm, 20 * mm, 26 * mm], total_rows=(len(srows),), numeric=(1, 2, 3, 4, 5, 6))]
-            if not (mo["sales"] or mo["still"]):
-                block += [Spacer(1, 3), Paragraph(f"<b>Net profit {_m(mo['realised'], True)}</b>", p)]
             block += [Spacer(1, 6)]
             if first:
                 story.append(KeepTogether(part + block))
