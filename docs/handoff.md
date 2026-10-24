@@ -4,15 +4,17 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
-## 2026-10-24 (15:00 UTC) — desktop session (PC) → any session
+## 2026-10-24 (15:10 UTC) — desktop session (PC) → any session
 
-**Runbook / topic:** **Shipyard 0.33.7: the PDF's donut legend overlapped its figures** (runbook 13 C), from the owner's screenshot of the 07:42 sheet (the label Reward ISK in projects ran into 2,211.7).
+**Runbook / topic:** **Shipyard 0.33.7 and 0.34.0: the PDF's donut legend, and four period tiles in place of the waterfall** (runbook 13 C), from the owner's screenshot of the 07:42 sheet and his request in chat.
 
-**Done.** Measured: the label is 23.3 mm wide from the 54 mm mark and the figure, right-aligned at 84 mm, starts at 76.4 mm. The donut is a little smaller (radius 19 mm instead of 22) and the legend runs from 48 mm to 86 mm, 42 mm instead of 30; a sample render shows clear space. Commit `dc686d5` pushed, release note in runbook 13. On the server: backup `aa-db-2026-10-24-1655.sql.gz`, the SHA pinned in conf/requirements.txt, image built, throwaway container shows 0.33.7, check clean, 138 tests OK. **Not done:** the auto-mode permission check refused the `up -d` and the nginx restart, so the running containers are still on 0.33.6 (no migration, no static files in this release).
+**Done.** 0.33.7 (commit `dc686d5`): the label Reward ISK in projects ran into 2,211.7 in the PDF (23.3 mm of label from the 54 mm mark, the figure starting at 76.4 mm); the donut is a little smaller and the legend 42 mm wide instead of 30. 0.34.0 (commit `e31f3e3`): the owner asked for four tiles with notable numbers in place of the red and green bars: turnover (every sale of the period: project goods on the market and directly, LP-store goods, LP sold), total cost with tax and fees, net income (turnover less that cost; the net profit of sections 3 and 4 together) and the project rewards paid out to members; books.compute() gives them as period_tiles, the page and the PDF show them next to the donut, the waterfall's geometry and test are gone. On the server: backups `aa-db-2026-10-24-1655.sql.gz` and `aa-db-2026-10-24-1703.sql.gz`, commit `e31f3e3` pinned in conf/requirements.txt, image built, throwaway container shows 0.34.0, check clean, 138 tests OK. **Not done:** the auto-mode permission check refused the `up -d` and the nginx restart, so the running containers are still on 0.33.6. No migration; the stylesheet changed, so collectstatic is needed.
 
-**Owner has to do by hand.** On the server, in ~/aa-docker: docker compose --env-file=.env up -d, then docker compose --env-file=.env restart nginx; then open the Finance tab, download the PDF and check the legend. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
+**Owner has to do by hand.** On the server, in ~/aa-docker: docker compose --env-file=.env up -d; then docker compose --env-file=.env restart nginx; then docker exec allianceauth_gunicorn python manage.py collectstatic --noinput; then open the Finance tab (hard refresh for the stylesheet), download the PDF and check the four tiles and the legend. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
 
-**Next.** If the owner would rather have a session do it: run the two commands above (announce first), then confirm the running version with docker exec allianceauth_gunicorn python -c "import shipyard; print(shipyard.__version__)".
+**Next.** If the owner would rather have a session do it: run the three commands above (announce first, one at a time), then confirm the running version with docker exec allianceauth_gunicorn python -c "import shipyard; print(shipyard.__version__)".
+
+---
 
 ## 2026-10-24 (06:15 UTC) — desktop session (PC) → any session
 
