@@ -22,7 +22,7 @@
         </form>
         {% if hangar_token %}
         <form method="post" action="{% url 'shipyard:hangar_refresh' %}">{% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Read the corporation's hangars from EVE now: the goods held are what is in the projects hangar"><i class="fas fa-warehouse fa-fw"></i> Read the hangar now</button>
+            <button type="submit" class="btn btn-sm btn-outline-secondary{% if hangar_schedule.cached %} text-body-tertiary{% endif %}" title="{% if hangar_schedule.cached %}EVE renews its copy of the hangar at {{ hangar_schedule.fresh_at|date:"H:i" }} EVE; a read before that shows the same contents. {% endif %}Last read {{ hangar_schedule.read_at|date:"H:i" }} EVE; next automatic read {{ hangar_schedule.effective|date:"H:i" }} EVE"><i class="fas fa-warehouse fa-fw"></i> Read the hangar now <span class="badge rounded-pill text-bg-dark fw-normal {% if hangar_schedule.cached %}text-warning{% else %}text-info{% endif %}" data-countdown="{{ hangar_schedule.effective|date:"c" }}" data-fresh="{% if hangar_schedule.fresh_at %}{{ hangar_schedule.fresh_at|date:"c" }}{% endif %}">{{ hangar_schedule.effective|date:"H:i" }}</span></button>
         </form>
         {% elif can_manage %}
         <a class="btn btn-sm btn-primary" href="{% url 'shipyard:hangar_connect' %}" title="EVE's login once with the CEO or a Director: the corporation assets scope lets the sheet count the projects hangar"><i class="fas fa-key fa-fw"></i> Connect the hangar</a>
@@ -48,9 +48,6 @@
 <h3 class="h5 mt-4">1. Position against the baseline</h3>
 {% if d.hangar.read_at %}
 <p class="small shipyard-k mb-1"><i class="fas fa-warehouse fa-fw"></i> Goods held from project buybacks = the projects hangar as read from EVE at {{ d.hangar.read_at|date:"Y-m-d H:i" }} EVE ({{ d.hangar.types }} item type{{ d.hangar.types|pluralize }}), at what the projects paid.{% if d.hangar.missing %} Bought by projects but not in the hangar: {{ d.hangar.missing|join:", " }}.{% endif %}{% if d.hangar.extra %} In the hangar but never bought by a project (not counted): {{ d.hangar.extra|join:", " }}.{% endif %}</p>
-<p class="small shipyard-k mb-1" id="hangar-clock" data-next="{{ hangar_schedule.effective|date:"c" }}" data-fresh="{% if hangar_schedule.fresh_at %}{{ hangar_schedule.fresh_at|date:"c" }}{% endif %}"><i class="fas fa-clock fa-fw"></i>
-    Next automatic hangar read at <strong>{{ hangar_schedule.effective|date:"H:i" }} EVE</strong> (<span data-countdown="{{ hangar_schedule.effective|date:"c" }}">in a while</span>){% if hangar_schedule.fresh_at %}; EVE renews its copy of the hangar at {{ hangar_schedule.fresh_at|date:"H:i" }} EVE{% if hangar_schedule.cached %} (<span data-countdown="{{ hangar_schedule.fresh_at|date:"c" }}">soon</span>), a read before that shows the same contents{% endif %}{% endif %}.
-</p>
 {% elif can_manage %}
 <p class="small text-warning mb-1"><i class="fas fa-triangle-exclamation fa-fw"></i> The hangar has not been read from EVE yet: the goods held follow the ledger. Connect the hangar (button above) with the CEO once.</p>
 {% endif %}
@@ -215,9 +212,13 @@
             var t = Date.parse(el.getAttribute("data-countdown"));
             if (isNaN(t)) { return; }
             var s = Math.round((t - now) / 1000);
-            if (s <= 0) { el.textContent = "due now"; return; }
-            var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
-            el.textContent = "in " + (h ? h + " h " : "") + (h || m ? m + " min" : s + " s");
+            var h = Math.floor(s / 3600), m = Math.ceil((s % 3600) / 60);
+            el.textContent = s <= 0 ? "due" : (h ? h + " h " + m + " min" : m + " min");
+            var fresh = Date.parse(el.getAttribute("data-fresh") || "");
+            if (!isNaN(fresh) && now >= fresh && el.classList.contains("text-warning")) {
+                el.classList.remove("text-warning"); el.classList.add("text-info");
+                var b = el.closest("button"); if (b) { b.classList.remove("text-body-tertiary"); }
+            }
         });
     }
     tick();
