@@ -77,6 +77,8 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
+*Release 0.33.3, 2026-10-24: the PDF loses the note line under section 1 (not counted, hangar read, ignored lines); the page keeps those as chips with hover text.*
+
 *Release 0.33.2, 2026-10-24: **the PDF trimmed to figures** (owner): the tables of sections 1 and 2 are label and amount only (no notes), section 3 loses its footnote, section 4 closes every sales table with a total row (sold, revenue, tax, broker, cost, net profit, the projected amount beside it) instead of a sentence, and the sheet uses the page's blue (headings, table heads, category tints, total rows). Also, on the page and in the PDF, the **Direct sale of goods** row shows what the projects paid for the goods sold under "Paid to members" (the value its margin is against; the month's paid total still counts deliveries only, since those goods were paid for in the delivery rows).*
 
 *Release 0.33.1, 2026-10-24: the waterfall keeps its proportions on the page (it had been stretched to the panel, which stretched its labels); in the PDF the donut legend uses short names (the long "Reward ISK in active corporation projects" ran into the figures) and the waterfall labels are one word each.*

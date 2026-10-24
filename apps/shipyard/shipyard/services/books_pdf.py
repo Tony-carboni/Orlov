@@ -129,23 +129,6 @@ def render(d: dict) -> bytes:
     t = table(["Assets", "M ISK"], rows, [140 * mm, 34 * mm], total_rows=(n + 1,), green_rows=(len(rows),))
     t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), tint) for b in shade_rows]))
     story.append(t)
-    bits = []
-    if d["director"] is not None:
-        bits.append(f"Director division {_m(d['director'])}")
-    if d["structure_income"] is not None:
-        bits.append(f"structure income waiting {_m(d['structure_income'])}")
-    if d["older"][0] >= 0.05 * M:
-        bits.append(f"older goods {_m(d['older'][0])} at cost")
-    text = ("Not counted: " + ", ".join(bits) + ". ") if bits else ""
-    hg = d.get("hangar") or {}
-    if hg.get("read_at"):
-        text += f"Goods held = the projects hangar read at {hg['read_at']:%H:%M} EVE ({hg.get('types', 0)} types), at what the projects paid."
-    else:
-        text += "Goods held follow the ledger (hangar not read yet)."
-    ign = d.get("ignored") or {}
-    if ign.get("count"):
-        text += f" {ign['count']} journal lines ignored ({_m(ign['net'], True)}), corrections pending."
-    story.append(Paragraph(text, note))
 
     story.append(Paragraph(f"2. Movements since {e(d['since_label'])}" + (f" ({base.day} {base:%B}, {base:%H:%M} EVE)" if d.get("period") is not None and d["period"].source else ""), h2))
     story.append(Spacer(1, 2))
