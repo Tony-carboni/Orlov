@@ -182,11 +182,6 @@ def render(d: dict) -> bytes:
                        ("Margin on what sold", pct_(pb.get("margin")), f"{_m(pb['sold_value'])} sold, {_m(pb['cost_sold'])} paid for it", sign_colour(pb.get("margin"))),
                        ("Projected on goods held", _m(pb["expected"], True), f"{_m(pb['held'])} at cost, {_m(pb['held_value'])} at Jita buy", None),
                        ("Paid to members, this period", _m(pb["paid_total"]), "", None)]), Spacer(1, 3)]
-        at = pb.get("all_time") or {}
-        if at.get("first"):
-            part += [tiles([(f"Paid to members since {at['first']:%-d %b %Y}", _m(at["paid"]), f"{at['members']} members", None),
-                            (f"Net profit since {at['first']:%-d %b}", _m(at["net"], True), f"{_m(at['sold'])} sold, {_m(at['cost'])} paid, {_m(at['fees_abs'])} fees" + (f"; {_m(at['written_off'])} written off not counted" if at.get("written_off") else ""), sign_colour(at["net"])),
-                            (f"Margin since {at['first']:%-d %b}", pct_(at.get("margin")), "before fees", sign_colour(at.get("margin")))], per_row=3), Spacer(1, 4)]
         first = True
         for mo in pb["months"]:
             block = [Paragraph(f"<b>{e(mo['label'])}</b>", p)]
