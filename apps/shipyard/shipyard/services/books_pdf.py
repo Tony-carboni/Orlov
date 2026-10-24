@@ -99,11 +99,23 @@ def render(d: dict) -> bytes:
     story.append(Spacer(1, 2))
     shade_rows = []
     mrows = []
+    import re as _re
     for g in d["move_groups"]:
         shade_rows.append(len(mrows) + 1)
         mrows.append([f"<b>{e(g['label'])}</b>", f"<b>{_m(g['total'], True)}</b>", e(g["note"])])
+        if g["key"] in ("transfers", "lp"):
+            continue  # one summed line (owner, 2026-10-24): the page has the movements, and section 4 has the LP detail
+        direct = [(label, v, n_) for label, v, n_ in g["rows"] if label.startswith("Goods sold directly")]
         for label, v, n_ in g["rows"]:
+            if label.startswith("Goods sold directly") or label.startswith("LP store:"):
+                continue  # direct sales are summed below; a conversion moves nothing (having sold the items implies the store)
             mrows.append([f"&nbsp;&nbsp;&nbsp;{e(label)}", _m(v, True), e(n_)])
+        if direct:  # one line for all direct sales (owner, 2026-10-24), the item lists stay on the page
+            left = 0.0
+            for _, _, n_ in direct:
+                m_ = _re.search(r"([\d.,]+) M of stock left the books", n_ or "")
+                left += float(m_.group(1).replace(",", "")) if m_ else 0.0
+            mrows.append([f"&nbsp;&nbsp;&nbsp;Direct sales ({len(direct)})", _m(sum(v for _, v, _ in direct), True), f"{left:,.1f} M of stock left the books"])
     mrows.append(["<b>Total</b>", f"<font color='#2e7d32'><b>{_m(d['period_result'], True)}</b></font>",
                   f"result {_m(d['result'], True)} less the opening {_m(d['opening_result'], True)}" if d.get("period") is not None and d["period"].source else ""])
     t = table(["Category", "M ISK", ""], mrows, [72 * mm, 24 * mm, 78 * mm], total_rows=(len(mrows),))
@@ -130,19 +142,6 @@ def render(d: dict) -> bytes:
                 rows.append([f"<b>{e(g['label'])}</b> <font size='6.5' color='#5b6b82'>{len(g['rows'])} items" + (f", {g['members']} members" if g["members"] else "") + "</font>",
                              f"<b>{_m(g['paid'])}</b>", f"<b>{_m(g['revenue'])}</b>", f"<b>{_m(g['cost'])}</b>", f"<b>{_m(g['fees'])}</b>", f"<b>{_m(g['net'], True)}</b>",
                              f"<b>{g['pct'] * 100:.0f} %</b>" if g["pct"] is not None else "–", f"<b>{_m(g['held_cost'])}</b>", f"<b>{_m(g['expected'], True)}</b>" if g["held_cost"] else "–"])
-                for r in g["rows"]:
-                    extra = []
-                    if r["delivered"]:
-                        extra.append(f"{r['delivered']:,.0f} delivered" + (f" by {r['members']}" if r["members"] else ""))
-                    if r["sold"]:
-                        extra.append(f"{r['sold']:,.0f} sold")
-                    if r["unmatched"]:
-                        extra.append(f"plus {_m(r['unmatched'])} from older stock")
-                    rows.append([f"&nbsp;&nbsp;&nbsp;{e(r['name'])}" + (f" <font size='6.5' color='#5b6b82'>{e(' · '.join(extra))}</font>" if extra else ""),
-                                 _m(r["paid"]) if r["paid"] else "–", _m(r["revenue"]) if r["revenue"] else "–", _m(r["cost"]) if r["cost"] else "–",
-                                 _m(r["fees"]) if r["fees"] else "–", _m(r["net"], True) if r["revenue"] else "–",
-                                 f"{r['pct'] * 100:.0f} %" if r["pct"] is not None else "–", _m(r["held_cost"]) if r["held_cost"] else "–",
-                                 _m(r["expected"], True) if r["held_cost"] else "–"])
             rows.append(["<b>Total</b>", f"<b>{_m(mo['paid_total'])}</b>", f"<b>{_m(mo['sold_value'])}</b>", f"<b>{_m(mo['cost_sold'])}</b>", f"<b>{_m(mo['fees'])}</b>",
                          f"<b>{_m(mo['realised'], True)}</b>", f"<b>{mo['pct'] * 100:.0f} %</b>" if mo["pct"] is not None else "", f"<b>{_m(mo['held_cost'])}</b>",
                          f"<b>{_m(mo['expected'], True)}</b>" if mo["held_cost"] else ""])
