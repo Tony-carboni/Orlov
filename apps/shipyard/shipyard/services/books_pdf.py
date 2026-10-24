@@ -78,7 +78,9 @@ def render(d: dict) -> bytes:
     cell = ParagraphStyle("cell", parent=p, fontSize=8.5, leading=10.5)
     num = ParagraphStyle("num", parent=cell, alignment=TA_RIGHT)
     note = ParagraphStyle("note", parent=p, fontSize=7.3, leading=9.2, textColor=colors.HexColor("#5b6b82"))
-    line, shade, green = colors.HexColor("#1f2a44"), colors.HexColor("#eef2f8"), colors.HexColor("#e7f4e8")
+    line, shade, green = colors.HexColor("#2a8fc4"), colors.HexColor("#d9eefc"), colors.HexColor("#e7f4e8")
+    tint, head_bg = colors.HexColor("#eef6fc"), colors.HexColor("#e1f1fb")
+    h2.textColor = colors.HexColor("#1f6f9c")
     e = lambda s: escape(str(s))  # noqa: E731
 
     def table(header, rows, widths, total_rows=(), green_rows=(), numeric=(1,)):
@@ -86,7 +88,7 @@ def render(d: dict) -> bytes:
         for r in rows:
             data.append([Paragraph(str(c), num if i in numeric else cell) for i, c in enumerate(r)])
         t = Table(data, colWidths=widths, repeatRows=1)
-        st = [("LINEBELOW", (0, 0), (-1, 0), 0.8, line), ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        st = [("LINEBELOW", (0, 0), (-1, 0), 0.8, line), ("BACKGROUND", (0, 0), (-1, 0), head_bg), ("VALIGN", (0, 0), (-1, -1), "TOP"),
               ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 4), ("LEFTPADDING", (0, 0), (-1, -1), 4)]
         for i in total_rows:
             st += [("BACKGROUND", (0, i), (-1, i), shade), ("LINEABOVE", (0, i), (-1, i), 0.8, line)]
@@ -117,15 +119,15 @@ def render(d: dict) -> bytes:
     rows = []
     for g in d["asset_groups"]:
         shade_rows.append(len(rows) + 1)
-        rows.append([f"<b>{e(g['label'])}</b>", f"<b>{_m(g['total'])}</b>", e(g.get("note", ""))])
+        rows.append([f"<b>{e(g['label'])}</b>", f"<b>{_m(g['total'])}</b>"])
         for label, value, note_ in g["rows"]:
-            rows.append([f"&nbsp;&nbsp;&nbsp;{e(label)}", _m(value), e(note_)])
+            rows.append([f"&nbsp;&nbsp;&nbsp;{e(label)}", _m(value)])
     n = len(rows)
-    rows += [["<b>Total assets</b>", f"<b>{_m(d['assets'])}</b>", ""],
-             ["Owner's budget (loan)", _m(d["loan"]), ""],
-             ["<b>Result</b>", f"<font color='#2e7d32'><b>{_m(d['result'], True)}</b></font>", ""]]
-    t = table(["Assets", "M ISK", ""], rows, [78 * mm, 26 * mm, 70 * mm], total_rows=(n + 1,), green_rows=(len(rows),))
-    t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), colors.HexColor("#f4f6fa")) for b in shade_rows]))
+    rows += [["<b>Total assets</b>", f"<b>{_m(d['assets'])}</b>"],
+             ["Owner's budget (loan)", _m(d["loan"])],
+             ["<b>Result</b>", f"<font color='#2e7d32'><b>{_m(d['result'], True)}</b></font>"]]
+    t = table(["Assets", "M ISK"], rows, [140 * mm, 34 * mm], total_rows=(n + 1,), green_rows=(len(rows),))
+    t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), tint) for b in shade_rows]))
     story.append(t)
     bits = []
     if d["director"] is not None:
@@ -152,24 +154,23 @@ def render(d: dict) -> bytes:
     import re as _re
     for g in d["move_groups"]:
         shade_rows.append(len(mrows) + 1)
-        mrows.append([f"<b>{e(g['label'])}</b>", f"<b>{_m(g['total'], True)}</b>", e(g["note"])])
+        mrows.append([f"<b>{e(g['label'])}</b>", f"<b>{_m(g['total'], True)}</b>"])
         if g["key"] in ("transfers", "lp"):
             continue  # one summed line (owner, 2026-10-24): the page has the movements, and section 4 has the LP detail
         direct = [(label, v, n_) for label, v, n_ in g["rows"] if label.startswith("Goods sold directly")]
         for label, v, n_ in g["rows"]:
             if label.startswith("Goods sold directly") or label.startswith("LP store:"):
                 continue  # direct sales are summed below; a conversion moves nothing (having sold the items implies the store)
-            mrows.append([f"&nbsp;&nbsp;&nbsp;{e(label)}", _m(v, True), e(n_)])
+            mrows.append([f"&nbsp;&nbsp;&nbsp;{e(label)}", _m(v, True)])
         if direct:  # one line for all direct sales (owner, 2026-10-24), the item lists stay on the page
             left = 0.0
             for _, _, n_ in direct:
                 m_ = _re.search(r"([\d.,]+) M of stock left the books", n_ or "")
                 left += float(m_.group(1).replace(",", "")) if m_ else 0.0
-            mrows.append([f"&nbsp;&nbsp;&nbsp;Direct sales ({len(direct)})", _m(sum(v for _, v, _ in direct), True), f"{left:,.1f} M of stock left the books"])
-    mrows.append(["<b>Total</b>", f"<font color='#2e7d32'><b>{_m(d['period_result'], True)}</b></font>",
-                  f"result {_m(d['result'], True)} less the opening {_m(d['opening_result'], True)}" if d.get("period") is not None and d["period"].source else ""])
-    t = table(["Category", "M ISK", ""], mrows, [72 * mm, 24 * mm, 78 * mm], total_rows=(len(mrows),))
-    t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), colors.HexColor("#f4f6fa")) for b in shade_rows]))
+            mrows.append([f"&nbsp;&nbsp;&nbsp;Direct sales ({len(direct)})", _m(sum(v for _, v, _ in direct), True)])
+    mrows.append(["<b>Total</b>", f"<font color='#2e7d32'><b>{_m(d['period_result'], True)}</b></font>"])
+    t = table(["Category", "M ISK"], mrows, [140 * mm, 34 * mm], total_rows=(len(mrows),))
+    t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), tint) for b in shade_rows]))
     story.append(t)
 
     pb = d.get("project_bb") or {}
@@ -197,7 +198,7 @@ def render(d: dict) -> bytes:
                          f"<b>{_m(mo['expected'], True)}</b>" if mo["held_cost"] else ""])
             t = table(["", "Paid to members", "Sold for", "Cost", "Tax and fees", "Net profit", "Margin", "Still held", "Projected"], rows,
                       [49 * mm, 19 * mm, 17 * mm, 17 * mm, 16 * mm, 18 * mm, 15 * mm, 17 * mm, 20 * mm], total_rows=(len(rows),), numeric=(1, 2, 3, 4, 5, 6, 7, 8))
-            t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), colors.HexColor("#f4f6fa")) for b in bold]))
+            t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), tint) for b in bold]))
             block.append(t)
             block += [Spacer(1, 6)]
             if first:
@@ -206,7 +207,7 @@ def render(d: dict) -> bytes:
                 first = False
             else:
                 story.extend(block)
-        story.append(Paragraph("Projected = goods held at Jita's highest buy, less sales tax at the rate paid so far, less cost.", note))
+        story.append(Spacer(1, 2))
 
     bb = d.get("buyback") or {}
     if bb.get("active"):
@@ -228,11 +229,16 @@ def render(d: dict) -> bytes:
             if mo["sales"] or mo["still"]:
                 srows = [[e(x["name"]), f"{x['sold']:,.0f}", _m(x["revenue"]), _m(x["tax"]), _m(x["broker"]), _m(x["cost"]), f"<b>{_m(x['net'], True)}</b>"] for x in mo["sales"]]
                 for v in mo["still"]:
-                    srows.append([f"{e(v['name'])}, still on sell orders", f"{v['units']:,}", f"{_m(v['value'])} at list", "", "", _m(v["cost"]), f"{_m(v['expected'], True)} projected"])
-                block += [Spacer(1, 3), table(["Sales on converted items", "Sold", "Revenue", "Sales tax", "Broker", "Cost", "Net profit"], srows,
-                                              [56 * mm, 14 * mm, 24 * mm, 18 * mm, 16 * mm, 20 * mm, 26 * mm], numeric=(1, 2, 3, 4, 5, 6))]
-            more = f", {_m(mo['expected'], True)} projected" if mo["expected"] else ""
-            block += [Spacer(1, 3), Paragraph(f"<b>Net profit {_m(mo['realised'], True)}</b>{more}.", p), Spacer(1, 6)]
+                    srows.append([f"{e(v['name'])}, listed", f"{v['units']:,}", _m(v["value"]), "", "", _m(v["cost"]), f"{_m(v['expected'], True)} projected"])
+                sold = sum(x["sold"] for x in mo["sales"])
+                srows.append(["<b>Total</b>", f"<b>{sold:,.0f}</b>", f"<b>{_m(sum(x['revenue'] for x in mo['sales']))}</b>", f"<b>{_m(sum(x['tax'] for x in mo['sales']))}</b>",
+                              f"<b>{_m(sum(x['broker'] for x in mo['sales']))}</b>", f"<b>{_m(sum(x['cost'] for x in mo['sales']))}</b>",
+                              f"<font color='#2e7d32'><b>{_m(mo['realised'], True)}</b></font>" + (f" <font size='6.5' color='#5b6b82'>{_m(mo['expected'], True)} projected</font>" if mo["expected"] else "")])
+                block += [Spacer(1, 3), table(["Sales", "Sold", "Revenue", "Sales tax", "Broker", "Cost", "Net profit"], srows,
+                                              [56 * mm, 14 * mm, 24 * mm, 18 * mm, 16 * mm, 20 * mm, 26 * mm], total_rows=(len(srows),), numeric=(1, 2, 3, 4, 5, 6))]
+            if not (mo["sales"] or mo["still"]):
+                block += [Spacer(1, 3), Paragraph(f"<b>Net profit {_m(mo['realised'], True)}</b>", p)]
+            block += [Spacer(1, 6)]
             if first:
                 story.append(KeepTogether(part + block))
                 first = False

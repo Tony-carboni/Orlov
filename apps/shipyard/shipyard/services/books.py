@@ -1076,14 +1076,16 @@ def _project_buybacks(cid, base, cut, led, goods_tax_month, brokers_month, stock
         # direct sales of the month (owner, 2026-10-21): one line, the deposits against what the projects paid for the goods
         sales = [d for d in direct if month(d["t"]) == key]
         if sales:
-            rows = [{"name": f"{_when(d['t'])}: {', '.join(d.get('removed') or []) or d['item'] or 'items not named'}", "delivered": 0.0, "paid": 0.0, "members": 0,
+            # "paid" is what the projects paid for the goods sold (the value the margin is against); those payments sit in the
+            # delivery rows above as well, so the month's paid total leaves this group out
+            rows = [{"name": f"{_when(d['t'])}: {', '.join(d.get('removed') or []) or d['item'] or 'items not named'}", "delivered": 0.0, "paid": d.get("cost", 0.0), "members": 0,
                      "sold": 0.0, "revenue": d["amount"], "cost": d.get("cost", 0.0), "tax": 0.0, "broker": 0.0, "fees": 0.0,
                      "net": d["amount"] - d.get("cost", 0.0), "pct": ((d["amount"] - d.get("cost", 0.0)) / d["cost"]) if d.get("cost") else None,
                      "unmatched": 0.0, "held_units": 0.0, "held_cost": 0.0, "held_value": 0.0, "expected": 0.0} for d in sales]
             tot = {k: sum(r[k] for r in rows) for k in ("delivered", "paid", "sold", "revenue", "cost", "tax", "broker", "fees", "net", "unmatched", "held_units", "held_cost", "held_value", "expected")}
             groups.append({"key": "direct", "label": "Direct sale of goods", "id": f"pb-{key}-direct", "rows": rows, "members": 0,
                            "pct": (tot["net"] / tot["cost"]) if tot["cost"] else None, "total": tot["net"], **tot})
-        paid_total = sum(g["paid"] for g in groups)
+        paid_total = sum(g["paid"] for g in groups if g["key"] != "direct")
         realised = sum(g["net"] for g in groups)
         expected = sum(g["expected"] for g in groups)
         sold_value = sum(g["revenue"] for g in groups)
