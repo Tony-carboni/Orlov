@@ -139,4 +139,4 @@ body.shipyard-resizing, body.shipyard-resizing * { cursor: col-resize !important
 .sy-fin-leg div.sep { border-top: 1px solid var(--sy-line); padding-top: .3rem; }
 .sy-fin-leg i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: .5rem; vertical-align: 0; }
 .sy-fin-leg .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.sy-fin-wf { width: 100%; height: 200px; display: block; }
+.sy-fin-wf { width: 100%; height: auto; display: block; }

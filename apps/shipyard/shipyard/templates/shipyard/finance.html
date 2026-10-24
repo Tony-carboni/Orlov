@@ -65,11 +65,11 @@
     <div class="sy-fin-panel">
         <h3>2 · Movements <small>since {{ d.since_label }}</small></h3>
         {% with w=charts.waterfall %}
-        <svg class="sy-fin-wf" viewBox="0 0 {{ w.width }} {{ w.height }}" preserveAspectRatio="none" role="img" aria-label="From the opening through the categories to the result">
+        <svg class="sy-fin-wf" viewBox="0 0 {{ w.width }} {{ w.height }}" role="img" aria-label="From the opening through the categories to the result">
             <line x1="0" y1="{{ w.zero }}" x2="{{ w.width }}" y2="{{ w.zero }}" stroke="#233a5e"/>
             {% for b in w.bars %}<rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" fill="{{ b.colour }}"{% if b.kind == "result" %} opacity=".6" stroke="#4cc3ff"{% endif %}><title>{{ b.label }}: {{ b.value|mil:True }}</title></rect>
-            <text x="{{ b.cx }}" y="{{ b.text_y }}" text-anchor="middle" font-size="9.5" font-weight="600" fill="{{ b.colour }}">{{ b.text }}</text>
-            <text x="{{ b.cx }}" y="{{ b.label_y }}" text-anchor="middle" font-size="9" fill="#8da2c0">{{ b.label }}</text>{% endfor %}
+            <text x="{{ b.cx }}" y="{{ b.text_y }}" text-anchor="middle" font-size="12" font-weight="600" fill="{{ b.colour }}">{{ b.text }}</text>
+            <text x="{{ b.cx }}" y="{{ b.label_y }}" text-anchor="middle" font-size="11" fill="#8da2c0">{{ b.label }}</text>{% endfor %}
         </svg>
         {% endwith %}
     </div>
