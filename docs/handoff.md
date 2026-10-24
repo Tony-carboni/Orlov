@@ -4,6 +4,16 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-24 (15:00 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** **Shipyard 0.33.7: the PDF's donut legend overlapped its figures** (runbook 13 C), from the owner's screenshot of the 07:42 sheet (the label Reward ISK in projects ran into 2,211.7).
+
+**Done.** Measured: the label is 23.3 mm wide from the 54 mm mark and the figure, right-aligned at 84 mm, starts at 76.4 mm. The donut is a little smaller (radius 19 mm instead of 22) and the legend runs from 48 mm to 86 mm, 42 mm instead of 30; a sample render shows clear space. Commit `dc686d5` pushed, release note in runbook 13. On the server: backup `aa-db-2026-10-24-1655.sql.gz`, the SHA pinned in conf/requirements.txt, image built, throwaway container shows 0.33.7, check clean, 138 tests OK. **Not done:** the auto-mode permission check refused the `up -d` and the nginx restart, so the running containers are still on 0.33.6 (no migration, no static files in this release).
+
+**Owner has to do by hand.** On the server, in ~/aa-docker: docker compose --env-file=.env up -d, then docker compose --env-file=.env restart nginx; then open the Finance tab, download the PDF and check the legend. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
+
+**Next.** If the owner would rather have a session do it: run the two commands above (announce first), then confirm the running version with docker exec allianceauth_gunicorn python -c "import shipyard; print(shipyard.__version__)".
+
 ## 2026-10-24 (06:15 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** **Shipyard 0.33.0: the Finance tab in look "C"** (runbook 13 C), after the owner asked for less text and more visuals; the mock-ups are at https://claude.ai/artifact/1ee6hQWFfPYAE11t1BKktk (A Neocom ledger, B brutalist blocks, C industrial dashboard; he picked C).
