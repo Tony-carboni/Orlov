@@ -651,6 +651,12 @@ class BooksTests(TestCase):
         self.assertIn("Download PDF", html)
         self.assertNotIn("Not explained", html)
 
+    def test_period_tiles_tie(self):
+        """The period's four figures (0.34.0): cost is what the turnover lost on the way to the net income."""
+        pt = books.compute()["period_tiles"]
+        self.assertEqual(set(pt), {"turnover", "cost", "net", "rewards"})
+        self.assertAlmostEqual(pt["cost"], pt["turnover"] - pt["net"], places=3)
+
     @unittest.skipUnless(__import__("importlib").util.find_spec("reportlab"), "reportlab not installed")
     def test_pdf(self):
         from ..services import books_pdf

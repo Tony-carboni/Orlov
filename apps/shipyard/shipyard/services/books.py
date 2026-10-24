@@ -839,6 +839,12 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         "structure_income_period": sum(g["total"] for g in move_groups if g["key"] == "structure"),
         "structure_income_total": structure_total,
         "fuel_month_isk": paying * 24 * 30 * fuel_price, "fuel_month_blocks": paying * 24 * 30,
+        # the period in four figures (owner, 2026-10-24, in place of the waterfall): turnover is every sale of the period
+        # (project goods on the market and directly, LP-store goods, LP sold), net income what is left after the goods'
+        # cost, tax and fees, so cost is the difference; rewards are what the projects paid the members
+        "period_tiles": {"turnover": project_bb["sold_value"] + buyback["sold_value"], "net": project_bb["realised"] + buyback["realised"],
+                         "cost": (project_bb["sold_value"] + buyback["sold_value"]) - (project_bb["realised"] + buyback["realised"]),
+                         "rewards": project_bb["paid_total"]},
         "asset_tiles": {k: sum(g["total"] for g in asset_groups if g["key"] in keys)
                         for k, keys in (("cash", ("cash",)), ("pool", ("pool",)), ("stock", ("listed", "physical")), ("held", ("held",)))},
         "fuel_burned": round(hours * paying), "fuel_burned_isk": round(hours * paying) * fuel_price,

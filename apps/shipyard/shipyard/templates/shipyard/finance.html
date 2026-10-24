@@ -63,14 +63,14 @@
         </div>
     </div>
     <div class="sy-fin-panel">
-        <h3>2 · Movements <small>since {{ d.since_label }}</small></h3>
-        {% with w=charts.waterfall %}
-        <svg class="sy-fin-wf" viewBox="0 0 {{ w.width }} {{ w.height }}" role="img" aria-label="From the opening through the categories to the result">
-            <line x1="0" y1="{{ w.zero }}" x2="{{ w.width }}" y2="{{ w.zero }}" stroke="#233a5e"/>
-            {% for b in w.bars %}<rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" fill="{{ b.colour }}"{% if b.kind == "result" %} opacity=".6" stroke="#4cc3ff"{% endif %}><title>{{ b.label }}: {{ b.value|mil:True }}</title></rect>
-            <text x="{{ b.cx }}" y="{{ b.text_y }}" text-anchor="middle" font-size="12" font-weight="600" fill="{{ b.colour }}">{{ b.text }}</text>
-            <text x="{{ b.cx }}" y="{{ b.label_y }}" text-anchor="middle" font-size="11" fill="#8da2c0">{{ b.label }}</text>{% endfor %}
-        </svg>
+        <h3>2 · This period <small>since {{ d.since_label }}</small></h3>
+        {% with pt=d.period_tiles %}
+        <div class="sy-fin-tiles">
+            <div class="sy-fin-card"><span class="l">Turnover, all sales</span><span class="v">{{ pt.turnover|mil }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+            <div class="sy-fin-card"><span class="l">Total cost, tax and fees</span><span class="v text-danger">{{ pt.cost|mil }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4"/></svg></div>
+            <div class="sy-fin-card"><span class="l">Net income</span><span class="v {% if pt.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ pt.net|mil:True }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 11h18M8 7V5h8v2"/></svg></div>
+            <div class="sy-fin-card"><span class="l">Project rewards paid out</span><span class="v">{{ pt.rewards|mil }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19h16M6 19V9l6-4 6 4v10"/><path d="M10 19v-5h4v5"/></svg></div>
+        </div>
         {% endwith %}
     </div>
 </div>

@@ -12,21 +12,18 @@ def _m(v, sign=False):
     return f"{v / M:+,.1f} M" if sign else f"{v / M:,.1f} M"
 
 
-def _pictures(d: dict):
-    """The donut and the waterfall side by side (look "C", owner's pick 2026-10-24), from finance_charts."""
+def _donut(d: dict):
+    """The donut of what the assets are in (look "C", owner's pick 2026-10-24), from finance_charts; 54 x 54 mm with
+    its legend to the right (42 mm wide: the longest name, 23 mm, and a five-digit figure fit without touching)."""
     from reportlab.graphics.shapes import Drawing, Line, Rect, String, Wedge
     from reportlab.lib import colors
     from reportlab.lib.units import mm
-    from reportlab.platypus import Table, TableStyle
 
     from . import finance_charts as fc
 
-    opening = d["opening_result"] if d.get("period") is not None and d["period"].source else 0.0
-    dn, wf = fc.donut(d["asset_groups"]), fc.waterfall(d["move_groups"], opening, width=300, height=150)
+    dn = fc.donut(d["asset_groups"])
     muted, ink = colors.HexColor("#5b6b82"), colors.HexColor("#1f2a44")
     legend_names = {"cash": "Liquid ISK", "pool": "Reward ISK in projects", "held": "Goods held", "listed": "Stock listed", "physical": "Physical stock", "lp": "Loyalty points"}
-    bar_names = {"project_sales": "Sales", "project_rewards": "Rewards", "lp": "LP", "stock": "Stock", "market": "Market", "structure": "Structure", "transfers": "Transfers", "gap": "Gap", "opening": "Opening", "result": "Result"}
-    # the donut: 54 x 54 mm, legend to its right (42 mm wide: the longest name, 23 mm, and a five-digit figure fit without touching)
     left = Drawing(87 * mm, 60 * mm)
     cx, cy, r = 21 * mm, 30 * mm, 19 * mm
     for sg in dn["segments"]:
@@ -45,20 +42,7 @@ def _pictures(d: dict):
     y -= 5.2 * mm
     left.add(String(48 * mm, y - 1 * mm, "Result", fontName="Helvetica-Bold", fontSize=6.5, fillColor=ink))
     left.add(String(86 * mm, y - 1 * mm, f"{d['result'] / M:+,.1f}", textAnchor="end", fontName="Helvetica-Bold", fontSize=6.5, fillColor=colors.HexColor("#2e7d32")))
-    # the waterfall: 84 x 60 mm, the SVG geometry scaled from 300 x 150
-    sx, sy = (84 * mm) / wf["width"], (60 * mm) / wf["height"]
-    right = Drawing(84 * mm, 60 * mm)
-    H = wf["height"]
-    right.add(Line(0, (H - wf["zero"]) * sy, 84 * mm, (H - wf["zero"]) * sy, strokeColor=colors.HexColor("#c9d2e0"), strokeWidth=0.5))
-    shades = {fc.POS: "#2e9e5b", fc.NEG: "#c84a57", fc.RESULT: "#2a8fc4", fc.OPENING: "#8da2c0"}
-    for b in wf["bars"]:
-        c = colors.HexColor(shades.get(b["colour"], b["colour"]))
-        right.add(Rect(b["x"] * sx, (H - b["y"] - b["h"]) * sy, b["w"] * sx, b["h"] * sy, fillColor=c, strokeColor=None))
-        right.add(String(b["cx"] * sx, (H - b["text_y"]) * sy, b["text"], textAnchor="middle", fontName="Helvetica-Bold", fontSize=6, fillColor=c))
-        right.add(String(b["cx"] * sx, (H - b["label_y"]) * sy, bar_names.get(b["key"], b["label"]), textAnchor="middle", fontName="Helvetica", fontSize=5.5, fillColor=muted))
-    t = Table([[left, right]], colWidths=[87 * mm, 87 * mm])
-    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
-    return t
+    return left
 
 
 def render(d: dict) -> bytes:
@@ -100,12 +84,11 @@ def render(d: dict) -> bytes:
     tile_l = ParagraphStyle("tl", parent=note, fontSize=7, leading=8.5)
     tile_v = ParagraphStyle("tv", parent=cell, fontSize=11, leading=13)
 
-    def tiles(items, per_row=4):
+    def tiles(items, per_row=4, width=174 * mm):
         """Stat tiles as on the page: (label, value, sub, colour) each; a shaded cell per tile."""
         cells = [[Paragraph(e(l), tile_l), Paragraph(f"<font color='{c or '#1f2a44'}'><b>{e(v)}</b></font>", tile_v)] for l, v, sub, c in items]  # label and figure only (owner, 2026-10-24)
         data = [[cells[i] if i < len(cells) else "" for i in range(r, r + per_row)] for r in range(0, len(cells), per_row)]
-        width = (174 * mm) / per_row
-        t = Table(data, colWidths=[width] * per_row)
+        t = Table(data, colWidths=[width / per_row] * per_row)
         t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), tint), ("BOX", (0, 0), (-1, -1), 0.4, colors.white), ("INNERGRID", (0, 0), (-1, -1), 1.2, colors.white),
                                ("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 5), ("LEFTPADDING", (0, 0), (-1, -1), 6)]))
         return t
@@ -134,7 +117,14 @@ def render(d: dict) -> bytes:
     kt.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), shade), ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#4cc3ff")),
                             ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3), ("LEFTPADDING", (0, 0), (-1, -1), 5)]))
     at_ = d.get("asset_tiles") or {}
-    story += [kt, Spacer(1, 6), _pictures(d), Paragraph("1. Position", h2), Spacer(1, 2),
+    # the donut on the left, the period's four figures on the right (owner, 2026-10-24, in place of the waterfall)
+    pt = d.get("period_tiles") or {}
+    period = tiles([("Turnover, all sales", _m(pt.get("turnover", 0.0)), "", None), ("Total cost, tax and fees", _m(pt.get("cost", 0.0)), "", "#c62828"),
+                    ("Net income", _m(pt.get("net", 0.0), True), "", sign_colour(pt.get("net"))), ("Project rewards paid out", _m(pt.get("rewards", 0.0)), "", None)],
+                   per_row=2, width=84 * mm)
+    pics = Table([[_donut(d), period]], colWidths=[90 * mm, 84 * mm])
+    pics.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0), ("TOPPADDING", (0, 0), (-1, -1), 0)]))
+    story += [kt, Spacer(1, 6), pics, Paragraph("1. Position", h2), Spacer(1, 2),
               tiles([("Liquid ISK", _m(at_.get("cash", 0.0)), "", None), ("Reward ISK in active projects", _m(at_.get("pool", 0.0)), "", None),
                      ("Stock", _m(at_.get("stock", 0.0)), "", None), ("Goods held from project buybacks", _m(at_.get("held", 0.0)), "", None)]), Spacer(1, 4)]
     shade_rows = []

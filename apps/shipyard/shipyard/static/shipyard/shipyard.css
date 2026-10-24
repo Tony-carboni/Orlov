@@ -118,7 +118,7 @@ body.shipyard-resizing, body.shipyard-resizing * { cursor: col-resize !important
 .shipyard-collapsing tr[data-bs-toggle="collapse"][aria-expanded="true"] .fa-chevron-right { transform: rotate(90deg); }
 .shipyard-collapsing .fa-chevron-right { transition: transform .15s ease; }
 
-/* Finance tab, look "C" (owner's pick, 2026-10-24): cards with icons, a donut and a waterfall */
+/* Finance tab, look "C" (owner's pick, 2026-10-24): cards with icons, a donut and four period tiles */
 .sy-fin-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .75rem; }
 .sy-fin-card { background: var(--sy-panel); border: 1px solid var(--sy-line); border-radius: .6rem; padding: .7rem .9rem; display: grid; grid-template-columns: 1fr auto; gap: .1rem .6rem; align-items: center; min-width: 0; }
 .sy-fin-card .l { font-size: .8rem; color: var(--sy-muted); grid-column: 1; }
@@ -139,4 +139,5 @@ body.shipyard-resizing, body.shipyard-resizing * { cursor: col-resize !important
 .sy-fin-leg div.sep { border-top: 1px solid var(--sy-line); padding-top: .3rem; }
 .sy-fin-leg i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: .5rem; vertical-align: 0; }
 .sy-fin-leg .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.sy-fin-wf { width: 100%; height: auto; display: block; }
+.sy-fin-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+@media (max-width: 480px) { .sy-fin-tiles { grid-template-columns: 1fr; } }

@@ -77,6 +77,8 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
+*Release 0.34.0, 2026-10-24: **four period tiles in place of the waterfall** (owner's request), on the page and in the PDF: turnover (every sale of the period: project goods on the market and directly, LP-store goods, LP sold), total cost with tax and fees, net income (turnover less that cost, the sum of the net profit of sections 3 and 4), and the project rewards paid out to members. The waterfall's geometry and its test are gone; the donut stays. No migration; collectstatic for the stylesheet.*
+
 *Release 0.33.7, 2026-10-24: the PDF's donut legend no longer runs into its figures (the label Reward ISK in projects touched 2,211.7): the donut is a little smaller and the legend 42 mm wide instead of 30.*
 
 *Release 0.33.6, 2026-10-24: section 1 opens with four tiles (Liquid ISK, Reward ISK in active projects, Stock, Goods held from project buybacks) and section 5 with three (fuel blocks per month, their cost per month, total structure income since the budget baseline), on the page and in the PDF.*
