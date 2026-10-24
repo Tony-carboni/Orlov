@@ -4,6 +4,18 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-24 (06:15 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** **Shipyard 0.33.0: the Finance tab in look "C"** (runbook 13 C), after the owner asked for less text and more visuals; the mock-ups are at https://claude.ai/artifact/1ee6hQWFfPYAE11t1BKktk (A Neocom ledger, B brutalist blocks, C industrial dashboard; he picked C).
+
+**Done.** Released 0.33.0 (commit `39af27b` pinned, backup `aa-db-2026-10-24-0607.sql.gz`, no migration, 138 tests): four cards with icons (Result, Total assets, Master wallet, Goods held; a Since card when a period is open), a donut of what the assets are in with the budget and the result under its legend, and a waterfall from the opening through every category to the result; the tables follow unchanged. The PDF draws the same two pictures under its headline block, the result cell in the front door's blue. Geometry in `services/finance_charts.py` (pure, tested), inline SVG on the page, reportlab shapes in the PDF. Earlier today: 0.32.0 and 0.32.1 decluttered the page and the PDF (see the previous entry), 0.31.2 and 0.31.3 the hangar countdown on the Read the hangar now button (orange when a read shows fresh data).
+
+**Owner has to do by hand.** Look at the Finance tab and the PDF; say what to tune. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
+
+**Next.** Nothing queued.
+
+---
+
 ## 2026-10-24 (04:45 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** **Shipyard 0.31.2: a clock for the next hangar read** (runbook 13 C), after the owner's direct sale DS-H3BV of 04:21 EVE.
@@ -74,21 +86,5 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Done.** The owner pasted a 20-line list of project goods (compressed ores, White Glaze, Crystalline Isogen-10, Zero-Point Condensate) and asked for six valuations; the by-hand figures at 04:40 UTC were: quote 156.4 M, project cost 140.8 M (first in first out), Jita buy 154.4 M, Jita sell 164.4 M, 95 % reprocessing with abyssal at Jita buy 160.1 M, the same capped at Jita sell 156.4 M. He wants that table every time, with the margin against the project cost in percent, and sanity checks against odd Jita prices. Released 0.26.0 (commit `c0b7b92` pinned, backup `aa-db-2026-10-23-0444.sql.gz`, no migration, 118 tests): the quote page shows the six valuations with margin in ISK and percent, every line carries Jita buy, Jita sell and the uncapped reprocessing value next to the price used, profit per line as a percentage of cost, and a line is marked when Jita buy is above sell, the spread is over 20 %, the quote is under 85 % of Jita buy, above Jita sell, or the reprocessing value is over 1.25x Jita sell. The rule is unchanged. Live render of the list: three Kernite lines flagged for a Jita spread of 27 to 40 %. **0.26.1** (commit `e8124d8` pinned, backup `aa-db-2026-10-23-0500.sql.gz`, no migration): the lines show **Project buy** (what the projects paid per unit, first in first out) and the profit is against the project cost of every unit sold: units beyond the goods held are priced at the same project buy price instead of counting as free; the registration keeps the lots' cost for the books.
 
 **Owner has to do by hand.** Use Finance → Register a direct sale for the next sale and say if a flag threshold should move. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
-
-**Next.** Nothing queued.
-
----
-
-## 2026-10-22 (15:00 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** **Shipyard 0.25.1** (runbook 13 C): LP purchase reasons in the owner's spellings, margin cards in sections 3 and 4, the first partial ignore.
-
-**Done.** The owner asked why the sheet showed 1,750 LP while the corporation wallet holds 69,750: the two purchases of today ("57k State protectorate LP" 45.6 M, "11k State Protectorate LP" 8.8 M) did not match the "<number> LP" pattern. Fixed; the sheet now reads 133,000 bought, 63,250 used, **69,750 left (55.8 M at cost)**, the wallet's figure. New cards **Margin on what sold** (sold stock only, sale price against cost, before fees): section 3 **13.1 %** (537.1 M sold against 474.8 M paid to members, market and direct sales), section 4 **10.5 %** (133.7 M against 121.0 M). The 62,534,212 deposit of 21 Oct 10:56 is ignored for 54,453,822 only; the 8,080,390 stays as cash (owner's decision). Result **+366.1 M**, gap 0. Released: backup `aa-db-2026-10-22-1444.sql.gz`, build, 117 tests, `up -d`, nginx.
-
-**Also:** the 9,000,000 deposit "correction industry orders" (22 Oct 13:13) settles ten private manufacturing jobs of 13:10 charged to the master wallet (20 lines, 8,008,380); the lines are flagged and the deposit is ignored for 8,008,380, so 991,620 stays as cash by the owner's rule of 21 October. Ignored lines now 240, net 0; result **+375.1 M**, gap 0. Still open from earlier: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
-
-**Also (0.25.2, 15:40 UTC):** the owner expected the LP line's Log button to list the corporation wallet's LP change by change with dates; the 0.25.0 log is the member characters' own LP. EVE has no corporation LP route, so the button now opens a page rebuilt from the books (purchases from the journal with EVE's dates, conversions from the stock batches): numbered lines with change and balance after, and the figure the corporation wallet's LP tab should show. Commit `b313603` pinned, backup `aa-db-2026-10-22-1507.sql.gz`, 118 tests.
-
-**Also (runbook 19, 15:15 UTC): the welcome DM.** New cog `orlovbot/cogs/welcome.py` (registered in `orlovbot/auth_hooks.py`, settings `ORLOVBOT_WELCOME` and `ORLOVBOT_WELCOME_CHANNEL_ID` in `conf/local.py`, copy `local.py.pre-welcome`): every member who joins the Discord gets a DM from Orlov auth with the link to #how-to-get-roles and the two-line summary; if their DMs are closed, the same note goes into the channel with a mention. The bot's Members intent was already on (allianceauth-discordbot). Deployed and the cog loads; a test DM with the text was sent to the owner's own account. Not yet seen with a real join: the owner can test with a second account (runbook 19 B).
 
 **Next.** Nothing queued.
