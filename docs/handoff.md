@@ -88,15 +88,3 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Also (06:10 UTC): Shipyard 0.27.1** (commit `fc4ed62` pinned, backup `aa-db-2026-10-23-0604.sql.gz`, no migration, 125 tests): a **period menu** at the top of the Finance tab, Since: Last alliance report / Day / Week / Month; Day, Week and Month open a period on the fly (the position 24 hours, 7 or 30 days ago becomes the opening, nothing stored; the PDF follows `?period=`); a start before the budget baseline of 18 October falls back to the baseline, so Week and Month equal the report until 25 October and 17 November. **Structure income** is one line in its own category in section 2 (the 77.0 M of 18 October and the 59.9 M of 23 October, 136.9 M together; the transfer rule is `raitaru|structure income`). Also refreshed from ESI today on the owner's request: leadplayer (now OARMI) and Kevin Choseph (now OARMI, Family Member).
 
 **Next.** Nothing queued.
-
----
-
-## 2026-10-23 (05:00 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** **Shipyard 0.26.0: Register a direct sale values the list six ways** (runbook 13 C), after the owner checked a quote by hand.
-
-**Done.** The owner pasted a 20-line list of project goods (compressed ores, White Glaze, Crystalline Isogen-10, Zero-Point Condensate) and asked for six valuations; the by-hand figures at 04:40 UTC were: quote 156.4 M, project cost 140.8 M (first in first out), Jita buy 154.4 M, Jita sell 164.4 M, 95 % reprocessing with abyssal at Jita buy 160.1 M, the same capped at Jita sell 156.4 M. He wants that table every time, with the margin against the project cost in percent, and sanity checks against odd Jita prices. Released 0.26.0 (commit `c0b7b92` pinned, backup `aa-db-2026-10-23-0444.sql.gz`, no migration, 118 tests): the quote page shows the six valuations with margin in ISK and percent, every line carries Jita buy, Jita sell and the uncapped reprocessing value next to the price used, profit per line as a percentage of cost, and a line is marked when Jita buy is above sell, the spread is over 20 %, the quote is under 85 % of Jita buy, above Jita sell, or the reprocessing value is over 1.25x Jita sell. The rule is unchanged. Live render of the list: three Kernite lines flagged for a Jita spread of 27 to 40 %. **0.26.1** (commit `e8124d8` pinned, backup `aa-db-2026-10-23-0500.sql.gz`, no migration): the lines show **Project buy** (what the projects paid per unit, first in first out) and the profit is against the project cost of every unit sold: units beyond the goods held are priced at the same project buy price instead of counting as free; the registration keeps the lots' cost for the books.
-
-**Owner has to do by hand.** Use Finance → Register a direct sale for the next sale and say if a flag threshold should move. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
-
-**Next.** Nothing queued.
