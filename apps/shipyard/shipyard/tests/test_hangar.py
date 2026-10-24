@@ -4,8 +4,18 @@ from unittest import mock
 
 from django.test import TestCase, override_settings
 
+from django.core.cache import cache
+
 from ..models import HangarItem
 from ..services import hangar
+
+
+def _page(rows, expires="Sat, 24 Oct 2026 05:31:00 GMT"):
+    """A fake ESI response: one page with an Expires header."""
+    r = mock.Mock()
+    r.json.return_value = rows
+    r.headers = {"X-Pages": "1", "Expires": expires}
+    return r
 
 CID = 98843356
 RAITARU = 1055528480464
@@ -31,7 +41,7 @@ class HangarTests(TestCase):
             {"type_id": 35, "quantity": 5, "location_id": 60003760, "location_flag": "CorpSAG1"},
             {"type_id": 62536, "quantity": 100, "location_id": RAITARU, "location_flag": "CorporationGoalDeliveries"},  # the game's Projects hangar
         ]
-        with mock.patch.object(hangar, "token", return_value=tok), mock.patch.object(hangar.esi, "_authed_pages", return_value=rows), \
+        with mock.patch.object(hangar, "token", return_value=tok), mock.patch.object(hangar.esi, "_authed", return_value=_page(rows)), \
              mock.patch.object(hangar.projects, "corp_id", return_value=CID), mock.patch("shipyard.services.projectbooks._names", return_value={62536: "Compressed Kernite"}):
             r = hangar.refresh()
         self.assertEqual((r["rows"], r["types"], r["character"]), (4, 3, "Catherine Frey"))
@@ -51,7 +61,7 @@ class HangarTests(TestCase):
                 divs = hangar.divisions(CID)
         self.assertEqual([(d["flag"], d["wanted"]) for d in divs], [("CorpSAG1", False), ("CorpDeliveries", False), ("CorpSAG2", True), ("CorporationGoalDeliveries", False)])
         # a second read replaces everything
-        with mock.patch.object(hangar, "token", return_value=tok), mock.patch.object(hangar.esi, "_authed_pages", return_value=rows[:1]), \
+        with mock.patch.object(hangar, "token", return_value=tok), mock.patch.object(hangar.esi, "_authed", return_value=_page(rows[:1])), \
              mock.patch.object(hangar.projects, "corp_id", return_value=CID), mock.patch("shipyard.services.projectbooks._names", return_value={}):
             hangar.refresh()
         self.assertEqual(HangarItem.objects.filter(corporation_id=CID).count(), 1)
@@ -75,3 +85,34 @@ class HangarTests(TestCase):
         with mock.patch.object(hangar, "token", return_value=None):
             with self.assertRaises(RuntimeError):
                 hangar.refresh()
+
+
+class ScheduleTests(TestCase):
+    def test_schedule_names_the_next_read_that_sees_fresh_data(self):
+        cache.delete(hangar.EXPIRES_KEY)
+        now = dt.datetime(2026, 10, 24, 4, 50, tzinfo=dt.timezone.utc)
+        with mock.patch.object(hangar.app_settings, "SHIPYARD_HANGAR_BEAT_MINUTE", 35):
+            s = hangar.schedule(now=now, read_at=now - dt.timedelta(minutes=19))
+            self.assertEqual(s["next_run"], dt.datetime(2026, 10, 24, 5, 35, tzinfo=dt.timezone.utc))
+            self.assertEqual(s["effective"], s["next_run"])
+            self.assertIsNone(s["fresh_at"])
+            self.assertFalse(s["cached"])
+            # EVE's copy renews at 06:10: the 05:35 read would show the same contents, the first useful read is 06:35
+            cache.set(hangar.EXPIRES_KEY, dt.datetime(2026, 10, 24, 6, 10, tzinfo=dt.timezone.utc).isoformat(), 3600)
+            s = hangar.schedule(now=now, read_at=now)
+            self.assertEqual(s["effective"], dt.datetime(2026, 10, 24, 6, 35, tzinfo=dt.timezone.utc))
+            self.assertTrue(s["cached"])
+            # at :35 exactly the next run is an hour later
+            s = hangar.schedule(now=dt.datetime(2026, 10, 24, 5, 35, tzinfo=dt.timezone.utc), read_at=now)
+            self.assertEqual(s["next_run"], dt.datetime(2026, 10, 24, 6, 35, tzinfo=dt.timezone.utc))
+        cache.delete(hangar.EXPIRES_KEY)
+
+    def test_refresh_remembers_when_eve_renews_its_copy(self):
+        cache.delete(hangar.EXPIRES_KEY)
+        tok = mock.Mock(character_name="Catherine Frey")
+        tok.valid_access_token.return_value = "x"
+        with mock.patch.object(hangar, "token", return_value=tok), mock.patch.object(hangar.esi, "_authed", return_value=_page([])), \
+             mock.patch.object(hangar.projects, "corp_id", return_value=CID), mock.patch("shipyard.services.projectbooks._names", return_value={}):
+            hangar.refresh()
+        self.assertEqual(cache.get(hangar.EXPIRES_KEY), "2026-10-24T05:31:00+00:00")
+        cache.delete(hangar.EXPIRES_KEY)

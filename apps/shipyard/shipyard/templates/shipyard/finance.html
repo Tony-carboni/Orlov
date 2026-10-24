@@ -48,6 +48,9 @@
 <h3 class="h5 mt-4">1. Position against the baseline</h3>
 {% if d.hangar.read_at %}
 <p class="small shipyard-k mb-1"><i class="fas fa-warehouse fa-fw"></i> Goods held from project buybacks = the projects hangar as read from EVE at {{ d.hangar.read_at|date:"Y-m-d H:i" }} EVE ({{ d.hangar.types }} item type{{ d.hangar.types|pluralize }}), at what the projects paid.{% if d.hangar.missing %} Bought by projects but not in the hangar: {{ d.hangar.missing|join:", " }}.{% endif %}{% if d.hangar.extra %} In the hangar but never bought by a project (not counted): {{ d.hangar.extra|join:", " }}.{% endif %}</p>
+<p class="small shipyard-k mb-1" id="hangar-clock" data-next="{{ hangar_schedule.effective|date:"c" }}" data-fresh="{% if hangar_schedule.fresh_at %}{{ hangar_schedule.fresh_at|date:"c" }}{% endif %}"><i class="fas fa-clock fa-fw"></i>
+    Next automatic hangar read at <strong>{{ hangar_schedule.effective|date:"H:i" }} EVE</strong> (<span data-countdown="{{ hangar_schedule.effective|date:"c" }}">in a while</span>){% if hangar_schedule.fresh_at %}; EVE renews its copy of the hangar at {{ hangar_schedule.fresh_at|date:"H:i" }} EVE{% if hangar_schedule.cached %} (<span data-countdown="{{ hangar_schedule.fresh_at|date:"c" }}">soon</span>), a read before that shows the same contents{% endif %}{% endif %}.
+</p>
 {% elif can_manage %}
 <p class="small text-warning mb-1"><i class="fas fa-triangle-exclamation fa-fw"></i> The hangar has not been read from EVE yet: the goods held follow the ledger. Connect the hangar (button above) with the CEO once.</p>
 {% endif %}
@@ -204,4 +207,21 @@
 <p class="small shipyard-k">Burned since the baseline by the structures the alliance pays for: {{ d.fuel_burned }} blocks, {{ d.fuel_burned_isk|mil }}.</p>
 <p class="small shipyard-k">The baseline and the stock batches (Heavy Water bought by direct trade) are kept in the admin: Shipyard → books baseline and stock batches. Market buys of a stock type are picked up by themselves.</p>
 {% endif %}
+<script>
+(function () {
+    function tick() {
+        var now = Date.now();
+        document.querySelectorAll("[data-countdown]").forEach(function (el) {
+            var t = Date.parse(el.getAttribute("data-countdown"));
+            if (isNaN(t)) { return; }
+            var s = Math.round((t - now) / 1000);
+            if (s <= 0) { el.textContent = "due now"; return; }
+            var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+            el.textContent = "in " + (h ? h + " h " : "") + (h || m ? m + " min" : s + " s");
+        });
+    }
+    tick();
+    setInterval(tick, 15000);
+})();
+</script>
 {% endblock %}

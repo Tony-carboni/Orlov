@@ -1,0 +1,21 @@
++ Project goods
+- Compressed White Glaze
+- Compressed Kernite
+- Compressed Kernite II-Grade
+- Compressed Kernite III-Grade
+- Compressed Omber
+- Compressed Omber II-Grade
+- Compressed Omber III-Grade
+- Compressed Plagioclase
+- Compressed Plagioclase II-Grade
+- Compressed Plagioclase III-Grade
+- Compressed Pyroxeres
+- Compressed Pyroxeres II-Grade
+- Compressed Pyroxeres III-Grade
+- Compressed Scordite II-Grade
+- Compressed Scordite III-Grade
+- Compressed Veldspar
+- Compressed Veldspar II-Grade
+- Compressed Veldspar III-Grade
+- Crystalline Isogen-10
+- Zero-Point Condensate

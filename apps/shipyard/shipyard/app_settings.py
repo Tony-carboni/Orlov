@@ -189,3 +189,4 @@ SHIPYARD_BARGAIN_DIP_PCT = getattr(settings, "SHIPYARD_BARGAIN_DIP_PCT", 0.20)  
 SHIPYARD_BARGAIN_MIN_ISK_DAY = getattr(settings, "SHIPYARD_BARGAIN_MIN_ISK_DAY", 50e6)
 SHIPYARD_BOOKS_HANGAR_LOCATIONS = getattr(settings, "SHIPYARD_BOOKS_HANGAR_LOCATIONS", [])  # station or structure ids
 SHIPYARD_BOOKS_HANGAR_FLAGS = getattr(settings, "SHIPYARD_BOOKS_HANGAR_FLAGS", [])            # e.g. ["CorpSAG2"]
+SHIPYARD_HANGAR_BEAT_MINUTE = getattr(settings, "SHIPYARD_HANGAR_BEAT_MINUTE", 35)  # the hour's minute the hourly hangar read runs at (the beat entry)

@@ -111,7 +111,7 @@ def finance(request):
     from .services import hangar as hangar_service
     return render(request, "shipyard/finance.html", _context(request, d=data, can_manage=request.user.has_perm("shipyard.manage_shipyard"),
                                                                period=period, periods=[(k, v[0]) for k, v in books.PERIODS.items()],
-                                                               hangar_token=hangar_service.token(), hangar_divisions=hangar_service.divisions()))
+                                                               hangar_token=hangar_service.token(), hangar_divisions=hangar_service.divisions(), hangar_schedule=hangar_service.schedule()))
 
 
 @login_required

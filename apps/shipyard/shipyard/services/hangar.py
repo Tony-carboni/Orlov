@@ -12,10 +12,12 @@ the owner's rule: section 1 counts the actual content of the projects hangar and
 SHIPYARD_BOOKS_HANGAR_LOCATIONS and SHIPYARD_BOOKS_HANGAR_FLAGS override that when set.
 """
 
+import datetime as dt
 import logging
 from collections import defaultdict
 
 from allianceauth.eveonline.models import EveCharacter
+from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 from esi.models import Token
@@ -63,13 +65,36 @@ def aggregate(rows) -> dict:
     return dict(out)
 
 
+EXPIRES_KEY = "shipyard:hangar:expires"  # when EVE's copy of the assets is renewed (the Expires header of the last read)
+
+
+def _read_assets(cid: int, access_token: str, max_pages: int = 50) -> tuple:
+    """(rows, expires): every page of the corporation's assets and the moment EVE renews its copy."""
+    path = f"/corporations/{int(cid)}/assets/"
+    first = esi._authed(path, access_token, {"page": 1})
+    rows = list(first.json() or [])
+    pages = min(int(first.headers.get("X-Pages") or 1), max_pages)
+    for page in range(2, pages + 1):
+        rows.extend(esi._authed(path, access_token, {"page": page}).json() or [])
+    expires = None
+    try:
+        from email.utils import parsedate_to_datetime
+
+        expires = parsedate_to_datetime(first.headers["Expires"]) if first.headers.get("Expires") else None
+    except (TypeError, ValueError, KeyError):
+        expires = None
+    return rows, expires
+
+
 def refresh() -> dict:
     """Read the corporation's assets and replace the hangar rows."""
     tok = token()
     if tok is None:
         raise RuntimeError("no token with the corporation assets scope for a character of the corporation")
     cid = corp_id()
-    rows = esi._authed_pages(f"/corporations/{cid}/assets/", tok.valid_access_token(), max_pages=50)
+    rows, expires = _read_assets(cid, tok.valid_access_token())
+    if expires is not None:
+        cache.set(EXPIRES_KEY, expires.isoformat(), 3 * 3600)
     agg = aggregate(rows)
     now = timezone.now()
     from .projectbooks import _names
@@ -81,6 +106,33 @@ def refresh() -> dict:
         HangarItem.objects.filter(corporation_id=cid).delete()
         HangarItem.objects.bulk_create(items)
     return {"assets": len(rows), "rows": len(items), "types": len({t for t, _, _ in agg}), "read_at": now, "character": tok.character_name}
+
+
+def schedule(now=None, read_at=None) -> dict:
+    """The clock on the Finance tab (owner, 2026-10-24): when the hangar was last read, when EVE renews its copy
+    (the Expires header of that read) and when the next hourly read runs (the beat entry's minute). The next
+    read only shows a change when EVE's copy has been renewed by then."""
+    now = now or timezone.now()
+    minute = int(app_settings.SHIPYARD_HANGAR_BEAT_MINUTE)
+    next_run = now.replace(minute=minute, second=0, microsecond=0)
+    if next_run <= now:
+        next_run += dt.timedelta(hours=1)
+    fresh_at = None
+    raw = cache.get(EXPIRES_KEY)
+    if raw:
+        try:
+            fresh_at = dt.datetime.fromisoformat(raw)
+        except ValueError:
+            fresh_at = None
+    if read_at is None:
+        read_at = HangarItem.objects.filter(corporation_id=corp_id()).values_list("read_at", flat=True).first()
+    # the first automatic read that sees renewed data
+    effective = next_run
+    if fresh_at is not None:
+        while effective < fresh_at:
+            effective += dt.timedelta(hours=1)
+    return {"read_at": read_at, "fresh_at": fresh_at, "next_run": next_run, "effective": effective, "now": now,
+            "cached": fresh_at is not None and fresh_at > now}
 
 
 def project_offices(cid=None) -> set:
