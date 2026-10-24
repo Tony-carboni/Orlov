@@ -48,16 +48,21 @@ def render(d: dict) -> bytes:
 
     cut, base = d["cut"], d["base"]
     story = [
-        Paragraph("Orlov Arms International · simplified balance sheet", h1),
-        Paragraph(f"As of {cut.day} {cut:%B %Y}, {cut:%H:%M} EVE time. Movements since {e(d['since_label'])}"
+        Paragraph("Orlov Arms International · balance sheet", h1),
+        Paragraph(f"{cut.day} {cut:%B %Y}, {cut:%H:%M} EVE · movements since {e(d['since_label'])}"
                   + (f" ({base.day} {base:%B}, {base:%H:%M} EVE)" if d.get("period") is not None and d["period"].source else "")
-                  + ". Figures from EVE (ESI) through auth. All amounts in millions of ISK. Prepared for the directors of The Orlov Family.", sub),
-        Paragraph("1. Position against the baseline", h2),
-        Paragraph(f"On {d['origin'].day} {d['origin']:%B} the corporation's money was separated from the owner's. The corporation works with a budget of {d['loan'] / M:,.0f} M lent by "
-                  "the owner, interest-free and without a repayment date. That loan counts as nothing: the corporation's result is everything above or below it."
-                  + (f" Since {e(d['since_label'])} the result moved {_m(d['period_result'], True)} (the opening was {_m(d['opening_result'], True)} above the loan)." if d.get("period") is not None and d["period"].source else ""), p),
-        Spacer(1, 4),
+                  + " · M ISK · from EVE through auth, for the directors of The Orlov Family", sub),
+        Spacer(1, 6),
     ]
+    # the headline figures, as the page's cards
+    kpis = [[Paragraph("<b>Result</b>", cell), Paragraph(f"<b>{_m(d['result'], True)}</b>", num), Paragraph(f"above the {d['loan'] / M:,.0f} M budget", note)]]
+    if d.get("period") is not None and d["period"].source:
+        kpis.append([Paragraph(f"<b>Since {e(d['since_label'])}</b>", cell), Paragraph(f"<b>{_m(d['period_result'], True)}</b>", num), Paragraph(f"opening {_m(d['opening_result'], True)}", note)])
+    kpis.append([Paragraph("<b>Total assets</b>", cell), Paragraph(f"<b>{_m(d['assets'])}</b>", num), Paragraph("", note)])
+    kpis.append([Paragraph("<b>Master wallet</b>", cell), Paragraph(f"<b>{_m(d['wallet'])}</b>", num), Paragraph(f"{_m(d['pool'])} in {d['n_projects']} active projects", note)])
+    kt = Table(kpis, colWidths=[40 * mm, 30 * mm, 104 * mm])
+    kt.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), shade), ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3), ("LEFTPADDING", (0, 0), (-1, -1), 5)]))
+    story += [kt, Paragraph("1. Position", h2), Spacer(1, 2)]
     shade_rows = []
     rows = []
     for g in d["asset_groups"]:
@@ -66,33 +71,32 @@ def render(d: dict) -> bytes:
         for label, value, note_ in g["rows"]:
             rows.append([f"&nbsp;&nbsp;&nbsp;{e(label)}", _m(value), e(note_)])
     n = len(rows)
-    rows += [["<b>Total assets</b>", f"<b>{_m(d['assets'])}</b>", ""], ["<b>Liabilities</b>", "", ""],
-             ["Loan from the owner (the working budget)", _m(d["loan"]), "Interest-free, perpetual, extractable when the corporation can bear it"],
-             ["<b>Result: assets above the loan</b>", f"<font color='#2e7d32'><b>{_m(d['result'], True)}</b></font>", "The corporation's own money"]]
-    t = table(["Assets", "ISK", "How it is valued"], rows, [78 * mm, 26 * mm, 70 * mm], total_rows=(n + 1,), green_rows=(len(rows),))
+    rows += [["<b>Total assets</b>", f"<b>{_m(d['assets'])}</b>", ""],
+             ["Owner's budget (loan)", _m(d["loan"]), ""],
+             ["<b>Result</b>", f"<font color='#2e7d32'><b>{_m(d['result'], True)}</b></font>", ""]]
+    t = table(["Assets", "M ISK", ""], rows, [78 * mm, 26 * mm, 70 * mm], total_rows=(n + 1,), green_rows=(len(rows),))
     t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), colors.HexColor("#f4f6fa")) for b in shade_rows]))
     story.append(t)
-    outside = []
+    bits = []
     if d["director"] is not None:
-        outside.append(f"wallet division 7 (the Director division, {d['director'] / M:,.1f} M), the owner's characters' shared wallet")
-    text = "Not included: " + (outside[0] + ". " if outside else "")
-    text += (f"Project goods paid for before the baseline and not sold yet, an estimated {d['older'][0] / M:,.0f} M at cost ({d['older'][1] / M:,.0f} M at Jita buy), "
-             "were never part of the budget; they count when they sell.")
+        bits.append(f"Director division {_m(d['director'])}")
     if d["structure_income"] is not None:
-        text += f" Structure income earned since the last transfer to the corporation, {d['structure_income'] / M:.1f} M, still sits in the structure corporation's wallet."
+        bits.append(f"structure income waiting {_m(d['structure_income'])}")
+    if d["older"][0] >= 0.05 * M:
+        bits.append(f"older goods {_m(d['older'][0])} at cost")
+    text = ("Not counted: " + ", ".join(bits) + ". ") if bits else ""
     hg = d.get("hangar") or {}
     if hg.get("read_at"):
-        text += f" The goods held from project buybacks are the projects hangar as read from EVE at {hg['read_at']:%Y-%m-%d %H:%M} EVE ({hg.get('types', 0)} item types), at what the projects paid."
+        text += f"Goods held = the projects hangar read at {hg['read_at']:%H:%M} EVE ({hg.get('types', 0)} types), at what the projects paid."
     else:
-        text += " The goods held from project buybacks follow the ledger (the hangar has not been read from EVE yet)."
+        text += "Goods held follow the ledger (hangar not read yet)."
     ign = d.get("ignored") or {}
     if ign.get("count"):
-        text += f" {ign['count']} journal lines are left out of the books ({_m(ign['net'], True)} together): mistakes being corrected, which net to zero once the corrections land."
+        text += f" {ign['count']} journal lines ignored ({_m(ign['net'], True)}), corrections pending."
     story.append(Paragraph(text, note))
 
-    story.append(Paragraph(f"2. What happened since {e(d['since_label'])}" + (f" ({base.day} {base:%B}, {base:%H:%M} EVE)" if d.get("period") is not None and d["period"].source else ""), h2))
-    story.append(Paragraph("Every journal line since the baseline lands in exactly one category, so the categories add up to the result.", p))
-    story.append(Spacer(1, 4))
+    story.append(Paragraph(f"2. Movements since {e(d['since_label'])}" + (f" ({base.day} {base:%B}, {base:%H:%M} EVE)" if d.get("period") is not None and d["period"].source else ""), h2))
+    story.append(Spacer(1, 2))
     shade_rows = []
     mrows = []
     for g in d["move_groups"]:
@@ -100,18 +104,15 @@ def render(d: dict) -> bytes:
         mrows.append([f"<b>{e(g['label'])}</b>", f"<b>{_m(g['total'], True)}</b>", e(g["note"])])
         for label, v, n_ in g["rows"]:
             mrows.append([f"&nbsp;&nbsp;&nbsp;{e(label)}", _m(v, True), e(n_)])
-    mrows.append([f"<b>Total since {e(d['since_label'])}</b>", f"<font color='#2e7d32'><b>{_m(d['period_result'], True)}</b></font>",
-                  f"The result in section 1 minus the opening of {_m(d['opening_result'], True)}" if d.get("period") is not None and d["period"].source else "Equals the result in section 1"])
-    t = table(["Category", "ISK", "Note"], mrows, [72 * mm, 24 * mm, 78 * mm], total_rows=(len(mrows),))
+    mrows.append(["<b>Total</b>", f"<font color='#2e7d32'><b>{_m(d['period_result'], True)}</b></font>",
+                  f"result {_m(d['result'], True)} less the opening {_m(d['opening_result'], True)}" if d.get("period") is not None and d["period"].source else ""])
+    t = table(["Category", "M ISK", ""], mrows, [72 * mm, 24 * mm, 78 * mm], total_rows=(len(mrows),))
     t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), colors.HexColor("#f4f6fa")) for b in shade_rows]))
     story.append(t)
 
     pb = d.get("project_bb") or {}
     if pb.get("active"):
-        part = [Paragraph("3. Project buybacks", h2),
-                Paragraph("Per month: what the corporation projects paid members, what the corporation sold of those goods at what the projects paid for them "
-                          "(first in, first out; ores count through the minerals they reprocess into), with sales tax and broker fees, and what is still held.", p),
-                Spacer(1, 4)]
+        part = [Paragraph("3. Project buybacks", h2), Spacer(1, 2)]
         at = pb.get("all_time") or {}
         if at.get("first"):
             margin = f"{at['margin'] * 100:.0f} %" if at.get("margin") is not None else "–"
@@ -149,25 +150,18 @@ def render(d: dict) -> bytes:
                       [49 * mm, 19 * mm, 17 * mm, 17 * mm, 16 * mm, 18 * mm, 15 * mm, 17 * mm, 20 * mm], total_rows=(len(rows),), numeric=(1, 2, 3, 4, 5, 6, 7, 8))
             t.setStyle(TableStyle([("BACKGROUND", (0, b), (-1, b), colors.HexColor("#f4f6fa")) for b in bold]))
             block.append(t)
-            pct = f" ({mo['pct'] * 100:.0f} % over what the projects paid)" if mo["pct"] is not None else ""
-            more = (f", {_m(mo['expected'], True)} more projected on the {_m(mo['held_cost'])} still held: {_m(mo['total'], True)} in total" if mo["expected"] else "")
-            block += [Spacer(1, 3), Paragraph(f"<b>Summary:</b> {_m(mo['paid_total'])} paid to {mo['members']} members; {_m(mo['sold_value'])} of project goods sold. "
-                                              f"Net profit {_m(mo['realised'], True)}{pct}{more}.", p), Spacer(1, 6)]
+            block += [Spacer(1, 6)]
             if first:
                 story.append(KeepTogether(part + block[:1]))
                 story.extend(block[1:])
                 first = False
             else:
                 story.extend(block)
-        story.append(Paragraph(f"Paid to members comes from the contributions read every hour (section 2 uses the fall of the projects' pool: {_m(pb['paid_pool'])}). "
-                               "Goods still held are valued at Jita's highest buy, less sales tax at the rate paid so far. Older stock, "
-                               f"{_m(pb['older'])} at cost, is not in these figures.", note))
+        story.append(Paragraph("Projected = goods held at Jita's highest buy, less sales tax at the rate paid so far, less cost.", note))
 
     bb = d.get("buyback") or {}
     if bb.get("active"):
-        part = [Paragraph("4. LP buybacks and conversions", h2),
-                Paragraph("Per month: the LP the corporation bought and converted, what it became in the LP store, what that sold for after sales tax and broker "
-                          "fees, and what is still on sell orders. Items bought to convert but not converted yet are ordinary stock in section 1.", p), Spacer(1, 4)]
+        part = [Paragraph("4. LP buybacks and conversions", h2), Spacer(1, 2)]
         first = True
         for mo in bb["months"]:
             block = [Paragraph(f"<b>{e(mo['label'])}</b>", p)]
@@ -188,14 +182,8 @@ def render(d: dict) -> bytes:
                     srows.append([f"{e(v['name'])}, still on sell orders", f"{v['units']:,}", f"{_m(v['value'])} at list", "", "", _m(v["cost"]), f"{_m(v['expected'], True)} projected"])
                 block += [Spacer(1, 3), table(["Sales on converted items", "Sold", "Revenue", "Sales tax", "Broker", "Cost", "Net profit"], srows,
                                               [56 * mm, 14 * mm, 24 * mm, 18 * mm, 16 * mm, 20 * mm, 26 * mm], numeric=(1, 2, 3, 4, 5, 6))]
-            summary = []
-            if mo["lp_bought"]:
-                summary.append(f"{_m(mo['lp_isk'])} of LP bought")
-            if mo["converted"]:
-                listed = f", {_m(mo['listed_value'])} still listed" if mo["listed_value"] else ""
-                summary.append(f"converted into {_m(mo['output_value'])} of sell orders ({_m(mo['sold_value'])} sold{listed})")
-            more = f", {_m(mo['expected'], True)} more projected: {_m(mo['total'], True)} in total" if mo["expected"] else ""
-            block += [Spacer(1, 3), Paragraph(f"<b>Summary:</b> {', '.join(summary) or 'no LP activity'}. Net profit {_m(mo['realised'], True)}{more}.", p), Spacer(1, 6)]
+            more = f", {_m(mo['expected'], True)} projected" if mo["expected"] else ""
+            block += [Spacer(1, 3), Paragraph(f"<b>Net profit {_m(mo['realised'], True)}</b>{more}.", p), Spacer(1, 6)]
             if first:
                 story.append(KeepTogether(part + block))
                 first = False
@@ -213,13 +201,11 @@ def render(d: dict) -> bytes:
         pay = d["fuel_paying_bph"]
         frows.append(["<b>Cost to the alliance</b>", f"<b>{pay}</b>", f"<b>{pay * 24}</b>", f"<b>{_m(pay * 24 * d['fuel_price'])}</b>", f"<b>{_m(pay * 24 * 30 * d['fuel_price'])}</b>"])
         story.append(KeepTogether([
-            Paragraph("5. Running costs: structure fuel", h2),
-            Paragraph(f"Fuel need of the online service modules, priced at today's cheapest fuel block at {e(d['market'])} ({e(d['fuel_name'])}, {d['fuel_price']:,.0f} ISK). "
-                      "Sponsored structures cost the alliance nothing.", p),
-            Spacer(1, 4),
+            Paragraph(f"5. Structure fuel <font size='8' color='#5b6b82'>{e(d['fuel_name'])} {d['fuel_price']:,.0f} ISK at {e(d['market'])}</font>", h2),
+            Spacer(1, 2),
             table(["Structure", "Blocks / hour", "Blocks / day", "ISK / day", "ISK / 30 days"], frows, [74 * mm, 22 * mm, 24 * mm, 26 * mm, 28 * mm],
                   total_rows=(len(frows),), numeric=(1, 2, 3, 4)),
-            Paragraph(f"Burned since the baseline by the structures the alliance pays for: {d['fuel_burned']:,} blocks, {d['fuel_burned_isk'] / M:.1f} M.", note),
+            Paragraph(f"Burned since the baseline: {d['fuel_burned']:,} blocks, {d['fuel_burned_isk'] / M:.1f} M.", note),
         ]))
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm, bottomMargin=16 * mm,

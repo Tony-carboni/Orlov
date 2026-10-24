@@ -647,7 +647,7 @@ class BooksTests(TestCase):
         r = client.get(reverse("shipyard:finance"))
         self.assertEqual(r.status_code, 200)
         html = r.content.decode()
-        self.assertIn("simplified balance sheet", html)
+        self.assertIn("balance sheet", html)
         self.assertIn("Download PDF", html)
         self.assertNotIn("Not explained", html)
 

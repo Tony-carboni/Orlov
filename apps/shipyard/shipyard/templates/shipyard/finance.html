@@ -9,20 +9,25 @@
 {% else %}
 <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
     <div>
-        <h2 class="h4 mb-1">Orlov Arms International · simplified balance sheet</h2>
-        <div class="btn-group btn-group-sm mb-1" role="group" aria-label="Period">
-            <span class="btn btn-sm btn-outline-secondary disabled shipyard-k">Since</span>
-            {% for key, label in periods %}<a class="btn btn-outline-secondary {% if key == period %}active{% endif %}" href="?period={{ key }}" title="{% if key == 'report' %}The period opened by the newest State of the Alliance post{% else %}Section 2 counts from {{ label|lower }}s ago; the opening is the position then{% endif %}">{{ label }}</a>{% endfor %}
+        <h2 class="h4 mb-1">Orlov Arms International · balance sheet</h2>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Period">
+                <span class="btn btn-sm btn-outline-secondary disabled shipyard-k">Since</span>
+                {% for key, label in periods %}<a class="btn btn-outline-secondary {% if key == period %}active{% endif %}" href="?period={{ key }}" title="{% if key == 'report' %}The period opened by the newest State of the Alliance post{% else %}The position {{ label|lower }}s ago is the opening{% endif %}">{{ label }}</a>{% endfor %}
+            </div>
+            <span class="shipyard-k small" title="The corporation's last journal line; EVE writes the journal once an hour">{{ d.cut|date:"j M Y, H:i" }} EVE · M ISK</span>
+            {% if d.period_fallback %}<span class="badge text-bg-warning fw-normal" title="The chosen period would start before the budget baseline of {{ d.origin|date:'j F' }}; it starts at the baseline instead">from the baseline</span>{% endif %}
+            {% if d.live_ahead is not None and d.live_ahead|floatformat:0 != "0" %}<span class="badge rounded-pill text-bg-dark fw-normal shipyard-k" title="EVE reports {{ d.live_books|mil }} in wallet divisions 1 to 6 right now; the difference is activity not in the journal yet (EVE writes it hourly)"><i class="fas fa-clock fa-fw"></i> live {{ d.live_ahead|mil:True }}</span>{% endif %}
+            {% if d.ignored.count %}<span class="badge rounded-pill text-bg-dark fw-normal shipyard-k" title="{{ d.ignored.count }} journal lines left out of the books ({{ d.ignored.net|mil:True }} together): mistakes being corrected, flagged in the admin or by their reason; the real wallet differs by that net until the corrections land"><i class="fas fa-eye-slash fa-fw"></i> {{ d.ignored.count }} ignored</span>{% endif %}
         </div>
-        <div class="shipyard-k small">As of {{ d.cut|date:"j F Y, H:i" }} EVE (the corporation's last journal line). Movements since {{ d.since_label }}{% if d.period.source %} ({{ d.base|date:"j F, H:i" }} EVE){% endif %}.{% if d.period_fallback %} <span class="text-warning">The chosen period would start on {{ d.period_fallback }}, before the books begin, so it counts from the baseline until it fits.</span>{% endif %} All amounts in millions of ISK.</div>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
         <form method="post" action="{% url 'shipyard:finance_refresh' %}">{% csrf_token %}
             <button type="submit" class="btn btn-sm btn-outline-secondary" title="Read the projects and the corporation's journal from EVE now (EVE refreshes them hourly)"><i class="fas fa-rotate fa-fw"></i> Read EVE now</button>
         </form>
         {% if hangar_token %}
         <form method="post" action="{% url 'shipyard:hangar_refresh' %}">{% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-outline-secondary{% if hangar_schedule.cached %} text-body-tertiary{% endif %}" title="{% if hangar_schedule.cached %}EVE renews its copy of the hangar at {{ hangar_schedule.fresh_at|date:"H:i" }} EVE; a read before that shows the same contents. {% endif %}Last read {{ hangar_schedule.read_at|date:"H:i" }} EVE; next automatic read {{ hangar_schedule.effective|date:"H:i" }} EVE"><i class="fas fa-warehouse fa-fw"></i> Read the hangar now <span class="badge rounded-pill text-bg-dark fw-normal {% if hangar_schedule.cached %}text-warning{% else %}text-info{% endif %}" data-countdown="{{ hangar_schedule.effective|date:"c" }}" data-fresh="{% if hangar_schedule.fresh_at %}{{ hangar_schedule.fresh_at|date:"c" }}{% endif %}">{{ hangar_schedule.effective|date:"H:i" }}</span></button>
+            <button type="submit" class="btn btn-sm btn-outline-secondary{% if hangar_schedule.cached %} text-body-tertiary{% endif %}" title="{% if hangar_schedule.cached %}EVE renews its copy of the hangar at {{ hangar_schedule.fresh_at|date:"H:i" }} EVE; a read before that shows the same contents. {% endif %}Last read {{ hangar_schedule.read_at|date:"H:i" }} EVE; next automatic read {{ hangar_schedule.effective|date:"H:i" }} EVE"><i class="fas fa-warehouse fa-fw"></i> Read the hangar now <span class="badge rounded-pill fw-semibold {% if hangar_schedule.cached %}text-bg-secondary{% else %}text-bg-warning{% endif %}" data-countdown="{{ hangar_schedule.effective|date:"c" }}" data-fresh="{% if hangar_schedule.fresh_at %}{{ hangar_schedule.fresh_at|date:"c" }}{% endif %}">{{ hangar_schedule.effective|date:"H:i" }}</span></button>
         </form>
         {% elif can_manage %}
         <a class="btn btn-sm btn-primary" href="{% url 'shipyard:hangar_connect' %}" title="EVE's login once with the CEO or a Director: the corporation assets scope lets the sheet count the projects hangar"><i class="fas fa-key fa-fw"></i> Connect the hangar</a>
@@ -33,176 +38,173 @@
 </div>
 
 <div class="row g-3 mb-3">
-    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Result against the baseline</div><div class="fs-3 fw-bold {% if d.result >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.result|mil:True }}</div></div></div>
-    {% if d.period.source %}<div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Since {{ d.since_label }}</div><div class="fs-3 fw-bold {% if d.period_result >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.period_result|mil:True }}</div><div class="shipyard-k small">the opening was {{ d.opening_result|mil:True }} above the loan</div></div></div>{% endif %}
-    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Total assets</div><div class="fs-3 fw-bold">{{ d.assets|mil }}</div><div class="shipyard-k small">against a loan of {{ d.loan|mil }}</div></div></div>
-    <div class="col-md-4"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Master wallet</div><div class="fs-3 fw-bold">{{ d.wallet|mil }}</div><div class="shipyard-k small">{{ d.pool|mil }} still inside {{ d.n_projects }} active projects</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Result</div><div class="fs-3 fw-bold {% if d.result >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.result|mil:True }}</div><div class="shipyard-k small">above the {{ d.loan|mil }} budget</div></div></div>
+    {% if d.period.source %}<div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Since {{ d.since_label }}</div><div class="fs-3 fw-bold {% if d.period_result >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.period_result|mil:True }}</div><div class="shipyard-k small">opening {{ d.opening_result|mil:True }}</div></div></div>{% endif %}
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Total assets</div><div class="fs-3 fw-bold">{{ d.assets|mil }}</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Master wallet</div><div class="fs-3 fw-bold">{{ d.wallet|mil }}</div><div class="shipyard-k small">{{ d.pool|mil }} in {{ d.n_projects }} active projects</div></div></div>
 </div>
 
-{% if d.live_ahead is not None and d.live_ahead|floatformat:0 != "0" %}
-<div class="alert alert-secondary py-2 small"><i class="fas fa-clock fa-fw"></i> EVE reports {{ d.live_books|mil }} in wallet divisions 1 to 6 right now, {{ d.live_ahead|mil:True }} against the journal's last line: activity EVE has not put in the journal yet (it does so once an hour). The sheet stops at the last journal line so every figure agrees.</div>
-{% endif %}
-{% if d.ignored.count %}
-<div class="alert alert-secondary py-2 small"><i class="fas fa-eye-slash fa-fw"></i> {{ d.ignored.count }} journal line{{ d.ignored.count|pluralize }} left out of the books ({{ d.ignored.net|mil:True }} together): mistakes being corrected, flagged in the admin under Shipyard → ignored journal lines, or with a reason matching the ignore patterns. The real wallet differs from the one shown by that net until the corrections land.</div>
-{% endif %}
-<h3 class="h5 mt-4">1. Position against the baseline</h3>
-{% if d.hangar.read_at %}
-<p class="small shipyard-k mb-1"><i class="fas fa-warehouse fa-fw"></i> Goods held from project buybacks = the projects hangar as read from EVE at {{ d.hangar.read_at|date:"Y-m-d H:i" }} EVE ({{ d.hangar.types }} item type{{ d.hangar.types|pluralize }}), at what the projects paid.{% if d.hangar.missing %} Bought by projects but not in the hangar: {{ d.hangar.missing|join:", " }}.{% endif %}{% if d.hangar.extra %} In the hangar but never bought by a project (not counted): {{ d.hangar.extra|join:", " }}.{% endif %}</p>
-{% elif can_manage %}
-<p class="small text-warning mb-1"><i class="fas fa-triangle-exclamation fa-fw"></i> The hangar has not been read from EVE yet: the goods held follow the ledger. Connect the hangar (button above) with the CEO once.</p>
-{% endif %}
-{% if can_manage and hangar_divisions %}
-<details class="small mb-2"><summary class="shipyard-k">Hangar divisions found at the last read ({{ hangar_divisions|length }}); the ones counted are marked</summary>
-<table class="table table-sm w-auto small mb-0"><thead><tr><th>Office</th><th>Division</th><th class="text-end">Types</th><th class="text-end">Units</th><th>Counted</th><th>Biggest</th></tr></thead><tbody>
-{% for h in hangar_divisions %}<tr><td>{{ h.location_id }}</td><td>{{ h.division }} ({{ h.flag }})</td><td class="text-end">{{ h.types }}</td><td class="text-end">{{ h.units|num:0 }}</td><td>{% if h.wanted %}<i class="fas fa-check text-success"></i>{% else %}<span class="shipyard-k">no</span>{% endif %}</td><td class="shipyard-k">{{ h.sample|join:", " }}</td></tr>{% endfor %}
-</tbody></table>
-<div class="shipyard-k">Narrow the count to the projects hangar with SHIPYARD_BOOKS_HANGAR_LOCATIONS and SHIPYARD_BOOKS_HANGAR_FLAGS in the settings.</div></details>
-{% endif %}
-<p class="small shipyard-k mb-2">The owner lent the corporation a working budget of {{ d.loan|mil }}, interest-free and without a repayment date. That loan counts as nothing: the corporation's result is everything above or below it. Click a line for its items.</p>
+<h3 class="h5 mt-4">1. Position</h3>
 <div class="table-responsive"><table class="table table-sm align-middle shipyard-collapsing">
-    <thead><tr><th>Assets</th><th class="text-end">ISK</th><th>How it is valued</th></tr></thead>
+    <thead><tr><th>Assets</th><th class="text-end">M ISK</th><th></th></tr></thead>
     <tbody>
         {% for g in d.asset_groups %}
-        <tr class="fw-semibold" role="button" data-bs-toggle="collapse" data-bs-target=".{{ g.id }}" aria-expanded="false" title="Click for the items">
-            <td><i class="fas fa-chevron-right fa-fw shipyard-k small"></i> {{ g.label }} <span class="shipyard-k fw-normal small">{{ g.rows|length }} line{{ g.rows|length|pluralize }}</span></td>
-            <td class="text-end">{{ g.total|mil }}</td><td class="small shipyard-k">{{ g.note|default:"" }}{% if g.key == "lp" %} <a class="btn btn-outline-light btn-sm py-0 ms-1" href="{% url 'shipyard:finance_lp_log' %}" title="The corporation's LP change by change: purchases from the wallet journal, conversions from the stock batches"><i class="fas fa-list fa-fw"></i> Log</a>{% endif %}</td>
+        <tr class="fw-semibold" role="button" data-bs-toggle="collapse" data-bs-target=".{{ g.id }}" aria-expanded="false">
+            <td><i class="fas fa-chevron-right fa-fw shipyard-k small"></i> {{ g.label }} <span class="shipyard-k fw-normal small">{{ g.rows|length }}</span></td>
+            <td class="text-end">{{ g.total|mil }}</td>
+            <td class="small shipyard-k">{{ g.note|default:"" }}{% if g.key == "held" and d.hangar.read_at %} <span class="badge rounded-pill text-bg-dark fw-normal shipyard-k" title="The projects hangar as read from EVE at {{ d.hangar.read_at|date:'H:i' }} EVE, {{ d.hangar.types }} item type{{ d.hangar.types|pluralize }}{% if d.hangar.missing %}; bought by projects but not in the hangar: {{ d.hangar.missing|join:', ' }}{% endif %}"><i class="fas fa-warehouse fa-fw"></i> {{ d.hangar.read_at|date:"H:i" }}</span>{% endif %}{% if g.key == "lp" %} <a class="btn btn-outline-light btn-sm py-0 ms-1" href="{% url 'shipyard:finance_lp_log' %}" title="The corporation's LP change by change"><i class="fas fa-list fa-fw"></i> Log</a>{% endif %}</td>
         </tr>
         {% for label, value, note in g.rows %}
         <tr class="collapse {{ g.id }} small shipyard-k"><td class="ps-4">{{ label }}</td><td class="text-end">{{ value|mil }}</td><td>{{ note }}</td></tr>
         {% endfor %}
         {% endfor %}
         <tr class="fw-bold"><td>Total assets</td><td class="text-end">{{ d.assets|mil }}</td><td></td></tr>
-        <tr><td>Loan from the owner (the working budget)</td><td class="text-end">{{ d.loan|mil }}</td><td class="small shipyard-k">Interest-free, perpetual, extractable when the corporation can bear it</td></tr>
-        <tr class="fw-bold table-success"><td>Result: assets above the loan</td><td class="text-end">{{ d.result|mil:True }}</td><td class="small">The corporation's own money</td></tr>
+        <tr><td>Owner's budget (loan)</td><td class="text-end">{{ d.loan|mil }}</td><td></td></tr>
+        <tr class="fw-bold table-success"><td>Result</td><td class="text-end">{{ d.result|mil:True }}</td><td></td></tr>
     </tbody>
 </table></div>
-<p class="small shipyard-k">Not included: {% if d.director is not None %}wallet division 7 (the Director division, {{ d.director|mil }}), the owner's characters' shared wallet. {% endif %}Project goods paid for before the baseline and not sold yet, about {{ d.older.0|mil }} at cost ({{ d.older.1|mil }} at Jita buy): never part of the budget, they count when they sell.{% if d.structure_income is not None %} Structure income since the last transfer to the corporation, {{ d.structure_income|mil }}, still sits in the structure corporation's wallet.{% endif %}</p>
+<div class="small shipyard-k d-flex flex-wrap gap-3">
+    <span class="shipyard-k">Not counted:</span>
+    {% if d.director is not None %}<span title="Wallet division 7, the owner's characters' shared wallet">Director division {{ d.director|mil }}</span>{% endif %}
+    {% if d.structure_income is not None %}<span title="Earned since the last transfer, still in the structure corporation's wallet">structure income waiting {{ d.structure_income|mil }}</span>{% endif %}
+    {% if d.older.0|floatformat:0 != "0" %}<span title="Project goods paid for before the baseline and not sold yet; they count when they sell">older goods {{ d.older.0|mil }} at cost</span>{% endif %}
+</div>
 
-<h3 class="h5 mt-4">2. What happened since {{ d.since_label }}</h3>
-<p class="small shipyard-k mb-2">Every journal line since the period's start lands in exactly one category, so the categories add up to the result{% if d.period.source %} minus the opening{% endif %}. Click a line for the movements. A new period opens at every State of the Alliance post on the alliance site.</p>
+<h3 class="h5 mt-4">2. Movements since {{ d.since_label }}</h3>
 <div class="table-responsive"><table class="table table-sm align-middle shipyard-collapsing">
-    <thead><tr><th>Category</th><th class="text-end">ISK</th><th>Note</th></tr></thead>
+    <thead><tr><th>Category</th><th class="text-end">M ISK</th><th></th></tr></thead>
     <tbody>
         {% for g in d.move_groups %}
-        <tr class="fw-semibold{% if g.key == 'gap' %} table-warning{% endif %}" role="button" data-bs-toggle="collapse" data-bs-target=".{{ g.id }}" aria-expanded="false" title="Click for the movements">
-            <td><i class="fas fa-chevron-right fa-fw shipyard-k small"></i> {{ g.label }} <span class="shipyard-k fw-normal small">{{ g.rows|length }} movement{{ g.rows|length|pluralize }}</span></td>
-            <td class="text-end {% if g.total < 0 %}text-danger{% elif g.total > 0 %}text-success{% endif %}">{{ g.total|mil:True }}</td><td class="small shipyard-k">{{ g.note }}</td>
+        <tr class="fw-semibold{% if g.key == 'gap' %} table-warning{% endif %}" role="button" data-bs-toggle="collapse" data-bs-target=".{{ g.id }}" aria-expanded="false" title="{{ g.note }}">
+            <td><i class="fas fa-chevron-right fa-fw shipyard-k small"></i> {{ g.label }} <span class="shipyard-k fw-normal small">{{ g.rows|length }}</span></td>
+            <td class="text-end {% if g.total < 0 %}text-danger{% elif g.total > 0 %}text-success{% endif %}">{{ g.total|mil:True }}</td><td></td>
         </tr>
         {% for label, value, note in g.rows %}
         <tr class="collapse {{ g.id }} small shipyard-k"><td class="ps-4">{{ label }}</td><td class="text-end">{{ value|mil:True }}</td><td>{{ note }}</td></tr>
         {% endfor %}
         {% endfor %}
-        <tr class="fw-bold"><td>Total since {{ d.since_label }}</td><td class="text-end">{{ d.period_result|mil:True }}</td><td class="small shipyard-k">{% if d.period.source %}The result above minus the opening of {{ d.opening_result|mil:True }}{% else %}Equals the result above{% endif %}</td></tr>
+        <tr class="fw-bold"><td>Total</td><td class="text-end">{{ d.period_result|mil:True }}</td><td class="small shipyard-k">{% if d.period.source %}result {{ d.result|mil:True }} less the opening {{ d.opening_result|mil:True }}{% endif %}</td></tr>
     </tbody>
 </table></div>
 
 {% with pb=d.project_bb %}{% if pb.active %}
 <h3 class="h5 mt-4">3. Project buybacks</h3>
-<p class="small shipyard-k mb-2">Per month: what the corporation projects paid members, what the corporation sold of those goods at what the projects paid for them (first in, first out; ores count through the minerals they reprocess into), with sales tax and broker fees, and what is still held.</p>
 <div class="row g-3 mb-2">
-    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Net profit so far, this period</div><div class="fs-4 fw-bold {% if pb.realised >= 0 %}text-success{% else %}text-danger{% endif %}">{{ pb.realised|mil:True }}</div><div class="shipyard-k small">after cost, sales tax and broker fees</div></div></div>
-    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Margin on what sold, this period</div><div class="fs-4 fw-bold {% if pb.margin is None %}shipyard-k{% elif pb.margin >= 0 %}text-success{% else %}text-danger{% endif %}">{% if pb.margin is not None %}{% widthratio pb.margin 1 100 %} %{% else %}–{% endif %}</div><div class="shipyard-k small">sold for {{ pb.sold_value|mil }}, market and direct, against {{ pb.cost_sold|mil }} paid to members; nothing held counted</div></div></div>
-    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Projected on goods still held</div><div class="fs-4 fw-bold">{{ pb.expected|mil:True }}</div><div class="shipyard-k small">{{ pb.held|mil }} at cost, {{ pb.held_value|mil }} at Jita buy, after sales tax</div></div></div>
-    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Paid to members since the baseline</div><div class="fs-4 fw-bold">{{ pb.paid_total|mil }}</div><div class="shipyard-k small">older stock {{ pb.older|mil }} at cost, not in these figures</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Net profit, this period</div><div class="fs-4 fw-bold {% if pb.realised >= 0 %}text-success{% else %}text-danger{% endif %}">{{ pb.realised|mil:True }}</div><div class="shipyard-k small">after cost, tax and fees</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Margin on what sold</div><div class="fs-4 fw-bold {% if pb.margin is None %}shipyard-k{% elif pb.margin >= 0 %}text-success{% else %}text-danger{% endif %}">{% if pb.margin is not None %}{% widthratio pb.margin 1 100 %} %{% else %}–{% endif %}</div><div class="shipyard-k small">{{ pb.sold_value|mil }} sold, {{ pb.cost_sold|mil }} paid for it</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Projected on goods held</div><div class="fs-4 fw-bold">{{ pb.expected|mil:True }}</div><div class="shipyard-k small">{{ pb.held|mil }} at cost, {{ pb.held_value|mil }} at Jita buy</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Paid to members, this period</div><div class="fs-4 fw-bold">{{ pb.paid_total|mil }}</div></div></div>
 </div>
 {% with at=pb.all_time %}{% if at and at.first %}
 <div class="row g-3 mb-2">
-    <div class="col-md-4"><div class="shipyard-infobar h-100 border-info"><div class="shipyard-k small">Paid to members since the first project ({{ at.first|date:"j F Y" }})</div><div class="fs-4 fw-bold">{{ at.paid|mil }}</div><div class="shipyard-k small">{{ at.members }} member{{ at.members|pluralize }} delivered; across every reporting period</div></div></div>
-    <div class="col-md-4"><div class="shipyard-infobar h-100 border-info"><div class="shipyard-k small">Net profit since the first project</div><div class="fs-4 fw-bold {% if at.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ at.net|mil:True }}</div><div class="shipyard-k small">{{ at.sold|mil }} sold, market and direct, less {{ at.cost|mil }} paid for it and {{ at.fees_abs|mil }} of fees{% if at.written_off %}; the {{ at.written_off|mil }} written off on the stock take (sold before the books) is left out{% endif %}</div></div></div>
-    <div class="col-md-4"><div class="shipyard-infobar h-100 border-info"><div class="shipyard-k small">Margin since the first project</div><div class="fs-4 fw-bold {% if at.margin is None %}shipyard-k{% elif at.margin >= 0 %}text-success{% else %}text-danger{% endif %}">{% if at.margin is not None %}{% widthratio at.margin 1 100 %} %{% else %}–{% endif %}</div><div class="shipyard-k small">sale price against what the projects paid, sold stock only, before fees</div></div></div>
+    <div class="col-md-4"><div class="shipyard-infobar h-100 border-info"><div class="shipyard-k small">Paid to members since {{ at.first|date:"j M Y" }}</div><div class="fs-4 fw-bold">{{ at.paid|mil }}</div><div class="shipyard-k small">{{ at.members }} member{{ at.members|pluralize }}</div></div></div>
+    <div class="col-md-4"><div class="shipyard-infobar h-100 border-info"><div class="shipyard-k small">Net profit since {{ at.first|date:"j M" }}</div><div class="fs-4 fw-bold {% if at.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ at.net|mil:True }}</div><div class="shipyard-k small">{{ at.sold|mil }} sold, {{ at.cost|mil }} paid, {{ at.fees_abs|mil }} fees{% if at.written_off %}; {{ at.written_off|mil }} written off not counted{% endif %}</div></div></div>
+    <div class="col-md-4"><div class="shipyard-infobar h-100 border-info"><div class="shipyard-k small">Margin since {{ at.first|date:"j M" }}</div><div class="fs-4 fw-bold {% if at.margin is None %}shipyard-k{% elif at.margin >= 0 %}text-success{% else %}text-danger{% endif %}">{% if at.margin is not None %}{% widthratio at.margin 1 100 %} %{% else %}–{% endif %}</div><div class="shipyard-k small">before fees</div></div></div>
 </div>
 {% endif %}{% endwith %}
 {% for m in pb.months %}
 <div class="card mb-3"><div class="card-body py-2">
 <h4 class="h6 mb-2">{{ m.label }}</h4>
-<div class="table-responsive"><table class="table table-sm align-middle mb-2 shipyard-collapsing">
-    <thead><tr><th></th><th class="text-end" title="ISK the projects paid members">Paid to members</th><th class="text-end" title="Sales of those goods, gross">Sold for</th><th class="text-end" title="What the projects paid for the goods that sold">Cost</th><th class="text-end" title="Sales tax and broker fees on those sales">Tax and fees</th><th class="text-end">Net profit</th><th class="text-end">Margin</th><th class="text-end" title="Goods still held, at what the projects paid">Still held</th><th class="text-end" title="At Jita's highest buy, less sales tax, less cost">Projected</th></tr></thead>
+<div class="table-responsive"><table class="table table-sm align-middle mb-0 shipyard-collapsing">
+    <thead><tr><th></th><th class="text-end" title="ISK the projects paid members">Paid</th><th class="text-end" title="Sales of those goods, gross">Sold for</th><th class="text-end" title="What the projects paid for the goods that sold">Cost</th><th class="text-end" title="Sales tax and broker fees on those sales">Tax, fees</th><th class="text-end">Net</th><th class="text-end" title="Net over cost">Margin</th><th class="text-end" title="Goods still held, at what the projects paid">Held</th><th class="text-end" title="At Jita's highest buy, less sales tax, less cost">Projected</th></tr></thead>
     <tbody>
     {% for g in m.groups %}
-    <tr class="fw-semibold" role="button" data-bs-toggle="collapse" data-bs-target=".{{ g.id }}" aria-expanded="false" title="Click for the items">
-        <td><i class="fas fa-chevron-right fa-fw shipyard-k small"></i> {{ g.label }} <span class="shipyard-k fw-normal small">{{ g.rows|length }} item{{ g.rows|length|pluralize }}{% if g.members %}, {{ g.members }} member{{ g.members|pluralize }}{% endif %}</span></td>
+    <tr class="fw-semibold" role="button" data-bs-toggle="collapse" data-bs-target=".{{ g.id }}" aria-expanded="false">
+        <td><i class="fas fa-chevron-right fa-fw shipyard-k small"></i> {{ g.label }} <span class="shipyard-k fw-normal small">{{ g.rows|length }}{% if g.members %} · {{ g.members }} member{{ g.members|pluralize }}{% endif %}</span></td>
         <td class="text-end">{{ g.paid|mil }}</td><td class="text-end">{{ g.revenue|mil }}</td><td class="text-end">{{ g.cost|mil }}</td><td class="text-end">{{ g.fees|mil }}</td>
         <td class="text-end {% if g.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ g.net|mil:True }}</td><td class="text-end">{% if g.pct is not None %}{% widthratio g.net g.cost 100 %} %{% else %}–{% endif %}</td>
         <td class="text-end">{{ g.held_cost|mil }}</td><td class="text-end">{% if g.held_cost %}{{ g.expected|mil:True }}{% else %}–{% endif %}</td>
     </tr>
     {% for r in g.rows %}
     <tr class="collapse {{ g.id }} small shipyard-k">
-        <td class="ps-4">{{ r.name }}{% if r.delivered %} <span class="small">· {{ r.delivered|floatformat:0 }} delivered{% if r.members %} by {{ r.members }}{% endif %}</span>{% endif %}{% if r.sold %} <span class="small">· {{ r.sold|floatformat:0 }} sold</span>{% endif %}{% if r.unmatched %} <span class="small">· plus {{ r.unmatched|mil }} from stock older than the projects' records</span>{% endif %}</td>
+        <td class="ps-4">{{ r.name }}{% if r.delivered %} <span class="small">· {{ r.delivered|floatformat:0 }} delivered{% if r.members %} by {{ r.members }}{% endif %}</span>{% endif %}{% if r.sold %} <span class="small">· {{ r.sold|floatformat:0 }} sold</span>{% endif %}{% if r.unmatched %} <span class="small">· {{ r.unmatched|mil }} from older stock</span>{% endif %}</td>
         <td class="text-end">{% if r.paid %}{{ r.paid|mil }}{% else %}–{% endif %}</td><td class="text-end">{% if r.revenue %}{{ r.revenue|mil }}{% else %}–{% endif %}</td><td class="text-end">{% if r.cost %}{{ r.cost|mil }}{% else %}–{% endif %}</td><td class="text-end">{% if r.fees %}{{ r.fees|mil }}{% else %}–{% endif %}</td>
         <td class="text-end">{% if r.revenue %}{{ r.net|mil:True }}{% else %}–{% endif %}</td><td class="text-end">{% if r.pct is not None %}{% widthratio r.net r.cost 100 %} %{% else %}–{% endif %}</td>
         <td class="text-end">{% if r.held_cost %}{{ r.held_cost|mil }}{% else %}–{% endif %}</td><td class="text-end">{% if r.held_cost %}{{ r.expected|mil:True }}{% else %}–{% endif %}</td>
     </tr>
     {% endfor %}
     {% endfor %}
-    <tr class="fw-bold"><td>Total</td><td class="text-end">{{ m.paid_total|mil }}</td><td class="text-end">{{ m.sold_value|mil }}</td><td class="text-end">{{ m.cost_sold|mil }}</td><td class="text-end">{{ m.fees|mil }}</td><td class="text-end {% if m.realised >= 0 %}text-success{% else %}text-danger{% endif %}">{{ m.realised|mil:True }}</td><td class="text-end">{% if m.pct is not None %}{% widthratio m.realised m.cost_sold 100 %} %{% endif %}</td><td class="text-end">{{ m.held_cost|mil }}</td><td class="text-end">{% if m.held_cost %}{{ m.expected|mil:True }}{% endif %}</td></tr>
+    <tr class="fw-bold"><td>Total{% if m.members %} <span class="shipyard-k fw-normal small">{{ m.members }} member{{ m.members|pluralize }}</span>{% endif %}</td><td class="text-end">{{ m.paid_total|mil }}</td><td class="text-end">{{ m.sold_value|mil }}</td><td class="text-end">{{ m.cost_sold|mil }}</td><td class="text-end">{{ m.fees|mil }}</td><td class="text-end {% if m.realised >= 0 %}text-success{% else %}text-danger{% endif %}">{{ m.realised|mil:True }}</td><td class="text-end">{% if m.pct is not None %}{% widthratio m.realised m.cost_sold 100 %} %{% endif %}</td><td class="text-end">{{ m.held_cost|mil }}</td><td class="text-end">{% if m.held_cost %}{{ m.expected|mil:True }}{% endif %}</td></tr>
     </tbody>
 </table></div>
-<p class="mb-0 small"><strong>Summary:</strong> {{ m.paid_total|mil }} paid to {{ m.members }} member{{ m.members|pluralize }}; {{ m.sold_value|mil }} of project goods sold. Net profit {{ m.realised|mil:True }}{% if m.pct is not None %} ({% widthratio m.realised m.cost_sold 100 %} % over what the projects paid){% endif %}{% if m.expected %}, {{ m.expected|mil:True }} more projected on the {{ m.held_cost|mil }} still held: {{ m.total|mil:True }} in total{% endif %}.</p>
 </div></div>
 {% endfor %}
-<p class="small shipyard-k">Paid to members comes from the contributions read every hour (section 2 uses the fall of the projects' pool: {{ pb.paid_pool|mil }}). Goods still held are valued at Jita's highest buy, less sales tax at the rate paid so far.</p>
 {% endif %}{% endwith %}
 
 {% with bb=d.buyback %}{% if bb.active %}
 <h3 class="h5 mt-4">4. LP buybacks and conversions</h3>
-<p class="small shipyard-k mb-2">Per month: the LP the corporation bought and converted, what it became in the LP store, what that sold for after sales tax and broker fees, LP sold directly (a deposit whose reason names the LP), and what is still on sell orders. Items bought to convert but not converted yet are ordinary stock in section 1.</p>
 <div class="row g-3 mb-2">
-    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Net profit so far</div><div class="fs-4 fw-bold {% if bb.realised >= 0 %}text-success{% else %}text-danger{% endif %}">{{ bb.realised|mil:True }}</div><div class="shipyard-k small">after cost, sales tax and broker fees</div></div></div>
-    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Margin on what sold</div><div class="fs-4 fw-bold {% if bb.margin is None %}shipyard-k{% elif bb.margin >= 0 %}text-success{% else %}text-danger{% endif %}">{% if bb.margin is not None %}{% widthratio bb.margin 1 100 %} %{% else %}–{% endif %}</div><div class="shipyard-k small">sold for {{ bb.sold_value|mil }} against {{ bb.cost_sold|mil }} of LP, inputs and ISK; nothing listed or held counted</div></div></div>
-    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Projected on what is still listed</div><div class="fs-4 fw-bold">{{ bb.expected|mil:True }}</div><div class="shipyard-k small">at the list price, after sales tax</div></div></div>
-    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">LP not converted yet</div><div class="fs-4 fw-bold">{{ bb.lp_left|floatformat:0 }} LP</div><div class="shipyard-k small">{{ bb.lp_left_value|mil }} at cost</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Net profit</div><div class="fs-4 fw-bold {% if bb.realised >= 0 %}text-success{% else %}text-danger{% endif %}">{{ bb.realised|mil:True }}</div><div class="shipyard-k small">after cost, tax and fees</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Margin on what sold</div><div class="fs-4 fw-bold {% if bb.margin is None %}shipyard-k{% elif bb.margin >= 0 %}text-success{% else %}text-danger{% endif %}">{% if bb.margin is not None %}{% widthratio bb.margin 1 100 %} %{% else %}–{% endif %}</div><div class="shipyard-k small">{{ bb.sold_value|mil }} sold, {{ bb.cost_sold|mil }} of LP, inputs and ISK</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">Projected on what is listed</div><div class="fs-4 fw-bold">{{ bb.expected|mil:True }}</div><div class="shipyard-k small">at list price, after sales tax</div></div></div>
+    <div class="col-md-3"><div class="shipyard-infobar h-100"><div class="shipyard-k small">LP not converted</div><div class="fs-4 fw-bold">{{ bb.lp_left|floatformat:0 }} LP</div><div class="shipyard-k small">{{ bb.lp_left_value|mil }} at cost</div></div></div>
 </div>
 {% for m in bb.months %}
 <div class="card mb-3"><div class="card-body py-2">
-<h4 class="h6 mb-2">{{ m.label }}</h4>
-<ul class="mb-2 small">
-    <li><strong>LP bought:</strong> {% if m.lp_bought %}{{ m.lp_bought|floatformat:0 }} LP for {{ m.lp_isk|mil }} ({{ m.lp_avg|floatformat:0 }} ISK per LP){% else %}none{% endif %}</li>
-    <li><strong>LP converted:</strong> {{ m.lp_converted|floatformat:0 }} LP</li>
-    {% if m.lp_sold %}<li><strong>LP sold directly:</strong> {{ m.lp_sold|floatformat:0 }} LP for {{ m.lp_sold_isk|mil }} ({{ m.lp_sold_avg|floatformat:0 }} ISK per LP), {{ m.lp_sold_cost|mil }} at cost, profit <span class="{% if m.lp_sold_net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ m.lp_sold_net|mil:True }}</span></li>{% endif %}
-</ul>
+<div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2 mb-2">
+    <h4 class="h6 mb-0">{{ m.label }}</h4>
+    <div class="small shipyard-k">
+        LP bought: {% if m.lp_bought %}<strong class="text-body">{{ m.lp_bought|floatformat:0 }}</strong> for {{ m.lp_isk|mil }} ({{ m.lp_avg|floatformat:0 }}/LP){% else %}none{% endif %}
+        · converted: <strong class="text-body">{{ m.lp_converted|floatformat:0 }}</strong>
+        {% if m.lp_sold %} · sold directly: <strong class="text-body">{{ m.lp_sold|floatformat:0 }}</strong> for {{ m.lp_sold_isk|mil }} ({{ m.lp_sold_avg|floatformat:0 }}/LP), profit <span class="{% if m.lp_sold_net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ m.lp_sold_net|mil:True }}</span>{% endif %}
+        · net profit <strong class="{% if m.realised >= 0 %}text-success{% else %}text-danger{% endif %}">{{ m.realised|mil:True }}</strong>{% if m.expected %}, {{ m.expected|mil:True }} projected{% endif %}
+    </div>
+</div>
 {% if m.converted %}
 <div class="table-responsive"><table class="table table-sm align-middle mb-2">
     <thead><tr><th>Converted into</th><th class="text-end">Units</th><th class="text-end">Cost</th><th class="text-end">Cost each</th><th>Made of</th></tr></thead>
-    <tbody>{% for c in m.converted %}<tr><td>{{ c.name }}</td><td class="text-end">{{ c.units|floatformat:0 }}</td><td class="text-end">{{ c.cost|mil }}</td><td class="text-end">{{ c.unit_cost|floatformat:0 }}</td><td class="small shipyard-k">{{ c.lp|floatformat:0 }} LP ({{ c.lp_value|mil }}){% if c.input_units %} + {{ c.input_units|floatformat:0 }} {{ c.input }} ({{ c.input_cost|mil }}){% endif %} + LP store ISK {{ c.isk|mil }}</td></tr>{% endfor %}</tbody>
+    <tbody>{% for c in m.converted %}<tr><td>{{ c.name }}</td><td class="text-end">{{ c.units|floatformat:0 }}</td><td class="text-end">{{ c.cost|mil }}</td><td class="text-end">{{ c.unit_cost|floatformat:0 }}</td><td class="small shipyard-k">{{ c.lp|floatformat:0 }} LP ({{ c.lp_value|mil }}){% if c.input_units %} + {{ c.input_units|floatformat:0 }} {{ c.input }} ({{ c.input_cost|mil }}){% endif %} + {{ c.isk|mil }} store ISK</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endif %}
 {% if m.sales or m.still %}
-<div class="table-responsive"><table class="table table-sm align-middle mb-2">
-    <thead><tr><th>Sales on converted items</th><th class="text-end">Sold</th><th class="text-end">Revenue</th><th class="text-end">Sales tax</th><th class="text-end">Broker fees</th><th class="text-end">Cost</th><th class="text-end">Net profit</th></tr></thead>
+<div class="table-responsive"><table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Sales</th><th class="text-end">Sold</th><th class="text-end">Revenue</th><th class="text-end">Sales tax</th><th class="text-end">Broker</th><th class="text-end">Cost</th><th class="text-end">Net</th></tr></thead>
     <tbody>{% for x in m.sales %}<tr><td>{{ x.name }}</td><td class="text-end">{{ x.sold|floatformat:0 }}</td><td class="text-end">{{ x.revenue|mil }}</td><td class="text-end">{{ x.tax|mil }}</td><td class="text-end">{{ x.broker|mil }}</td><td class="text-end">{{ x.cost|mil }}</td><td class="text-end fw-semibold {% if x.net >= 0 %}text-success{% else %}text-danger{% endif %}">{{ x.net|mil:True }}</td></tr>{% endfor %}
-    {% for v in m.still %}<tr class="shipyard-k"><td>{{ v.name }}, still on sell orders</td><td class="text-end">{{ v.units|floatformat:0 }}</td><td class="text-end">{{ v.value|mil }} at list</td><td class="text-end" colspan="2"></td><td class="text-end">{{ v.cost|mil }}</td><td class="text-end">{{ v.expected|mil:True }} projected</td></tr>{% endfor %}</tbody>
+    {% for v in m.still %}<tr class="shipyard-k"><td>{{ v.name }} <span class="small">· listed</span></td><td class="text-end">{{ v.units|floatformat:0 }}</td><td class="text-end">{{ v.value|mil }}</td><td class="text-end" colspan="2"></td><td class="text-end">{{ v.cost|mil }}</td><td class="text-end">{{ v.expected|mil:True }}</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endif %}
-<p class="mb-0 small"><strong>Summary:</strong> {% if m.lp_bought %}{{ m.lp_isk|mil }} of LP bought{% if m.converted %}, {% endif %}{% endif %}{% if m.converted %}converted into {{ m.output_value|mil }} of sell orders ({{ m.sold_value|mil }} sold{% if m.listed_value %}, {{ m.listed_value|mil }} still listed{% endif %}){% endif %}. Net profit {{ m.realised|mil:True }}{% if m.expected %}, {{ m.expected|mil:True }} more projected: {{ m.total|mil:True }} in total{% endif %}.</p>
 </div></div>
 {% endfor %}
 {% if bb.buying %}
 <h4 class="h6 mt-3">Buying now</h4>
 <div class="table-responsive"><table class="table table-sm align-middle">
-    <thead><tr><th>Item</th><th class="text-end">Still to buy</th><th class="text-end">Price</th><th class="text-end">ISK in escrow</th><th>Since</th></tr></thead>
+    <thead><tr><th>Item</th><th class="text-end">Still to buy</th><th class="text-end">Price</th><th class="text-end">In escrow</th><th>Since</th></tr></thead>
     <tbody>{% for o in bb.buying %}<tr><td>{{ o.name }}</td><td class="text-end">{{ o.remain }} / {{ o.total }}</td><td class="text-end">{{ o.price|floatformat:2 }}</td><td class="text-end">{{ o.escrow|mil }}</td><td>{{ o.issued|date:"j M H:i" }}</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endif %}
 {% endif %}{% endwith %}
 
 {% if d.orders %}
-<h3 class="h5 mt-4">Market orders now</h3>
+<h3 class="h5 mt-4">Market orders</h3>
 <div class="table-responsive"><table class="table table-sm align-middle">
     <thead><tr><th></th><th>Item</th><th class="text-end">Left / total</th><th class="text-end">Price</th><th class="text-end">Value left</th><th class="text-end">Cost each</th><th>Issued</th></tr></thead>
     <tbody>{% for o in d.orders %}<tr><td>{% if o.is_buy %}<span class="badge text-bg-info">buy</span>{% else %}<span class="badge text-bg-secondary">sell</span>{% endif %}</td><td>{{ o.name }}</td><td class="text-end">{{ o.remain }} / {{ o.total }}</td><td class="text-end">{{ o.price|floatformat:2 }}</td><td class="text-end">{{ o.value|mil }}</td><td class="text-end">{% if o.unit_cost %}{{ o.unit_cost|floatformat:0 }}{% else %}–{% endif %}</td><td>{{ o.issued|date:"j M H:i" }}</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endif %}
 
-<h3 class="h5 mt-4">5. Running costs: structure fuel</h3>
-<p class="small shipyard-k mb-2">Fuel need of the online service modules at today's cheapest fuel block at {{ d.market }} ({{ d.fuel_name }}, {{ d.fuel_price|floatformat:0 }} ISK). Sponsored structures cost the alliance nothing.</p>
+<h3 class="h5 mt-4">5. Structure fuel <span class="small shipyard-k fw-normal" title="Today's cheapest fuel block at {{ d.market }}">{{ d.fuel_name }} {{ d.fuel_price|floatformat:0 }} ISK</span></h3>
 <div class="table-responsive"><table class="table table-sm align-middle">
     <thead><tr><th>Structure</th><th class="text-end">Blocks / hour</th><th class="text-end">Blocks / day</th><th class="text-end">ISK / day</th><th class="text-end">ISK / 30 days</th></tr></thead>
     <tbody>
-        {% for f in d.fuel_rows %}<tr><td>{{ f.name }}{% if f.sponsored %} <span class="badge text-bg-secondary">sponsored</span>{% endif %}</td><td class="text-end">{{ f.bph }}</td><td class="text-end">{% widthratio f.bph 1 24 %}</td><td class="text-end">{{ f.day|mil }}</td><td class="text-end">{{ f.month|mil }}</td></tr>{% endfor %}
+        {% for f in d.fuel_rows %}<tr><td>{{ f.name }}{% if f.sponsored %} <span class="badge text-bg-secondary" title="Paid by a private individual: costs the alliance nothing">sponsored</span>{% endif %}</td><td class="text-end">{{ f.bph }}</td><td class="text-end">{% widthratio f.bph 1 24 %}</td><td class="text-end">{{ f.day|mil }}</td><td class="text-end">{{ f.month|mil }}</td></tr>{% endfor %}
+        <tr class="fw-bold"><td>Burned since the baseline</td><td class="text-end" colspan="2">{{ d.fuel_burned }} blocks</td><td class="text-end" colspan="2">{{ d.fuel_burned_isk|mil }}</td></tr>
     </tbody>
 </table></div>
-<p class="small shipyard-k">Burned since the baseline by the structures the alliance pays for: {{ d.fuel_burned }} blocks, {{ d.fuel_burned_isk|mil }}.</p>
-<p class="small shipyard-k">The baseline and the stock batches (Heavy Water bought by direct trade) are kept in the admin: Shipyard → books baseline and stock batches. Market buys of a stock type are picked up by themselves.</p>
+
+{% if can_manage %}
+<details class="small mt-4"><summary class="shipyard-k">Settings and diagnostics</summary>
+<div class="mt-2 shipyard-k">
+    <p class="mb-1">Baseline and stock batches (Heavy Water bought by direct trade): auth admin → Shipyard → books baseline, stock batches. Ignored journal lines: Shipyard → ignored journal lines, or a reason matching the ignore patterns. Market buys of a stock type are picked up by themselves.</p>
+    {% if hangar_divisions %}
+    <p class="mb-1">Hangar divisions found at the last read; the counted ones are marked. Narrow with SHIPYARD_BOOKS_HANGAR_LOCATIONS and SHIPYARD_BOOKS_HANGAR_FLAGS.{% if d.hangar.extra %} In the projects hangar but never bought by a project (not counted): {{ d.hangar.extra|join:", " }}.{% endif %}</p>
+    <table class="table table-sm w-auto small mb-0"><thead><tr><th>Office</th><th>Division</th><th class="text-end">Types</th><th class="text-end">Units</th><th>Counted</th><th>Biggest</th></tr></thead><tbody>
+    {% for h in hangar_divisions %}<tr><td>{{ h.location_id }}</td><td>{{ h.division }} ({{ h.flag }})</td><td class="text-end">{{ h.types }}</td><td class="text-end">{{ h.units|num:0 }}</td><td>{% if h.wanted %}<i class="fas fa-check text-success"></i>{% else %}<span class="shipyard-k">no</span>{% endif %}</td><td class="shipyard-k">{{ h.sample|join:", " }}</td></tr>{% endfor %}
+    </tbody></table>
+    {% elif not d.hangar.read_at %}
+    <p class="mb-1 text-warning">The hangar has not been read from EVE yet: the goods held follow the ledger. Connect the hangar with the CEO once.</p>
+    {% endif %}
+</div></details>
+{% endif %}
 {% endif %}
 <script>
 (function () {
@@ -215,8 +217,8 @@
             var h = Math.floor(s / 3600), m = Math.ceil((s % 3600) / 60);
             el.textContent = s <= 0 ? "due" : (h ? h + " h " + m + " min" : m + " min");
             var fresh = Date.parse(el.getAttribute("data-fresh") || "");
-            if (!isNaN(fresh) && now >= fresh && el.classList.contains("text-warning")) {
-                el.classList.remove("text-warning"); el.classList.add("text-info");
+            if (!isNaN(fresh) && now >= fresh && el.classList.contains("text-bg-secondary")) {
+                el.classList.remove("text-bg-secondary"); el.classList.add("text-bg-warning");
                 var b = el.closest("button"); if (b) { b.classList.remove("text-body-tertiary"); }
             }
         });
