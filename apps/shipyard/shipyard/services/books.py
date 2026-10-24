@@ -410,6 +410,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
     other_buys = 0.0
     fees = escrow = project_net = lp_store_paid = 0.0
     deposits, direct_sales, payouts, others = [], [], [], defaultdict(float)
+    structure_total = 0.0  # every structure income transfer since the budget baseline, whatever the period
     direct_sales_all = []  # every direct sale since the budget baseline: the lots leave whatever the period; the period's own are picked below
     lp_units, lp_cost = 0, 0.0
     stock_paid = []  # withdrawals that paid for a stock batch: [batch id, amount]
@@ -470,8 +471,12 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
                 lp_sales.append([e.date, units, e.amount, row["who"]])
                 if inp:
                     lp_sold += units
-            elif inp:
-                deposits.append({**row, "item": ""})
+            else:
+                rule_ = app_settings.SHIPYARD_BOOKS_STRUCTURE_TRANSFER
+                if rule_ and re.search(rule_, e.reason or "", re.I):
+                    structure_total += e.amount
+                if inp:
+                    deposits.append({**row, "item": ""})
         elif rt == "corporation_account_withdrawal":
             if e.first_party_id == cid and e.second_party_id == cid:
                 # between wallet divisions: within 1-6 it nets to zero; to division 7 it leaves the books
@@ -832,7 +837,10 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         "orders": orders, "buyback": buyback, "project_bb": project_bb, "lp_events": lp_events,
         "fuel_price": fuel_price, "fuel_name": fuel_name, "fuel_rows": fuel_rows, "fuel_paying_bph": paying,
         "structure_income_period": sum(g["total"] for g in move_groups if g["key"] == "structure"),
-        "fuel_month_isk": paying * 24 * 30 * fuel_price,
+        "structure_income_total": structure_total,
+        "fuel_month_isk": paying * 24 * 30 * fuel_price, "fuel_month_blocks": paying * 24 * 30,
+        "asset_tiles": {k: sum(g["total"] for g in asset_groups if g["key"] in keys)
+                        for k, keys in (("cash", ("cash",)), ("pool", ("pool",)), ("stock", ("listed", "physical")), ("held", ("held",)))},
         "fuel_burned": round(hours * paying), "fuel_burned_isk": round(hours * paying) * fuel_price,
         "generated": timezone.now(), "market": market.name if market else "",
     }

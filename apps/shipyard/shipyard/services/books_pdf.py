@@ -133,7 +133,10 @@ def render(d: dict) -> bytes:
     kt = Table(kpis, colWidths=[40 * mm, 30 * mm, 104 * mm])
     kt.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), shade), ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#4cc3ff")),
                             ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3), ("LEFTPADDING", (0, 0), (-1, -1), 5)]))
-    story += [kt, Spacer(1, 6), _pictures(d), Paragraph("1. Position", h2), Spacer(1, 2)]
+    at_ = d.get("asset_tiles") or {}
+    story += [kt, Spacer(1, 6), _pictures(d), Paragraph("1. Position", h2), Spacer(1, 2),
+              tiles([("Liquid ISK", _m(at_.get("cash", 0.0)), "", None), ("Reward ISK in active projects", _m(at_.get("pool", 0.0)), "", None),
+                     ("Stock", _m(at_.get("stock", 0.0)), "", None), ("Goods held from project buybacks", _m(at_.get("held", 0.0)), "", None)]), Spacer(1, 4)]
     shade_rows = []
     rows = []
     for g in d["asset_groups"]:
@@ -256,10 +259,9 @@ def render(d: dict) -> bytes:
         story.append(KeepTogether([
             Paragraph(f"5. Structure fuel <font size='8' color='#5b6b82'>{e(d['fuel_name'])} {d['fuel_price']:,.0f} ISK at {e(d['market'])}</font>", h2),
             Spacer(1, 2),
-            tiles([("Fuel burned since the baseline", f"{d['fuel_burned']:,} blocks", "", None),
-                   ("Fuel cost since the baseline", _m(d["fuel_burned_isk"]), "", "#c62828"),
-                   ("Fuel per 30 days", _m(d["fuel_month_isk"]), "", None),
-                   ("Structure income, this period", _m(d.get("structure_income_period", 0.0), True), "", "#2e7d32")]),
+            tiles([("Fuel blocks per month", f"{d['fuel_month_blocks']:,.0f} blocks", "", None),
+                   ("Cost of these blocks per month", _m(d["fuel_month_isk"]), "", "#c62828"),
+                   ("Total structure income", _m(d.get("structure_income_total", 0.0), True), "", "#2e7d32")], per_row=3),
             Spacer(1, 4),
             table(["Structure", "Blocks / hour", "Blocks / day", "ISK / day", "ISK / 30 days"], frows, [74 * mm, 22 * mm, 24 * mm, 26 * mm, 28 * mm],
                   total_rows=(len(frows),), numeric=(1, 2, 3, 4)),

@@ -76,6 +76,12 @@
 </div>
 
 <h3 class="h5 mt-4">1. Position</h3>
+<div class="sy-fin-cards mb-3">
+    <div class="sy-fin-card"><span class="l">Liquid ISK</span><span class="v">{{ d.asset_tiles.cash|mil }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4"/></svg></div>
+    <div class="sy-fin-card"><span class="l">Reward ISK in active projects</span><span class="v">{{ d.asset_tiles.pool|mil }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19h16M6 19V9l6-4 6 4v10"/><path d="M10 19v-5h4v5"/></svg></div>
+    <div class="sy-fin-card"><span class="l">Stock</span><span class="v">{{ d.asset_tiles.stock|mil }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8l9-4 9 4-9 4z"/><path d="M3 8v8l9 4 9-4V8"/><path d="M12 12v8"/></svg></div>
+    <div class="sy-fin-card"><span class="l">Goods held from project buybacks</span><span class="v">{{ d.asset_tiles.held|mil }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10l9-5 9 5v10H3z"/><path d="M8 20v-6h8v6"/></svg></div>
+</div>
 <div class="table-responsive"><table class="table table-sm align-middle shipyard-collapsing">
     <thead><tr><th>Assets</th><th class="text-end">M ISK</th><th></th></tr></thead>
     <tbody>
@@ -215,10 +221,9 @@
 
 <h3 class="h5 mt-4">5. Structure fuel <span class="small shipyard-k fw-normal" title="Today's cheapest fuel block at {{ d.market }}">{{ d.fuel_name }} {{ d.fuel_price|floatformat:0 }} ISK</span></h3>
 <div class="sy-fin-cards mb-3">
-    <div class="sy-fin-card"><span class="l">Fuel burned since the baseline</span><span class="v">{{ d.fuel_burned }} blocks</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 1-3s0 2 2 2c0-3-1-5 1-8z"/></svg></div>
-    <div class="sy-fin-card"><span class="l">Fuel cost since the baseline</span><span class="v text-danger">{{ d.fuel_burned_isk|mil }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4"/></svg></div>
-    <div class="sy-fin-card"><span class="l">Fuel per 30 days</span><span class="v">{{ d.fuel_month_isk|mil }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>
-    <div class="sy-fin-card"><span class="l">Structure income, this period</span><span class="v {% if d.structure_income_period >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.structure_income_period|mil:True }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg></div>
+    <div class="sy-fin-card"><span class="l">Fuel blocks per month</span><span class="v">{{ d.fuel_month_blocks|floatformat:0 }} blocks</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 1-3s0 2 2 2c0-3-1-5 1-8z"/></svg></div>
+    <div class="sy-fin-card"><span class="l">Cost of these blocks per month</span><span class="v text-danger">{{ d.fuel_month_isk|mil }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4"/></svg></div>
+    <div class="sy-fin-card"><span class="l">Total structure income</span><span class="v {% if d.structure_income_total >= 0 %}text-success{% else %}text-danger{% endif %}">{{ d.structure_income_total|mil:True }}</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg></div>
 </div>
 <div class="table-responsive"><table class="table table-sm align-middle">
     <thead><tr><th>Structure</th><th class="text-end">Blocks / hour</th><th class="text-end">Blocks / day</th><th class="text-end">ISK / day</th><th class="text-end">ISK / 30 days</th></tr></thead>
