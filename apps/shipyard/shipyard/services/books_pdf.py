@@ -102,7 +102,7 @@ def render(d: dict) -> bytes:
 
     def tiles(items, per_row=4):
         """Stat tiles as on the page: (label, value, sub, colour) each; a shaded cell per tile."""
-        cells = [[Paragraph(e(l), tile_l), Paragraph(f"<font color='{c or '#1f2a44'}'><b>{e(v)}</b></font>", tile_v), Paragraph(e(sub), tile_l)] for l, v, sub, c in items]
+        cells = [[Paragraph(e(l), tile_l), Paragraph(f"<font color='{c or '#1f2a44'}'><b>{e(v)}</b></font>", tile_v)] for l, v, sub, c in items]  # label and figure only (owner, 2026-10-24)
         data = [[cells[i] if i < len(cells) else "" for i in range(r, r + per_row)] for r in range(0, len(cells), per_row)]
         width = (174 * mm) / per_row
         t = Table(data, colWidths=[width] * per_row)
