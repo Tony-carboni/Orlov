@@ -4,6 +4,18 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-25 (06:45 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** **Shipyard 0.34.1: register a direct sale at any of the six valuations** (runbook 13 C), and the moon board's weekly public moons (runbook 09).
+
+**Done.** 0.34.1 (commit `84a3463` pinned, backup `aa-db-2026-10-25-0638.sql.gz`, no migration, 138 tests): on Register a direct sale every valuation of the six-way table has a **Register at this rate** button; the sale is registered with every line at that valuation (Jita buy, Jita sell, 95 % reprocessing, capped), the code comes back as usual, the registration's note says which. The books take the deposit as the sale's revenue whatever the quote, so the choice only sets the reference price shown with the code (the owner's own conclusion: it does not matter which he picks). Moon board: two public moons on a weekly timer (`ORLOVBOT_MOON_RECURRING`: Raussinen Public Moon Wednesdays 17:00 EVE, Piekura Public Moon Mondays 18:00 EVE), sorted in with the refineries soonest first; bot restarted, board redrawn.
+
+**Owner has to do by hand.** Say "go, keep him on Discord" or "go, remove him from Discord" for the Family Friend (locked) cleanup (the plan is in the chat of 24 October: rename the state to a bare "Locked" pinned to Kitten Kerns, because deleting it would hand him Family Member back through the corp rule; delete the two Discord roles). Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
+
+**Next.** Nothing queued.
+
+---
+
 ## 2026-10-24 (15:10 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** **Shipyard 0.33.7 and 0.34.0: the PDF's donut legend, and four period tiles in place of the waterfall** (runbook 13 C), from the owner's screenshot of the 07:42 sheet and his request in chat.
@@ -65,26 +77,5 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 - Also run on request: the market volume refresh (431 ores, ships and scrap items) at 18:25 EVE.
 
 **Owner has to do by hand.** Look at the new row on Finance → section 3. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep, test the welcome DM with a real join.
-
-**Next.** Nothing queued.
-
----
-
-## 2026-10-23 (05:35 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** **Shipyard 0.26.2, 0.26.3 and 0.27.0: the goods held are the projects hangar, as raw ore** (runbook 13 C), three owner's rules of this morning (saved in memory as well).
-
-**Owner's rules.** (1) Buyback goods are raw compressed ore sold in bulk: nothing is converted to minerals unless he asks. (2) The goods held from project buybacks are what is physically in the corporation's projects hangar, read from EVE; if it is not there it is not in stock. (3) Stock kept elsewhere (cap boosters, Heavy Water) stays ledger-style as stock batches.
-
-**Done.**
-- **0.26.2** (commit `e601e8f`, backup `aa-db-2026-10-23-0515.sql.gz`): ore delivered after the last stock take stays an ore lot at what the project paid (the Kernite project buy is 165, not 180.6 through older mineral lots); the quote costs goods from the lots since the stock take only and skips what earlier registrations sold.
-- **0.26.3** (commit `17f1e0e`, backup `aa-db-2026-10-23-0521.sql.gz`): a stock take clears every lot that existed at its moment. The stock take of 21 October had stored the sheet's lines at its journal cut-off, so the deliveries of 21 October 15:25 to 17:27 EVE (about 72 M as minerals) were never written off and reappeared. Goods held now: exactly the 20 items of the owner's list, 130.6 M at project cost, all as ore; gap 0.
-- **0.27.0** (commit `04b1df4` pinned, backup `aa-db-2026-10-23-0529.sql.gz`, migration 0032, beat entry `shipyard_refresh_hangar` at :35 appended to `conf/local.py` and `deploy/conf/local.py.append`, 123 tests): the hourly task reads the corporation's assets (scope `esi-assets.read_corporation_assets.v1`) into `HangarItem` rows; the sheet values what is in the hangar at the projects' prices (lots oldest first, excess at the newest lot's price), lists items never bought by a project without counting them, names types the ledger expects but the hangar lacks, and section 2 adds "Hangar count against the ledger" so the sheet still reconciles. Until the first read the goods held follow the ledger and the page says so. Finance tab: **Connect the hangar** (manager; asks for the production scopes plus the assets scope, one token for all) and **Read the hangar now**.
-
-**Owner has to do by hand.** Finance → Connect the hangar, log in with Catherine Frey (CEO; the assets scope needs a Director), accept the scopes. Then say which office and hangar division is the projects hangar (the page lists the divisions the read found) so a local session sets `SHIPYARD_BOOKS_HANGAR_LOCATIONS` and `SHIPYARD_BOOKS_HANGAR_FLAGS`. Still open: DigitalOcean weekly backups check, the stray #pings, roster tokens for GB44 and 1E3, which of the seven project graphs to keep.
-
-**Also (05:55 UTC): the hangar is connected and pinned.** The owner logged in with Catherine Frey and read the hangar; the first count took every corp hangar division everywhere (29 lines, 9.4 B, the owner's own mineral stock included). The projects hangar is **structure 1055529310484, hangar division 2** (40 item types): `SHIPYARD_BOOKS_HANGAR_LOCATIONS = [1055529310484]`, `SHIPYARD_BOOKS_HANGAR_FLAGS = ["CorpSAG2"]` appended to `conf/local.py` and the deploy template, app containers restarted. Goods held now: 18 lines, 109.7 M at project cost, gap 0, result +405.7 M. Not in that hangar although bought by projects: 600 Zero-Point Condensate and 36 Crystalline Isogen-10 (they sit in structure 1055543898857, division 1, with the owner's own 14,931 ZPC and 13,156 CI-10), so the sheet counts them out and shows "Hangar count against the ledger" −21.0 M; the owner decides whether to move them into the projects hangar. 22 types in the projects hangar were never bought by a project (moon ores, Compressed Scordite and the like) and are listed, not counted.
-
-**Also (06:10 UTC): Shipyard 0.27.1** (commit `fc4ed62` pinned, backup `aa-db-2026-10-23-0604.sql.gz`, no migration, 125 tests): a **period menu** at the top of the Finance tab, Since: Last alliance report / Day / Week / Month; Day, Week and Month open a period on the fly (the position 24 hours, 7 or 30 days ago becomes the opening, nothing stored; the PDF follows `?period=`); a start before the budget baseline of 18 October falls back to the baseline, so Week and Month equal the report until 25 October and 17 November. **Structure income** is one line in its own category in section 2 (the 77.0 M of 18 October and the 59.9 M of 23 October, 136.9 M together; the transfer rule is `raitaru|structure income`). Also refreshed from ESI today on the owner's request: leadplayer (now OARMI) and Kevin Choseph (now OARMI, Family Member).
 
 **Next.** Nothing queued.
