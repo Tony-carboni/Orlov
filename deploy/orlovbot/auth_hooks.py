@@ -11,4 +11,5 @@ def register_cogs():
         "orlovbot.cogs.jfwatch",
         "orlovbot.cogs.juicy",
         "orlovbot.cogs.welcome",
+        "orlovbot.cogs.leaderboards",
     ]

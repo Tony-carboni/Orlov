@@ -151,6 +151,13 @@ ORLOVBOT_JUICY_BLACK_OPS_B = 12
 ORLOVBOT_JUICY_SHIP_B = 10                   # any other non-capital ship
 ORLOVBOT_JUICY_EXTRA_TYPE_IDS = []           # more hulls to post whatever their value, by type id
 
+# Leaderboards (runbook 20): one board per leaderboard in this channel, refreshed daily at the hour below (EVE time)
+ORLOVBOT_LEADERBOARD_CHANNEL = "leaderboards-bot"   # channel name; "" switches the leaderboards off
+ORLOVBOT_LEADERBOARD_DAYS = 30                       # the window of the project payouts board
+ORLOVBOT_LEADERBOARD_TOP = 5                         # pilots shown
+ORLOVBOT_LEADERBOARD_HOUR = 14                       # refresh hour, EVE time
+
+
 # --- Shipyard (ship-building dashboard, runbook 13) ------------------------
 INSTALLED_APPS += ["shipyard"]
 CELERYBEAT_SCHEDULE["shipyard_refresh_all"] = {
