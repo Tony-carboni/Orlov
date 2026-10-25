@@ -579,9 +579,16 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
                                 "input_units": input_taken, "input_cost": input_cost, "isk": p.isk_paid, "outside": p.isk_paid_by == "outside", "total": total})
     stock_lines = []
     stock_now = 0.0
+    written_off_stock, written_off_names = 0.0, []
     for tid in sorted(stock_types, key=lambda x: names.get(x, "")):
         units = sum(r[1] for r in lots[tid])
         value = sum(r[1] * r[2] for r in lots[tid])
+        if tid in set(app_settings.SHIPYARD_BOOKS_STOCK_WRITTEN_OFF):
+            # left out of the books (owner, 2026-10-25): the lots leave at cost in one movement; a later sale is a plain deposit
+            if value > 1e-6:
+                written_off_stock += value
+                written_off_names.append(names.get(tid, f"type {tid}"))
+            continue
         stock_now += value
         last = next((s for s in reversed(batches) if s.type_id == tid), None)
         if units > 1e-9 or sold[tid][0]:
@@ -781,6 +788,8 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
             cost = units * lp_avg
             moves.append([f"LP sold directly: {units:,} LP", isk - cost,
                           f"Sold to {who}, {_when(t)}, for {isk / M:.1f} M ({isk / units:,.0f} ISK per LP); {cost / M:.1f} M at cost left the books"])
+    if written_off_stock > 1e-6:
+        moves.append(["Stock written off, left out of the books", -written_off_stock, ", ".join(written_off_names) + ": what they fetch later arrives as a deposit"])
     if live_now is not None and abs(live_now - journal_now) >= 1:
         moves.append(["Wallet as EVE shows it, against the journal copy", live_now - journal_now,
                       "Activity EVE has not written to the journal yet, and corrections made in game that the journal lines left out"])
@@ -1242,7 +1251,7 @@ def _group_moves(moves, outputs) -> list:
             return "lp"
         if label.endswith("sold, profit over its cost"):
             return "lp" if label[: -len(" sold, profit over its cost")] in outputs else "stock"
-        if label == "Stock bought":
+        if label == "Stock bought" or label.startswith("Stock written off"):
             return "stock"
         if label.startswith("Escrow of") or label.startswith("ISK still in open buy orders") or label.startswith("Broker fees") or label.startswith("Bought on the market"):
             return "market"

@@ -194,3 +194,6 @@ SHIPYARD_HANGAR_BEAT_MINUTE = getattr(settings, "SHIPYARD_HANGAR_BEAT_MINUTE", 3
 # that was paid from the wrong division (owner, 2026-10-25: "correction projects"): the books count it as ISK put into
 # projects, not as money leaving for the Director division.
 SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS = getattr(settings, "SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS", [r"correction project"])
+# Stock types the books no longer carry (owner, 2026-10-25: the leftover Cap Boosters bought to convert, too small to
+# matter; what they fetch later simply arrives as a deposit). Their lots are written off in one movement.
+SHIPYARD_BOOKS_STOCK_WRITTEN_OFF = getattr(settings, "SHIPYARD_BOOKS_STOCK_WRITTEN_OFF", [])  # type ids

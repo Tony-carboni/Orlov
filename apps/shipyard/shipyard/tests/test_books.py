@@ -184,6 +184,20 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(rows["Master wallet, division 1"], journal["wallet"] + 50e6, places=0)
         self.assertAlmostEqual(rows["Wallet division 2"], 32e6, places=0)
 
+    def test_written_off_stock_leaves_the_books_in_one_movement(self):
+        """Owner's rule (2026-10-25): the leftover Cap Boosters bought to convert are left out; their lots leave at cost."""
+        before = books.compute()
+        boosters = next(s for s in before["stock"] if s["type_id"] == 11289)
+        self.assertGreater(boosters["value"], 0)
+        with mock.patch.object(books.app_settings, "SHIPYARD_BOOKS_STOCK_WRITTEN_OFF", [11289]):
+            d = books.compute()
+        self.assertNotIn(11289, [s["type_id"] for s in d["stock"]])
+        move = next(m for m in d["moves"] if m[0].startswith("Stock written off"))
+        self.assertAlmostEqual(move[1], -boosters["value"], places=0)
+        self.assertAlmostEqual(d["result"], before["result"] - boosters["value"], places=0)
+        self.assertLess(abs(d["gap"]), 1.0)
+        self.assertEqual(next(g for g in d["move_groups"] if g["key"] == "stock")["rows"][-1][0], move[0])
+
     def test_period_tiles_follow_the_period(self):
         """The four tiles under the donut count the period only: sales before the period's start stay out (0.34.3)."""
         whole = books.compute()
