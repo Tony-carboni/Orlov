@@ -77,6 +77,8 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
+*Release 0.34.1, 2026-10-25: on Register a direct sale, every valuation in the six-way table has a **Register at this rate** button (owner's request): the sale is registered with every line at that valuation (Jita buy, Jita sell, 95 % reprocessing, capped) and the code comes back as usual; the note on the registration says which. The books take the deposit as the sale's revenue whatever the quote, so the choice only sets the reference price shown with the code.*
+
 *Release 0.34.0, 2026-10-24: **four period tiles in place of the waterfall** (owner's request), on the page and in the PDF: turnover (every sale of the period: project goods on the market and directly, LP-store goods, LP sold), total cost with tax and fees, net income (turnover less that cost, the sum of the net profit of sections 3 and 4), and the project rewards paid out to members. The waterfall's geometry and its test are gone; the donut stays. No migration; collectstatic for the stylesheet.*
 
 *Release 0.33.7, 2026-10-24: the PDF's donut legend no longer runs into its figures (the label Reward ISK in projects touched 2,211.7): the donut is a little smaller and the legend 42 mm wide instead of 30.*

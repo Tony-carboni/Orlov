@@ -136,8 +136,9 @@ def finance_direct_sale(request):
             messages.info(request, "Registration forgotten." if n else "Nothing to forget: that code is unknown or already matched.")
             return redirect("shipyard:finance_direct_sale")
         try:
-            if action == "register":
-                registered = directsales.register(text, request.user)
+            basis = request.POST.get("register_as") or "rule"
+            if action == "register" or request.POST.get("register_as"):
+                registered = directsales.register(text, request.user, basis)
                 messages.success(request, f"Registered as {registered.code}: put that code in the deposit's reason.")
                 text = ""
             else:

@@ -176,6 +176,48 @@ def _drain(queue, units: float) -> None:
             queue.popleft()
 
 
+BASES = {  # the valuations a sale can be registered at (owner, 2026-10-25); "rule" is the quote itself
+    "rule": "the rule", "buy": "Jita buy", "sell": "Jita sell", "repro": "95 % reprocessing, no cap", "capped": "95 % reprocessing capped at Jita sell",
+}
+
+
+def price_at(basis: str, ln: dict):
+    """The unit price of a quoted line under one valuation, or None when that valuation has no price for it."""
+    if basis == "buy":
+        return ln.get("buy")
+    if basis == "sell":
+        return ln.get("sell")
+    if basis in ("repro", "capped"):
+        if not ln["is_ore"] or ln.get("repro") is None:
+            return ln.get("buy") or ln["unit"]
+        return min(ln["repro"], ln["sell"]) if basis == "capped" and ln.get("sell") else ln["repro"]
+    return ln["unit"]
+
+
+def reprice(q: dict, basis: str) -> dict:
+    """The same quote with every line at another valuation (the buttons next to the six totals). Pure."""
+    if basis not in BASES or basis == "rule":
+        q["basis"] = "rule"
+        return q
+    total = cost_total = 0.0
+    for ln in q["lines"]:
+        unit = price_at(basis, ln)
+        if unit is None:
+            continue  # no price under this valuation: the rule's price stays
+        ln["unit"] = round(unit, 2)
+        ln["line"] = round(unit * ln["qty"], 2)
+        ln["profit"] = round(ln["line"] - ln["cost"], 2)
+        ln["pct"] = _pct(ln["line"], ln["cost"])
+        ln["basis"] = BASES[basis] + f" {unit:,.2f}"
+        ln["flags"] = flags(unit, ln.get("buy"), ln.get("sell"), ln.get("repro"))
+    for ln in q["lines"]:
+        total += ln["line"]
+        cost_total += ln["cost"]
+    q.update({"total": round(total, 2), "cost": round(cost_total, 2), "profit": round(total - cost_total, 2), "pct": _pct(total, cost_total),
+              "flagged": sum(1 for ln in q["lines"] if ln["flags"]), "basis": basis})
+    return q
+
+
 def valuations(lines: list) -> list:
     """The six ways to value the pasted list, each with its margin against the projects' cost (owner, 2026-10-23).
     Pure. A line carries unit (the quote), buy, sell, repro (95 % of the reprocessing value, ores only), qty, cost."""
@@ -188,14 +230,14 @@ def valuations(lines: list) -> list:
         return ore_value(ln) if ln["is_ore"] and ln.get("repro") is not None else (ln.get("buy") or ln["unit"])
 
     rows = [
-        ("Direct-sale quote (the rule)", total(lambda ln: ln["unit"])),
-        ("Paid via projects, first in first out", cost),
-        ("Jita buy on everything", total(lambda ln: ln.get("buy") or 0)),
-        ("Jita sell on everything", total(lambda ln: ln.get("sell") or 0)),
-        ("95 % reprocessing on ores and ice, Jita buy on the rest, no cap", total(lambda ln: ore_or_buy(ln, lambda l: l["repro"]))),
-        ("95 % reprocessing capped at Jita sell, Jita buy on the rest", total(lambda ln: ore_or_buy(ln, lambda l: min(l["repro"], l["sell"]) if l.get("sell") else l["repro"]))),
+        ("rule", "Direct-sale quote (the rule)", total(lambda ln: ln["unit"])),
+        ("cost", "Paid via projects, first in first out", cost),
+        ("buy", "Jita buy on everything", total(lambda ln: ln.get("buy") or 0)),
+        ("sell", "Jita sell on everything", total(lambda ln: ln.get("sell") or 0)),
+        ("repro", "95 % reprocessing on ores and ice, Jita buy on the rest, no cap", total(lambda ln: ore_or_buy(ln, lambda l: l["repro"]))),
+        ("capped", "95 % reprocessing capped at Jita sell, Jita buy on the rest", total(lambda ln: ore_or_buy(ln, lambda l: min(l["repro"], l["sell"]) if l.get("sell") else l["repro"]))),
     ]
-    return [{"label": label, "total": round(v, 2), "margin": round(v - cost, 2), "pct": _pct(v, cost), "is_cost": label.startswith("Paid")} for label, v in rows]
+    return [{"key": key, "label": label, "total": round(v, 2), "margin": round(v - cost, 2), "pct": _pct(v, cost), "is_cost": key == "cost"} for key, label, v in rows]
 
 
 def quote(text: str, user) -> dict:
@@ -299,15 +341,16 @@ def new_code() -> str:
             return code
 
 
-def register(text: str, user) -> BookDirectSale:
-    """Quote and record the sale; returns the row with its code. Raises ValueError when nothing can be priced."""
-    q = quote(text, user)
+def register(text: str, user, basis: str = "rule") -> BookDirectSale:
+    """Quote (at the chosen valuation) and record the sale; returns the row with its code. Raises ValueError when nothing
+    can be priced. The books take the deposit as the sale's revenue whatever the quote; the quote is the reference price."""
+    q = reprice(quote(text, user), basis)
     if not q["lines"]:
         raise ValueError("; ".join(q["problems"]) or "nothing to sell")
     items = ", ".join(f"{ln['qty']:,} {ln['name']}" for ln in q["lines"])
     return BookDirectSale.objects.create(
         corporation_id=projects.corp_id(), code=new_code(), items=items[:500], lines=q["lines"], quote=q["total"], cost=sum(ln["cost_lots"] for ln in q["lines"]),
-        created_by=getattr(user, "username", "")[:150], note=("; ".join(q["problems"]))[:200],
+        created_by=getattr(user, "username", "")[:150], note=("; ".join(([f"priced at {BASES[q['basis']]}"] if q.get("basis", "rule") != "rule" else []) + list(q["problems"])))[:200],
     )
 
 
