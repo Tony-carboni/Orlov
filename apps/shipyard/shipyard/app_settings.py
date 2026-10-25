@@ -190,3 +190,7 @@ SHIPYARD_BARGAIN_MIN_ISK_DAY = getattr(settings, "SHIPYARD_BARGAIN_MIN_ISK_DAY",
 SHIPYARD_BOOKS_HANGAR_LOCATIONS = getattr(settings, "SHIPYARD_BOOKS_HANGAR_LOCATIONS", [])  # station or structure ids
 SHIPYARD_BOOKS_HANGAR_FLAGS = getattr(settings, "SHIPYARD_BOOKS_HANGAR_FLAGS", [])            # e.g. ["CorpSAG2"]
 SHIPYARD_HANGAR_BEAT_MINUTE = getattr(settings, "SHIPYARD_HANGAR_BEAT_MINUTE", 35)  # the hour's minute the hourly hangar read runs at (the beat entry)
+# A transfer from the master wallet to another division whose reason matches one of these patterns is project funding
+# that was paid from the wrong division (owner, 2026-10-25: "correction projects"): the books count it as ISK put into
+# projects, not as money leaving for the Director division.
+SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS = getattr(settings, "SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS", [r"correction project"])

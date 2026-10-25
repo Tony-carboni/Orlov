@@ -135,6 +135,25 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(labels["LP store: 240 Navy Cap Booster 800"], 0.0)
         self.assertNotIn("Paid in the LP store, not entered as stock", labels)
 
+    def test_a_correction_transfer_to_the_director_division_counts_as_project_funding(self):
+        """Projects funded from the Director division by mistake, then 679 M moved from the master wallet to division 7
+        with "correction projects" in the reason (owner, 2026-10-25): the transfer is ISK put into projects, not money leaving."""
+        p1 = CorpProject.objects.get(project_id="p1")
+        ProjectSnapshot.objects.create(project=p1, taken_at=at(0.5), state="Active", reward_remaining=2387e6)
+        before = books.compute()
+        # the pool grew by 100 M with no master-wallet funding line (paid from division 7)
+        p1.reward_remaining += 100e6
+        p1.save()
+        ProjectSnapshot.objects.create(project=p1, taken_at=at(12.5), state="Active", reward_remaining=2387e6 + 100e6)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_701, division=1, date=at(12.6), ref_type="corporation_account_withdrawal", amount=-100e6,
+                                        reason="correction projects", first_party_id=CORP, second_party_id=CORP)
+        d = books.compute()
+        self.assertNotIn("Moved to the Director division", [m[0] for m in d["moves"] if abs(m[1] + 100e6) < 1])
+        paid = next(m for m in d["moves"] if m[0].startswith("Project rewards paid"))
+        self.assertAlmostEqual(paid[1], next(m for m in before["moves"] if m[0].startswith("Project rewards paid"))[1], places=0)
+        self.assertAlmostEqual(d["result"], before["result"], places=0)
+        self.assertLess(abs(d["gap"]), 1.0)
+
     def test_structure_income_is_one_line_in_its_own_category(self):
         """Two transfers of structure income (one by the old 'raitaru' wording, one saying 'structure income') make one
         movement under the Structure income category (owner, 2026-10-23)."""

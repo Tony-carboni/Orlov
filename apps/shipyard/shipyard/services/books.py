@@ -286,10 +286,12 @@ def _drop_ignored(journal, cid):
 
     flagged = {(r.division, r.entry_id): (r.reason, r.amount) for r in BookIgnoredEntry.objects.filter(corporation_id=cid)}
     patterns = [re.compile(p, re.I) for p in app_settings.SHIPYARD_BOOKS_IGNORE_REASONS]
+    # a repayment of project funding ("correction projects") carries an ignore word but must stay: it is ISK put into projects
+    keep_patterns = [re.compile(p, re.I) for p in app_settings.SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS]
     kept, out = [], []
     for e in journal:
         why, part = flagged.get((e.division, e.entry_id), (None, None))
-        if why is None and e.reason and any(p.search(e.reason) for p in patterns):
+        if why is None and e.reason and any(p.search(e.reason) for p in patterns) and not any(p.search(e.reason) for p in keep_patterns):
             why = f"reason: {e.reason}"
         if why is None:
             kept.append(e)
@@ -479,9 +481,13 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
                     deposits.append({**row, "item": ""})
         elif rt == "corporation_account_withdrawal":
             if e.first_party_id == cid and e.second_party_id == cid:
-                # between wallet divisions: within 1-6 it nets to zero; to division 7 it leaves the books
+                # between wallet divisions: within 1-6 it nets to zero; to division 7 it leaves the books, unless the
+                # reason says it repays project funding paid from the wrong division: then it is ISK put into projects
                 if inp:
-                    transfers_out += e.amount
+                    if any(re.search(p_, e.reason or "", re.I) for p_ in app_settings.SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS):
+                        project_net += e.amount
+                    else:
+                        transfers_out += e.amount
                 continue
             units = lp_units_from(e.reason) if e.amount < 0 else None
             if units:
