@@ -145,14 +145,52 @@ class BooksTests(TestCase):
         p1.reward_remaining += 100e6
         p1.save()
         ProjectSnapshot.objects.create(project=p1, taken_at=at(12.5), state="Active", reward_remaining=2387e6 + 100e6)
-        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_701, division=1, date=at(12.6), ref_type="corporation_account_withdrawal", amount=-100e6,
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_701, division=1, date=at(12.6), ref_type="corporation_account_withdrawal", amount=-60e6,
                                         reason="correction projects", first_party_id=CORP, second_party_id=CORP)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_702, division=1, date=at(12.7), ref_type="corporation_account_withdrawal", amount=-40e6,
+                                        reason="correction projects", first_party_id=CORP, second_party_id=4444)  # to a character: the same
         d = books.compute()
-        self.assertNotIn("Moved to the Director division", [m[0] for m in d["moves"] if abs(m[1] + 100e6) < 1])
+        self.assertNotIn("Moved to the Director division", [m[0] for m in d["moves"] if abs(m[1] + 60e6) < 1])
+        self.assertFalse([m for m in d["moves"] if m[0].startswith("Paid out: correction")])
+        # a correction in (a project cancelled from the wrong wallet, the money came back): a refund of funding, not income
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_703, division=1, date=at(12.8), ref_type="player_donation", amount=25e6,
+                                        reason="correction projects refund", first_party_id=4444, second_party_id=CORP)
+        d2 = books.compute()
+        self.assertFalse([m for m in d2["moves"] if m[0].startswith("Deposit: correction")])
+        self.assertAlmostEqual(d2["result"], d["result"] + 25e6, places=0)  # the ISK is in the wallet; the pool did not move here
+        self.assertLess(abs(d2["gap"]), 1.0)
         paid = next(m for m in d["moves"] if m[0].startswith("Project rewards paid"))
         self.assertAlmostEqual(paid[1], next(m for m in before["moves"] if m[0].startswith("Project rewards paid"))[1], places=0)
         self.assertAlmostEqual(d["result"], before["result"], places=0)
         self.assertLess(abs(d["gap"]), 1.0)
+
+    def test_the_live_sheet_shows_the_wallet_as_eve_shows_it(self):
+        """Owner's rule (2026-10-25): the wallet figures are EVE's live balances; the difference to the journal copy is one
+        movement, so the sheet still reconciles; a past moment keeps the journal's balance."""
+        journal = books.compute()
+        live = {1: journal["wallet"] + 50e6, 2: 25e6 + 7e6, 7: 1e9}
+        with mock.patch.object(books, "live_wallets", lambda: live):
+            d = books.compute()
+            past = books.compute(now=at(10))
+        self.assertAlmostEqual(d["wallet"], journal["wallet"] + 50e6, places=0)
+        self.assertAlmostEqual(d["other_divs"], 32e6, places=0)
+        move = next(m for m in d["moves"] if m[0].startswith("Wallet as EVE shows it"))
+        self.assertAlmostEqual(move[1], 50e6 + 7e6, places=0)
+        self.assertAlmostEqual(d["result"], journal["result"] + 57e6, places=0)
+        self.assertLess(abs(d["gap"]), 1.0)
+        self.assertTrue(d["live_ahead"] is None or abs(d["live_ahead"]) < 1)
+        self.assertAlmostEqual(past["wallet"], books.compute(now=at(10))["wallet"], places=0)
+        rows = dict((r[0], r[1]) for g in d["asset_groups"] if g["key"] == "cash" for r in g["rows"])
+        self.assertAlmostEqual(rows["Master wallet, division 1"], journal["wallet"] + 50e6, places=0)
+        self.assertAlmostEqual(rows["Wallet division 2"], 32e6, places=0)
+
+    def test_period_tiles_follow_the_period(self):
+        """The four tiles under the donut count the period only: sales before the period's start stay out (0.34.3)."""
+        whole = books.compute()
+        self.assertAlmostEqual(whole["period_tiles"]["turnover"] - whole["period_tiles"]["net"], whole["period_tiles"]["cost"], places=2)
+        later = books.compute(since=at(11.5), since_label="later")  # after the Navy Cap Booster sale of hour 12? no: after the Pyerite sale of hour 2
+        self.assertLess(later["period_tiles"]["turnover"], whole["period_tiles"]["turnover"])
+        self.assertAlmostEqual(later["period_tiles"]["turnover"] - later["period_tiles"]["net"], later["period_tiles"]["cost"], places=2)
 
     def test_structure_income_is_one_line_in_its_own_category(self):
         """Two transfers of structure income (one by the old 'raitaru' wording, one saying 'structure income') make one

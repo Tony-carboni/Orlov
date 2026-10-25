@@ -462,6 +462,11 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
             if inp:
                 lp_store_paid += e.amount
         elif rt == "player_donation" and e.amount > 0:
+            if any(re.search(p_, e.reason or "", re.I) for p_ in app_settings.SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS):
+                # a project correction in: project money that came back after a project set up or cancelled from the wrong wallet
+                if inp:
+                    project_net += e.amount
+                continue
             m = DIRECT_SALE.search(e.reason or "")
             c = CODE_RE.search(e.reason or "")
             row = {"t": e.date, "who": names.get(e.first_party_id, str(e.first_party_id)), "reason": e.reason, "amount": e.amount, "entry_id": e.entry_id,
@@ -488,6 +493,11 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
                         project_net += e.amount
                     else:
                         transfers_out += e.amount
+                continue
+            if e.amount < 0 and any(re.search(p_, e.reason or "", re.I) for p_ in app_settings.SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS):
+                # repaying project funding that came from elsewhere (the Director division or a character): ISK put into projects
+                if inp:
+                    project_net += e.amount
                 continue
             units = lp_units_from(e.reason) if e.amount < 0 else None
             if units:
@@ -520,7 +530,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         tax = tax_by_entry.get(entry_id + 1, tax_by_entry.get(entry_id - 1, 0.0))
         events.append((t, 2, "sale", (tid, qty, revenue, tax, entry_id in period_sales)))
     sold = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])  # type -> [qty, revenue, cost, sales tax]
-    sold_period = defaultdict(lambda: [0.0, 0.0, 0.0])  # type -> [qty, revenue, cost] inside the period (the profit moves)
+    sold_period = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])  # type -> [qty, revenue, cost, tax] inside the period (the profit moves, the tiles)
     sold_month = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])  # (YYYY-MM, type) -> [qty, revenue, cost, sales tax]
     bought_units = defaultdict(lambda: [0.0, 0.0])  # type -> [units, cost] bought on the market
     used_units = defaultdict(lambda: [0.0, 0.0])  # type -> [units, cost] used in LP store offers
@@ -545,6 +555,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
                 sp[0] += qty
                 sp[1] += revenue
                 sp[2] += cost
+                sp[3] += tax
             sm = sold_month[(t.strftime("%Y-%m"), tid)]
             sm[0] += qty
             sm[1] += revenue
@@ -676,6 +687,18 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         n_projects = 0
     wallet = b.wallet + cash.get(1, 0.0)
     other_divs = b.other_divs + sum(v for d, v in cash.items() if d != 1)
+    journal_now, live_now = wallet + other_divs, None
+    if now is None:
+        # Owner's rule (2026-10-25): the live sheet shows the wallets as EVE shows them. Mistakes are corrected in game
+        # with a correction transfer, never in the books; the difference to the journal copy is one movement below.
+        live_ = live_wallets()
+        if live_ and 1 in live_:
+            wallet = float(live_[1])
+            other_divs = sum(float(v) for k, v in live_.items() if k in divisions and k != 1)
+            for k, v in live_.items():
+                if k in divisions and k != 1:
+                    cash[k] = float(v)  # the division rows of section 1 show the live balances
+            live_now = wallet + other_divs
     assets = wallet + other_divs + pool + stock_now + held_total + lp_left + open_escrow
     result = assets - loan
     paid_members = b.pool + (-project_net) - pool
@@ -698,7 +721,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         if d.get("unmatched"):
             note += "; not matched: " + ", ".join(d["unmatched"]) + " (name the items in the reason, or in the admin under Shipyard → direct sales)"
         moves.append([f"Goods sold directly ({what})", d["amount"], note])
-    for tid, (qty, revenue, cost) in sold_period.items():
+    for tid, (qty, revenue, cost, _tax) in sold_period.items():
         if qty:
             moves.append([f"{names.get(tid, tid)} sold, profit over its cost", revenue - cost,
                           f"{qty:,.0f} units for {revenue / M:.1f} M, less what they cost = {cost / M:.1f} M"])
@@ -758,6 +781,9 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
             cost = units * lp_avg
             moves.append([f"LP sold directly: {units:,} LP", isk - cost,
                           f"Sold to {who}, {_when(t)}, for {isk / M:.1f} M ({isk / units:,.0f} ISK per LP); {cost / M:.1f} M at cost left the books"])
+    if live_now is not None and abs(live_now - journal_now) >= 1:
+        moves.append(["Wallet as EVE shows it, against the journal copy", live_now - journal_now,
+                      "Activity EVE has not written to the journal yet, and corrections made in game that the journal lines left out"])
     explained = sum(m[1] for m in moves)
     gap = (result - b.opening_result) - explained
     goods_tax_month = defaultdict(float)  # (YYYY-MM, type) -> sales tax of project-goods sales
@@ -848,14 +874,36 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         # the period in four figures (owner, 2026-10-24, in place of the waterfall): turnover is every sale of the period
         # (project goods on the market and directly, LP-store goods, LP sold), net income what is left after the goods'
         # cost, tax and fees, so cost is the difference; rewards are what the projects paid the members
-        "period_tiles": {"turnover": project_bb["sold_value"] + buyback["sold_value"], "net": project_bb["realised"] + buyback["realised"],
-                         "cost": (project_bb["sold_value"] + buyback["sold_value"]) - (project_bb["realised"] + buyback["realised"]),
-                         "rewards": project_bb["paid_total"]},
+        "period_tiles": _period_tiles(project_bb, all_conversions, sold_period, lp_sales, lp_avg, base, broker_lines, orders, sale_prices),
         "asset_tiles": {k: sum(g["total"] for g in asset_groups if g["key"] in keys)
                         for k, keys in (("cash", ("cash",)), ("pool", ("pool",)), ("stock", ("listed", "physical")), ("held", ("held",)))},
         "fuel_burned": round(hours * paying), "fuel_burned_isk": round(hours * paying) * fuel_price,
         "generated": timezone.now(), "market": market.name if market else "",
     }
+
+
+def _period_tiles(project_bb, conversions, sold_period, lp_sales, lp_avg, base, broker_lines, orders, sale_prices) -> dict:
+    """The four tiles under the donut, all inside the period (owner, 2026-10-25): turnover of every sale (project goods on the
+    market and directly, LP-store goods, LP sold directly), the net after cost, tax and fees, the cost as the difference,
+    and the rewards the projects paid. The project part comes period-scoped from _project_buybacks; the LP part is
+    taken from the period's sales here, because the LP section itself runs since the budget baseline."""
+    products = {c["type_id"] for c in conversions}
+    lp_turnover = lp_cost = lp_tax = 0.0
+    for tid, (qty, revenue, cost, tax) in sold_period.items():
+        if tid in products:
+            lp_turnover += revenue
+            lp_cost += cost
+            lp_tax += tax
+    for t, units, isk, _who in lp_sales:
+        if t >= base:
+            lp_turnover += isk
+            lp_cost += units * lp_avg
+    broker_by_type, _ = _broker_split([b for b in broker_lines if b[0] >= base], orders, sale_prices)
+    lp_broker = sum(v for tid, v in broker_by_type.items() if tid in products)
+    lp_net = lp_turnover - lp_cost + lp_tax + lp_broker  # tax and broker lines are negative amounts
+    turnover = project_bb["sold_value"] + lp_turnover
+    net = project_bb["realised"] + lp_net
+    return {"turnover": turnover, "net": net, "cost": turnover - net, "rewards": project_bb["paid_total"]}
 
 
 def _broker_split(broker_lines, orders, sale_prices=None):
@@ -1215,10 +1263,10 @@ def _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held
     """Section 1 by category: liquid ISK, reward ISK in projects, stock listed for sale, physical items in stock
     (the inputs bought to convert), goods held from projects, loyalty points. Each with its items behind a click."""
     groups = []
-    rows = [["Master wallet, division 1", wallet, "Balance from the corporation's journal"]]
+    rows = [["Master wallet, division 1", wallet, "Balance as EVE shows it"]]
     for d in sorted(k for k in cash if k != 1):
         if abs(cash[d]) >= 1:
-            rows.append([f"Wallet division {d}", cash[d], "Balance from the corporation's journal"])
+            rows.append([f"Wallet division {d}", cash[d], "Balance as EVE shows it"])
     for o in orders:
         if o["is_buy"] and o["issued"] <= cut and o["escrow"]:
             rows.append([f"Escrow of the buy order for {o['name']}", o["escrow"], f"{o['remain']:,} left to buy at {o['price']:,.2f}"])
