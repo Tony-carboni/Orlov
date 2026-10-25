@@ -26,6 +26,7 @@ to the result; a difference would show as "not explained" (and is a bug).
 """
 
 import datetime as dt
+import logging
 import re
 from collections import defaultdict, deque
 
@@ -35,6 +36,8 @@ from .. import app_settings
 from ..models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, Ore, PriceSnapshot
 from .directsales import CODE_RE
 from . import hangar, projectbooks, projects, reprocessing
+
+logger = logging.getLogger(__name__)
 
 M = 1e6
 FEES = ("brokers_fee", "transaction_tax", "market_provider_tax")
@@ -865,6 +868,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
     hours = max(0.0, (cut - origin).total_seconds() / 3600)
 
     return {
+        "outside_master": outside_master(cid, origin) if now is None else {"lines": [], "funded": 0.0, "corrected": 0.0, "owed": 0.0},
         "cut": cut, "base": base, "origin": origin, "loan": loan, "period": b, "opening_result": b.opening_result,
         "since_label": b.source or f"the working-budget baseline of {origin.day} {origin:%B}, {origin:%H:%M} EVE", "period_fallback": period_fallback,
         "period_result": result - b.opening_result, "wallet": wallet, "other_divs": other_divs, "pool": pool, "n_projects": n_projects,
@@ -890,6 +894,76 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         "fuel_burned": round(hours * paying), "fuel_burned_isk": round(hours * paying) * fuel_price,
         "generated": timezone.now(), "market": market.name if market else "",
     }
+
+
+OUTSIDE_MASTER_SEEN = "shipyard:books:outside_master:seen"
+
+
+def outside_master(cid: int, origin, cut=None) -> dict:
+    """Projects funded from any wallet but the master wallet (owner's rule, 2026-10-25: that is always a mistake and
+    is flagged to him). Every funding line outside division 1 since the budget baseline, against what the master
+    wallet paid back since then: a line whose reason matches SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS (to a character or
+    a division), or a transfer into another division whose reason matches an ignore pattern (the 171 M "correction"
+    of 23 October). The flag stands while the funding exceeds the corrections; it cannot tell which line is covered."""
+    qs = CorpJournalEntry.objects.filter(corporation_id=cid, date__gt=origin, ref_type="project_payouts", amount__lt=0).exclude(division=1)
+    if cut is not None:
+        qs = qs.filter(date__lte=cut)
+    lines, funded = [], 0.0
+    for e in qs.order_by("date", "entry_id"):
+        gid = (e.reason or "")[8:44]
+        p = CorpProject.objects.filter(corporation_id=cid, project_id__startswith=gid[:8]).first() if gid else None
+        funded -= e.amount
+        lines.append({"entry_id": e.entry_id, "date": e.date, "division": e.division, "amount": -e.amount,
+                      "project": p.name if p else (e.reason or "")[:40], "state": p.state if p else "", "remaining": p.reward_remaining if p else 0.0})
+    funding = [re.compile(p_, re.I) for p_ in app_settings.SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS]
+    ignore = [re.compile(p_, re.I) for p_ in app_settings.SHIPYARD_BOOKS_IGNORE_REASONS]
+    corrected = 0.0
+    cq = CorpJournalEntry.objects.filter(corporation_id=cid, division=1, date__gt=origin, ref_type="corporation_account_withdrawal", amount__lt=0)
+    if cut is not None:
+        cq = cq.filter(date__lte=cut)
+    for e in cq:
+        reason = e.reason or ""
+        if any(p_.search(reason) for p_ in funding) or (e.first_party_id == cid and e.second_party_id == cid and any(p_.search(reason) for p_ in ignore)):
+            corrected -= e.amount
+    return {"lines": lines, "funded": funded, "corrected": corrected, "owed": max(0.0, funded - corrected)}
+
+
+def flag_outside_master() -> int:
+    """After the hourly journal read: tell every finance user about each new funding line outside the master wallet,
+    once (a notification in auth, a Discord DM through the bot when it is installed). Returns the lines flagged."""
+    from django.contrib.auth import get_user_model
+    from django.core.cache import cache
+    b = budget()
+    if b is None:
+        return 0
+    om = outside_master(projects.corp_id(), b.taken_at)
+    seen = set(cache.get(OUTSIDE_MASTER_SEEN) or [])
+    fresh = [ln for ln in om["lines"] if ln["entry_id"] not in seen and ln["date"] >= timezone.now() - dt.timedelta(days=7)]
+    if fresh:
+        users = [u for u in get_user_model().objects.filter(is_active=True) if u.has_perm("shipyard.manage_shipyard") or u.has_perm("shipyard.books_access")]
+        rows = "\n".join(f"- {ln['date']:%d %b %H:%M} EVE: {ln['project']} funded with {ln['amount'] / 1e6:,.1f} M from wallet division {ln['division']}" for ln in fresh)
+        text = (f"Projects funded outside the master wallet (always a mistake):\n{rows}\n"
+                f"Funded outside division 1 since the baseline {om['funded'] / 1e6:,.1f} M, corrected {om['corrected'] / 1e6:,.1f} M, "
+                f"still owed to the funding wallet {om['owed'] / 1e6:,.1f} M. Cancel and remake them from the master wallet, "
+                f"then transfer the funding back with \"correction projects\" in the reason.")
+        for u in users:
+            _tell(u, "Shipyard: project funded outside the master wallet", text)
+    cache.set(OUTSIDE_MASTER_SEEN, list(seen | {ln["entry_id"] for ln in om["lines"]}), 90 * 24 * 3600)
+    return len(fresh)
+
+
+def _tell(user, title: str, text: str):
+    """A notification in auth, and a Discord DM through the bot when it is installed (never raises)."""
+    try:
+        from allianceauth.notifications import notify
+        notify(user, title, text, level="danger")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("notify %s: %s", user, exc)
+    try:
+        from aadiscordbot.tasks import send_message
+        send_message(user=user, message=f"**{title}**\n{text}")
+    except Exception as exc:  # noqa: BLE001
+        logger.info("discord DM %s: %s", user, exc)
 
 
 def _period_tiles(project_bb, conversions, sold_period, lp_sales, lp_avg, base, broker_lines, orders, sale_prices) -> dict:

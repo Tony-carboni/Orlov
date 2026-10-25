@@ -291,6 +291,11 @@ def refresh_corp_wallet():
         _done(run, False, 0, str(exc))
         return
     _done(run, True, result["added"], f"{result['added']} new entries, {result['total']} in the ledger, {result['divisions']} divisions")
+    try:
+        from .services import books
+        books.flag_outside_master()  # owner's rule (2026-10-25): a project funded from any other wallet is flagged to him
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("outside-master flag: %s", exc)
 
 
 @shared_task

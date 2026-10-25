@@ -676,6 +676,38 @@ class BooksTests(TestCase):
         listed = next(g for g in d["asset_groups"] if g["key"] == "listed")
         self.assertEqual(len(listed["rows"]), 2)  # Heavy Water and the listed Navy boosters
 
+    def test_projects_funded_outside_the_master_wallet_are_flagged(self):
+        """Owner's rule (2026-10-25): a project funded from any other wallet is always a mistake. The flag lists the funding
+        lines since the baseline and stands while they exceed the corrections paid back from the master wallet."""
+        CorpProject.objects.create(project_id="d7aaaaaa-1111", corporation_id=CORP, name="glist zeolites", state="Active", reward_initial=334.5e6, reward_remaining=314.1e6)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_801, division=7, date=at(20), ref_type="project_payouts", amount=-334.5e6,
+                                        reason="goal_id=d7aaaaaa-1111-2222:goal_name=glist zeolites", first_party_id=CORP, second_party_id=1000413)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_802, division=7, date=BASE - dt.timedelta(hours=1), ref_type="project_payouts", amount=-150e6,
+                                        reason="goal_id=before00-0000:goal_name=before the baseline", first_party_id=CORP, second_party_id=1000413)
+        om = books.compute()["outside_master"]
+        self.assertEqual([(ln["project"], ln["division"], ln["amount"], ln["state"]) for ln in om["lines"]], [("glist zeolites", 7, 334.5e6, "Active")])
+        self.assertAlmostEqual(om["owed"], 334.5e6, places=0)
+        # paid back to a character with the funding reason, and a plain "correction" transfer into the funding division: both count
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_803, division=1, date=at(20.1), ref_type="corporation_account_withdrawal", amount=-200e6,
+                                        reason="correction projects", first_party_id=CORP, second_party_id=4444)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_804, division=1, date=at(20.2), ref_type="corporation_account_withdrawal", amount=-134.5e6,
+                                        reason="correction", first_party_id=CORP, second_party_id=CORP)
+        om = books.compute()["outside_master"]
+        self.assertAlmostEqual(om["corrected"], 334.5e6, places=0)
+        self.assertEqual(om["owed"], 0.0)
+        self.assertEqual(books.compute(now=at(21))["outside_master"]["lines"], [])  # a past moment does not flag
+        # the hourly flag tells the finance users once per line
+        owner = get_user_model().objects.create_user("tony_flag", password="x")
+        owner.user_permissions.add(Permission.objects.get(codename="manage_shipyard", content_type__app_label="shipyard"))
+        told = []
+        with mock.patch.object(books, "_tell", lambda u, t, x: told.append((u.username, x))), mock.patch.object(books.timezone, "now", lambda: at(21)):
+            from django.core.cache import cache
+            cache.delete(books.OUTSIDE_MASTER_SEEN)
+            self.assertEqual(books.flag_outside_master(), 1)
+            self.assertEqual(books.flag_outside_master(), 0)
+        self.assertTrue(told and "glist zeolites funded with 334.5 M from wallet division 7" in told[0][1])
+        self.assertIn("still owed to the funding wallet 0.0 M", told[0][1])
+
     def test_corrected_withdrawal_is_dropped(self):
         # a mistyped LP purchase paid back a minute later with "correction" in the reason: neither line counts
         j = lambda hours, ref, amount, reason="", entry_id=None: CorpJournalEntry.objects.create(  # noqa: E731
