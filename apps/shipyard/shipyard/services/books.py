@@ -1375,7 +1375,7 @@ def live_wallets() -> dict:
             return {int(r["division"]): float(r["balance"]) for r in rows}
         except Exception:  # noqa: BLE001
             return {}
-    return _cached_get("shipyard:books:wallets", read)
+    return _cached_get("shipyard:books:wallets", read, seconds=60)  # EVE renews the balances every 5 minutes; the page adds a minute at most (owner, 2026-10-25)
 
 
 def live_orders() -> list:
