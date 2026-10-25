@@ -77,7 +77,7 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
-*Release 0.34.6, 2026-10-25: stock types listed in `SHIPYARD_BOOKS_STOCK_WRITTEN_OFF` (the leftover Cap Booster 100, 400 and 800 bought to convert, 10.3 M; owner: too small to matter) leave the books: one movement "Stock written off, left out of the books" at cost under Stock sales, no line in section 1; what they fetch later arrives as a plain deposit.*
+*Release 0.34.6, 2026-10-25: stock types listed in `SHIPYARD_BOOKS_STOCK_WRITTEN_OFF` (the leftover Cap Booster 100, 400 and 800 bought to convert, 10.3 M; owner: too small to matter) do not exist for the books: no line in section 1, no movement of their own, their names nowhere; their purchase cost is simply spent inside "Bought on the market" (0.34.7: the owner wants them never mentioned); what they fetch later arrives as a plain deposit.*
 
 *Release 0.34.5, 2026-10-25: the "waiting for the deposit" list on Register a direct sale no longer shows stock takes (a WO- code never gets a deposit).*
 

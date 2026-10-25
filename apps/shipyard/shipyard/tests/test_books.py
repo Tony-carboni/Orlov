@@ -192,11 +192,12 @@ class BooksTests(TestCase):
         with mock.patch.object(books.app_settings, "SHIPYARD_BOOKS_STOCK_WRITTEN_OFF", [11289]):
             d = books.compute()
         self.assertNotIn(11289, [s["type_id"] for s in d["stock"]])
-        move = next(m for m in d["moves"] if m[0].startswith("Stock written off"))
-        self.assertAlmostEqual(move[1], -boosters["value"], places=0)
+        self.assertFalse([m for m in d["moves"] if "written off" in m[0].lower() and "stock" in m[0].lower()])
+        self.assertFalse([m for m in d["moves"] if "Cap Booster 800" in m[0] or "Cap Booster 800" in m[2]])  # never named
+        move = next(m for m in d["moves"] if m[0] == "Bought on the market")
+        self.assertAlmostEqual(move[1], -boosters["value"], places=0)  # their cost is simply spent
         self.assertAlmostEqual(d["result"], before["result"] - boosters["value"], places=0)
         self.assertLess(abs(d["gap"]), 1.0)
-        self.assertEqual(next(g for g in d["move_groups"] if g["key"] == "stock")["rows"][-1][0], move[0])
 
     def test_period_tiles_follow_the_period(self):
         """The four tiles under the donut count the period only: sales before the period's start stay out (0.34.3)."""

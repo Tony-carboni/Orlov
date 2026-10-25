@@ -761,9 +761,12 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         moves.append(["Hangar count against the ledger", held_total - held_ledger_total,
                       f"The projects hangar as read at {hangar_read:%H:%M} EVE, at the projects' prices, minus what the ledger expects: negative = sold or moved without a record"
                       + (f"; not in the hangar: {', '.join(hangar_info['missing'][:8])}" if hangar_info["missing"] else "")])
-    if market_bought:
-        bought_names = sorted({names.get(tid, str(tid)) for _, tid, _, _, inp in market_buys if inp})
-        moves.append(["Bought on the market", 0.0, f"{market_bought / M:.1f} M paid for {', '.join(bought_names)}, held as stock at cost or used below"])
+    if market_bought or written_off_stock > 1e-6:
+        # types the books do not carry (SHIPYARD_BOOKS_STOCK_WRITTEN_OFF) are not named and their cost is simply spent here
+        gone = set(app_settings.SHIPYARD_BOOKS_STOCK_WRITTEN_OFF)
+        bought_names = sorted({names.get(tid, str(tid)) for _, tid, _, _, inp in market_buys if inp and tid not in gone})
+        note = f"{market_bought / M:.1f} M paid on the market" + (f" for {', '.join(bought_names)}, held as stock at cost or used below" if bought_names else "")
+        moves.append(["Bought on the market", -written_off_stock, note])
     all_conv = list(conversions)
     conversions = [c for c in conversions if c["in_period"]]
     corp_isk = sum(c["isk"] for c in conversions if not c["outside"])
@@ -788,8 +791,6 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
             cost = units * lp_avg
             moves.append([f"LP sold directly: {units:,} LP", isk - cost,
                           f"Sold to {who}, {_when(t)}, for {isk / M:.1f} M ({isk / units:,.0f} ISK per LP); {cost / M:.1f} M at cost left the books"])
-    if written_off_stock > 1e-6:
-        moves.append(["Stock written off, left out of the books", -written_off_stock, ", ".join(written_off_names) + ": what they fetch later arrives as a deposit"])
     if live_now is not None and abs(live_now - journal_now) >= 1:
         moves.append(["Wallet as EVE shows it, against the journal copy", live_now - journal_now,
                       "Activity EVE has not written to the journal yet, and corrections made in game that the journal lines left out"])
@@ -1251,7 +1252,7 @@ def _group_moves(moves, outputs) -> list:
             return "lp"
         if label.endswith("sold, profit over its cost"):
             return "lp" if label[: -len(" sold, profit over its cost")] in outputs else "stock"
-        if label == "Stock bought" or label.startswith("Stock written off"):
+        if label == "Stock bought":
             return "stock"
         if label.startswith("Escrow of") or label.startswith("ISK still in open buy orders") or label.startswith("Broker fees") or label.startswith("Bought on the market"):
             return "market"
