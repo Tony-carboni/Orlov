@@ -687,6 +687,10 @@ class BooksTests(TestCase):
         om = books.compute()["outside_master"]
         self.assertEqual([(ln["project"], ln["division"], ln["amount"], ln["state"]) for ln in om["lines"]], [("glist zeolites", 7, 334.5e6, "Active")])
         self.assertAlmostEqual(om["owed"], 334.5e6, places=0)
+        self.assertEqual(len(om["open"]), 1)
+        CorpProject.objects.filter(project_id="d7aaaaaa-1111").update(state="Closed", reward_remaining=0)
+        self.assertEqual((len(books.compute()["outside_master"]["lines"]), books.compute()["outside_master"]["open"]), (1, []))  # closed ones stay out of the box
+        CorpProject.objects.filter(project_id="d7aaaaaa-1111").update(state="Active", reward_remaining=314.1e6)
         # paid back to a character with the funding reason, and a plain "correction" transfer into the funding division: both count
         CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_803, division=1, date=at(20.1), ref_type="corporation_account_withdrawal", amount=-200e6,
                                         reason="correction projects", first_party_id=CORP, second_party_id=4444)

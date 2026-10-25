@@ -868,7 +868,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
     hours = max(0.0, (cut - origin).total_seconds() / 3600)
 
     return {
-        "outside_master": outside_master(cid, origin) if now is None else {"lines": [], "funded": 0.0, "corrected": 0.0, "owed": 0.0},
+        "outside_master": outside_master(cid, origin) if now is None else {"lines": [], "open": [], "funded": 0.0, "corrected": 0.0, "owed": 0.0},
         "cut": cut, "base": base, "origin": origin, "loan": loan, "period": b, "opening_result": b.opening_result,
         "since_label": b.source or f"the working-budget baseline of {origin.day} {origin:%B}, {origin:%H:%M} EVE", "period_fallback": period_fallback,
         "period_result": result - b.opening_result, "wallet": wallet, "other_divs": other_divs, "pool": pool, "n_projects": n_projects,
@@ -925,7 +925,8 @@ def outside_master(cid: int, origin, cut=None) -> dict:
         reason = e.reason or ""
         if any(p_.search(reason) for p_ in funding) or (e.first_party_id == cid and e.second_party_id == cid and any(p_.search(reason) for p_ in ignore)):
             corrected -= e.amount
-    return {"lines": lines, "funded": funded, "corrected": corrected, "owed": max(0.0, funded - corrected)}
+    return {"lines": lines, "open": [ln for ln in lines if ln["state"] != "Closed"],  # the box lists the open ones (owner, 0.35.1)
+            "funded": funded, "corrected": corrected, "owed": max(0.0, funded - corrected)}
 
 
 def flag_outside_master() -> int:

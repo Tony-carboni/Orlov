@@ -41,7 +41,7 @@
 <div class="alert alert-danger py-2 mb-3">
     <div class="fw-semibold mb-1"><i class="fas fa-triangle-exclamation fa-fw"></i> Projects funded outside the master wallet · still owed to the funding wallet {{ d.outside_master.owed|mil }}</div>
     <table class="table table-sm table-borderless mb-1 small w-auto">
-        <tbody>{% for ln in d.outside_master.lines %}<tr><td class="shipyard-k">{{ ln.date|date:"j M H:i" }}</td><td>division {{ ln.division }}</td><td>{{ ln.project }}</td><td class="text-end">{{ ln.amount|mil }}</td><td class="shipyard-k">{{ ln.state }}</td></tr>{% endfor %}</tbody>
+        <tbody>{% for ln in d.outside_master.open %}<tr><td class="shipyard-k">{{ ln.date|date:"j M H:i" }}</td><td>division {{ ln.division }}</td><td>{{ ln.project }}</td><td class="text-end">{{ ln.amount|mil }}</td><td class="shipyard-k">{{ ln.state }}</td></tr>{% endfor %}</tbody>
     </table>
     <div class="small">Funded {{ d.outside_master.funded|mil }}, corrected {{ d.outside_master.corrected|mil }}. Cancel and remake them from the master wallet, then transfer the funding back with "correction projects" in the reason.</div>
 </div>

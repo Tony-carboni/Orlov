@@ -116,7 +116,7 @@ def render(d: dict) -> bytes:
     om = d.get("outside_master") or {}
     if om.get("owed", 0.0) >= 1:
         kpis.append([Paragraph("<b><font color='#c62828'>Funded outside the master wallet</font></b>", cell), Paragraph(f"<b><font color='#c62828'>{_m(om['owed'])}</font></b>", num),
-                     Paragraph(f"still owed to the funding wallet: {len(om['lines'])} project lines, {_m(om['funded'])} funded, {_m(om['corrected'])} corrected", note)])
+                     Paragraph(f"still owed to the funding wallet: {len(om['open'])} open projects, {_m(om['funded'])} funded, {_m(om['corrected'])} corrected", note)])
     kt = Table(kpis, colWidths=[40 * mm, 30 * mm, 104 * mm])
     kt.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), shade), ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#4cc3ff")),
                             ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3), ("LEFTPADDING", (0, 0), (-1, -1), 5)]))

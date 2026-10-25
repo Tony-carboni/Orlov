@@ -77,6 +77,8 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
+*Release 0.35.1, 2026-10-25: the red box lists only the open projects funded outside the master wallet (owner: no need to list the closed ones); the totals and the amount owed still count every line.*
+
 *Release 0.35.0, 2026-10-25: **projects funded outside the master wallet are flagged** (owner's rule: a project funded from any other wallet division is always a mistake). The books list every project funding line outside division 1 since the budget baseline against what the master wallet paid back since then (a line with "correction project" in the reason, to a character or a division, or a plain "correction" transfer into the funding division); while the funding exceeds the corrections the Finance page shows a red box with the lines and the amount still owed, and the PDF a red headline row. After every hourly journal read, each new such line is reported once to every finance user: a notification in auth and a Discord DM through the bot.*
 
 *Release 0.34.6, 2026-10-25: stock types listed in `SHIPYARD_BOOKS_STOCK_WRITTEN_OFF` (the leftover Cap Booster 100, 400 and 800 bought to convert, 10.3 M; owner: too small to matter) do not exist for the books: no line in section 1, no movement of their own, their names nowhere; their purchase cost is simply spent inside "Bought on the market" (0.34.7: the owner wants them never mentioned); what they fetch later arrives as a plain deposit.*
