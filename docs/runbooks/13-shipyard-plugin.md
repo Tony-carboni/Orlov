@@ -77,6 +77,8 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
+*Release 0.34.5, 2026-10-25: the "waiting for the deposit" list on Register a direct sale no longer shows stock takes (a WO- code never gets a deposit).*
+
 *Release 0.34.4, 2026-10-25: the page keeps EVE's wallet balances for one minute instead of five, so the master wallet trails the game by ESI's own five-minute cache at most (the owner saw a stale figure after a transfer).*
 
 *Release 0.34.3, 2026-10-25: **project corrections in or out** (owner's rule: a line with "correction project" in its reason means a project was set up or cancelled from the wrong wallet): a withdrawal, to a division or to a character, counts as ISK put into projects; a deposit counts as project money coming back; neither is income or cost, and neither is dropped by the "correction" ignore pattern. Also the **four period tiles count the period only**: the LP part (sales of LP-store goods, LP sold directly, their cost, tax and broker fees) is taken from the period's sales, where it had run since the budget baseline like the LP section. And **the wallet is EVE's live balance** (owner's rule: mistakes are corrected in game with a correction transfer, never in the books): the master wallet and the division rows of section 1 show what EVE shows right now, on the page and in the PDF; the difference to the journal copy (activity not written yet, corrections the journal lines left out) is one movement, "Wallet as EVE shows it, against the journal copy", so the sheet still adds up. A past moment (an opening) keeps the journal's balance.*

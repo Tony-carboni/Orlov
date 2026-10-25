@@ -381,7 +381,7 @@ def write_offs():
 
 
 def pending():
-    return list(BookDirectSale.objects.filter(corporation_id=projects.corp_id(), entry_id__isnull=True).exclude(code="").order_by("-created_at"))
+    return list(BookDirectSale.objects.filter(corporation_id=projects.corp_id(), entry_id__isnull=True).exclude(code="").exclude(code__startswith="WO-").order_by("-created_at"))  # a stock take never gets a deposit
 
 
 def recent(limit=10):

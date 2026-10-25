@@ -531,6 +531,7 @@ class BooksTests(TestCase):
         owner = get_user_model().objects.create_user("owner", password="x")
         wo = directsales.write_off(owner, "sold by direct trade earlier")
         self.assertTrue(wo.code.startswith("WO-"))
+        self.assertNotIn(wo.code, [s.code for s in directsales.pending()])  # a stock take is not a sale waiting for its deposit
         self.assertAlmostEqual(wo.cost, 10e6, places=0)
         self.assertEqual([(ln["name"], ln["qty"]) for ln in wo.lines], [("Pyerite", 1_000_000.0)])
         d = books.compute()
