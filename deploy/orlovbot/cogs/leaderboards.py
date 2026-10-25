@@ -65,25 +65,28 @@ def payout_rows(days: int) -> dict:
     return {"rows": rows, "total": sum(e["isk"] for e in events), "members": len(rows), "since": since, "until": until}
 
 
+def _name(text: str, width: int) -> str:
+    """The pilot's name in bold green, padded to the column (the ANSI codes take no width)."""
+    return "\u001b[1;32m" + f"{text:<{width}}" + "\u001b[0m"
+
+
 def payouts_embed(data: dict, top: int) -> Embed:
-    """The board: a ranked table in a code block, like the other boards, and one line of totals."""
+    """The board: a ranked table in an ANSI code block in the structure board's colours (owner, 2026-10-25:
+    name in bold green, ISK, projects; no deliveries, no runners-up), and the lines of totals."""
     rows = data["rows"][:top]
     embed = Embed(title=PAYOUTS_TITLE, colour=Color.gold())
     if not rows:
         embed.description = "No project payouts in this period yet."
         return embed
     width = max(len(r["name"]) for r in rows)
-    lines = ["```"]
+    lines = ["```ansi"]
     for i, r in enumerate(rows, 1):
-        lines.append(f"{i}. {r['name']:<{width}}  {_mil(r['isk']):>10}   {r['projects']:>2} projects, {r['deliveries']:>3} deliveries")
+        lines.append(f"{i}. {_name(r['name'], width)}  {_mil(r['isk']):>10}   {r['projects']:>2} projects")
     lines.append("```")
-    rest = data["rows"][top:top + 2]
-    foot = [f"ISK earned from Orlov Arms International projects, {data['since']:%d %b} to {data['until']:%d %b}. Thank you for keeping the buyback running.",
-            f"{data['members']} pilots were paid {_mil(data['total'])} in total."]
-    if rest:
-        foot.append("Next in line: " + ", ".join(f"{r['name']} {_mil(r['isk'])}" for r in rest) + ".")
-    foot.append("Alts registered in auth count for their main. Refreshed daily at "
-                f"{_settings()['hour']:02d}:00 EVE.")
+    foot = [f"ISK earned from Orlov Arms International projects, {data['since']:%d %b} to {data['until']:%d %b}. "
+            "Thank you for keeping the buyback running ❤️",
+            f"{data['members']} pilots were paid {_mil(data['total'])} in total.",
+            "*(Alts registered in auth count for their main.)*"]
     embed.description = ("\n".join(lines) + "\n" + "\n".join(foot))[:4096]
     return embed
 
