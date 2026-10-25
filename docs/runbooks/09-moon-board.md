@@ -82,3 +82,7 @@ The channel may be moved to another category at any time: the bot finds it by na
 - **Two board messages** → someone renamed the channel and back, or the bot could not read the history. Delete the older one by hand; the bot keeps using the one it finds first (the newest).
 - **Board shows "No extraction is running"** while one is running in game → Moon Mining has not picked it up: check Moon Mining → *Extractions* on auth. The board only repeats what that page knows (it updates every 10 minutes).
 - **Times look wrong** → "EVE time" is UTC. "In your time zone" is the **arrival** time, not the current time, converted by Discord with the time zone of the reader's own device: 17:01 EVE time reads 7:01 PM on a device set to UTC+2. (The line was called "Your time" until 2026-10-05; it was renamed after it was mistaken for the current time.)
+
+## Public moons on a weekly timer (2026-10-25)
+
+Moons that pop on a fixed weekday (public moons the alliance mines but does not own) are listed in `ORLOVBOT_MOON_RECURRING` in `conf/local.py`: a name, the system, the weekday (0 = Monday) and the EVE time. The board shows each one under the refineries with the next pop ("in 3d 2h", the date, the reader's own time) and marks it popped for three hours afterwards. Current entries: **Raussinen Public Moon**, every Wednesday 17:00 EVE; **Piekura Public Moon**, every Monday 18:00 EVE. Changing the list: edit `conf/local.py` and `deploy/conf/local.py.append`, then restart only the bot container.

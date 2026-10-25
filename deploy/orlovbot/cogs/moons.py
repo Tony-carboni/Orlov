@@ -4,6 +4,8 @@ Two things live here:
 - /moons: lists the upcoming extractions on request.
 - The moon board: one message in the channel named by ORLOVBOT_MOON_BOARD_CHANNEL that
   the bot keeps up to date, so nobody has to ask (docs/runbooks/09-moon-board.md).
+- Public moons on a weekly timer (owner, 2026-10-25): ORLOVBOT_MOON_RECURRING lists them with
+  a weekday and an EVE time; the board shows the next pop of each under the refineries.
 """
 
 import datetime as dt
@@ -24,6 +26,39 @@ logger = logging.getLogger(__name__)
 MEMBER_ROLE = "Family Member"
 MAX_ROWS = 10
 BOARD_TITLE = "Upcoming moon extractions"
+WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+RECENT = dt.timedelta(hours=3)  # a weekly pop stays on the board this long after it happened
+
+
+def next_pop(rule: dict, now) -> tuple:
+    """(moment of the pop to show, popped already?) for a weekly rule {weekday 0=Monday, hour, minute}.
+    A pop less than RECENT ago is shown as popped; otherwise the next one."""
+    hour, minute = int(rule.get("hour", 0)), int(rule.get("minute", 0))
+    day = now.date() - dt.timedelta(days=(now.weekday() - int(rule["weekday"])) % 7)
+    at = dt.datetime.combine(day, dt.time(hour, minute), tzinfo=dt.timezone.utc)
+    if now - at > RECENT:
+        at += dt.timedelta(days=7)
+    return at, at <= now
+
+
+def recurring_lines(now) -> list:
+    rules = list(getattr(settings, "ORLOVBOT_MOON_RECURRING", []) or [])
+    if not rules:
+        return []
+    lines = []
+    for rule, (at, popped) in sorted(((r, next_pop(r, now)) for r in rules), key=lambda x: x[1][0]):
+        block = []
+        if popped:
+            block.append(("Pop:", "POPPED, ore is out", "green", f"since {at:%a %d %b %H:%M} EVE"))
+        else:
+            soon = at - now <= dt.timedelta(hours=1)
+            block.append(("Pop:", _until(at, now), "orange" if soon else "blue", f"{at:%a %d %b %H:%M} EVE"))
+        block.append(("Repeats:", f"every {WEEKDAYS[int(rule['weekday'])]} {int(rule.get('hour', 0)):02d}:{int(rule.get('minute', 0)):02d} EVE", "", ""))
+        lines.append(f"### {rule['name']} ({rule.get('system', '')}, public moon)")
+        lines.append(_block(block))
+        lines.append(f"Your time: pops {_stamp(at, 'f')}")
+        lines.append("")
+    return lines
 
 
 async def build_embed() -> Embed:
@@ -43,13 +78,17 @@ async def build_embed() -> Embed:
         .order_by("chunk_arrival_at")
     )
     rows = [extraction async for extraction in extractions[:MAX_ROWS]]
-    if not rows:
+    public = recurring_lines(now)
+    if not rows and not public:
         embed = Embed(title=BOARD_TITLE, colour=Color.blue())
         embed.description = "No extraction is running at the moment."
         return embed
 
     lines = []
     ready = False
+    if not rows:
+        lines.append("No extraction of our own is running at the moment.")
+        lines.append("")
     for extraction in rows:
         refinery = extraction.refinery
         moon = refinery.moon.eve_moon.name if refinery.moon else "unknown moon"
@@ -71,6 +110,7 @@ async def build_embed() -> Embed:
         # live timestamps: Discord shows these in the reader's own time zone
         lines.append(f"Your time: arrives {_stamp(arrival, 'f')} · auto-pops {_stamp(auto, 'f')}")
         lines.append("")
+    lines += public
 
     embed = Embed(title=BOARD_TITLE, colour=Color.green() if ready else Color.blue())
     embed.description = "\n".join(lines).strip()[:4096]

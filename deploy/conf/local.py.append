@@ -105,6 +105,11 @@ DISCORD_BOT_COGS = [
 
 # --- Moon board: one always-current message in #moon-board (runbook 09) -----
 ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"   # channel name; "" switches the board off
+# Public moons on a weekly timer, shown on the board under the refineries (owner, 2026-10-25). weekday: 0 = Monday.
+ORLOVBOT_MOON_RECURRING = [
+    {"name": "Raussinen Public Moon", "system": "Raussinen", "weekday": 2, "hour": 17, "minute": 0},
+    {"name": "Piekura Public Moon", "system": "Piekura", "weekday": 0, "hour": 18, "minute": 0},
+]
 
 # Bot log lines go to the container output: docker compose logs allianceauth_discordbot
 LOGGING["loggers"]["aadiscordbot"] = {"handlers": ["console"], "level": "INFO"}
