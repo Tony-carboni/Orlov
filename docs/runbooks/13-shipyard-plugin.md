@@ -77,6 +77,8 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
+*Release 0.35.2, 2026-10-25: the period tile "Total cost, tax and fees" is replaced by **LP bought**, the loyalty points the corporation bought inside the period (the ISK paid is in the tile's tooltip on the page); on the page and in the PDF. The owner's four key numbers: turnover, LP bought, net income, project rewards paid out.*
+
 *Release 0.35.1, 2026-10-25: the red box lists only the open projects funded outside the master wallet (owner: no need to list the closed ones); the totals and the amount owed still count every line.*
 
 *Release 0.35.0, 2026-10-25: **projects funded outside the master wallet are flagged** (owner's rule: a project funded from any other wallet division is always a mistake). The books list every project funding line outside division 1 since the budget baseline against what the master wallet paid back since then (a line with "correction project" in the reason, to a character or a division, or a plain "correction" transfer into the funding division); while the funding exceeds the corrections the Finance page shows a red box with the lines and the amount still owed, and the PDF a red headline row. After every hourly journal read, each new such line is reported once to every finance user: a notification in auth and a Discord DM through the bot.*

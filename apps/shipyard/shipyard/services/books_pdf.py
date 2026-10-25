@@ -123,7 +123,7 @@ def render(d: dict) -> bytes:
     at_ = d.get("asset_tiles") or {}
     # the donut on the left, the period's four figures on the right (owner, 2026-10-24, in place of the waterfall)
     pt = d.get("period_tiles") or {}
-    period = tiles([("Turnover, all sales", _m(pt.get("turnover", 0.0)), "", None), ("Total cost, tax and fees", _m(pt.get("cost", 0.0)), "", "#c62828"),
+    period = tiles([("Turnover, all sales", _m(pt.get("turnover", 0.0)), "", None), ("LP bought", f"{pt.get('lp_units', 0):,.0f} LP", "", None),
                     ("Net income", _m(pt.get("net", 0.0), True), "", sign_colour(pt.get("net"))), ("Project rewards paid out", _m(pt.get("rewards", 0.0)), "", None)],
                    per_row=2, width=84 * mm)
     pics = Table([[_donut(d), period]], colWidths=[90 * mm, 84 * mm])

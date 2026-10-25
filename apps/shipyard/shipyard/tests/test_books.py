@@ -779,7 +779,9 @@ class BooksTests(TestCase):
     def test_period_tiles_tie(self):
         """The period's four figures (0.34.0): cost is what the turnover lost on the way to the net income."""
         pt = books.compute()["period_tiles"]
-        self.assertEqual(set(pt), {"turnover", "cost", "net", "rewards"})
+        self.assertEqual(set(pt), {"turnover", "cost", "net", "rewards", "lp_units", "lp_isk"})
+        self.assertEqual((pt["lp_units"], pt["lp_isk"]), (50_000, 40e6))  # the fixture's LP purchases inside the period (0.35.2)
+        self.assertEqual(books.compute(since=at(11.5), since_label="later")["period_tiles"]["lp_units"], 0)
         self.assertAlmostEqual(pt["cost"], pt["turnover"] - pt["net"], places=3)
 
     @unittest.skipUnless(__import__("importlib").util.find_spec("reportlab"), "reportlab not installed")

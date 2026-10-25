@@ -888,7 +888,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         # the period in four figures (owner, 2026-10-24, in place of the waterfall): turnover is every sale of the period
         # (project goods on the market and directly, LP-store goods, LP sold), net income what is left after the goods'
         # cost, tax and fees, so cost is the difference; rewards are what the projects paid the members
-        "period_tiles": _period_tiles(project_bb, all_conversions, sold_period, lp_sales, lp_avg, base, broker_lines, orders, sale_prices),
+        "period_tiles": _period_tiles(project_bb, all_conversions, sold_period, lp_sales, lp_avg, base, broker_lines, orders, sale_prices, lp_purchases),
         "asset_tiles": {k: sum(g["total"] for g in asset_groups if g["key"] in keys)
                         for k, keys in (("cash", ("cash",)), ("pool", ("pool",)), ("stock", ("listed", "physical")), ("held", ("held",)))},
         "fuel_burned": round(hours * paying), "fuel_burned_isk": round(hours * paying) * fuel_price,
@@ -967,7 +967,7 @@ def _tell(user, title: str, text: str):
         logger.info("discord DM %s: %s", user, exc)
 
 
-def _period_tiles(project_bb, conversions, sold_period, lp_sales, lp_avg, base, broker_lines, orders, sale_prices) -> dict:
+def _period_tiles(project_bb, conversions, sold_period, lp_sales, lp_avg, base, broker_lines, orders, sale_prices, lp_purchases=()) -> dict:
     """The four tiles under the donut, all inside the period (owner, 2026-10-25): turnover of every sale (project goods on the
     market and directly, LP-store goods, LP sold directly), the net after cost, tax and fees, the cost as the difference,
     and the rewards the projects paid. The project part comes period-scoped from _project_buybacks; the LP part is
@@ -988,7 +988,9 @@ def _period_tiles(project_bb, conversions, sold_period, lp_sales, lp_avg, base, 
     lp_net = lp_turnover - lp_cost + lp_tax + lp_broker  # tax and broker lines are negative amounts
     turnover = project_bb["sold_value"] + lp_turnover
     net = project_bb["realised"] + lp_net
-    return {"turnover": turnover, "net": net, "cost": turnover - net, "rewards": project_bb["paid_total"]}
+    bought_units = sum(units for t, units, _isk, _to in lp_purchases if t >= base)  # the LP bought tile (owner, 0.35.2), the period only
+    bought_isk = sum(isk for t, _units, isk, _to in lp_purchases if t >= base)
+    return {"turnover": turnover, "net": net, "cost": turnover - net, "rewards": project_bb["paid_total"], "lp_units": bought_units, "lp_isk": bought_isk}
 
 
 def _broker_split(broker_lines, orders, sale_prices=None):
