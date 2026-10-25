@@ -29,6 +29,10 @@ class BooksTests(TestCase):
         patcher = mock.patch.object(books, "_names", lambda ids: {35: "Pyerite", 16272: "Heavy Water"})
         patcher.start()
         self.addCleanup(patcher.stop)
+        for name in ("SHIPYARD_BOOKS_STOCK_WRITTEN_OFF",):  # the live settings write the real cap boosters off; the fixture keeps its own
+            patch = mock.patch.object(books.app_settings, name, [])
+            patch.start()
+            self.addCleanup(patch.stop)
         BooksBaseline.objects.all().delete()  # the migration seeds the real baseline and batch
         BookStock.objects.all().delete()
         BooksBaseline.objects.create(taken_at=BASE, loan=5000e6, wallet=2397e6, pool=2387e6)
@@ -193,7 +197,8 @@ class BooksTests(TestCase):
             d = books.compute()
         self.assertNotIn(11289, [s["type_id"] for s in d["stock"]])
         self.assertFalse([m for m in d["moves"] if "written off" in m[0].lower() and "stock" in m[0].lower()])
-        self.assertFalse([m for m in d["moves"] if "Cap Booster 800" in m[0] or "Cap Booster 800" in m[2]])  # never named
+        import re as _re
+        self.assertFalse([m for m in d["moves"] if _re.search(r"(?<!Navy )Cap Booster 800", m[0] + " " + m[2])])  # the input booster is never named (the Navy one is a product)
         move = next(m for m in d["moves"] if m[0] == "Bought on the market")
         self.assertAlmostEqual(move[1], -boosters["value"], places=0)  # their cost is simply spent
         self.assertAlmostEqual(d["result"], before["result"] - boosters["value"], places=0)
