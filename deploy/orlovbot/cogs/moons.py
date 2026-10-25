@@ -41,12 +41,13 @@ def next_pop(rule: dict, now) -> tuple:
     return at, at <= now
 
 
-def recurring_lines(now) -> list:
+def recurring_entries(now) -> list:
+    """[(moment, lines)] for the weekly public moons; the board sorts them in with the refineries."""
     rules = list(getattr(settings, "ORLOVBOT_MOON_RECURRING", []) or [])
-    if not rules:
-        return []
-    lines = []
-    for rule, (at, popped) in sorted(((r, next_pop(r, now)) for r in rules), key=lambda x: x[1][0]):
+    entries = []
+    for rule in rules:
+        at, popped = next_pop(rule, now)
+        lines = []
         block = []
         if popped:
             block.append(("Pop:", "POPPED, ore is out", "green", f"since {at:%a %d %b %H:%M} EVE"))
@@ -58,7 +59,8 @@ def recurring_lines(now) -> list:
         lines.append(_block(block))
         lines.append(f"Your time: pops {_stamp(at, 'f')}")
         lines.append("")
-    return lines
+        entries.append((at, lines))
+    return entries
 
 
 async def build_embed() -> Embed:
@@ -78,17 +80,13 @@ async def build_embed() -> Embed:
         .order_by("chunk_arrival_at")
     )
     rows = [extraction async for extraction in extractions[:MAX_ROWS]]
-    public = recurring_lines(now)
-    if not rows and not public:
+    entries = recurring_entries(now)  # (moment, lines): sorted together with the refineries, soonest first
+    if not rows and not entries:
         embed = Embed(title=BOARD_TITLE, colour=Color.blue())
         embed.description = "No extraction is running at the moment."
         return embed
 
-    lines = []
     ready = False
-    if not rows:
-        lines.append("No extraction of our own is running at the moment.")
-        lines.append("")
     for extraction in rows:
         refinery = extraction.refinery
         moon = refinery.moon.eve_moon.name if refinery.moon else "unknown moon"
@@ -105,12 +103,12 @@ async def build_embed() -> Embed:
         else:
             soon = auto - now <= dt.timedelta(hours=1)
             block.append(("Auto-pop:", f"{_until(auto, now)}", "orange" if soon else "blue", f"{auto:%a %d %b %H:%M} EVE"))
-        lines.append(f"### {refinery.name} ({moon})")
-        lines.append(_block(block))
+        lines = [f"### {refinery.name} ({moon})", _block(block)]
         # live timestamps: Discord shows these in the reader's own time zone
         lines.append(f"Your time: arrives {_stamp(arrival, 'f')} · auto-pops {_stamp(auto, 'f')}")
         lines.append("")
-    lines += public
+        entries.append((arrival, lines))
+    lines = [line for _, block_lines in sorted(entries, key=lambda x: x[0]) for line in block_lines]
 
     embed = Embed(title=BOARD_TITLE, colour=Color.green() if ready else Color.blue())
     embed.description = "\n".join(lines).strip()[:4096]
