@@ -174,11 +174,14 @@ def render(d: dict) -> bytes:
 
     pb = d.get("project_bb") or {}
     if pb.get("active"):
+        at = pb.get("all_time") or {}
+        since = f" since {at['first'].day} {at['first']:%b}" if at.get("first") else ""
         part = [Paragraph("3. Project buybacks", h2), Spacer(1, 2),
-                tiles([("Net profit, this period", _m(pb["realised"], True), "after cost, tax and fees", sign_colour(pb["realised"])),
-                       ("Margin on what sold", pct_(pb.get("margin")), f"{_m(pb['sold_value'])} sold, {_m(pb['cost_sold'])} paid for it", sign_colour(pb.get("margin"))),
-                       ("Projected on goods held", _m(pb["expected"], True), f"{_m(pb['held'])} at cost, {_m(pb['held_value'])} at Jita buy", None),
-                       ("Paid to members, this period", _m(pb["paid_total"]), "", None)]), Spacer(1, 3)]
+                tiles([("Paid to members, this period", _m(pb["paid_total"]), "", None),
+                       ("Margin on goods sold, this period", pct_(pb.get("margin")), f"{_m(pb['sold_value'])} sold, {_m(pb['cost_sold'])} paid for it", sign_colour(pb.get("margin"))),
+                       ("Net profit, this period", _m(pb["realised"], True), "after cost, tax and fees", sign_colour(pb["realised"])),
+                       (f"Total project payout{since}", _m(at.get("paid", 0.0)), "", None),
+                       (f"Total project margin{since}", pct_(at.get("margin")), "", sign_colour(at.get("margin")))], per_row=5), Spacer(1, 3)]
         first = True
         for mo in pb["months"]:
             block = [Paragraph(f"<b>{e(mo['label'])}</b>", p)]

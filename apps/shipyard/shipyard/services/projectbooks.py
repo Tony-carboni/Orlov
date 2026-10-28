@@ -163,8 +163,10 @@ def ledger(cid=None, until=None) -> dict:
                             round(m3, 2), 1 if e["est"] else 0, round(asis, 2), round(reproc, 2), names.get(tid, e["project"])])
         if not tid or e["isk"] <= 0:
             continue
+        # the lot's origin: "ice" for ice, "ore" for asteroid, moon and abyssal ore, "item" for anything else (0.36.0: ice apart)
+        origin = "item" if o is None else ("ice" if o.kind == "ice" else "ore")
         if o is None or tid in sold_types or (raw_since is not None and e["t"] > raw_since):
-            lots[tid].append([e["t"], e["units"], e["isk"] / e["units"] if e["units"] else 0.0, "ore" if o is not None else "item"])
+            lots[tid].append([e["t"], e["units"], e["isk"] / e["units"] if e["units"] else 0.0, origin])
         else:
             batches = e["units"] / float(o.portion_size or 1)
             parts = [(int(m), batches * float(q) * yields[tid]) for m, q in (o.materials or {}).items()]
@@ -172,7 +174,7 @@ def ledger(cid=None, until=None) -> dict:
             for m, q in parts:
                 if q > 0:
                     share = (q * prices.get(m, 0.0)) / total
-                    lots[m].append([e["t"], q, e["isk"] * share / q, "ore"])
+                    lots[m].append([e["t"], q, e["isk"] * share / q, origin])
         stock.append([_iso(e["t"]), round(e["isk"], 2)])
 
     # --- sales against the lots, first in first out, only lots that existed at the sale

@@ -346,7 +346,8 @@ class BooksTests(TestCase):
 
     def test_registered_direct_sale_quotes_matches_by_code_and_shows_in_section_3(self):
         """Register a direct sale on the Finance tab (quote by the rule, a DS code), deposit with the code: the lots leave,
-        section 3 carries one 'Direct sale of goods' line with the profit."""
+        section 3 folds the sale into the row of the goods it took (0.36.0: under Other items for a plain item), the
+        month's Paid stays what the projects paid members."""
         from ..models import MarketLocation, MaterialType, PriceSnapshot
         from ..services import directsales
         MaterialType.objects.get_or_create(type_id=35, defaults={"name": "Pyerite"})
@@ -408,7 +409,9 @@ class BooksTests(TestCase):
         self.assertRegex(sale.code, r"^DS-[A-HJ-NP-Z2-9]{4}$")
         self.assertEqual([s.code for s in directsales.pending()], [sale.code])
         before = books.compute()
-        self.assertNotIn("direct", [g["key"] for g in before["project_bb"]["months"][0]["groups"]])
+        month_before = before["project_bb"]["months"][0]
+        self.assertEqual([g["key"] for g in month_before["groups"]], ["item"])  # Pyerite delivered as an item: Other items only
+        items_before = month_before["groups"][0]
         CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_501, division=1, date=at(13), ref_type="player_donation", amount=6e6,
                                         reason=f"{sale.code.lower()} buyer paid", first_party_id=111, second_party_id=CORP)
         d = books.compute()
@@ -419,11 +422,19 @@ class BooksTests(TestCase):
         sale.refresh_from_db()
         self.assertEqual((sale.entry_id, sale.matched_at), (99_501, at(13)))
         self.assertEqual(directsales.pending(), [])
-        group = next(g for g in d["project_bb"]["months"][0]["groups"] if g["key"] == "direct")
-        self.assertEqual(group["label"], "Direct sale of goods")
-        self.assertAlmostEqual(group["revenue"], 6e6)
-        self.assertAlmostEqual(group["cost"], 4e6)
-        self.assertAlmostEqual(group["net"], 2e6)
+        month = d["project_bb"]["months"][0]
+        self.assertEqual([g["key"] for g in month["groups"]], ["item"])  # no "Direct sale of goods" line any more
+        group = month["groups"][0]
+        self.assertEqual(group["label"], "Other items")
+        self.assertAlmostEqual(group["revenue"], items_before["revenue"] + 6e6)
+        self.assertAlmostEqual(group["cost"], items_before["cost"] + 4e6)
+        self.assertAlmostEqual(group["net"], items_before["net"] + 2e6)
+        self.assertAlmostEqual(group["paid"], items_before["paid"])  # a direct sale pays no member
+        self.assertAlmostEqual(month["paid_total"], sum(g["paid"] for g in month["groups"]))  # the lines add up to the total
+        row = next(r for r in group["rows"] if r["name"] == "Pyerite")
+        row_before = next(r for r in items_before["rows"] if r["name"] == "Pyerite")
+        self.assertAlmostEqual(row["direct"], 6e6)
+        self.assertAlmostEqual(row["sold"], row_before["sold"] + 400_000.0)  # on top of the fixture's market sale
         self.assertAlmostEqual(d["project_bb"]["realised"], before["project_bb"]["realised"] + 2e6, places=0)
 
     def test_after_a_stock_take_ore_is_held_as_ore(self):
@@ -487,8 +498,12 @@ class BooksTests(TestCase):
         self.assertEqual([lot[3] for lot in led["lots"][62536]], ["ore"])  # the second delivery, held as ore
         self.assertIn(36, led["lots"])  # the first, as minerals
         d = books.compute()
-        group = next(g for g in d["project_bb"]["months"][0]["groups"] if g["key"] == "direct")
-        self.assertAlmostEqual(group["cost"], 14_406 * 165.0, places=0)  # the minerals of the first delivery, not nothing
+        group = next(g for g in d["project_bb"]["months"][0]["groups"] if g["key"] == "ore")
+        self.assertEqual(group["label"], "Ore")
+        row = next(r for r in group["rows"] if r["name"] == "Compressed Kernite")  # the direct sale sits in the ore's own row
+        self.assertAlmostEqual(row["cost"], 14_406 * 165.0, places=0)  # the minerals of the first delivery, not nothing
+        self.assertAlmostEqual(row["direct"], 3e6)
+        self.assertAlmostEqual(row["paid"], 2 * 14_406 * 165.0, places=0)  # both deliveries (EVE reports 2 × 14,406 cumulative, so 14,406 more)
         self.assertAlmostEqual(dict(d["held"])["Compressed Kernite"], 14_406 * 165.0, places=0)  # the second delivery untouched
         move = next(m for m in d["moves"] if m[0].startswith("Goods written off"))
         self.assertIn("0.0 M of project goods left the books", move[2])  # nothing was left for the stock take
@@ -562,7 +577,43 @@ class BooksTests(TestCase):
         self.assertIn("10.0 M of project goods left the books", move[2])
         self.assertAlmostEqual(d["result"], before["result"] - 10e6, places=0)
         self.assertLess(abs(d["gap"]), 1.0)
-        self.assertNotIn("direct", [g["key"] for g in d["project_bb"]["months"][0]["groups"]])  # not a sale, not in section 3
+        # not a sale: nothing sold and nothing more paid in section 3
+        self.assertAlmostEqual(d["project_bb"]["months"][0]["sold_value"], before["project_bb"]["months"][0]["sold_value"])
+        self.assertAlmostEqual(d["project_bb"]["months"][0]["paid_total"], before["project_bb"]["months"][0]["paid_total"])
+
+    def test_ice_has_a_line_of_its_own_in_section_3(self):
+        """Owner (2026-10-28): section 3 lists Ore, Ice and Other items. Ice delivered after a stock take is held as ice
+        (lot origin "ice"), its payout sits under Ice, and a direct sale of it is folded into the same row."""
+        from ..models import MaterialType, Ore
+        from ..services import directsales, projectbooks
+        for tid, name in ((28433, "Compressed Blue Ice"), (16274, "Helium Isotopes"), (16275, "Strontium Clathrates")):
+            MaterialType.objects.get_or_create(type_id=tid, defaults={"name": name})
+        Ore.objects.create(type_id=28433, name="Compressed Blue Ice", group_id=465, kind="ice", family="Blue Ice", variant="base", portion_size=1, materials={"16274": 50, "16275": 25}, volume=100.0)
+        owner = get_user_model().objects.create_user("owner", password="x")
+        wo = directsales.write_off(owner, "nothing held")
+        wo.matched_at = at(11.5)
+        wo.save(update_fields=["matched_at"])
+        p3 = CorpProject.objects.create(project_id="p3", corporation_id=CORP, name="blue ice", state="Active", reward_per_contribution=20_000.0,
+                                        reward_initial=30e6, reward_remaining=30e6 - 500 * 20_000.0,
+                                        details={"configuration": [{"deliver_item": {"items": [{"type_id": 28433}]}}]})
+        ProjectContribution.objects.create(project=p3, taken_at=at(12), character_id=4242, character_name="Miner", contributed=500)
+        led = projectbooks.ledger(CORP)
+        self.assertEqual([lot[3] for lot in led["lots"][28433]], ["ice"])
+        sale = directsales.register("Compressed Blue Ice\t200", owner)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_701, division=1, date=at(13), ref_type="player_donation", amount=5e6,
+                                        reason=f"{sale.code} ice sold", first_party_id=111, second_party_id=CORP)
+        d = books.compute()
+        month = d["project_bb"]["months"][0]
+        self.assertIn("ice", [g["key"] for g in month["groups"]])
+        self.assertEqual([g["label"] for g in month["groups"] if g["key"] == "ice"], ["Ice"])
+        ice = next(g for g in month["groups"] if g["key"] == "ice")
+        row = next(r for r in ice["rows"] if r["name"] == "Compressed Blue Ice")
+        self.assertAlmostEqual(row["paid"], 500 * 20_000.0)
+        self.assertAlmostEqual(row["direct"], 5e6)
+        self.assertAlmostEqual(row["cost"], 200 * 20_000.0)
+        self.assertAlmostEqual(row["net"], 5e6 - 200 * 20_000.0)
+        self.assertAlmostEqual(month["paid_total"], sum(g["paid"] for g in month["groups"]))
+        self.assertGreaterEqual(d["project_bb"]["members"], month["members"])  # the period's members across its months
 
     def test_a_line_can_be_ignored_in_part(self):
         """A settlement deposit that also brings real money: only the settling part leaves the books."""

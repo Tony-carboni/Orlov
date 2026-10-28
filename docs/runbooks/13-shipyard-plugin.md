@@ -77,6 +77,8 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
+*Release 0.36.0, 2026-10-28: **section 3 of the Finance tab redone** (owner's request after the Paid column did not add up: the "Direct sale of goods" line showed the goods' cost under Paid while the month's total left it out). Five tiles on the page and in the PDF: paid to members this period, margin on goods sold this period, net profit this period, total project payout since the first project, total project margin since then; the projected-on-goods-held and net-profit-since tiles are gone. Per month three lines, **Ore**, **Ice** and **Other items** (a click opens the items); a direct sale no longer has a line of its own but is folded into the rows of the goods it took, under the category those goods came from, the deposit split over the lines in proportion to their cost; Paid is always what the projects paid members and the lines add up to the total. The ledger's lots and matches now carry "ice" next to "ore" and "item". No migration.*
+
 *Release 0.35.2, 2026-10-25: the period tile "Total cost, tax and fees" is replaced by **LP bought**, the loyalty points the corporation bought inside the period (the ISK paid is in the tile's tooltip on the page); on the page and in the PDF. The owner's four key numbers: turnover, LP bought, net income, project rewards paid out.*
 
 *Release 0.35.1, 2026-10-25: the red box lists only the open projects funded outside the master wallet (owner: no need to list the closed ones); the totals and the amount owed still count every line.*
