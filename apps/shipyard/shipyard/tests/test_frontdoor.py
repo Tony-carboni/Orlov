@@ -5,6 +5,7 @@ from django.contrib.auth.models import AnonymousUser, Permission
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase, override_settings
 
+from .. import access
 from ..middleware import StandaloneHostMiddleware
 from ..models import UserSettings
 from ..services import characters
@@ -58,12 +59,15 @@ class StandaloneHostMiddlewareTests(TestCase):
 
     def test_reprocessing_only_member_lands_on_the_reprocessing_tab(self):
         # the front door lets them in, but every other page becomes the Reprocessing tab
-        for path in ("/shipyard/", "/shipyard/fuel/", "/shipyard/scrapmetal/", "/shipyard/settings/"):
+        for path in ("/shipyard/", "/shipyard/fuel/", "/shipyard/settings/"):
             response = self.mw(self._request(path, HOST, self.repro))
             self.assertEqual((response.status_code, response["Location"]), (302, "/shipyard/reprocessing/"), path)
         request = self._request("/shipyard/reprocessing/", HOST, self.repro)
         self.assertEqual(self.mw(request).status_code, 200)
         self.assertTrue(request.shipyard_standalone)
+        # 0.36.1 (owner: for Hamu): the Scrapmetal tab comes with reprocessing_access
+        self.assertEqual(self.mw(self._request("/shipyard/scrapmetal/", HOST, self.repro)).status_code, 200)
+        self.assertIn("scrapmetal", access.tabs(self.repro))
         # a full member is not redirected
         self.assertEqual(self.mw(self._request("/shipyard/fuel/", HOST, self.member)).status_code, 200)
         # dashboard-only: the dashboard, ship pages and settings pass, the rest lands on the dashboard

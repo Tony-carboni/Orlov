@@ -700,7 +700,7 @@ def reprocessing_view(request):
 
 
 @login_required
-@permission_required("shipyard.basic_access")
+@access.allows("scrapmetal")
 def scrapmetal_view(request):
     """Scrapmetal tab: modules worth buying at Jita to reprocess for their minerals."""
     settings = board.get_user_settings(request.user)

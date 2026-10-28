@@ -131,11 +131,12 @@ class AccessTests(TestCase):
             self.assertEqual(r.status_code, 200)
             html = r.content.decode()
             self.assertIn("Reprocessing", html)
-            self.assertNotIn(reverse("shipyard:scrapmetal"), html)   # no other tabs in the navigation
-            self.assertNotIn(reverse("shipyard:fuel"), html)
+            self.assertIn(reverse("shipyard:scrapmetal"), html)   # 0.36.1: the Scrapmetal tab comes with reprocessing_access
+            self.assertNotIn(reverse("shipyard:fuel"), html)   # no other tabs in the navigation
+            self.assertEqual(client.get(reverse("shipyard:scrapmetal")).status_code, 200)
             # the other pages stay closed (auth turns the 403 into a redirect)
             self.assertIn(client.get(reverse("shipyard:index")).status_code, (302, 403))
-            self.assertIn(client.get(reverse("shipyard:scrapmetal")).status_code, (302, 403))
+            self.assertIn(client.get(reverse("shipyard:fuel")).status_code, (302, 403))
         # dashboard-only: the ship dashboard and My settings open, the rest stays closed
         other = get_user_model().objects.create_user("hamu3", password="x")
         AuthUtils.add_main_character_2(other, "Hamu Three", 9103, corp_id=9002, corp_name="Corp", alliance_id=None, alliance_name="")
@@ -159,7 +160,8 @@ class AccessTests(TestCase):
         with override_settings(SHIPYARD_STANDALONE_HOST=""):
             html = client.get(reverse("shipyard:index")).content.decode()
             self.assertIn(reverse("shipyard:reprocessing"), html)
-            self.assertNotIn(reverse("shipyard:scrapmetal"), html)
+            self.assertIn(reverse("shipyard:scrapmetal"), html)   # 0.36.1: Scrapmetal rides with reprocessing_access
+            self.assertNotIn(reverse("shipyard:fuel"), html)
 
 
 class RowTests(TestCase):

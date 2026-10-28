@@ -1,7 +1,7 @@
 """Who may enter the Shipyard, and which pages.
 
 `basic_access` opens every page. The limited permissions (owner, 2026-10-12, first for Hamu)
-open a few named pages each: `reprocessing_access` the Reprocessing tab, `dashboard_access`
+open a few named pages each: `reprocessing_access` the Reprocessing, Scrapmetal (0.36.1, owner: for Hamu) and Bargains tabs, `dashboard_access`
 the ship dashboard with its ship pages and My settings (the character picker). A member
 with limited access is sent from any other Shipyard page to their first tab, and the
 navigation shows only what they may open.
@@ -14,7 +14,7 @@ from django.core.exceptions import PermissionDenied
 FULL = "shipyard.basic_access"
 LIMITED = {
     "shipyard.dashboard_access": {"index", "ship_detail", "api_simulate", "settings", "use_character", "set_facility", "set_bpc_price", "go"},
-    "shipyard.reprocessing_access": {"reprocessing", "reprocessing_skills", "bargains", "bargains_pref", "use_character", "go"},
+    "shipyard.reprocessing_access": {"reprocessing", "reprocessing_skills", "scrapmetal", "bargains", "bargains_pref", "use_character", "go"},
     "shipyard.books_access": {"finance", "finance_pdf", "finance_refresh", "hangar_refresh", "lplog", "go"},
 }
 # the tab a limited member lands on, in order of preference
