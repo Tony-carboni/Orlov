@@ -12,6 +12,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Owner has to do by hand.** Decide whether the character refresh should run every 3 h (say "go" and a session edits the beat entry in conf/local.py and restarts beat). Decide what to do with `corp_GB44` (group, Discord role, Eemar's `corp_1E3` likewise) now that Go Browns is out, and whether the GB44 members stay on Discord as Family Friends. Still open: Family Friend (locked) cleanup decision, DigitalOcean weekly backups check, the stray #pings, which of the seven project graphs to keep.
 
+**Also (desktop session, later on 2026-10-29): members refreshed** on the owner's word (runbook 04 E): **JordayTM** (Hemiscorpiidae. → OARMI) and **Veldspar Vinnie** (Target - Locked → OARMI; the owner wrote "Vinny"), both now Family Member, corp_OARMI, Discord roles and "[OARMI] …" nicknames set (Vinnie's first Discord push hit the rate limit and went through a minute later).
+
 **Next.** Nothing queued.
 
 ---
