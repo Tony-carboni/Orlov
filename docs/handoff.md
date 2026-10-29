@@ -4,6 +4,20 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-29 (cloud session) → local session
+
+**Topic:** director-group audit and a standing rule: nobody holds a director group without being a member (owner's instruction 2026-10-29).
+
+### Next — local session, in this order (announce each write first, show output, backup before the first write)
+1. **Audit.** For every user in the groups `Alliance Director`, `Corp Director`, `OARMI Director` and `FC`: refresh the main character from ESI first (`EveCharacter.update_character()` on the profile's main, so a stale corp/alliance does not mislead), then list username, main character, corp ticker, alliance ticker, current state, and the groups held. Also list any user in those groups with no main character. Show the table before changing anything.
+2. **Clean-up.** For each of those users whose main is not in alliance ORLOV and not in OARMI or GWON (the `Family Member` rule in `docs/design/membership.md`): remove them from the four groups above, then force a state re-check (`user.profile.assign_state()` or the equivalent in AA 5.4) so they drop to Family Friend and Discord roles follow at the next sync. Leave `Early Founders` alone (add-only rule). Report who was changed. If nobody fails the check, say so and go on.
+3. **Build it in.** Set the allowed states of the four groups to `Family Member` only (`AuthGroup.states`, admin field "States that are allowed to have this group"); leave `Early Founders` unrestricted. With that set, Alliance Auth itself removes the group when a user's state changes away from Family Member (groupmanagement's state-change signal), and the `Family Member` state is re-evaluated on every character update. Verify on the test user `Flapoor_Hendrik` if its state allows (do not change its state). Show the four groups' states afterwards.
+4. **Safety net.** Check what periodic task refreshes characters and states on this install (`run_model_update` in the beat schedule) and its interval; report it. If it is less frequent than every 4 hours, say so and propose the schedule, do not change it without the owner's go.
+5. Record it: a changelog line in `docs/design/membership.md` ("director groups restricted to Family Member; audit of 2026-10-29: …") and, in the groups table, mark the four groups "state-restricted: Family Member". Commit, push, write the next handoff entry.
+Rules from CLAUDE.md apply.
+
+---
+
 ## 2026-10-28 (20:50 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** **Shipyard 0.36.0 and 0.36.1: section 3 of the Finance tab redone, Scrapmetal for Hamu** (runbook 13 C), from the owner's screenshot: the Paid column did not add up (1,007.0 + 353.6 + 862.0 against a total of 1,360.6).
