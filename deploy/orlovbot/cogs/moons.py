@@ -8,7 +8,7 @@ Two things live here:
   a weekday and an EVE time; the board shows the next pop of each under the refineries.
 - Public moons by date (owner, 2026-10-30): ORLOVBOT_MOON_SCHEDULE lists the published
   extractions of the freeport refineries, each with its own moment ("2026-11-04 17:00", EVE time);
-  the board shows every one still to come, soonest first, with the chunk's arrival and the assumed
+  the board shows every one still to come, soonest first, with the chunk's arrival and the
   auto-pop three hours later, and keeps an entry for three hours after that auto-pop.
   The owner posts the game's Upcoming Extractions list whenever new ones are published.
 """
@@ -33,7 +33,7 @@ MAX_ROWS = 10
 BOARD_TITLE = "Upcoming moon extractions"
 WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 RECENT = dt.timedelta(hours=3)  # a weekly pop stays on the board this long after it happened
-AUTO_POP = dt.timedelta(hours=3)  # a chunk auto-fractures about three hours after it arrives if nobody fires the laser (owner, 2026-10-30)
+AUTO_POP = dt.timedelta(hours=3)  # a chunk auto-fractures three hours after it arrives (owner, 2026-10-30)
 
 
 def next_pop(rule: dict, now) -> tuple:
@@ -99,7 +99,7 @@ def scheduled_entries(now) -> list:
             block.append(("Auto-pop:", "passed, ore is out", "green", f"since {auto:%a %d %b %H:%M} EVE"))
         else:
             soon = auto - now <= dt.timedelta(hours=1)
-            block.append(("Auto-pop:", _until(auto, now), "orange" if soon else "blue", f"{auto:%a %d %b %H:%M} EVE (assumed, 3 h after arrival)"))
+            block.append(("Auto-pop:", _until(auto, now), "orange" if soon else "blue", f"{auto:%a %d %b %H:%M} EVE"))
         lines = [f"### {item.get('name', 'Public moon')} ({item.get('system', '')}, public moon)", _block(block),
                  f"Your time: arrives {_stamp(at, 'f')} · auto-pops {_stamp(auto, 'f')}", ""]
         entries.append((at, lines))

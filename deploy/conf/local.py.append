@@ -108,7 +108,7 @@ ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"   # channel name; "" switches the boa
 # Public moons on a weekly timer (owner, 2026-10-25; weekday 0 = Monday). Empty since 2026-10-30: the published dates below replace them.
 ORLOVBOT_MOON_RECURRING = []
 # Public moons by date (owner, 2026-10-30): the freeport refineries' published extractions (chunk arrival, EVE time); the board adds
-# the assumed auto-pop three hours later and drops an entry three hours after that. The owner posts the game's Upcoming Extractions list when new ones are published; replace the list then.
+# the auto-pop three hours later and drops an entry three hours after that. The owner posts the game's Upcoming Extractions list when new ones are published; replace the list then.
 ORLOVBOT_MOON_SCHEDULE = [
     {"name": "Raussinen Freeport 1", "system": "Raussinen", "at": "2026-11-25 17:01"},
     {"name": "Raussinen Freeport 2", "system": "Raussinen", "at": "2026-11-04 17:00"},
