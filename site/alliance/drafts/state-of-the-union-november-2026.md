@@ -57,7 +57,7 @@ The Raitaru we have up has generated about 120 M ISK over the last period, which
 <div class="tile"><span class="l">Buyback paid out, this period</span><span class="v">1.45 B ISK</span></div>
 <div class="tile"><span class="l">Corporate balance</span><span class="v">644 M ISK</span></div>
 <div class="tile"><span class="l">LP processed, this period</span><span class="v">172,000 LP</span></div>
-<div class="tile"><span class="l">Net profit, this period</span><span class="v">384 M ISK</span></div>
+<div class="tile"><span class="l">Net income, this period</span><span class="v">284 M ISK</span></div>
 </div>
 
 ## The alliance
