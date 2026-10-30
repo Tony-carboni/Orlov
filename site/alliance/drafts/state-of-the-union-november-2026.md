@@ -1,9 +1,8 @@
 title: State of the Union, November 2026
-date: (to be set at publication)
+date: draft, date set at publication
 author: Catherine Frey, Alliance Director
 summary: Six weeks in: 60 pilots in the corporation, a wider range of content, the first officers named, and honest news about the alliance. Where we stand, what the last weeks brought, and where the focus goes next.
-
-DRAFT (2026-10-30, first full text from the owner's notes). Lives in drafts/ so build.py does not publish it; moved into posts/ with its date when the owner says so. Figures: OARMI 60 characters in game, 74 in the alliance; auth 37 OARMI accounts, 19 of them since 14 October; finance from the sheet of 30 October 09:01 EVE.
+notes: DRAFT (2026-10-30, first full text from the owner's notes). Lives in drafts/ so build.py does not publish it; moved into posts/ with its date when the owner says so. Figures: OARMI 60 characters in game, 74 in the alliance; auth 37 OARMI accounts, 19 of them since 14 October; finance from the sheet of 30 October 09:01 EVE.
 
 Capsuleers of The Orlov Family,
 
