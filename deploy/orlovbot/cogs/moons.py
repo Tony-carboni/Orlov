@@ -6,6 +6,10 @@ Two things live here:
   the bot keeps up to date, so nobody has to ask (docs/runbooks/09-moon-board.md).
 - Public moons on a weekly timer (owner, 2026-10-25): ORLOVBOT_MOON_RECURRING lists them with
   a weekday and an EVE time; the board shows the next pop of each under the refineries.
+- Public moons by date (owner, 2026-10-30): ORLOVBOT_MOON_SCHEDULE lists the published
+  extractions of the freeport refineries, each with its own moment ("2026-11-04 17:00", EVE time);
+  the board shows every one still to come, soonest first, and keeps a pop for three hours after.
+  The owner posts the game's Upcoming Extractions list whenever new ones are published.
 """
 
 import datetime as dt
@@ -63,6 +67,38 @@ def recurring_entries(now) -> list:
     return entries
 
 
+def parse_moment(text: str):
+    """'2026-11-04 17:00' (EVE time, UTC) → aware datetime; None when it does not parse."""
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y.%m.%d %H:%M:%S", "%Y.%m.%d %H:%M"):
+        try:
+            return dt.datetime.strptime(str(text).strip(), fmt).replace(tzinfo=dt.timezone.utc)
+        except ValueError:
+            continue
+    return None
+
+
+def scheduled_entries(now) -> list:
+    """[(moment, lines)] for the public moons published by date; past pops drop off RECENT after they happened."""
+    entries = []
+    for item in list(getattr(settings, "ORLOVBOT_MOON_SCHEDULE", []) or []):
+        at = parse_moment(item.get("at", ""))
+        if at is None:
+            logger.warning("moon schedule: cannot read the moment of %s: %r", item.get("name"), item.get("at"))
+            continue
+        if now - at > RECENT:
+            continue
+        block = []
+        if at <= now:
+            block.append(("Pop:", "POPPED, ore is out", "green", f"since {at:%a %d %b %H:%M} EVE"))
+        else:
+            soon = at - now <= dt.timedelta(hours=1)
+            block.append(("Pop:", _until(at, now), "orange" if soon else "blue", f"{at:%a %d %b %H:%M} EVE"))
+        lines = [f"### {item.get('name', 'Public moon')} ({item.get('system', '')}, public moon)", _block(block),
+                 f"Your time: pops {_stamp(at, 'f')}", ""]
+        entries.append((at, lines))
+    return entries
+
+
 async def build_embed() -> Embed:
     """The upcoming extractions, one block each in the structure board's style.
 
@@ -80,7 +116,7 @@ async def build_embed() -> Embed:
         .order_by("chunk_arrival_at")
     )
     rows = [extraction async for extraction in extractions[:MAX_ROWS]]
-    entries = recurring_entries(now)  # (moment, lines): sorted together with the refineries, soonest first
+    entries = recurring_entries(now) + scheduled_entries(now)  # (moment, lines): sorted together with the refineries, soonest first
     if not rows and not entries:
         embed = Embed(title=BOARD_TITLE, colour=Color.blue())
         embed.description = "No extraction is running at the moment."

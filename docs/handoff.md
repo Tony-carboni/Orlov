@@ -26,6 +26,8 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Also (desktop session, later on 2026-10-29): members refreshed** on the owner's word (runbook 04 E): **JordayTM** (Hemiscorpiidae. → OARMI) and **Veldspar Vinnie** (Target - Locked → OARMI; the owner wrote "Vinny"), both now Family Member, corp_OARMI, Discord roles and "[OARMI] …" nicknames set (Vinnie's first Discord push hit the rate limit and went through a minute later).
 
+**Also (desktop session, 2026-10-30 18:30 UTC): the moon board shows the public moons by date.** The owner posted the game's Upcoming Extractions list (nine freeport pops, 2 to 25 November) and wants those instead of the weekly placeholders. The cog has `ORLOVBOT_MOON_SCHEDULE` (name, system, moment in EVE time; a pop stays three hours, then drops); `ORLOVBOT_MOON_RECURRING` is empty now. `conf/local.py` (copy `local.py.pre-moon-schedule`) and the deploy template carry the list; runbook 09 has the new section; the bot restarted and updated the board. When the owner posts a new list, replace `ORLOVBOT_MOON_SCHEDULE` in both files and restart the bot container.
+
 **Next.** Nothing queued.
 
 ---

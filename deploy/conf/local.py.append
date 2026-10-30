@@ -105,10 +105,20 @@ DISCORD_BOT_COGS = [
 
 # --- Moon board: one always-current message in #moon-board (runbook 09) -----
 ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"   # channel name; "" switches the board off
-# Public moons on a weekly timer, shown on the board under the refineries (owner, 2026-10-25). weekday: 0 = Monday.
-ORLOVBOT_MOON_RECURRING = [
-    {"name": "Raussinen Public Moon", "system": "Raussinen", "weekday": 2, "hour": 17, "minute": 0},
-    {"name": "Piekura Public Moon", "system": "Piekura", "weekday": 0, "hour": 18, "minute": 0},
+# Public moons on a weekly timer (owner, 2026-10-25; weekday 0 = Monday). Empty since 2026-10-30: the published dates below replace them.
+ORLOVBOT_MOON_RECURRING = []
+# Public moons by date (owner, 2026-10-30): the freeport refineries' published extractions, EVE time. The board drops a pop three
+# hours after it happened. The owner posts the game's Upcoming Extractions list when new ones are published; replace the list then.
+ORLOVBOT_MOON_SCHEDULE = [
+    {"name": "Raussinen Freeport 1", "system": "Raussinen", "at": "2026-11-25 17:01"},
+    {"name": "Raussinen Freeport 2", "system": "Raussinen", "at": "2026-11-04 17:00"},
+    {"name": "Raussinen Freeport 3", "system": "Raussinen", "at": "2026-11-11 17:01"},
+    {"name": "Raussinen Freeport 4", "system": "Raussinen", "at": "2026-11-18 17:01"},
+    {"name": "Piekura Freeport Moon 1", "system": "Piekura", "at": "2026-11-16 18:01"},
+    {"name": "Piekura Freeport Moon 2", "system": "Piekura", "at": "2026-11-02 18:00"},
+    {"name": "Piekura Freeport Moon 3", "system": "Piekura", "at": "2026-11-23 18:00"},
+    {"name": "Piekura Freeport Moon 4", "system": "Piekura", "at": "2026-11-09 18:01"},
+    {"name": "Piekura Freeport Prime T2 Refinery", "system": "Piekura", "at": "2026-11-15 09:00"},
 ]
 
 # Bot log lines go to the container output: docker compose logs allianceauth_discordbot
