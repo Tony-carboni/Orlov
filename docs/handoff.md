@@ -12,7 +12,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Owner has to do by hand.** More officers: say "make X an officer". Decide whether the `OARMI Director` role and group still serve a purpose (they gate nothing now). Open from 2026-10-29: the 3-hour character refresh, `corp_GB44` and `corp_1E3` after Go Browns left, the Family Friend (locked) cleanup, DigitalOcean weekly backups, the stray #pings, the seven project graphs.
 
-**Next.** The post went live first (the FC paragraph was taken out of it). Still on the owner's go: retire the FC role and open #pings to every Family Member. The script is ready and dry-run clean: `deploy/discord-admin/retire_fc_role.py` (set DRY_RUN = False, pipe it into the Discord bot container's Django shell as its docstring says). It gives Family Member the FC allow set on #pings, empties and deletes the FC auth group (Braadslee, Sabbard, Tavaga, tony hold it; Braadslee keeps Officer), deletes the Discord role FC. Open question for the owner: the FCs category (#fc-discussions, #fittings, voice4) is then Officer and director only; say whether members should see it. After the run: membership.md (FC row, hierarchy line, changelog) and this handoff. Then move the draft from `site/alliance/drafts/` into `posts/` with its date, build, copy dist/ to the server (runbook 15 D).
+**Next.** Nothing queued. (FC retired 12:40 UTC: #pings open to every Family Member, FC auth group and Discord role deleted, the owner deleted the FCs category; membership.md changelog 2026-10-30.)
 
 ---
 

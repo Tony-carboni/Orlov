@@ -15,7 +15,7 @@ import requests
 from django.conf import settings
 from django.contrib.auth.models import Group
 
-DRY_RUN = True
+DRY_RUN = True  # ran for real on 2026-10-30 12:40 UTC; kept as the record of what was done
 API = "https://discord.com/api/v10"
 FC_ROLE = "1555294425817817099"
 FAMILY_MEMBER = "1555294152080498738"
@@ -36,7 +36,8 @@ if grp:
     members = sorted(u.username for u in grp.user_set.all())
     print("auth group FC members:", members)
     if not DRY_RUN:
-        grp.user_set.clear()
+        for u in list(grp.user_set.all()):  # one by one: auth's group signal cannot handle a bulk clear
+            u.groups.remove(grp)
         grp.delete()
         print("auth group FC deleted")
 
