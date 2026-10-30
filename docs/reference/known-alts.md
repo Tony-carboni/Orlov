@@ -10,5 +10,6 @@ Owner's rule (2026-10-30): the characters below are alts of members who are in a
 | Goedweer5 | Goedweer |
 | MinerTavaga | Tavaga |
 | Josh HavensAlt | Josh Havenguard |
+| Frankie0 | Francis01 |
 
-Open on 2026-10-30, the owner is chasing them: Tyke Almighty, Tagger UK, Master Hacer, Rainy Pidling, Petrosyan, Morgothy, Frankie0, Ladonie Divalone, Raikakailen Kashuken.
+Open on 2026-10-30, the owner is chasing them: Tyke Almighty, Tagger UK, Master Hacer, Rainy Pidling, Petrosyan, Morgothy, Ladonie Divalone, Raikakailen Kashuken.
