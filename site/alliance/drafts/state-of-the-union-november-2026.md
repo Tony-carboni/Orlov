@@ -18,12 +18,11 @@ To carry that growth we are rolling out the first iteration of our leadership st
 
 ## The last 30 days
 
-- Monolithic Juggernaut [MONO1] joined the alliance on 18 October, 16 characters strong. They bring with them infrastructure in NPC null which we might soon put to good use.
+- Monolithic Juggernaut [MONO1] joined the alliance on 18 October. They bring with them infrastructure in NPC null which we might soon put to good use.
 - Content widened: gas huffing, faction warfare and duo abyssals, next to the mining fleets that keep the buyback fed.
 - The buyback kept running at pace: 1.45 B ISK paid out to members through corporation projects since the budget baseline of 18 October.
 - The first officers were named: Braadslee and Logan Grishnar, with more to follow.
-- Discord grew a leaderboard: the top pilots by project payouts over the last 30 days, refreshed daily. Alts registered in auth count for their main.
-- Access to a total of 8 public moons across 2 systems. Access to another 6 privately owned but allied moons is in the works.
+- Access to a total of 8 public moons across 2 systems.
 - Plans are being drawn for more of our own corporate Athanors.
 
 ## The next 90 days
@@ -36,26 +35,29 @@ To carry that growth we are rolling out the first iteration of our leadership st
 
 The general structure is simple: Member, Officer, Director.
 
-- **Members.** Everyone in the corporation is encouraged to take part in content, and just as much to host and organise it. Members who gravitate toward certain activities, or toward leading, will be asked to become officers.
-- **The FC role goes.** It was created to open up pings and channels on Discord to a few more people. From now on every member can send pings, because we want everyone to feel free to step up and host something. The FC role is therefore dissolved.
+- **Members.** Everyone in the corporation is encouraged to take part in content, and just as much to host and organise it.
 - **Officers** are the operational leadership team. They take very active roles in areas such as recruitment, industry and faction warfare, and they are the points of contact to help organise activities and improve collaboration.
 - **Directors** are the corporate leaders: less focused on content and fleets, more on the corporation's growth and direction, strategy and diplomacy.
 
-The first officers have been assigned, and more will follow. If you want to take up a role, in whatever area, speak up. We would rather have too many volunteers than too few.
+The first officers have been assigned, and more will follow. Newer players are just as welcome to become officers as veterans, as long as the intent to help build and coordinate is there. If you want to take up a role, in whatever area, speak up. We would rather have too many volunteers than too few.
 
 ## On people and numbers
 
-Since the October message the corporation has grown from about 33 pilots to 60, which is better than one and a half a day. The alliance as a whole went from 46 to 74 characters, even after two corporations left, thanks to our own growth and the arrival of Monolithic Juggernaut. The balance between veterans and newer players still looks healthy, and the target of one new member a day stands.
+Since the October message the corporation has grown from about 33 pilots to 60, which is better than one and a half a day. The balance between veterans and newer players still looks healthy, and the target of one new member a day stands.
 
 ## On ISK
 
-The corporation's finances are healthy. The buyback is the engine: corporation projects paid out 1.45 B ISK to members since 18 October, 2.16 B since they began on 4 October, and the goods sold on at a margin of around 10 %. That margin is what pays for everything else. The loyalty point programme took in 172,000 LP from members in the same period, converted at a similar margin. The structures brought in 219 M ISK and burn about 103 M ISK of fuel a month, so they pay for themselves with room to spare. In short: the buyback pays the members well, the corporation earns a modest margin on it, and the balance grows.
+The corporation's finances are healthy. The buyback is the engine. Members sell their ore to us at a slight discount, but save on sales taxes. The corporation picks the right moment to sell in bulk and at full prices to make a margin. It helps fuel our corporate finances, and results in roughly 10 % net margin on the buyback programme.
+
+We burn through roughly 100 M ISK per month on fuel blocks, so the income from the buyback helps us compensate.
+
+The Raitaru we have up has generated about 120 M ISK over the last period, which also helps fatten the purse. Let public builders pay the fees, while we get access to tax-free infrastructure.
 
 <div class="tiles">
 <div class="tile"><span class="l">Buyback paid out, this period</span><span class="v">1.45 B ISK</span></div>
 <div class="tile"><span class="l">Corporate balance</span><span class="v">644 M ISK</span></div>
 <div class="tile"><span class="l">LP processed, this period</span><span class="v">172,000 LP</span></div>
-<div class="tile"><span class="l">Net profit, this period</span><span class="v">165 M ISK</span></div>
+<div class="tile"><span class="l">Net profit, this period</span><span class="v">384 M ISK</span></div>
 </div>
 
 ## The alliance
@@ -66,11 +68,15 @@ It does highlight something: while the corporation is flourishing, the alliance 
 
 ## What I am asking of you
 
-Three things. Keep bringing people in; one a day is the target and you are the recruiters. Keep hosting: a mining fleet, a gatecamp, an abyssal pair, a trip into low-sec, anything that gets five people in space with a plan. And if you want a role, say so. The officer positions are open to anyone who wants to carry part of the load, and the directors will back you with whatever you need to make it happen.
+Three things.
+
+- **Keep bringing people in.** One a day is the target, and you are the recruiters.
+- **Keep hosting.** A mining fleet, a gatecamp, an abyssal pair, a trip into low-sec: anything that gets five people in space with a plan.
+- **If you want a role, say so.** The officer positions are open to anyone who wants to carry part of the load, and the directors will back you with whatever you need to make it happen.
 
 To everyone who showed up these past weeks, mined a rock, huffed a cloud, held a gate or kept comms warm at night: thank you. The corporation is becoming what we hoped it would be. Let's keep going.
 
 Fly safe, fly together.
 
-Catherine Frey
+Catherine Frey  
 Alliance Director, The Orlov Family
