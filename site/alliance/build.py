@@ -30,6 +30,7 @@ except ImportError:  # pragma: no cover
     sys.exit("Install the markdown package first: python -m pip install --user markdown")
 
 HERE = pathlib.Path(__file__).resolve().parent
+DRAFTS = HERE / "drafts"
 POSTS = HERE / "posts"
 DIST = HERE / "dist"
 TEMPLATE = (HERE / "template.html").read_text(encoding="utf-8")
@@ -89,6 +90,24 @@ def main() -> int:
     # a 404 page so a mistyped link still looks like ours
     (DIST / "404.html").write_text(render(site=SITE_NAME, title="Not found", date="", author="", nav='<a href="/">All posts</a>',
                                           content="<p>That page does not exist. The posts are on the front page.</p>"), encoding="utf-8")
+    # drafts/: previews for the owner only (2026-10-30). Rendered under an unguessable folder, not in the index, not in
+    # posts.json (the Shipyard would open a reporting period), with a noindex tag. The folder name lives in .preview-token
+    # (gitignored); delete the file for a new address.
+    drafts = sorted(parse(p) for p in DRAFTS.glob("*.md")) if DRAFTS.exists() else []
+    if drafts:
+        token_file = HERE / ".preview-token"
+        if not token_file.exists():
+            import secrets
+            token_file.write_text(secrets.token_urlsafe(18), encoding="utf-8")
+        token = token_file.read_text(encoding="utf-8").strip()
+        folder = DIST / "preview" / token
+        folder.mkdir(parents=True)
+        for meta in drafts:
+            page = render(site=SITE_NAME, title=html.escape(meta["title"]) + " (preview)", date=html.escape(meta["date"]),
+                          author=(" · " + html.escape(meta["author"])) if meta["author"] else "", content=meta["body_html"], nav="")
+            page = page.replace("</head>", '<meta name="robots" content="noindex, nofollow">' + chr(10) + "</head>", 1)
+            (folder / f"{meta['slug']}.html").write_text(page, encoding="utf-8")
+            print(f"  preview: /preview/{token}/{meta['slug']}.html  {meta['title']}")
     print(f"built {len(posts)} post(s) into {DIST}")
     for meta in posts:
         print(f"  {meta['slug']}.html  {meta['title']}")

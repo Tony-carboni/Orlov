@@ -2,3 +2,4 @@
 site/alliance/dist/
 __pycache__/
 .preview-*.html
+site/alliance/.preview-token
