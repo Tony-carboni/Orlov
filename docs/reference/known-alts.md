@@ -12,4 +12,19 @@ Owner's rule (2026-10-30): the characters below are alts of members who are in a
 | Josh HavensAlt | Josh Havenguard |
 | Frankie0 | Francis01 |
 
-Open on 2026-10-30, the owner is chasing them: Tyke Almighty, Tagger UK, Master Hacer, Rainy Pidling, Petrosyan, Morgothy, Ladonie Divalone, Raikakailen Kashuken.
+## Reminders sent
+
+The owner sends in-game reminders to unregistered pilots. The next audit lists, separately, who received a reminder and is still not registered (owner's rule 2026-10-30).
+
+| Character | Reminder sent | Registered since |
+|---|---|---|
+| Tyke Almighty | 2026-10-30 | |
+| Tagger UK | 2026-10-30 | |
+| Master Hacer | 2026-10-30 | |
+| Rainy Pidling | 2026-10-30 | |
+| Petrosyan | 2026-10-30 | |
+| Morgothy | 2026-10-30 | |
+| Ladonie Divalone | 2026-10-30 | |
+| Raikakailen Kashuken | 2026-10-30 | |
+
+When one registers, fill in the date; when a reminder goes out again, add the date in the second column.
