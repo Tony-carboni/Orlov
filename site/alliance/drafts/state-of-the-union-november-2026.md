@@ -54,10 +54,10 @@ We burn through roughly 100 M ISK per month on fuel blocks, so the income from t
 The Raitaru we have up has generated about 120 M ISK over the last period, which also helps fatten the purse. Let public builders pay the fees, while we get access to tax-free infrastructure.
 
 <div class="tiles">
-<div class="tile"><span class="l">Buyback paid out, this period</span><span class="v">1.45 B ISK</span></div>
 <div class="tile"><span class="l">Corporate balance</span><span class="v">644 M ISK</span></div>
-<div class="tile"><span class="l">LP processed, this period</span><span class="v">172,000 LP</span></div>
 <div class="tile"><span class="l">Net income, this period</span><span class="v">284 M ISK</span></div>
+<div class="tile"><span class="l">Buyback paid out, this period</span><span class="v">1.45 B ISK</span></div>
+<div class="tile"><span class="l">LP processed, this period</span><span class="v">172,000 LP</span></div>
 </div>
 
 ## The alliance
