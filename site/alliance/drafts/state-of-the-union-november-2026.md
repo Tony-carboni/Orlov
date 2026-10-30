@@ -20,7 +20,7 @@ To carry that growth we are rolling out the first iteration of our leadership st
 
 - Monolithic Juggernaut [MONO1] joined the alliance on 18 October. They bring with them infrastructure in NPC null which we might soon put to good use.
 - Content widened: gas huffing, faction warfare and duo abyssals, next to the mining fleets that keep the buyback fed.
-- The buyback kept running at pace: 1.45 B ISK paid out to members through corporation projects since the budget baseline of 18 October.
+- The buyback kept running at pace: 1.45 B ISK paid out to members through corporation projects since the last communication.
 - The first officers were named: Braadslee and Logan Grishnar, with more to follow.
 - Access to a total of 8 public moons across 2 systems.
 - Plans are being drawn for more of our own corporate Athanors.
