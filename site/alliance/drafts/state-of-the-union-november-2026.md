@@ -71,7 +71,7 @@ It does highlight something: while the corporation is flourishing, the alliance 
 Three things.
 
 - **Keep bringing people in.** One a day is the target, and you are the recruiters.
-- **Keep hosting.** A mining fleet, a gatecamp, an abyssal pair, a trip into low-sec: anything that gets five people in space with a plan.
+- **Keep hosting.** A mining fleet, a gatecamp, an abyssal pair, a trip into low-sec: anything that gets people in space with a plan.
 - **If you want a role, say so.** The officer positions are open to anyone who wants to carry part of the load, and the directors will back you with whatever you need to make it happen.
 
 To everyone who showed up these past weeks, mined a rock, huffed a cloud, held a gate or kept comms warm at night: thank you. The corporation is becoming what we hoped it would be. Let's keep going.
