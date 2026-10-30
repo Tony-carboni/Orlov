@@ -29,3 +29,7 @@ code { background: var(--panel); padding: .1rem .3rem; border-radius: 3px; font-
 img { max-width: 100%; height: auto; border-radius: 4px; }
 hr { border: 0; border-top: 1px solid var(--border); margin: 2rem 0; }
 footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 1rem; border-top: 1px solid var(--border); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .6rem; margin: 1.2rem 0; }
+.tile { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: .6rem .8rem; display: flex; flex-direction: column; }
+.tile .l { color: var(--muted); font-size: .8rem; }
+.tile .v { color: var(--accent); font-size: 1.35rem; font-weight: 700; }
