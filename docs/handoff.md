@@ -4,6 +4,17 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-10-31 (20:15 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** Shipyard 0.37.0 (runbook 13 C; `docs/runbooks/13-shipyard-plugin.md` release paragraph), the blue alliance's wormhole map (`docs/research/09-blue-alliance-wormhole-map.md`), and a note on an unregistered pilot.
+
+**Done.** **Shipyard 0.37.0** (commit `d08157e` pinned, backup `aa-db-2026-10-31-2007.sql.gz`, migration 0036, 145 tests): new permission `shipyard.refresh_prices`; whoever holds it sees the Refresh button on the ship dashboard, Reprocessing and Scrapmetal and the "Read prices now" button on Bargains without manager rights. Granted to Hamu's account directly (his permissions are all direct: dashboard_access, reprocessing_access, refresh_prices); all four tabs rendered as him show the button. Observation during the checks: `makemigrations --check` keeps reporting an index rename on `lpsnapshot` (`shipyard_lp_charact_6b1f2e_idx` to `..._00de85_idx`); cosmetic, not in a migration, unchanged by this release. **Research 09:** the blue alliance maps on wormhole.systems (not Pathfinder); the doc has the access model (alliance-wide grants, our alliance id 99015337), the API (share token or personal token, GET /api/maps/{id} with home, statics, connections with mass and lifetime), the three built-in Discord alerts, and the proposed path: Viewer access for the alliance, an `entrance` cog for orlovbot that keeps a C2 entrance embed up to date, a proximity alert to our webhook. Mirroring in our own mapper rejected (no sync exists). **Zypher Komeer** (Discord helavade) asked to auth 2026-10-31, locked out of Discord; `docs/reference/known-alts.md`.
+
+**Owner has to do by hand.** For the entrance board: ask the blue alliance for alliance-level Viewer access (id 99015337), the map id, and a share token (or mint a personal token with one of our characters once access is granted); say which channel and which staging system to count jumps from. Open from before: more officers, the OARMI Director role's purpose, the 3-hour refresh, corp_GB44 and corp_1E3, DigitalOcean weekly backups, the stray #pings, the seven project graphs.
+
+**Next.** When the map id and token arrive: build the entrance cog (`deploy/orlovbot/cogs/`), runbook 21, settings in conf/local.py, restart the bot container.
+
+---
 ## 2026-10-30 (07:30 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** the Officer role (owner's instruction 2026-10-30; `docs/design/membership.md`, changelog 2026-10-30), and the November State of the Union draft.
