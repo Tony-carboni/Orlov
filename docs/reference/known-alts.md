@@ -11,6 +11,7 @@ Owner's rule (2026-10-30): the characters below are alts of members who are in a
 | MinerTavaga | Tavaga |
 | Josh HavensAlt | Josh Havenguard |
 | Frankie0 | Francis01 |
+| Petrosyan | Hamu |
 
 ## Reminders sent
 
@@ -22,7 +23,6 @@ The owner sends in-game reminders to unregistered pilots. The next audit lists, 
 | Tagger UK | 2026-10-30 | |
 | Master Hacer | 2026-10-30 | |
 | Rainy Pidling | 2026-10-30 | |
-| Petrosyan | 2026-10-30 | |
 | Morgothy | 2026-10-30 | |
 | Ladonie Divalone | 2026-10-30 | |
 | Raikakailen Kashuken | 2026-10-30 | |
