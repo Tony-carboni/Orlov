@@ -1,4 +1,4 @@
 """Shipyard — T1 ship-building profit dashboard for Alliance Auth."""
 
-__version__ = "0.36.2"
+__version__ = "0.37.0"
 __title__ = "Shipyard"

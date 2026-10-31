@@ -19,6 +19,7 @@ class General(models.Model):
             ("view_corp_industry", "Can see the industry of everyone in their corporation"),
             ("view_alliance_industry", "Can see the industry of everyone in the alliance"),
             ("books_access", "Can see the corporation's balance sheet (Finance tab)"),
+            ("refresh_prices", "Can press Refresh on the dashboards (queues the Jita price refreshes, nothing else)"),
         )
 
 

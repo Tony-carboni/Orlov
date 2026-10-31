@@ -137,6 +137,36 @@ class BoardTests(TestCase):
             self.assertEqual(client.get(url).status_code, 405)
         cache.delete(views.REFRESH_COOLDOWN_KEY)
 
+    def test_refresh_permission_alone(self):
+        """0.37.0: `refresh_prices` presses both Refresh buttons without the manager rights (owner: Hamu)."""
+        from django.contrib.auth.models import Permission
+        from django.core.cache import cache
+        from django.test import Client, override_settings
+        from django.urls import reverse
+        from .. import views
+        cache.delete(views.REFRESH_COOLDOWN_KEY)
+        perms = Permission.objects.filter(content_type__app_label="shipyard")
+        client = Client()
+        with override_settings(SHIPYARD_STANDALONE_HOST=""), \
+                mock.patch("shipyard.tasks.refresh_prices_and_stats.delay") as p1, \
+                mock.patch("shipyard.tasks.refresh_contract_prices.delay") as p2, \
+                mock.patch("shipyard.tasks.refresh_bargain_prices.delay") as p3:
+            self.user.user_permissions.add(perms.get(codename="reprocessing_access"))
+            client.force_login(self.user)
+            self.assertEqual(client.post(reverse("shipyard:refresh_now")).status_code, 403)
+            self.assertEqual(client.post(reverse("shipyard:bargains_refresh")).status_code, 403)
+            self.assertEqual((p1.call_count, p3.call_count), (0, 0))
+            self.user.user_permissions.add(perms.get(codename="refresh_prices"))
+            self.user = type(self.user).objects.get(pk=self.user.pk)  # permission cache
+            client.force_login(self.user)
+            self.assertEqual(client.post(reverse("shipyard:refresh_now"), {"next": "reprocessing"}).status_code, 302)
+            self.assertEqual((p1.call_count, p2.call_count), (1, 1))
+            self.assertEqual(client.post(reverse("shipyard:bargains_refresh")).status_code, 302)
+            self.assertEqual(p3.call_count, 1)
+            self.assertTrue(views._can_refresh(self.user))
+            self.assertFalse(self.user.has_perm("shipyard.manage_shipyard"))
+        cache.delete(views.REFRESH_COOLDOWN_KEY)
+
     def test_researched_defaults(self):
         self.assertEqual(Ship(category="Base").default_me_te, (10, 20))
         self.assertEqual(Ship(category="Fuel").default_me_te, (10, 20))

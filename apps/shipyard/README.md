@@ -25,7 +25,7 @@ Sales tax = base 7.5 % × (1 − 0.11 × Accounting). Broker fee (NPC station) =
 2. `local.py`: `INSTALLED_APPS += ["shipyard"]` and the beat entries from `deploy/conf/local.py.append` (full refresh every 6 h, prices + volumes hourly).
 3. Build, `up -d`, `restart nginx`, `migrate`, `collectstatic`.
 4. `manage.py shipyard_load_ships` (catalog + default facility/market/LP factions), then `manage.py shipyard_refresh` (first data load, ~3 min).
-5. Permissions: `shipyard | general | Can access the Shipyard dashboard` to the groups that may see it; `Can edit blueprint prices…` to managers. Superusers see it without any grant.
+5. Permissions: `shipyard | general | Can access the Shipyard dashboard` to the groups that may see it; `Can edit blueprint prices…` to managers; `Can press Refresh on the dashboards…` (`refresh_prices`, 0.37.0) to a member who may queue the Jita price refresh from the ship, Reprocessing, Scrapmetal and Bargains tabs without the manager rights. Superusers see it without any grant.
 
 ## Settings (optional, local.py)
 `SHIPYARD_HISTORY_REGION_ID` (10000002), `SHIPYARD_VOLUME_DAYS` (7), `SHIPYARD_REQUEST_DELAY` (0.15 s), `SHIPYARD_SIM_CACHE_SECONDS` (1800), `SHIPYARD_USER_AGENT`.

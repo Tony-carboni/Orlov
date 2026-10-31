@@ -1,11 +1,13 @@
 import datetime as dt
 import logging
 from decimal import Decimal, InvalidOperation
+from functools import wraps
 
 from allianceauth.authentication.models import CharacterOwnership
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.cache import cache
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import JsonResponse
 from django.urls import reverse
@@ -38,6 +40,7 @@ def _context(request, **extra):
         "standalone": standalone,
         "full_access": access.has_full_access(request.user),
         "tabs": access.tabs(request.user),
+        "can_refresh": _can_refresh(request.user),  # the Refresh button (0.37.0): managers, or the refresh_prices permission
     }
     context.update(extra)
     return context
@@ -89,6 +92,21 @@ def index(request):
 
 def _books_allowed(user) -> bool:
     return user.has_perm("shipyard.manage_shipyard") or user.has_perm("shipyard.books_access")
+
+
+def _can_refresh(user) -> bool:
+    """The Refresh buttons (prices on the dashboards, Jita prices on Bargains): managers, or `refresh_prices` alone (0.37.0, owner: Hamu)."""
+    return user.has_perm("shipyard.manage_shipyard") or user.has_perm("shipyard.refresh_prices")
+
+
+def _refresh_allowed(view):
+    @wraps(view)
+    def wrapped(request, *args, **kwargs):
+        if not _can_refresh(request.user):
+            raise PermissionDenied
+        return view(request, *args, **kwargs)
+
+    return wrapped
 
 
 @login_required
@@ -498,10 +516,10 @@ REFRESH_COOLDOWN_SECONDS = 300
 
 
 @login_required
-@permission_required("shipyard.manage_shipyard")
+@_refresh_allowed
 @require_POST
 def refresh_now(request):
-    """Refresh button on the dashboard (managers): queue the hourly refreshes right away.
+    """Refresh button on the dashboards (managers, or `refresh_prices`): queue the hourly refreshes right away.
 
     Jita prices, sales volumes and the contract prices. Builds and indices are not
     included (they take minutes of EVE Ref calls and change rarely). One click per
@@ -654,10 +672,9 @@ def bargains_pref(request):
 @login_required
 @require_POST
 def bargains_refresh(request):
-    """Read Jita's prices for the bargains now (manager): a minute of Fuzzwork calls, run in the background."""
-    from django.core.exceptions import PermissionDenied
+    """Read Jita's prices for the bargains now (manager, or `refresh_prices`): a minute of Fuzzwork calls, run in the background."""
     from .tasks import refresh_bargain_prices
-    if not request.user.has_perm("shipyard.manage_shipyard"):
+    if not _can_refresh(request.user):
         raise PermissionDenied
     refresh_bargain_prices.delay()
     messages.success(request, "Reading Jita's prices for every traded type in the background; reload in a minute.")
