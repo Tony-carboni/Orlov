@@ -26,5 +26,8 @@ The owner sends in-game reminders to unregistered pilots. The next audit lists, 
 | Morgothy | 2026-10-30 | |
 | Ladonie Divalone | 2026-10-30 | |
 | Raikakailen Kashuken | 2026-10-30 | |
+| Zypher Komeer | 2026-10-31 | |
 
 When one registers, fill in the date; when a reminder goes out again, add the date in the second column.
+
+Notes: **Zypher Komeer** is Discord user **helavade** (the owner's information, 2026-10-31); asked to auth on 2026-10-31, not done yet because the user is locked out of their own Discord account. Not registered in auth, no Discord link to check until they are back in.
