@@ -12,6 +12,8 @@ Owner's rule (2026-10-30): the characters below are alts of members who are in a
 | Josh HavensAlt | Josh Havenguard |
 | Frankie0 | Francis01 |
 | Petrosyan | Hamu |
+| Murkowski | Camilynn (joining 2026-11-01, auth user Camilynn once authed) |
+| kyriakos | Camilynn (joining 2026-11-01, auth user Camilynn once authed) |
 
 ## Reminders sent
 
