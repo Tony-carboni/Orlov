@@ -789,6 +789,7 @@ class BooksBaseline(models.Model):
     opening_result = models.FloatField(default=0, help_text="Assets above the loan at the start, ISK (0 for the budget baseline)")
     source = models.CharField(max_length=200, blank=True, help_text="What opened the period: the State of the Alliance post's title and date")
     note = models.CharField(max_length=300, blank=True)
+    carry = models.FloatField(default=0, help_text="ISK carried into the period by hand when it was re-opened (0.37.0): one movement, so the period starts from it instead of 0")
 
     class Meta:
         ordering = ["taken_at"]

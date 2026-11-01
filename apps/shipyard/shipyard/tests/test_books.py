@@ -250,6 +250,23 @@ class BooksTests(TestCase):
         self.assertEqual(books.period_start("report"), (None, None))
         self.assertEqual(books.period_start("nonsense"), (None, None))
 
+    def test_a_period_can_be_reopened_with_a_carry(self):
+        """0.37.0 (owner, 2026-11-01): re-opening the period takes the live position as the opening and carries a figure
+        in as one movement, so the period reads that figure now and moves with what happens after."""
+        books.open_period(at(10), source="State of the Alliance, test")
+        before = books.compute()
+        row = books.reopen_period(72.8e6, "net of the buybacks so far")
+        self.assertIsNotNone(row)
+        d = books.compute()
+        self.assertAlmostEqual(d["period_result"], 72.8e6, places=0)
+        self.assertAlmostEqual(d["result"], before["result"], places=0)  # the position itself does not move
+        self.assertLess(abs(d["gap"]), 1.0)
+        carry = next(m for m in d["moves"] if m[0].startswith("Carried over"))
+        self.assertEqual((round(carry[1]), carry[2]), (72_800_000, "net of the buybacks so far"))
+        self.assertIn("carry", [g["key"] for g in d["move_groups"]])
+        row.delete()
+        self.assertIsNone(books.reopen_period(1.0))  # never the budget baseline itself
+
     def test_a_new_period_opens_at_a_state_of_the_alliance_post(self):
         """A post dated after the budget baseline opens a period: section 2 then counts from there and adds
         up to the result minus the opening; stock, LP and goods keep counting from the budget baseline."""

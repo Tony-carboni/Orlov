@@ -30,6 +30,7 @@ import logging
 import re
 from collections import defaultdict, deque
 
+from django.core.cache import cache
 from django.utils import timezone
 
 from .. import app_settings
@@ -820,6 +821,8 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
     if live_now is not None and abs(live_now - journal_now) >= 1:
         moves.append(["Wallet as EVE shows it, against the journal copy", live_now - journal_now,
                       "Activity EVE has not written to the journal yet, and corrections made in game that the journal lines left out"])
+    if getattr(b, "carry", 0.0):
+        moves.append(["Carried over from the previous period", b.carry, b.note or "Set by hand when the period was re-opened"])
     explained = sum(m[1] for m in moves)
     gap = (result - b.opening_result) - explained
     goods_tax_month = defaultdict(float)  # (YYYY-MM, type) -> sales tax of project-goods sales
@@ -1351,6 +1354,7 @@ MOVE_GROUPS = [
     ("market", "Market orders and fees", "Escrow of buy orders, items bought on the market, broker fees and sales tax"),
     ("structure", "Structure income", "Industry tax of the Raitaru, moved from the structure corporation to the corporation"),
     ("transfers", "Transfers, deposits and payouts", "ISK moved into or out of the corporation's wallets by hand"),
+    ("carry", "Carried over", "What the period started with when it was re-opened by hand"),
     ("gap", "Not explained", ""),
 ]
 
@@ -1372,6 +1376,8 @@ def _group_moves(moves, outputs) -> list:
             return "market"
         if label == "Not explained":
             return "gap"
+        if label.startswith("Carried over"):
+            return "carry"
         if label.startswith("Structure income transferred"):
             return "structure"
         return "transfers"
@@ -1433,6 +1439,27 @@ def open_period(start_at, source: str = "", note: str = ""):
         taken_at=start_at, loan=first.loan, wallet=d["wallet"], other_divs=d["other_divs"], pool=d["pool"], held=d["held_total"],
         open_escrow=d["open_escrow"], lp_units=int(d["lp_units"]), lp_cost=d["lp_cost"], opening_result=d["result"], source=source[:200], note=note[:300],
     )
+
+
+def reopen_period(carry: float, note: str = ""):
+    """Re-open the current period now (owner, 2026-11-01): the live position becomes the opening, and `carry` is what the
+    period starts with (one movement, "Carried over from the previous period"), so the result since the opening reads
+    `carry` at this moment instead of whatever timing artefacts (goods sold before the period but taken from the hangar
+    inside it, LP-store items not yet sold) had piled up. The period keeps its source. Returns the row."""
+    b = baseline()
+    first = budget()
+    if b is None or first is None or b.pk == first.pk:
+        return None
+    d = compute()
+    b.taken_at = timezone.now()
+    b.wallet, b.other_divs, b.pool, b.held = d["wallet"], d["other_divs"], d["pool"], d["held_total"]
+    b.open_escrow, b.lp_units, b.lp_cost = d["open_escrow"], int(d["lp_units"]), d["lp_cost"]
+    b.opening_result = d["result"] - carry
+    b.carry = carry
+    b.note = note[:300]
+    b.save()
+    cache.delete("shipyard:books:wallets")
+    return b
 
 
 def state_posts() -> list:
