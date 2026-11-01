@@ -611,9 +611,11 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         units = sum(r[1] for r in lots[tid])
         value = sum(r[1] * r[2] for r in lots[tid])
         if tid in set(app_settings.SHIPYARD_BOOKS_STOCK_WRITTEN_OFF):
-            # left out of the books (owner, 2026-10-25): the lots leave at cost in one movement; a later sale is a plain deposit
-            if value > 1e-6:
-                written_off_stock += value
+            # left out of the books (owner, 2026-10-25): the lots leave at cost in one movement; a later sale is a plain deposit.
+            # Only lots bought inside the period move (0.37.1): at the opening they were already out of the books.
+            value_in_period = sum(r[1] * r[2] for r in lots[tid] if r[0] >= base)
+            if value_in_period > 1e-6:
+                written_off_stock += value_in_period
                 written_off_names.append(names.get(tid, f"type {tid}"))
             continue
         stock_now += value
