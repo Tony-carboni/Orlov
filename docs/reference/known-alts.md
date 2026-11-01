@@ -12,8 +12,6 @@ Owner's rule (2026-10-30): the characters below are alts of members who are in a
 | Josh HavensAlt | Josh Havenguard |
 | Frankie0 | Francis01 |
 | Petrosyan | Hamu |
-| Murkowski | Camilynn (joining 2026-11-01, auth user Camilynn once authed) |
-| kyriakos | Camilynn (joining 2026-11-01, auth user Camilynn once authed) |
 
 ## Reminders sent
 
@@ -33,3 +31,5 @@ The owner sends in-game reminders to unregistered pilots. The next audit lists, 
 When one registers, fill in the date; when a reminder goes out again, add the date in the second column.
 
 Notes: **Zypher Komeer** is Discord user **helavade** (the owner's information, 2026-10-31); asked to auth on 2026-10-31, not done yet because the user is locked out of their own Discord account. Not registered in auth, no Discord link to check until they are back in.
+
+Registered after all (no entry needed): Camilynn's Murkowski and Kyriakos, all three characters on the Camilynn auth account since 2026-11-01.
