@@ -12,4 +12,5 @@ def register_cogs():
         "orlovbot.cogs.juicy",
         "orlovbot.cogs.welcome",
         "orlovbot.cogs.leaderboards",
+        "orlovbot.cogs.radio",
     ]

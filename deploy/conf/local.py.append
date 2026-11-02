@@ -303,3 +303,13 @@ ORLOVBOT_WELCOME_CHANNEL_ID = 1555292924374417471   # #how-to-get-roles
 
 # Stock the books no longer carry (owner, 2026-10-25): the leftover Cap Booster 100, 400 and 800 bought to convert; a later sale is a plain deposit.
 SHIPYARD_BOOKS_STOCK_WRITTEN_OFF = [3554, 11287, 11289]
+
+# Radio in comms (runbook 21): internet radio stations the bot plays in a voice channel on /radio on. Listeners set
+# their own level with Discord's user volume on the bot; ORLOVBOT_RADIO_VOLUME is the bot's output level (0 to 1).
+ORLOVBOT_RADIO_STATIONS = [
+    {"name": "Space Station Soma", "url": "https://ice1.somafm.com/spacestation-128-mp3"},
+    {"name": "Drone Zone", "url": "https://ice1.somafm.com/dronezone-128-mp3"},
+    {"name": "Groove Salad", "url": "https://ice1.somafm.com/groovesalad-128-mp3"},
+    {"name": "Nightwave Plaza", "url": "https://radio.plaza.one/mp3"},
+]
+ORLOVBOT_RADIO_VOLUME = 0.3
