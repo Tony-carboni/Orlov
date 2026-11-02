@@ -39,6 +39,7 @@ class Radio(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.index = 0
+        self.seq = 0
         self.volume = default_volume()
         self.source = None
 
@@ -62,8 +63,14 @@ class Radio(commands.Cog):
         return any(role.name == MEMBER_ROLE for role in getattr(ctx.author, "roles", []))
 
     def _play(self, voice, station: dict):
-        """Start one station on the connected voice client; the next one starts when this stream ends or errors."""
-        if voice.is_playing():
+        """Start one station on the connected voice client. Each start gets a sequence number: the previous source's
+        `after` callback sees it is superseded and does nothing (without this, stopping the old source to start the
+        new one re-triggered the old callback, which started yet another station, in a loop). When a stream ends on
+        its own, the next station starts two seconds later."""
+        self.seq += 1
+        my = self.seq
+        voice._radio_wanted = True
+        if voice.is_playing() or voice.is_paused():
             voice.stop()
         audio = discord.FFmpegPCMAudio(station["url"], before_options=FFMPEG_BEFORE, options="-vn")
         self.source = discord.PCMVolumeTransformer(audio, volume=self.volume)
@@ -71,12 +78,13 @@ class Radio(commands.Cog):
         def after(error):
             if error:
                 logger.warning("radio: %s stopped: %s", station["name"], error)
-            if voice.is_connected() and getattr(voice, "_radio_wanted", False):
-                self.index = (self.index + 1) % max(1, len(stations()))
-                nxt = stations()[self.index]
-                self.bot.loop.call_soon_threadsafe(lambda: self._play(voice, nxt))
+            if my != self.seq or not getattr(voice, "_radio_wanted", False) or not voice.is_connected():
+                return  # superseded by a newer start, or switched off on purpose
+            self.index = (self.index + 1) % max(1, len(stations()))
+            nxt = stations()[self.index]
+            logger.info("radio: %s ended, next is %s", station["name"], nxt["name"])
+            self.bot.loop.call_soon_threadsafe(lambda: self.bot.loop.call_later(2, self._play, voice, nxt))
 
-        voice._radio_wanted = True
         voice.play(self.source, after=after)
         self.bot.loop.create_task(self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=station["name"])))
         logger.info("radio: playing %s in #%s", station["name"], voice.channel.name)
