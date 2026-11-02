@@ -11,6 +11,8 @@
 | Settings | `ORLOVBOT_RADIO_STATIONS` (name and stream URL each), `ORLOVBOT_RADIO_VOLUME` (0 to 1), `ORLOVBOT_RADIO_CHANNELS` (the radio plays only in voice channels whose name contains one of these words; owner, 2026-11-02: the music channel only, so the bot is not on comms for everyone) in `~/aa-docker/conf/local.py`; template `deploy/conf/local.py.append` |
 | Stations | 21 by genre (2026-11-02): Lofi, Lofi Plaza, Chill, Ambient, Space, Deep House, Prog House, Minimal, Dubstep, Soul, 70s, Lounge, Spy Lounge, Jazz, Indie, Rock, Eclectic, Mellow, Metal, 80s, Vaporwave; SomaFM, Nightwave Plaza and Radio Paradise streams, each decode-tested from the container |
 
+**Where members read this.** `#music-bot-instructions` under *public* (1566737683311501462): one embed posted by the bot on 2026-11-02 with the commands, the personal-volume tip and the station list; everyone can read, nobody but Alliance Director can post (overwrites copied in spirit from `#how-to-get-roles`: @everyone view and history, send and threads denied). The music channel itself is `Voice1 - music bot`.
+
 ## A. Build the image with voice (server — local session)
 
 1. Copy `deploy/custom.dockerfile` to `~/aa-docker/custom.dockerfile` and add `PyNaCl` to `~/aa-docker/conf/requirements.txt`.
