@@ -17,6 +17,15 @@ from discord.ext import commands, tasks
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+_vlog = logging.getLogger("discord.voice")  # the voice negotiation in the bot's log (diagnostics, 2026-11-02)
+_vlog.setLevel(logging.DEBUG)
+if not _vlog.handlers:
+    _h = logging.StreamHandler()
+    _h.setFormatter(logging.Formatter("%(asctime)s VOICE %(name)s %(levelname)s %(message)s"))
+    _vlog.addHandler(_h)
+
+# Discord requires its end-to-end voice encryption (DAVE): the voice server closes with 4017 without it (seen 2026-11-02),
+# so there is no opt-out. py-cord does the encryption through the davey package, pinned in conf/requirements.txt.
 
 MEMBER_ROLE = "Family Member"
 FFMPEG_BEFORE = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
@@ -114,11 +123,18 @@ class Radio(commands.Cog):
             if station.lower() not in names:
                 return await ctx.respond("Unknown station. " + self._station_list(), ephemeral=True)
             self.index = names.index(station.lower())
+        await ctx.defer()  # the voice handshake can take longer than Discord's three seconds
         voice = self._voice()
-        if voice is None or not voice.is_connected():
-            voice = await state.channel.connect()
-        elif voice.channel != state.channel:
-            await voice.move_to(state.channel)
+        try:
+            if voice is None or not voice.is_connected():
+                voice = await state.channel.connect(timeout=20.0, reconnect=True)
+            elif voice.channel != state.channel:
+                await voice.move_to(state.channel)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("radio: could not join #%s: %s", state.channel.name, exc)
+            await self._stop()
+            return await ctx.respond(f"Could not join #{state.channel.name}: {type(exc).__name__}. See the bot's log.", ephemeral=True)
+        logger.info("radio: connected to #%s, dave=%s", state.channel.name, getattr(voice, "is_dave_connection", lambda: "?")())
         self._play(voice, stations()[self.index])
         await ctx.respond(f"Radio on in #{state.channel.name}: {stations()[self.index]['name']}. Set your own level by right-clicking me in the channel.")
 
