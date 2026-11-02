@@ -36,6 +36,14 @@ def stations() -> list:
     return [dict(s) for s in getattr(settings, "ORLOVBOT_RADIO_STATIONS", []) or []]
 
 
+def allowed_channel(channel) -> bool:
+    """The radio plays only in voice channels whose name contains one of ORLOVBOT_RADIO_CHANNELS (case-insensitive;
+    owner, 2026-11-02: one music channel, so the bot is not on comms for everyone because one person wants music).
+    An empty list allows every voice channel."""
+    names = [str(n).lower() for n in (getattr(settings, "ORLOVBOT_RADIO_CHANNELS", []) or [])]
+    return not names or any(n in channel.name.lower() for n in names)
+
+
 def default_volume() -> float:
     return max(0.0, min(2.0, float(getattr(settings, "ORLOVBOT_RADIO_VOLUME", 0.3) or 0.3)))
 
@@ -118,6 +126,10 @@ class Radio(commands.Cog):
         state = getattr(ctx.author, "voice", None)
         if state is None or state.channel is None:
             return await ctx.respond("Join a voice channel first, then /radio on.", ephemeral=True)
+        if not allowed_channel(state.channel):
+            guild = self._guild()
+            where = ", ".join(f"#{c.name}" for c in guild.voice_channels if allowed_channel(c)) if guild else ""
+            return await ctx.respond(f"The radio plays in {where or 'the music channel'} only; join it and try again.", ephemeral=True)
         if station:
             names = [s["name"].lower() for s in stations()]
             if station.lower() not in names:

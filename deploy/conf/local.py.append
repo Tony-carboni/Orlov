@@ -330,3 +330,4 @@ ORLOVBOT_RADIO_STATIONS = [
     {"name": "Vaporwave", "url": "https://ice1.somafm.com/vaporwaves-128-mp3"},      # SomaFM Vaporwaves
 ]
 ORLOVBOT_RADIO_VOLUME = 0.3
+ORLOVBOT_RADIO_CHANNELS = ["music", "voice1"]   # the radio plays only in voice channels whose name contains one of these; [] = anywhere
