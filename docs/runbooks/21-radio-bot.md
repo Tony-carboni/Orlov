@@ -7,9 +7,9 @@
 | What | Where |
 |---|---|
 | Code | `deploy/orlovbot/cogs/radio.py` → `~/aa-docker/orlovbot/cogs/radio.py`; registered in `deploy/orlovbot/auth_hooks.py` |
-| Image | `deploy/custom.dockerfile` → `~/aa-docker/custom.dockerfile`: ffmpeg and libopus0 (apt, as root for that layer); `PyNaCl` and `davey` (py-cord's voice extra) in `conf/requirements.txt` |
+| Image | `deploy/custom.dockerfile` → `~/aa-docker/custom.dockerfile`: ffmpeg and libopus0 (apt, as root for that layer); `PyNaCl` and `davey==0.1.7` (py-cord's voice extra) in `conf/requirements.txt`. Discord requires its end-to-end voice encryption (DAVE, close code 4017 without it); davey 0.2.0 of 2026-11-02 gave silent audio with py-cord 2.8.1, hence the pin |
 | Settings | `ORLOVBOT_RADIO_STATIONS` (name and stream URL each), `ORLOVBOT_RADIO_VOLUME` (0 to 1) in `~/aa-docker/conf/local.py`; template `deploy/conf/local.py.append` |
-| Stations at launch | SomaFM Space Station Soma, Drone Zone, Groove Salad; Nightwave Plaza |
+| Stations | 21 by genre (2026-11-02): Lofi, Lofi Plaza, Chill, Ambient, Space, Deep House, Prog House, Minimal, Dubstep, Soul, 70s, Lounge, Spy Lounge, Jazz, Indie, Rock, Eclectic, Mellow, Metal, 80s, Vaporwave; SomaFM, Nightwave Plaza and Radio Paradise streams, each decode-tested from the container |
 
 ## A. Build the image with voice (server — local session)
 

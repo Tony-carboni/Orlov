@@ -307,9 +307,26 @@ SHIPYARD_BOOKS_STOCK_WRITTEN_OFF = [3554, 11287, 11289]
 # Radio in comms (runbook 21): internet radio stations the bot plays in a voice channel on /radio on. Listeners set
 # their own level with Discord's user volume on the bot; ORLOVBOT_RADIO_VOLUME is the bot's output level (0 to 1).
 ORLOVBOT_RADIO_STATIONS = [
-    {"name": "Space Station Soma", "url": "https://ice1.somafm.com/spacestation-128-mp3"},
-    {"name": "Drone Zone", "url": "https://ice1.somafm.com/dronezone-128-mp3"},
-    {"name": "Groove Salad", "url": "https://ice1.somafm.com/groovesalad-128-mp3"},
-    {"name": "Nightwave Plaza", "url": "https://radio.plaza.one/mp3"},
+    {"name": "Lofi", "url": "https://ice1.somafm.com/fluid-128-mp3"},                 # SomaFM Fluid: instrumental hip hop, lo-fi beats
+    {"name": "Lofi Plaza", "url": "https://radio.plaza.one/mp3"},                    # Nightwave Plaza: lo-fi vaporwave
+    {"name": "Chill", "url": "https://ice1.somafm.com/groovesalad-128-mp3"},         # SomaFM Groove Salad: downtempo
+    {"name": "Ambient", "url": "https://ice1.somafm.com/dronezone-128-mp3"},         # SomaFM Drone Zone
+    {"name": "Space", "url": "https://ice1.somafm.com/spacestation-128-mp3"},        # SomaFM Space Station Soma
+    {"name": "Deep House", "url": "https://ice1.somafm.com/beatblender-128-mp3"},    # SomaFM Beat Blender
+    {"name": "Prog House", "url": "https://ice1.somafm.com/thetrip-128-mp3"},        # SomaFM The Trip: progressive house and trance
+    {"name": "Minimal", "url": "https://ice1.somafm.com/cliqhop-128-mp3"},           # SomaFM cliqhop: IDM, minimal electronics
+    {"name": "Dubstep", "url": "https://ice1.somafm.com/dubstep-128-mp3"},           # SomaFM Dub Step Beyond
+    {"name": "Soul", "url": "https://ice1.somafm.com/7soul-128-mp3"},                # SomaFM Seven Inch Soul: vintage soul and funk 45s
+    {"name": "70s", "url": "https://ice1.somafm.com/seventies-128-mp3"},             # SomaFM Left Coast 70s
+    {"name": "Lounge", "url": "https://ice1.somafm.com/illstreet-128-mp3"},          # SomaFM Illinois Street Lounge
+    {"name": "Spy Lounge", "url": "https://ice1.somafm.com/secretagent-128-mp3"},    # SomaFM Secret Agent
+    {"name": "Jazz", "url": "https://ice1.somafm.com/sonicuniverse-128-mp3"},        # SomaFM Sonic Universe
+    {"name": "Indie", "url": "https://ice1.somafm.com/indiepop-128-mp3"},            # SomaFM Indie Pop Rocks
+    {"name": "Rock", "url": "https://stream.radioparadise.com/rock-128"},            # Radio Paradise Rock mix
+    {"name": "Eclectic", "url": "https://stream.radioparadise.com/mp3-128"},         # Radio Paradise main mix
+    {"name": "Mellow", "url": "https://stream.radioparadise.com/mellow-128"},        # Radio Paradise Mellow mix
+    {"name": "Metal", "url": "https://ice1.somafm.com/metal-128-mp3"},               # SomaFM Metal Detector
+    {"name": "80s", "url": "https://ice1.somafm.com/u80s-128-mp3"},                  # SomaFM Underground 80s
+    {"name": "Vaporwave", "url": "https://ice1.somafm.com/vaporwaves-128-mp3"},      # SomaFM Vaporwaves
 ]
 ORLOVBOT_RADIO_VOLUME = 0.3
