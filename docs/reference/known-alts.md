@@ -12,6 +12,7 @@ Owner's rule (2026-10-30): the characters below are alts of members who are in a
 | Josh HavensAlt | Josh Havenguard |
 | Frankie0 | Francis01 |
 | Petrosyan | Hamu |
+| Abyussy Doodoospace | Nick Mineypoo (applied to the corp 2026-11-03, per the application note) |
 | Lillianth Stellarum | Logan Grishnar |
 
 ## Reminders sent
