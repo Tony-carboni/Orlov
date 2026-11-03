@@ -54,7 +54,7 @@ def recurring_entries(now) -> list:
     for rule in rules:
         at, popped = next_pop(rule, now)
         lines = []
-        block = [("Tax:", "10% tax", "boldblue", "")]  # public moons: the owner's tax (owner, 2026-11-03)
+        block = [("Tax:", "10% Tax - Pay to station owner", "boldblue", "")]  # public moons (owner, 2026-11-03)
         if popped:
             block.append(("Pop:", "POPPED, ore is out", "green", f"since {at:%a %d %b %H:%M} EVE"))
         else:
@@ -138,7 +138,7 @@ async def build_embed() -> Embed:
         # NO TAX only on the refineries named in ORLOVBOT_MOON_NO_TAX; every other moon, including freeport refineries
         # we track and the public moons, carries the 10 % tax (owner, 2026-11-03)
         no_tax = any(n.lower() == refinery.name.lower() for n in getattr(settings, "ORLOVBOT_MOON_NO_TAX", []) or [])
-        block = [("Tax:", "NO TAX", "boldgreen", "") if no_tax else ("Tax:", "10% tax", "boldblue", "")]
+        block = [("Tax:", "NO TAX - Tips to corp welcome :)", "boldgreen", "") if no_tax else ("Tax:", "10% Tax - Pay to station owner", "boldblue", "")]
         if arrival <= now:
             ready = True
             block.append(("Chunk:", "ARRIVED, can be fractured", "green", f"since {arrival:%a %d %b %H:%M} EVE"))
