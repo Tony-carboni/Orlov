@@ -63,7 +63,6 @@ def recurring_entries(now) -> list:
         block.append(("Repeats:", f"every {WEEKDAYS[int(rule['weekday'])]} {int(rule.get('hour', 0)):02d}:{int(rule.get('minute', 0)):02d} EVE", "", ""))
         lines.append(f"### {rule['name']} ({rule.get('system', '')}, public moon)")
         lines.append(_block(block))
-        lines.append("")
         entries.append((at, lines))
     return entries
 
@@ -99,7 +98,7 @@ def scheduled_entries(now) -> list:
         else:
             soon = auto - now <= dt.timedelta(hours=1)
             block.append(("Auto-pop:", _until(auto, now), "orange" if soon else "blue", f"{auto:%a %d %b %H:%M} EVE"))
-        lines = [f"### {item.get('name', 'Public moon')} ({item.get('system', '')}, public moon)", _block(block), ""]
+        lines = [f"### {item.get('name', 'Public moon')} ({item.get('system', '')}, public moon)", _block(block)]
         entries.append((at, lines))
     return entries
 
@@ -149,9 +148,17 @@ async def build_embed() -> Embed:
             block.append(("Auto-pop:", f"{_until(auto, now)}", "orange" if soon else "blue", f"{auto:%a %d %b %H:%M} EVE"))
         lines = [f"### {refinery.name} ({moon})", _block(block)]
         # live timestamps: Discord shows these in the reader's own time zone
-        lines.append("")
         entries.append((arrival, lines))
-    lines = [line for _, block_lines in sorted(entries, key=lambda x: x[0]) for line in block_lines]
+    # section headers (owner, 2026-11-03): what pops this week first, then one section per month with a known moon
+    lines = []
+    section = None
+    week_end = now + dt.timedelta(days=7)
+    for moment, block_lines in sorted(entries, key=lambda x: x[0]):
+        label = "This week" if moment <= week_end else f"{moment:%B %Y}"
+        if label != section:
+            lines.append(f"## {label}")
+            section = label
+        lines.extend(block_lines)
 
     embed = Embed(title=BOARD_TITLE, colour=Color.green() if ready else Color.blue())
     embed.description = "\n".join(lines).strip()[:4096]
