@@ -106,6 +106,7 @@ DISCORD_BOT_COGS = [
 # --- Moon board: one always-current message in #moon-board (runbook 09) -----
 ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"   # channel name; "" switches the board off
 # Public moons on a weekly timer (owner, 2026-10-25; weekday 0 = Monday). Empty since 2026-10-30: the published dates below replace them.
+ORLOVBOT_MOON_NO_TAX = ["Piekura - Orlov Mining Facility I", "Saatuban - Orlov Mining Facility II"]  # exact refinery names shown as NO TAX; all other moons show 10% tax
 ORLOVBOT_MOON_RECURRING = []
 # Public moons by date (owner, 2026-10-30): the freeport refineries' published extractions (chunk arrival, EVE time); the board adds
 # the auto-pop three hours later and drops an entry three hours after that. The owner posts the game's Upcoming Extractions list when new ones are published; replace the list then.

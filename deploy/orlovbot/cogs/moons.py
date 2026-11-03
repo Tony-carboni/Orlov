@@ -135,7 +135,10 @@ async def build_embed() -> Embed:
         moon = refinery.moon.eve_moon.name if refinery.moon else "unknown moon"
         arrival = extraction.chunk_arrival_at
         auto = extraction.auto_fracture_at
-        block = [("Tax:", "NO TAX", "boldgreen", "")]  # our own refineries (owner, 2026-11-03)
+        # NO TAX only on the refineries named in ORLOVBOT_MOON_NO_TAX; every other moon, including freeport refineries
+        # we track and the public moons, carries the 10 % tax (owner, 2026-11-03)
+        no_tax = any(n.lower() == refinery.name.lower() for n in getattr(settings, "ORLOVBOT_MOON_NO_TAX", []) or [])
+        block = [("Tax:", "NO TAX", "boldgreen", "") if no_tax else ("Tax:", "10% tax", "boldblue", "")]
         if arrival <= now:
             ready = True
             block.append(("Chunk:", "ARRIVED, can be fractured", "green", f"since {arrival:%a %d %b %H:%M} EVE"))
