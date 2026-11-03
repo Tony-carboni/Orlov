@@ -63,7 +63,6 @@ def recurring_entries(now) -> list:
         block.append(("Repeats:", f"every {WEEKDAYS[int(rule['weekday'])]} {int(rule.get('hour', 0)):02d}:{int(rule.get('minute', 0)):02d} EVE", "", ""))
         lines.append(f"### {rule['name']} ({rule.get('system', '')}, public moon)")
         lines.append(_block(block))
-        lines.append(f"Your time: pops {_stamp(at, 'f')}")
         lines.append("")
         entries.append((at, lines))
     return entries
@@ -100,8 +99,7 @@ def scheduled_entries(now) -> list:
         else:
             soon = auto - now <= dt.timedelta(hours=1)
             block.append(("Auto-pop:", _until(auto, now), "orange" if soon else "blue", f"{auto:%a %d %b %H:%M} EVE"))
-        lines = [f"### {item.get('name', 'Public moon')} ({item.get('system', '')}, public moon)", _block(block),
-                 f"Your time: arrives {_stamp(at, 'f')} · auto-pops {_stamp(auto, 'f')}", ""]
+        lines = [f"### {item.get('name', 'Public moon')} ({item.get('system', '')}, public moon)", _block(block), ""]
         entries.append((at, lines))
     return entries
 
@@ -151,7 +149,6 @@ async def build_embed() -> Embed:
             block.append(("Auto-pop:", f"{_until(auto, now)}", "orange" if soon else "blue", f"{auto:%a %d %b %H:%M} EVE"))
         lines = [f"### {refinery.name} ({moon})", _block(block)]
         # live timestamps: Discord shows these in the reader's own time zone
-        lines.append(f"Your time: arrives {_stamp(arrival, 'f')} · auto-pops {_stamp(auto, 'f')}")
         lines.append("")
         entries.append((arrival, lines))
     lines = [line for _, block_lines in sorted(entries, key=lambda x: x[0]) for line in block_lines]
