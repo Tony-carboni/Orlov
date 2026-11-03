@@ -42,7 +42,7 @@ BANNER_PEACE = "# \N{LARGE GREEN CIRCLE} NOT AT WAR"
 BANNER_WAR = "# \N{LARGE RED CIRCLE} AT WAR"
 # Coloured text exists in Discord only inside an "ansi" code block (fixed-width font, no
 # links, no live timestamps). Green = as it should be, orange = needs attention, red = urgent.
-ANSI = {"green": "0;32", "orange": "0;33", "red": "1;31", "blue": "0;34"}
+ANSI = {"green": "0;32", "orange": "0;33", "red": "1;31", "blue": "0;34", "boldgreen": "1;32", "boldblue": "1;34"}
 LEVELS = {"orange": 1, "red": 2}  # how a text colour counts for the message's colour bar
 LABEL_WIDTH = 11
 REINFORCE_LABEL = "Reinforce:"

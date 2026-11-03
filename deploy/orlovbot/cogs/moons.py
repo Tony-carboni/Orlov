@@ -54,7 +54,7 @@ def recurring_entries(now) -> list:
     for rule in rules:
         at, popped = next_pop(rule, now)
         lines = []
-        block = []
+        block = [("Tax:", "10% tax", "boldblue", "")]  # public moons: the owner's tax (owner, 2026-11-03)
         if popped:
             block.append(("Pop:", "POPPED, ore is out", "green", f"since {at:%a %d %b %H:%M} EVE"))
         else:
@@ -135,7 +135,7 @@ async def build_embed() -> Embed:
         moon = refinery.moon.eve_moon.name if refinery.moon else "unknown moon"
         arrival = extraction.chunk_arrival_at
         auto = extraction.auto_fracture_at
-        block = []
+        block = [("Tax:", "NO TAX", "boldgreen", "")]  # our own refineries (owner, 2026-11-03)
         if arrival <= now:
             ready = True
             block.append(("Chunk:", "ARRIVED, can be fractured", "green", f"since {arrival:%a %d %b %H:%M} EVE"))
