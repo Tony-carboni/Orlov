@@ -90,7 +90,7 @@ def scheduled_entries(now) -> list:
         auto = at + AUTO_POP
         if now - auto > RECENT:
             continue
-        block = []
+        block = [("Tax:", "10% Tax - Pay to station owner", "boldblue", "")]  # public moons (owner, 2026-11-03)
         if at <= now:
             block.append(("Chunk:", "ARRIVED, can be fractured", "green", f"since {at:%a %d %b %H:%M} EVE"))
         else:
