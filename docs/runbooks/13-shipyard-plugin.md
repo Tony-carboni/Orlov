@@ -77,6 +77,8 @@
 
 New commits to `apps/shipyard` don't reach the server by themselves. Update = change the SHA in `conf/requirements.txt` to the new commit, rebuild, `up -d`, `restart nginx`, `migrate`, `collectstatic`. Same as Day 4 C4.
 
+*Release 0.37.2, 2026-11-03: the ship page's captions "Dashboard numbers (ME 0, …)" and "ME 0 · facility" above the bill of materials said ME 0 for every hull without a member blueprint, while the numbers were the ME 10 / TE 20 snapshot for base hulls and fuel blocks since 0.9.3 (owner spotted it on the Prophecy: 2,444,904 Tritanium is the ME 10 figure, ME 0 would be 2,716,560). The captions now show the ME and TE the numbers are at; the numbers did not change. Test added; 146 tests.*
+
 *Release 0.37.1, 2026-11-01: written-off stock bought before the period's start no longer shows as "Bought on the market" in every period (it had put −10.3 M and a matching +10.3 M "Not explained" on each new period); only lots bought inside the period move.*
 
 *Release 0.37.0, 2026-10-31: **a Refresh button for Hamu** (owner: a separate button on all his dashboards). New permission `shipyard.refresh_prices` ("Can press Refresh on the dashboards…"): whoever holds it sees the Refresh button on the ship dashboard, Reprocessing and Scrapmetal (the hourly Jita price and contract refreshes, queued at once, one press per five minutes) and the "Read prices now" button on Bargains, without any manager right. Migration 0036 registers the permission; granted to Hamu's account directly, like his other two.*

@@ -182,6 +182,19 @@ class BoardTests(TestCase):
         d = board.ship_detail(base, s)
         self.assertEqual((d["me"], d["te"], d["source"]), (10, 20, "snapshot"))
         self.assertEqual(d["econ"].materials[0].quantity, 900)
+        # the ship page says which ME the numbers are at (0.37.2: the caption used to read "ME 0" for every hull)
+        from django.contrib.auth.models import Permission
+        from django.test import Client, override_settings
+        self.user.user_permissions.add(Permission.objects.get(codename="basic_access", content_type__app_label="shipyard"))
+        client = Client()
+        client.force_login(self.user)
+        with override_settings(SHIPYARD_STANDALONE_HOST=""), mock.patch("shipyard.services.characters.ensure_fresh", return_value=None):
+            response = client.get("/shipyard/ship/621/")
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("ME 10 / TE 20", html)
+        self.assertIn("ME 10 · TE 20 ·", html)
+        self.assertNotIn("ME 0", html)
 
     def test_fuel_block_rows_are_per_run(self):
         fuel = Ship.objects.create(type_id=4247, name="Helium Fuel Block", group_id=1136, hull_size="Fuel block",

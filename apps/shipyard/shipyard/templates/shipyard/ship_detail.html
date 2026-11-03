@@ -20,7 +20,7 @@
 <div class="row g-3">
     <div class="col-lg-4">
         <div class="card mb-3">
-            <div class="card-header py-2"><strong>Dashboard numbers</strong> <span class="small text-muted">({% if owned %}your {{ owned.kind }} ME {{ owned.me }} / TE {{ owned.te }}{% else %}ME 0{% endif %}, {{ detail.facility|default:"no facility" }})</span></div>
+            <div class="card-header py-2"><strong>Dashboard numbers</strong> <span class="small text-muted">({% if owned %}your {{ owned.kind }} ME {{ owned.me }} / TE {{ owned.te }}{% else %}ME {{ detail.me }} / TE {{ detail.te }}{% endif %}, {{ detail.facility|default:"no facility" }})</span></div>
             <div class="card-body py-2">
                 <table class="table table-sm mb-0 shipyard-kv">
                     <tr><td>Sell price (Jita lowest)</td><td class="text-end">{{ econ.sell_price|isk:2 }}</td></tr>
@@ -92,7 +92,7 @@
         <div class="card">
             <div class="card-header py-2 d-flex align-items-center">
                 <strong>Bill of materials</strong>
-                <span class="small text-muted ms-2" id="bom-caption">ME 0 · {{ detail.facility|default:"–" }}</span>
+                <span class="small text-muted ms-2" id="bom-caption">ME {{ detail.me }} · TE {{ detail.te }} · {{ detail.facility|default:"–" }}</span>
                 <button class="btn btn-sm btn-outline-secondary ms-auto" id="copy-multibuy" title="Copy as EVE multibuy list"><i class="fas fa-copy"></i> Copy multibuy</button>
             </div>
             <div class="card-body py-2">
