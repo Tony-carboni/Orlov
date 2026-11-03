@@ -90,9 +90,9 @@ def scheduled_entries(now) -> list:
             continue
         block = [("Tax:", "10% Tax - Pay to station owner", "boldblue", "")]  # public moons (owner, 2026-11-03)
         if at <= now:
-            block.append(("Chunk:", "ARRIVED, can be fractured", "green", f"since {at:%a %d %b %H:%M} EVE"))
+            block.append(("Arrives:", "ARRIVED", "green", f"since {at:%a %d %b %H:%M} EVE"))
         else:
-            block.append(("Chunk:", f"arrives {_until(at, now)}", "blue", f"{at:%a %d %b %H:%M} EVE"))
+            block.append(("Arrives:", _until(at, now), "blue", f"{at:%a %d %b %H:%M} EVE"))
         if auto <= now:
             block.append(("Auto-pop:", "passed, ore is out", "green", f"since {auto:%a %d %b %H:%M} EVE"))
         else:
@@ -135,12 +135,12 @@ async def build_embed() -> Embed:
         # NO TAX only on the refineries named in ORLOVBOT_MOON_NO_TAX; every other moon, including freeport refineries
         # we track and the public moons, carries the 10 % tax (owner, 2026-11-03)
         no_tax = any(n.lower() == refinery.name.lower() for n in getattr(settings, "ORLOVBOT_MOON_NO_TAX", []) or [])
-        block = [("Tax:", "NO TAX - Tips to corp welcome :)", "boldgreen", "") if no_tax else ("Tax:", "10% Tax - Pay to station owner", "boldblue", "")]
+        block = [("Tax:", "NO TAX - Tips to corp welcome", "boldgreen", "") if no_tax else ("Tax:", "10% Tax - Pay to station owner", "boldblue", "")]
         if arrival <= now:
             ready = True
-            block.append(("Chunk:", "ARRIVED, can be fractured", "green", f"since {arrival:%a %d %b %H:%M} EVE"))
+            block.append(("Arrives:", "ARRIVED", "green", f"since {arrival:%a %d %b %H:%M} EVE"))
         else:
-            block.append(("Chunk:", f"arrives {_until(arrival, now)}", "blue", f"{arrival:%a %d %b %H:%M} EVE"))
+            block.append(("Arrives:", _until(arrival, now), "blue", f"{arrival:%a %d %b %H:%M} EVE"))
         if auto <= now:
             block.append(("Auto-pop:", "passed", "orange", ""))
         else:
