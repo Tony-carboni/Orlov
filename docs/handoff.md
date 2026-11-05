@@ -4,6 +4,19 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-11-05 (10:15 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** the wallet reconciliation after the project corrections of 4 November (owner's request of 4 November 23:25), Shipyard 0.38.0 (runbook 13 C release paragraph).
+
+**Done.** Diagnostic script (scratchpad, read-only; journal since 2 November, every project since 1 October with its funding wallet and refunds, the owner-to-corp ledger since the 18 October baseline, books.compute). Findings: private project funding since the baseline 1,756.3 M, repaid 1,576.3 M with "correction projects" plus the 360 M "corrections" of 5 November 08:23 (laptop session's advice, executed by the owner) = the 180 M refund of the privately funded scordite project + the extra 180 M "correction" deposit of 4 November 22:22. Project side fully reconciled; sheet gap 0.0, live wallets equal the journal copy. **Shipyard 0.38.0** (commit `3ba8052` pinned, backup `aa-db-2026-11-05-1006.sql.gz`, 147 tests, no migration): `SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES` (entry id to ISK) counts part of a master-wallet withdrawal as project repayment; set on the server and in the deploy template to the 360 M line with 180 M (`conf/local.py`, copy `local.py.pre-repayment-entries`). The Finance tab's "owed to the funding wallet" box is gone (funded 1,756.3 = corrected 1,756.3). The 100 M LP-store purchase of 31 October 13:58 (24th Imperial Crusade, master wallet) flagged by id against the owner's 100 M "correction LP store purchase" deposit. The scheduled 01:27 run of 5 November never fired (session restarted overnight; session-only timers die with it); the 09:00 reminder task can be deleted.
+
+**Open.** The 75 M "correction" deposit of 3 November 13:10 has no corp-side counterpart: the LP-store purchases of 2 November (500 M and 150 M) were paid from division 7, the owner's own wallet, and no master-wallet LP-store line exists around then. The sheet now shows it as "Wallet as EVE shows it, against the journal copy +75 M". Either the corp sends 75 M back to the owner, or the owner names what it settled and the lines get flagged.
+
+**Owner has to do by hand.** Decide the 75 M. Still open from before: the C2 entrance board inputs (map id, share token, channel, staging system), more officers, the OARMI Director role, the 3-hour refresh, corp_GB44 and corp_1E3, DigitalOcean weekly backups, the stray #pings, the seven project graphs.
+
+**Next.** Nothing queued.
+
+---
 ## 2026-11-02 (08:20 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** **radio in comms** (runbook 21, research 10), from the owner's ask for background music in the voice channel that each member can switch off or turn down for themselves.
