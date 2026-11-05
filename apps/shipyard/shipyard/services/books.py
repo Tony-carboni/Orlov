@@ -1445,7 +1445,7 @@ def _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held
                        "note": f"At what the projects paid for them; {held_value / M:,.1f} M at Jita's highest buy"})
     if lp_left:
         groups.append({"key": "lp", "label": "Loyalty points", "id": "as-lp", "total": lp_left,
-                       "rows": [[f"{lp_units:,} LP not converted yet", lp_left, "At what the corporation paid per LP"]]})
+                       "rows": [[f"{lp_units:,} LP held for sale", lp_left, "At what the corporation paid per LP"]]})
     return groups
 
 

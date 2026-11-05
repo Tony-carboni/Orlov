@@ -703,7 +703,7 @@ class BooksTests(TestCase):
         last = d["lp_events"][-1]
         self.assertEqual((last["lp"], last["balance"], last["kind"]), (-10_000, 16_000, "sold"))
         self.assertIn("Sold to", last["what"])
-        self.assertEqual(next(g for g in d["asset_groups"] if g["key"] == "lp")["rows"][0][0], "16,000 LP not converted yet")
+        self.assertEqual(next(g for g in d["asset_groups"] if g["key"] == "lp")["rows"][0][0], "16,000 LP held for sale")
 
     def test_ignored_lines_leave_the_books(self):
         """An accidental sale and its tax, flagged by id, and the owner's settlement, matched by its reason, net out."""
