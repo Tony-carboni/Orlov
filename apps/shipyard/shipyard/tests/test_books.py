@@ -744,6 +744,30 @@ class BooksTests(TestCase):
         listed = next(g for g in d["asset_groups"] if g["key"] == "listed")
         self.assertEqual(len(listed["rows"]), 2)  # Heavy Water and the listed Navy boosters
 
+    def test_a_repayment_can_be_named_by_entry_id(self):
+        """0.38.0 (owner, 2026-11-05): the 360 M "corrections" withdrawal repaid 180 M of private project funding and returned a
+        180 M deposit; SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES names the line and the repaid part."""
+        CorpProject.objects.create(project_id="d7bbbbbb-1111", corporation_id=CORP, name="compressed scordite", state="Closed", reward_initial=180e6, reward_remaining=0)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_811, division=7, date=at(20), ref_type="project_payouts", amount=-180e6,
+                                        reason="goal_id=d7bbbbbb-1111-2222:goal_name=compressed scordite", first_party_id=CORP, second_party_id=1000413)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_812, division=1, date=at(20.2), ref_type="project_payouts", amount=180e6,
+                                        reason="goal_id=d7bbbbbb-1111-2222:goal_name=compressed scordite", first_party_id=1000413, second_party_id=CORP)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_813, division=1, date=at(20.3), ref_type="player_donation", amount=180e6,
+                                        reason="correction", first_party_id=4444, second_party_id=CORP)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_814, division=1, date=at(20.5), ref_type="corporation_account_withdrawal", amount=-360e6,
+                                        reason="corrections", first_party_id=CORP, second_party_id=4444)
+        before = books.compute()
+        self.assertAlmostEqual(before["outside_master"]["owed"], 180e6, places=0)
+        with override_settings(SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES={99_814: 180e6}):
+            d = books.compute()
+        om = d["outside_master"]
+        self.assertAlmostEqual(om["corrected"], 180e6, places=0)
+        self.assertEqual(om["owed"], 0.0)
+        # 180 M of the line left the books as a plain correction, the other 180 M stayed as ISK put into projects
+        self.assertIn([at(20.5), "corporation_account_withdrawal", -180e6, "reason: corrections"], [[r[0], r[1], r[2], r[3]] for r in d["ignored"]["lines"]])
+        self.assertAlmostEqual(d["ignored"]["net"] - before["ignored"]["net"], 180e6, places=0)  # the plain half shrank from 360 to 180
+        self.assertAlmostEqual(d["gap"], 0.0, places=0)
+
     def test_projects_funded_outside_the_master_wallet_are_flagged(self):
         """Owner's rule (2026-10-25): a project funded from any other wallet is always a mistake. The flag lists the funding
         lines since the baseline and stands while they exceed the corrections paid back from the master wallet."""

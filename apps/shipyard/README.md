@@ -51,7 +51,7 @@ For the owner (`shipyard.manage_shipyard`): the **Member shipyards** tab shows t
 
 ## Finance (0.17)
 
-The directors' balance sheet against the owner's working budget (`services/books.py`), at `/shipyard/finance/` for `manage_shipyard` or `books_access`, with a PDF on demand (`services/books_pdf.py`, reportlab). The baseline and stock batches are edited in the admin (books baseline, stock batches). Settings: `SHIPYARD_BOOKS_DIVISIONS` (default 1 to 6; 7 is the owner's), `SHIPYARD_BOOKS_STRUCTURE_TRANSFER` (reason pattern of structure income moved in, default `raitaru`), `SHIPYARD_BOOKS_FUEL` (structures, blocks per hour, sponsored).
+The directors' balance sheet against the owner's working budget (`services/books.py`), at `/shipyard/finance/` for `manage_shipyard` or `books_access`, with a PDF on demand (`services/books_pdf.py`, reportlab). The baseline and stock batches are edited in the admin (books baseline, stock batches). Settings: `SHIPYARD_BOOKS_DIVISIONS` (default 1 to 6; 7 is the owner's), `SHIPYARD_BOOKS_STRUCTURE_TRANSFER` (reason pattern of structure income moved in, default `raitaru`), `SHIPYARD_BOOKS_FUEL` (structures, blocks per hour, sponsored), `SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES` (0.38.0: journal entry id to ISK, a master-wallet withdrawal that repaid private project funding without "correction projects" in its reason; that much counts as ISK put into projects, the rest of the line follows the ignore rules).
 
 ## Direct sales of project goods (0.23.0)
 

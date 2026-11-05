@@ -315,8 +315,21 @@ def _drop_ignored(journal, cid):
     patterns = [re.compile(p, re.I) for p in app_settings.SHIPYARD_BOOKS_IGNORE_REASONS]
     # a repayment of project funding ("correction projects") carries an ignore word but must stay: it is ISK put into projects
     keep_patterns = [re.compile(p, re.I) for p in app_settings.SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS]
+    overrides = _repayment_overrides()
     kept, out = [], []
     for e in journal:
+        if e.division == 1 and e.amount < 0 and e.entry_id in overrides:
+            # part of the line repaid private project funding (0.38.0): that part stays, worded so that compute()
+            # counts it as ISK put into projects; the rest goes on through the flags and patterns
+            repaid = min(overrides[e.entry_id], abs(e.amount))
+            repay = copy.copy(e)
+            repay.amount = -repaid
+            repay.reason = f"{e.reason or ''} [correction projects: {repaid:,.0f} by SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES]"
+            kept.append(repay)
+            if repaid >= abs(e.amount):
+                continue
+            e = copy.copy(e)
+            e.amount = e.amount + repaid
         why, part = flagged.get((e.division, e.entry_id), (None, None))
         if why is None and e.reason and any(p.search(e.reason) for p in patterns) and not any(p.search(e.reason) for p in keep_patterns):
             why = f"reason: {e.reason}"
@@ -332,6 +345,11 @@ def _drop_ignored(journal, cid):
         else:
             out.append([e.date, e.ref_type, e.amount, why])
     return kept, {"count": len(out), "net": sum(r[2] for r in out), "lines": out}
+
+
+def _repayment_overrides() -> dict:
+    """{entry id: ISK} of master-wallet withdrawals that repaid private project funding without saying so (0.38.0)."""
+    return {int(k): float(v) for k, v in (app_settings.SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES or {}).items()}
 
 
 def ignore_entries(entry_ids, reason: str, cid=None, division: int = 1, amount=None) -> int:
@@ -949,9 +967,12 @@ def outside_master(cid: int, origin, cut=None) -> dict:
     cq = CorpJournalEntry.objects.filter(corporation_id=cid, division=1, date__gt=origin, ref_type="corporation_account_withdrawal", amount__lt=0)
     if cut is not None:
         cq = cq.filter(date__lte=cut)
+    overrides = _repayment_overrides()
     for e in cq:
         reason = e.reason or ""
-        if any(p_.search(reason) for p_ in funding) or (e.first_party_id == cid and e.second_party_id == cid and any(p_.search(reason) for p_ in ignore)):
+        if e.entry_id in overrides:
+            corrected += min(overrides[e.entry_id], -e.amount)
+        elif any(p_.search(reason) for p_ in funding) or (e.first_party_id == cid and e.second_party_id == cid and any(p_.search(reason) for p_ in ignore)):
             corrected -= e.amount
     return {"lines": lines, "open": [ln for ln in lines if ln["state"] != "Closed"],  # the box lists the open ones (owner, 0.35.1)
             "funded": funded, "corrected": corrected, "owed": max(0.0, funded - corrected)}
