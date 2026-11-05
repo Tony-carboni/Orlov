@@ -758,7 +758,7 @@ class BooksTests(TestCase):
                                         reason="corrections", first_party_id=CORP, second_party_id=4444)
         before = books.compute()
         self.assertAlmostEqual(before["outside_master"]["owed"], 180e6, places=0)
-        with override_settings(SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES={99_814: 180e6}):
+        with mock.patch.object(books.app_settings, "SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES", {99_814: 180e6}):
             d = books.compute()
         om = d["outside_master"]
         self.assertAlmostEqual(om["corrected"], 180e6, places=0)
