@@ -9,7 +9,8 @@ Two things live here:
 - Public moons by date (owner, 2026-10-30): ORLOVBOT_MOON_SCHEDULE lists the published
   extractions of the freeport refineries, each with its own moment ("2026-11-04 17:00", EVE time);
   the board shows every one still to come, soonest first, with the chunk's arrival and the
-  auto-pop three hours later, and keeps an entry for three hours after that auto-pop.
+  auto-pop three hours later, and keeps an entry for twelve hours after the pop (owner, 2026-11-06:
+  people who missed a pop must still see which moon it was), in a "Popped, ore is out" section on top.
   The owner posts the game's Upcoming Extractions list whenever new ones are published.
 """
 
@@ -32,17 +33,17 @@ MEMBER_ROLE = "Family Member"
 MAX_ROWS = 10
 BOARD_TITLE = "Upcoming moon extractions"
 WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-RECENT = dt.timedelta(hours=3)  # a weekly pop stays on the board this long after it happened
+POPPED = dt.timedelta(hours=12)  # a popped moon stays on the board this long (owner, 2026-11-06; three hours before that)
 AUTO_POP = dt.timedelta(hours=3)  # a chunk auto-fractures three hours after it arrives (owner, 2026-10-30)
 
 
 def next_pop(rule: dict, now) -> tuple:
     """(moment of the pop to show, popped already?) for a weekly rule {weekday 0=Monday, hour, minute}.
-    A pop less than RECENT ago is shown as popped; otherwise the next one."""
+    A pop less than POPPED ago is shown as popped; otherwise the next one."""
     hour, minute = int(rule.get("hour", 0)), int(rule.get("minute", 0))
     day = now.date() - dt.timedelta(days=(now.weekday() - int(rule["weekday"])) % 7)
     at = dt.datetime.combine(day, dt.time(hour, minute), tzinfo=dt.timezone.utc)
-    if now - at > RECENT:
+    if now - at > POPPED:
         at += dt.timedelta(days=7)
     return at, at <= now
 
@@ -56,14 +57,14 @@ def recurring_entries(now) -> list:
         lines = []
         block = [("Tax:", "10% Tax - Pay to station owner", "boldblue", "")]  # public moons (owner, 2026-11-03)
         if popped:
-            block.append(("Pop:", "POPPED, ore is out", "green", f"since {at:%a %d %b %H:%M} EVE"))
+            block.append(("Popped:", "ORE IS OUT", "green", f"since {at:%a %d %b %H:%M} EVE, listed until {at + POPPED:%H:%M}"))
         else:
             soon = at - now <= dt.timedelta(hours=1)
             block.append(("Pop:", _until(at, now), "orange" if soon else "blue", f"{at:%a %d %b %H:%M} EVE"))
         block.append(("Repeats:", f"every {WEEKDAYS[int(rule['weekday'])]} {int(rule.get('hour', 0)):02d}:{int(rule.get('minute', 0)):02d} EVE", "", ""))
         lines.append(f"### {rule['name']} ({rule.get('system', '')}, public moon)")
         lines.append(_block(block))
-        entries.append((at, lines))
+        entries.append((at, lines, popped))
     return entries
 
 
@@ -78,7 +79,7 @@ def parse_moment(text: str):
 
 
 def scheduled_entries(now) -> list:
-    """[(moment, lines)] for the public moons published by date; past pops drop off RECENT after they happened."""
+    """[(moment, lines, popped)] for the public moons published by date; a pop drops off POPPED after it happened."""
     entries = []
     for item in list(getattr(settings, "ORLOVBOT_MOON_SCHEDULE", []) or []):
         at = parse_moment(item.get("at", ""))
@@ -86,7 +87,7 @@ def scheduled_entries(now) -> list:
             logger.warning("moon schedule: cannot read the moment of %s: %r", item.get("name"), item.get("at"))
             continue
         auto = at + AUTO_POP
-        if now - auto > RECENT:
+        if now - auto > POPPED:
             continue
         block = [("Tax:", "10% Tax - Pay to station owner", "boldblue", "")]  # public moons (owner, 2026-11-03)
         if at <= now:
@@ -94,12 +95,12 @@ def scheduled_entries(now) -> list:
         else:
             block.append(("Arrives:", _until(at, now), "blue", f"{at:%a %d %b %H:%M} EVE"))
         if auto <= now:
-            block.append(("Auto-pop:", "passed, ore is out", "green", f"since {auto:%a %d %b %H:%M} EVE"))
+            block.append(("Popped:", "ORE IS OUT", "green", f"since {auto:%a %d %b %H:%M} EVE, listed until {auto + POPPED:%H:%M}"))
         else:
             soon = auto - now <= dt.timedelta(hours=1)
             block.append(("Auto-pop:", _until(auto, now), "orange" if soon else "blue", f"{auto:%a %d %b %H:%M} EVE"))
         lines = [f"### {item.get('name', 'Public moon')} ({item.get('system', '')}, public moon)", _block(block)]
-        entries.append((at, lines))
+        entries.append((auto if auto <= now else at, lines, auto <= now))
     return entries
 
 
@@ -113,14 +114,18 @@ async def build_embed() -> Embed:
     from moonmining.models import Extraction
 
     now = timezone.now()
+    from django.db.models import Q
+
+    # running extractions, plus the ones popped (fired by hand or auto-fractured) less than POPPED ago
     extractions = (
-        Extraction.objects.filter(auto_fracture_at__gte=now, canceled_at__isnull=True)
-        .exclude(status__in=["CN", "CP"])  # canceled, completed
+        Extraction.objects.filter(canceled_at__isnull=True)
+        .exclude(status="CN")
+        .filter(Q(auto_fracture_at__gte=now - POPPED) | Q(fractured_at__gte=now - POPPED))
         .select_related("refinery", "refinery__moon__eve_moon")
         .order_by("chunk_arrival_at")
     )
     rows = [extraction async for extraction in extractions[:MAX_ROWS]]
-    entries = recurring_entries(now) + scheduled_entries(now)  # (moment, lines): sorted together with the refineries, soonest first
+    entries = recurring_entries(now) + scheduled_entries(now)  # (moment, lines, popped): sorted together with the refineries, soonest first
     if not rows and not entries:
         embed = Embed(title=BOARD_TITLE, colour=Color.blue())
         embed.description = "No extraction is running at the moment."
@@ -136,6 +141,12 @@ async def build_embed() -> Embed:
         # we track and the public moons, carries the 10 % tax (owner, 2026-11-03)
         no_tax = any(n.lower() == refinery.name.lower() for n in getattr(settings, "ORLOVBOT_MOON_NO_TAX", []) or [])
         block = [("Tax:", "NO TAX - Tips to corp welcome", "boldgreen", "") if no_tax else ("Tax:", "10% Tax - Pay to station owner", "boldblue", "")]
+        popped_at = extraction.fractured_at if extraction.fractured_at and extraction.fractured_at <= now else (auto if auto <= now else None)
+        if popped_at is not None:
+            # popped: the chunk was fired or fractured by itself; the entry stays POPPED long so latecomers see which moon it was
+            block.append(("Popped:", "ORE IS OUT", "green", f"since {popped_at:%a %d %b %H:%M} EVE, listed until {popped_at + POPPED:%H:%M}"))
+            entries.append((popped_at, [f"### {refinery.name} ({moon})", _block(block)], True))
+            continue
         if arrival <= now:
             ready = True
             block.append(("Arrives:", "ARRIVED", "green", f"since {arrival:%a %d %b %H:%M} EVE"))
@@ -147,14 +158,13 @@ async def build_embed() -> Embed:
             soon = auto - now <= dt.timedelta(hours=1)
             block.append(("Auto-pop:", f"{_until(auto, now)}", "orange" if soon else "blue", f"{auto:%a %d %b %H:%M} EVE"))
         lines = [f"### {refinery.name} ({moon})", _block(block)]
-        # live timestamps: Discord shows these in the reader's own time zone
-        entries.append((arrival, lines))
+        entries.append((arrival, lines, False))
     # section headers (owner, 2026-11-03): what pops this week first, then one section per month with a known moon
     lines = []
     section = None
     week_end = now + dt.timedelta(days=7)
-    for moment, block_lines in sorted(entries, key=lambda x: x[0]):
-        label = "This week" if moment <= week_end else f"{moment:%B %Y}"
+    for moment, block_lines, popped in sorted(entries, key=lambda x: x[0]):
+        label = "Popped, ore is out" if popped else ("This week" if moment <= week_end else f"{moment:%B %Y}")
         if label != section:
             lines.append(f"## {label}")
             section = label
