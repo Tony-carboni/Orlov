@@ -158,10 +158,24 @@ def render(d: dict) -> bytes:
                             ("Still held, at cost", _m(mo["held_cost"]), "", None)], per_row=5), Spacer(1, 3)]
         story.append(KeepTogether(part))
 
-    # the "LP buybacks and conversions" part left in 0.38.1 (owner, 2026-11-05: no more LP-store conversions, LP goes to a bulk buyer)
+    bb = d.get("buyback") or {}
+    if bb.get("active"):  # 0.38.2 (owner, 2026-11-06): the LP tiles stay, nothing about the conversions
+        part = [Paragraph("4. Loyalty points", h2), Spacer(1, 2),
+                tiles([("Net profit on LP", _m(bb["realised"], True), "", sign_colour(bb["realised"])),
+                       ("Margin on what sold", pct_(bb.get("margin")), "", sign_colour(bb.get("margin"))),
+                       ("LP processed", f"{bb['lp_processed']:,.0f} LP", "", None),
+                       ("LP in stock", f"{bb['lp_left']:,.0f} LP", "", None)]), Spacer(1, 3)]
+        for mo in bb["months"]:
+            part += [Paragraph(f"<b>{e(mo['label'])}</b>", p),
+                     tiles([("LP bought", f"{mo['lp_bought']:,} LP" if mo["lp_bought"] else "none", "", None),
+                            ("LP sold", f"{mo['lp_sold']:,} LP" if mo.get("lp_sold") else "none", "", None),
+                            ("Profit on LP sold", _m(mo.get("lp_sold_net", 0.0), True), "", sign_colour(mo.get("lp_sold_net", 0.0))),
+                            ("Net profit", _m(mo["realised"], True), "", sign_colour(mo["realised"]))]), Spacer(1, 3)]
+        story.append(KeepTogether(part))
+
     if d["fuel_rows"]:
         story.append(KeepTogether([
-            Paragraph(f"4. Structure fuel <font size='8' color='#5b6b82'>{e(d['fuel_name'])} {d['fuel_price']:,.0f} ISK at {e(d['market'])}</font>", h2),
+            Paragraph(f"5. Structure fuel <font size='8' color='#5b6b82'>{e(d['fuel_name'])} {d['fuel_price']:,.0f} ISK at {e(d['market'])}</font>", h2),
             Spacer(1, 2),
             tiles([("Fuel blocks per month", f"{d['fuel_month_blocks']:,.0f} blocks", "", None),
                    ("Cost of these blocks per month", _m(d["fuel_month_isk"]), "", "#c62828"),

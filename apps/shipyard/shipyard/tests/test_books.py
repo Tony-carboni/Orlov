@@ -704,6 +704,8 @@ class BooksTests(TestCase):
         self.assertEqual((last["lp"], last["balance"], last["kind"]), (-10_000, 16_000, "sold"))
         self.assertIn("Sold to", last["what"])
         self.assertEqual(next(g for g in d["asset_groups"] if g["key"] == "lp")["rows"][0][0], "16,000 LP held for sale")
+        # 0.38.2: the LP section's tiles without the conversion tables
+        self.assertEqual((bb["lp_processed"], round(bb["lp_sold_isk"])), (34_000, 8_800_000))  # 24,000 converted + 10,000 sold for 8.8 M
 
     def test_ignored_lines_leave_the_books(self):
         """An accidental sale and its tax, flagged by id, and the owner's settlement, matched by its reason, net out."""

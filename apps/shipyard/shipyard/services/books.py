@@ -1161,6 +1161,8 @@ def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversi
     cost_sold = sum(m["cost_sold"] for m in out)
     return {"months": out, "lp_units": lp_units, "lp_cost": lp_cost, "lp_avg": lp_avg, "lp_used": lp_used,
             "lp_left": lp_units - lp_used - lp_sold, "lp_left_value": lp_left, "buying": buying, "lp_sold": lp_sold,
+            # LP processed (0.38.2): everything bought that is no longer in stock, converted or sold; the sales in ISK
+            "lp_processed": lp_used + lp_sold, "lp_sold_isk": sum(m["lp_sold_isk"] for m in out),
             "realised": realised, "expected": expected, "total": realised + expected,
             # margin on what sold (owner, 2026-10-22): the sale price against what the conversion cost, nothing held counted
             "sold_value": sold_value, "cost_sold": cost_sold, "margin": ((sold_value - cost_sold) / cost_sold) if cost_sold else None,
