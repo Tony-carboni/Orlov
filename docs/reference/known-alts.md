@@ -28,10 +28,14 @@ The owner sends in-game reminders to unregistered pilots. The next audit lists, 
 | Morgothy | 2026-10-30 | |
 | Ladonie Divalone | 2026-10-30 | |
 | Raikakailen Kashuken | 2026-10-30 | |
-| Zypher Komeer | 2026-10-31 | |
+| Zypher Komeer | 2026-10-31 | by 2026-11-06 (Family Member in auth; the in-game title too) |
 
 When one registers, fill in the date; when a reminder goes out again, add the date in the second column.
 
-Notes: **Zypher Komeer** is Discord user **helavade** (the owner's information, 2026-10-31); asked to auth on 2026-10-31, not done yet because the user is locked out of their own Discord account. Not registered in auth, no Discord link to check until they are back in.
+Notes: **Zypher Komeer** is Discord user **helavade** (the owner's information, 2026-10-31); asked to auth on 2026-10-31 while locked out of their own Discord account; registered and Family Member by 2026-11-06 (seen in the in-game title check of that day).
+
+## In-game title "Family Member" (check of 2026-11-06)
+
+OARMI gives members an in-game corporation title `Family Member`. Auth can only see titles of characters that are in Member Audit (the corporation-level titles scope is not among the scopes auth requests), so a check lists three groups: audited characters without the title, characters registered in auth but not in Member Audit, and characters not registered at all. The owner sees the full picture in game under Corporation → Members → Title management.
 
 Registered after all (no entry needed): Camilynn's Murkowski and Kyriakos, all three characters on the Camilynn auth account since 2026-11-01.
