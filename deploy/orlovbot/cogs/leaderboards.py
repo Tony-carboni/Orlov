@@ -1,5 +1,6 @@
 """Leaderboards: one board message per leaderboard in the channel named by ORLOVBOT_LEADERBOARD_CHANNEL,
-refreshed once a day at ORLOVBOT_LEADERBOARD_HOUR EVE (owner, 2026-10-25; docs/runbooks/20-leaderboards-bot.md).
+refreshed every hour at half past (owner, 2026-11-06; daily at 14:00 EVE before that; docs/runbooks/20-leaderboards-bot.md).
+Half past because the Shipyard reads the projects at about 25 past the hour, so each refresh sees the latest payouts.
 
 The first leaderboard: project payouts. The top ORLOVBOT_LEADERBOARD_TOP pilots by ISK earned from the
 corporation's projects in the last ORLOVBOT_LEADERBOARD_DAYS days, from the Shipyard plugin's payout events
@@ -30,7 +31,6 @@ def _settings() -> dict:
     return {
         "days": int(getattr(settings, "ORLOVBOT_LEADERBOARD_DAYS", 30) or 30),
         "top": int(getattr(settings, "ORLOVBOT_LEADERBOARD_TOP", 5) or 5),
-        "hour": int(getattr(settings, "ORLOVBOT_LEADERBOARD_HOUR", 14) or 0),
     }
 
 
@@ -98,22 +98,20 @@ async def build_embed() -> Embed:
 
 
 class Leaderboards(commands.Cog):
-    """Leaderboards kept up to date once a day."""
+    """Leaderboards kept up to date every hour."""
 
     def __init__(self, bot):
         self.bot = bot
         self.board = Board(bot, PAYOUTS_TITLE, "ORLOVBOT_LEADERBOARD_CHANNEL")
-        hour = _settings()["hour"]
-        self.daily.change_interval(time=dt.time(hour, 0, tzinfo=dt.timezone.utc))
 
     @commands.Cog.listener()
     async def on_ready(self):
-        if not self.daily.is_running():
-            self.daily.start()
+        if not self.hourly.is_running():
+            self.hourly.start()
         await self.refresh()  # a restart redraws the board, so it is never missing
 
     def cog_unload(self):
-        self.daily.cancel()
+        self.hourly.cancel()
 
     async def refresh(self):
         try:
@@ -122,8 +120,8 @@ class Leaderboards(commands.Cog):
             logger.exception("Leaderboard update failed")
             self.board.reset()
 
-    @tasks.loop(time=dt.time(14, 0, tzinfo=dt.timezone.utc))
-    async def daily(self):
+    @tasks.loop(time=[dt.time(h, 30, tzinfo=dt.timezone.utc) for h in range(24)])
+    async def hourly(self):
         await self.refresh()
 
 

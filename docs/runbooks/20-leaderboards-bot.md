@@ -1,6 +1,6 @@
 # Runbook 20 — The leaderboards bot in `#leaderboards-bot`
 
-**Goal (owner, 2026-10-25):** a channel under *bots* where the Orlov auth bot keeps leaderboards, one board message each, refreshed daily at 14:00 EVE. The first board: **project payouts**, the top 5 pilots by ISK earned from Orlov Arms International's corporation projects in the last 30 days. Two reasons: congratulate the high achievers, and make contributing visible, because the projects are the corp's main source of income.
+**Goal (owner, 2026-10-25):** a channel under *bots* where the Orlov auth bot keeps leaderboards, one board message each, refreshed every hour at half past (since 2026-11-06; daily at 14:00 EVE before that). The first board: **project payouts**, the top 5 pilots by ISK earned from Orlov Arms International's corporation projects in the last 30 days. Two reasons: congratulate the high achievers, and make contributing visible, because the projects are the corp's main source of income.
 
 **Per pilot, not per character.** A character registered in Alliance Auth counts for its main character, so a pilot who adds alts to auth pools their deliveries under one name. A character nobody has registered stands on its own name. That is deliberate: it rewards getting characters into auth.
 
@@ -11,7 +11,7 @@
 | Channel | `#leaderboards-bot`, category *bots*, same permissions as `#moon-board` (members read, only the bot posts) |
 | Code | `deploy/orlovbot/cogs/leaderboards.py` → `~/aa-docker/orlovbot/cogs/leaderboards.py`; registered in `deploy/orlovbot/auth_hooks.py` |
 | Settings | `ORLOVBOT_LEADERBOARD_CHANNEL`, `_DAYS` (30), `_TOP` (5), `_HOUR` (14) in `~/aa-docker/conf/local.py` (template: `deploy/conf/local.py.append`) |
-| Refresh | daily at `ORLOVBOT_LEADERBOARD_HOUR`:00 EVE, and once at every bot restart |
+| Refresh | every hour at xx:30 EVE (the Shipyard reads the projects at about xx:25), and once at every bot restart |
 
 ## A. Create the channel (server — local session)
 
@@ -31,7 +31,6 @@
 ## C. Changing it
 
 - Another window or a longer list: change `ORLOVBOT_LEADERBOARD_DAYS` or `_TOP`, restart the bot.
-- Another hour: `ORLOVBOT_LEADERBOARD_HOUR`, restart the bot.
 - Switch the board off: `ORLOVBOT_LEADERBOARD_CHANNEL = ""`, restart the bot; the old message stays until deleted by hand.
 - A second leaderboard goes into the same cog as its own `Board` with its own title; the channel then holds one message per board.
 

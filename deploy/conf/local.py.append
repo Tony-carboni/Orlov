@@ -166,7 +166,6 @@ ORLOVBOT_JUICY_EXTRA_TYPE_IDS = []           # more hulls to post whatever their
 ORLOVBOT_LEADERBOARD_CHANNEL = "leaderboards-bot"   # channel name; "" switches the leaderboards off
 ORLOVBOT_LEADERBOARD_DAYS = 30                       # the window of the project payouts board
 ORLOVBOT_LEADERBOARD_TOP = 5                         # pilots shown
-ORLOVBOT_LEADERBOARD_HOUR = 14                       # refresh hour, EVE time
 
 
 # --- Shipyard (ship-building dashboard, runbook 13) ------------------------
