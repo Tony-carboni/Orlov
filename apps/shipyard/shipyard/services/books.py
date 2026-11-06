@@ -452,6 +452,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
     lp_purchases = []  # [t, units, isk, to]
     lp_sales = []  # [t, units, isk, from]: a deposit whose reason names LP, the corporation sold them (0.28.1)
     lp_sold = 0  # units sold in the period
+    lp_sold_isk = 0.0  # what those brought in (0.38.2)
     goods_sale_entries = []  # [journal entry id, type_id] of project-goods sales, to find their sales tax
     market_buys = []  # [t, type_id, qty, cost]
     other_buys = 0.0
@@ -523,6 +524,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
                 lp_sales.append([e.date, units, e.amount, row["who"]])
                 if inp:
                     lp_sold += units
+                    lp_sold_isk += e.amount
             else:
                 rule_ = app_settings.SHIPYARD_BOOKS_STRUCTURE_TRANSFER
                 if rule_ and re.search(rule_, e.reason or "", re.I):
@@ -871,7 +873,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         running += e["lp"]
         e["balance"] = running
     buyback = _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, all_conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices,
-                       lp_sales=lp_sales, lp_sold=lp_sold)
+                       lp_sales=lp_sales, lp_sold=lp_sold, lp_sold_isk=lp_sold_isk)
     if abs(gap) >= 1.0:
         moves.append(["Not explained", gap, "The journal and the position differ: a missing journal page or a new kind of entry"])
     outputs = {c["name"] for c in conversions}
@@ -1083,7 +1085,7 @@ def _broker_split(broker_lines, orders, sale_prices=None):
 
 
 def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversions, sold, sold_month, lots, names, orders, broker_lines, sale_prices=None,
-             lp_sales=(), lp_sold=0) -> dict:
+             lp_sales=(), lp_sold=0, lp_sold_isk=0.0) -> dict:
     """LP buybacks and conversions per calendar month (owner, 2026-10-20): LP bought and converted, what it
     was converted into, what those items sold for with their sales tax and broker fees, the net profit,
     and what is still on sell orders with its projected net. Items bought to convert that are not
@@ -1161,8 +1163,9 @@ def _buyback(lp_purchases, lp_units, lp_cost, lp_avg, lp_used, lp_left, conversi
     cost_sold = sum(m["cost_sold"] for m in out)
     return {"months": out, "lp_units": lp_units, "lp_cost": lp_cost, "lp_avg": lp_avg, "lp_used": lp_used,
             "lp_left": lp_units - lp_used - lp_sold, "lp_left_value": lp_left, "buying": buying, "lp_sold": lp_sold,
-            # LP processed (0.38.2): everything bought that is no longer in stock, converted or sold; the sales in ISK
-            "lp_processed": lp_used + lp_sold, "lp_sold_isk": sum(m["lp_sold_isk"] for m in out),
+            # LP processed this period (0.38.2): converted or sold since the period base, like lp_used and lp_sold; the
+            # sales in ISK over the same period (lp_units is the LP on hand at the base plus what the period bought)
+            "lp_processed": lp_used + lp_sold, "lp_sold_isk": lp_sold_isk,
             "realised": realised, "expected": expected, "total": realised + expected,
             # margin on what sold (owner, 2026-10-22): the sale price against what the conversion cost, nothing held counted
             "sold_value": sold_value, "cost_sold": cost_sold, "margin": ((sold_value - cost_sold) / cost_sold) if cost_sold else None,

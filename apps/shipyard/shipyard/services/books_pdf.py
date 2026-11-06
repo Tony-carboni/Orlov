@@ -163,7 +163,7 @@ def render(d: dict) -> bytes:
         part = [Paragraph("4. Loyalty points", h2), Spacer(1, 2),
                 tiles([("Net profit on LP", _m(bb["realised"], True), "", sign_colour(bb["realised"])),
                        ("Margin on what sold", pct_(bb.get("margin")), "", sign_colour(bb.get("margin"))),
-                       ("LP processed", f"{bb['lp_processed']:,.0f} LP", "", None),
+                       ("LP processed this period", f"{bb['lp_processed']:,.0f} LP", "", None),
                        ("LP in stock", f"{bb['lp_left']:,.0f} LP", "", None)]), Spacer(1, 3)]
         for mo in bb["months"]:
             part += [Paragraph(f"<b>{e(mo['label'])}</b>", p),
