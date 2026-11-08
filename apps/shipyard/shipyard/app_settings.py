@@ -192,8 +192,9 @@ SHIPYARD_BOOKS_HANGAR_FLAGS = getattr(settings, "SHIPYARD_BOOKS_HANGAR_FLAGS", [
 SHIPYARD_HANGAR_BEAT_MINUTE = getattr(settings, "SHIPYARD_HANGAR_BEAT_MINUTE", 35)  # the hour's minute the hourly hangar read runs at (the beat entry)
 # A transfer from the master wallet to another division whose reason matches one of these patterns is project funding
 # that was paid from the wrong division (owner, 2026-10-25: "correction projects"): the books count it as ISK put into
-# projects, not as money leaving for the Director division.
-SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS = getattr(settings, "SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS", [r"correction project"])
+# projects, not as money leaving for the Director division. "corrections projects" counts too (0.39.1: the 206 M
+# correction of 8 November 15:56 was typed that way and the box did not close).
+SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS = getattr(settings, "SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS", [r"corrections?\s+projects?"])
 # Master-wallet lines that moved project money without that wording (owner, 2026-11-05: the 360 M "corrections" of
 # 5 November was 180 M project repayment plus 180 M plain correction; 2026-11-06: the 75 M "correction" deposit of
 # 3 November was project money coming back). {journal entry id: ISK}: that much of the line counts as ISK put into

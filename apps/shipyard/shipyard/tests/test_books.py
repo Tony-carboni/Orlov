@@ -830,6 +830,13 @@ class BooksTests(TestCase):
         om = books.compute()["outside_master"]
         self.assertEqual([(ln["project"], ln["open_amount"]) for ln in om["open"]], [("Corp buyback Ice", 106e6)])
         self.assertAlmostEqual(om["owed"], 106e6, places=0)
+        # 0.39.1 (2026-11-08 15:56): the reason typed as "corrections projects" is the same routine
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_837, division=1, date=at(21.6), ref_type="corporation_account_withdrawal", amount=-106e6,
+                                        reason="corrections projects", first_party_id=CORP, second_party_id=4444)
+        d = books.compute()
+        self.assertEqual((d["outside_master"]["open"], d["outside_master"]["owed"]), ([], 0.0))
+        self.assertNotIn(at(21.6), [r[0] for r in d["ignored"]["lines"]])
+        self.assertAlmostEqual(d["gap"], 0.0, places=0)
 
     def test_a_deposit_can_be_named_as_project_money_coming_back(self):
         """0.38.4 (owner, 2026-11-06: the 75 M "correction" deposit of 3 November settled projects made from the wrong wallet):
