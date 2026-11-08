@@ -69,19 +69,3 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Next.** Nothing queued. (FC retired 12:40 UTC: #pings open to every Family Member, FC auth group and Discord role deleted, the owner deleted the FCs category; membership.md changelog 2026-10-30.)
 
 ---
-
-## 2026-10-29 (07:10 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** the director-group audit and the Family-Member-only restriction asked for in the cloud session's entry of 2026-10-29 (`docs/design/membership.md`).
-
-**Done.** Backup `aa-db-2026-10-29-0649.sql.gz`. Audit of the 8 accounts in the four groups after an ESI refresh of every main: Braadslee, Sabbard, Tavaga (FC), Hamu (Corp Director, OARMI Director) and tony pass. Three fail: Eemar (main in the NPC corp IAC, Family Friend), Masterxxx and MrFreshy_Valterus. **Finding: Go Browns [GB44] left The Orlov Family on 2026-10-28 at 23:57 EVE** (ESI's alliance history for the corp; the alliance's corporation list now holds OARMI and MONO1 only). The three were removed from `Corp Director`, their state re-checked (Family Friend), Discord roles synced for Eemar and Masterxxx (MrFreshy has no Discord link); auth's Discord rate limiter interrupted the first run once, the rerun with a 70 s pause went through. The four groups' allowed states set to `Family Member` only, `Early Founders` left unrestricted; the Flapoor_Hendrik test was skipped because that account is Family Member itself. Safety net: `run_model_update` runs every 6 h (beat `0 */6`), `check_all_character_ownership` every 4 h; proposal: refresh every 3 h (`0 */3`), not changed. The 4 Go Browns characters in auth are Family Friend; `corp_GB44` group and Discord role left in place. membership.md updated (GB44 row, groups table, changelog).
-
-**Owner has to do by hand.** Decide whether the character refresh should run every 3 h (say "go" and a session edits the beat entry in conf/local.py and restarts beat). Decide what to do with `corp_GB44` (group, Discord role, Eemar's `corp_1E3` likewise) now that Go Browns is out, and whether the GB44 members stay on Discord as Family Friends. Still open: Family Friend (locked) cleanup decision, DigitalOcean weekly backups check, the stray #pings, which of the seven project graphs to keep.
-
-**Also (desktop session, later on 2026-10-29): members refreshed** on the owner's word (runbook 04 E): **JordayTM** (Hemiscorpiidae. → OARMI) and **Veldspar Vinnie** (Target - Locked → OARMI; the owner wrote "Vinny"), both now Family Member, corp_OARMI, Discord roles and "[OARMI] …" nicknames set (Vinnie's first Discord push hit the rate limit and went through a minute later).
-
-**Also (desktop session, 2026-10-30 18:30 UTC): the moon board shows the public moons by date.** The owner posted the game's Upcoming Extractions list (nine freeport pops, 2 to 25 November) and wants those instead of the weekly placeholders. The cog has `ORLOVBOT_MOON_SCHEDULE` (name, system, moment in EVE time; a pop stays three hours, then drops); `ORLOVBOT_MOON_RECURRING` is empty now. `conf/local.py` (copy `local.py.pre-moon-schedule`) and the deploy template carry the list; runbook 09 has the new section; the bot restarted and updated the board. When the owner posts a new list, replace `ORLOVBOT_MOON_SCHEDULE` in both files and restart the bot container.
-
-**Next.** Nothing queued.
-
----
