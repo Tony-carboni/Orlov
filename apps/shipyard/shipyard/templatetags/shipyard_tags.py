@@ -196,6 +196,20 @@ def mil(value, sign=False):
 
 
 @register.filter
+def kilo(value):
+    """Whole thousands for counts such as LP: 519375 → '519k', 950 → '950', None → '–' (owner, 2026-11-08)."""
+    if value is None:
+        return "–"
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return "–"
+    if abs(v) < 1000:
+        return f"{v:,.0f}"
+    return f"{v / 1000:,.0f}k"
+
+
+@register.filter
 def split(value, sep=" "):
     """"7 14 30"|split -> ["7", "14", "30"]."""
     return str(value).split(sep)
