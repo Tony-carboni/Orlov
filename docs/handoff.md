@@ -4,6 +4,20 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-11-08 (16:20 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** Shipyard 0.38.3 and 0.38.4 (runbook 13 C), the finance confusion of 7–8 November, runbook 04 E (Eternity Emperor), runbook 09 (moon board, 6 November), runbook 20 (leaderboards hourly, 6 November).
+
+**Done.** 0.38.3: the "LP processed" and "LP in stock" tiles count in thousands (519k LP). 0.38.4: the outside-master box lets the corrections cover the funding lines in date order and lists only the lines still open with the amount open, whatever the project's state, plus the time of the last journal line; SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES accepts deposits and names the 75 M "correction" deposit of 3 November 13:10 (entry 26228486232) as project money coming back (server conf/local.py and deploy/conf/local.py.append); new setting SHIPYARD_LP_STOCK_ISK_PER_LP = 800: LP in stock are carried at 800 ISK each, LP bought dearer or cheaper book the difference in the "LP bought" movement. Both released per runbook 13 C (backups aa-db-2026-11-08-1602 and -1616, no migration, 151 tests). Eternity Emperor refreshed (C.KC → OARMI, Family Member, nickname set). Earlier this week: moon board keeps a popped moon 12 hours (04b45ca), leaderboards bot refreshes hourly at xx:30 (f8bc576).
+
+**Findings.** The owner's routines, now in memory: a project funded from the wrong wallet is cancelled, remade from the master wallet, and the funding is paid back from the master wallet to the owner's character with "correction projects" (not to division 7); a deposit with a DS code is a direct sale. The confusion of 7–8 November came from the box: it listed the projects by state and named three settled ones while the 206 M it asked for belonged to two cancelled ones (coesite 56 M and Corp buyback Ice 150 M, funded from division 7 at 17:40 on 7 November). At 16:18 UTC the live master wallet is exactly 206 M below the journal copy, so that correction is paid and shows at the next journal read (journal read up to 13:11 UTC). Sheet then: gap 0, owed 0. The hourly flag sent the owner a notification about the two 17:40 lines after the restart.
+
+**Owner by hand.** Nothing. Check the Finance tab after the next journal read: the red box should be gone.
+
+**Open.** Donated LP: the owner says members donated LP to the corporation without a purchase cost; the books only know LP from journal lines ("NNNk LP" withdrawals), and ESI has no corporation LP balance (only /characters/{id}/loyalty/points). They need a way in (a hand-kept register in the admin, or the owner names the units); once in, they count at 800 ISK each like the rest. Also still open from earlier entries: the C2 entrance board inputs, more officers, the OARMI Director role purpose, the 3-hour character refresh, corp_GB44/corp_1E3, DigitalOcean weekly backups, stray #pings, the seven project graphs, the hangar-vs-ledger gap, the radio sound confirmation.
+
+**Next.** Whichever session the owner answers in: build the donated-LP register once he says how many LP and from whom.
+
 ## 2026-11-05 (10:15 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** the wallet reconciliation after the project corrections of 4 November (owner's request of 4 November 23:25), Shipyard 0.38.0 (runbook 13 C release paragraph).
@@ -71,15 +85,3 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Next.** Nothing queued.
 
 ---
-
-## 2026-10-29 (cloud session) → local session
-
-**Topic:** director-group audit and a standing rule: nobody holds a director group without being a member (owner's instruction 2026-10-29).
-
-### Next — local session, in this order (announce each write first, show output, backup before the first write)
-1. **Audit.** For every user in the groups `Alliance Director`, `Corp Director`, `OARMI Director` and `FC`: refresh the main character from ESI first (`EveCharacter.update_character()` on the profile's main, so a stale corp/alliance does not mislead), then list username, main character, corp ticker, alliance ticker, current state, and the groups held. Also list any user in those groups with no main character. Show the table before changing anything.
-2. **Clean-up.** For each of those users whose main is not in alliance ORLOV and not in OARMI or GWON (the `Family Member` rule in `docs/design/membership.md`): remove them from the four groups above, then force a state re-check (`user.profile.assign_state()` or the equivalent in AA 5.4) so they drop to Family Friend and Discord roles follow at the next sync. Leave `Early Founders` alone (add-only rule). Report who was changed. If nobody fails the check, say so and go on.
-3. **Build it in.** Set the allowed states of the four groups to `Family Member` only (`AuthGroup.states`, admin field "States that are allowed to have this group"); leave `Early Founders` unrestricted. With that set, Alliance Auth itself removes the group when a user's state changes away from Family Member (groupmanagement's state-change signal), and the `Family Member` state is re-evaluated on every character update. Verify on the test user `Flapoor_Hendrik` if its state allows (do not change its state). Show the four groups' states afterwards.
-4. **Safety net.** Check what periodic task refreshes characters and states on this install (`run_model_update` in the beat schedule) and its interval; report it. If it is less frequent than every 4 hours, say so and propose the schedule, do not change it without the owner's go.
-5. Record it: a changelog line in `docs/design/membership.md` ("director groups restricted to Family Member; audit of 2026-10-29: …") and, in the groups table, mark the four groups "state-restricted: Family Member". Commit, push, write the next handoff entry.
-Rules from CLAUDE.md apply.
