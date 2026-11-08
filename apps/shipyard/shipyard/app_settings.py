@@ -194,10 +194,15 @@ SHIPYARD_HANGAR_BEAT_MINUTE = getattr(settings, "SHIPYARD_HANGAR_BEAT_MINUTE", 3
 # that was paid from the wrong division (owner, 2026-10-25: "correction projects"): the books count it as ISK put into
 # projects, not as money leaving for the Director division.
 SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS = getattr(settings, "SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS", [r"correction project"])
-# Withdrawals from the master wallet that repaid private project funding without that wording (owner, 2026-11-05: the
-# 360 M "corrections" of 5 November was 180 M project repayment plus 180 M plain correction). {journal entry id: ISK}:
-# that much of the line counts as ISK put into projects, the rest of the line follows the usual rules (0.38.0).
+# Master-wallet lines that moved project money without that wording (owner, 2026-11-05: the 360 M "corrections" of
+# 5 November was 180 M project repayment plus 180 M plain correction; 2026-11-06: the 75 M "correction" deposit of
+# 3 November was project money coming back). {journal entry id: ISK}: that much of the line counts as ISK put into
+# projects (a withdrawal) or coming back out of them (a deposit), the rest of the line follows the usual rules.
 SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES = getattr(settings, "SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES", {})
+# Every LP in stock is carried at this price (owner, 2026-11-08: "assume every LP in stock has a value of 800 ISK, since
+# that is the price we would buy at; if we got it for free as a donation, consider it worth 800 while in stock"). LP bought
+# above or below it books the difference at once; LP sold or converted leave at it. 0 or None: at average cost (0.38.3).
+SHIPYARD_LP_STOCK_ISK_PER_LP = getattr(settings, "SHIPYARD_LP_STOCK_ISK_PER_LP", 800)
 # Stock types the books no longer carry (owner, 2026-10-25: the leftover Cap Boosters bought to convert, too small to
 # matter; what they fetch later simply arrives as a deposit). Their lots are written off in one movement.
 SHIPYARD_BOOKS_STOCK_WRITTEN_OFF = getattr(settings, "SHIPYARD_BOOKS_STOCK_WRITTEN_OFF", [])  # type ids

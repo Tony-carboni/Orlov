@@ -296,10 +296,12 @@ CELERYBEAT_SCHEDULE["doctrines_srp_match_payments"] = {
 
 # Journal lines left out of the Finance tab by their reason (owner, 2026-10-20 "accidental"; 2026-10-21 "correction" too)
 SHIPYARD_BOOKS_IGNORE_REASONS = [r"accidental", r"correction"]
-# Master-wallet withdrawals that repaid private project funding without "correction projects" in the reason (0.38.0):
-# entry id -> ISK counted as the repayment; the rest of the line is a plain correction. 2026-11-05 08:23: 360 M "corrections"
-# = the 180 M refund of the privately funded scordite project + the extra 180 M "correction" deposit of 4 November.
-SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES = {26235384711: 180_000_000}
+# Master-wallet lines that moved project money without "correction projects" in the reason (0.38.0, deposits 0.38.4):
+# entry id -> ISK counted as project money out (a withdrawal) or back in (a deposit); the rest of the line is a plain
+# correction. 2026-11-05 08:23: 360 M "corrections" = the 180 M refund of the privately funded scordite project + the
+# extra 180 M "correction" deposit of 4 November. 2026-11-03 13:10: the 75 M "correction" deposit settled projects
+# made from the wrong wallet (owner, 2026-11-06).
+SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES = {26235384711: 180_000_000, 26228486232: 75_000_000}
 
 # --- Welcome DM (runbook 19): every new Discord member gets the link to #how-to-get-roles ---
 ORLOVBOT_WELCOME = True

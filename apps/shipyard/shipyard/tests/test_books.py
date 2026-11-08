@@ -783,7 +783,9 @@ class BooksTests(TestCase):
         self.assertAlmostEqual(om["owed"], 334.5e6, places=0)
         self.assertEqual(len(om["open"]), 1)
         CorpProject.objects.filter(project_id="d7aaaaaa-1111").update(state="Closed", reward_remaining=0)
-        self.assertEqual((len(books.compute()["outside_master"]["lines"]), books.compute()["outside_master"]["open"]), (1, []))  # closed ones stay out of the box
+        om = books.compute()["outside_master"]  # 0.38.4: a cancelled project stays in the box until its funding is paid back
+        self.assertEqual((len(om["lines"]), [(ln["state"], ln["open_amount"]) for ln in om["open"]]), (1, [("Closed", 334.5e6)]))
+        self.assertEqual(om["journal_at"], at(20))
         CorpProject.objects.filter(project_id="d7aaaaaa-1111").update(state="Active", reward_remaining=314.1e6)
         # paid back to a character with the funding reason, and a plain "correction" transfer into the funding division: both count
         CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_803, division=1, date=at(20.1), ref_type="corporation_account_withdrawal", amount=-200e6,
@@ -792,7 +794,7 @@ class BooksTests(TestCase):
                                         reason="correction", first_party_id=CORP, second_party_id=CORP)
         om = books.compute()["outside_master"]
         self.assertAlmostEqual(om["corrected"], 334.5e6, places=0)
-        self.assertEqual(om["owed"], 0.0)
+        self.assertEqual((om["owed"], om["open"]), (0.0, []))
         self.assertEqual(books.compute(now=at(21))["outside_master"]["lines"], [])  # a past moment does not flag
         # the hourly flag tells the finance users once per line
         owner = get_user_model().objects.create_user("tony_flag", password="x")
@@ -805,6 +807,61 @@ class BooksTests(TestCase):
             self.assertEqual(books.flag_outside_master(), 0)
         self.assertTrue(told and "glist zeolites funded with 334.5 M from wallet division 7" in told[0][1])
         self.assertIn("still owed to the funding wallet 0.0 M", told[0][1])
+
+    def test_the_box_lists_the_funding_lines_the_corrections_have_not_covered(self):
+        """0.38.4 (owner, 2026-11-08): the box named settled projects while asking for two cancelled ones. The corrections
+        cover the funding lines in date order; the box lists what is left, with the amount still open, whatever the state."""
+        CorpProject.objects.create(project_id="d7cccccc-1111", corporation_id=CORP, name="zeolites", state="Deleted", reward_initial=232e6, reward_remaining=0)
+        CorpProject.objects.create(project_id="d7dddddd-1111", corporation_id=CORP, name="coesite", state="Closed", reward_initial=56e6, reward_remaining=0)
+        CorpProject.objects.create(project_id="d7eeeeee-1111", corporation_id=CORP, name="Corp buyback Ice", state="Closed", reward_initial=150e6, reward_remaining=0)
+        for i, (gid, name, amount, hours) in enumerate((("d7cccccc-1111", "zeolites", 232e6, 20), ("d7dddddd-1111", "coesite", 56e6, 21), ("d7eeeeee-1111", "Corp buyback Ice", 150e6, 21.01))):
+            CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_831 + i, division=7, date=at(hours), ref_type="project_payouts", amount=-amount,
+                                            reason=f"goal_id={gid}-2222:goal_name={name}", first_party_id=CORP, second_party_id=1000413)
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_835, division=1, date=at(20.5), ref_type="corporation_account_withdrawal", amount=-232e6,
+                                        reason="correction projects", first_party_id=CORP, second_party_id=4444)
+        om = books.compute()["outside_master"]
+        self.assertAlmostEqual(om["owed"], 206e6, places=0)
+        self.assertEqual([(ln["project"], ln["open_amount"]) for ln in om["open"]], [("coesite", 56e6), ("Corp buyback Ice", 150e6)])
+        self.assertEqual([ln["covered"] for ln in om["lines"]], [232e6, 0.0, 0.0])
+        self.assertEqual(om["journal_at"], at(21.01))
+        # a part payment covers the oldest line first
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_836, division=1, date=at(21.5), ref_type="corporation_account_withdrawal", amount=-100e6,
+                                        reason="correction projects", first_party_id=CORP, second_party_id=4444)
+        om = books.compute()["outside_master"]
+        self.assertEqual([(ln["project"], ln["open_amount"]) for ln in om["open"]], [("Corp buyback Ice", 106e6)])
+        self.assertAlmostEqual(om["owed"], 106e6, places=0)
+
+    def test_a_deposit_can_be_named_as_project_money_coming_back(self):
+        """0.38.4 (owner, 2026-11-06: the 75 M "correction" deposit of 3 November settled projects made from the wrong wallet):
+        SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES names a deposit too; that much counts as project money coming back."""
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_821, division=1, date=at(20.3), ref_type="player_donation", amount=75e6,
+                                        reason="correction", first_party_id=4444, second_party_id=CORP)
+        before = books.compute()
+        self.assertIn([at(20.3), "player_donation", 75e6, "reason: correction"], [[r[0], r[1], r[2], r[3]] for r in before["ignored"]["lines"]])
+        with mock.patch.object(books.app_settings, "SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES", {99_821: 75e6}):
+            d = books.compute()
+        self.assertNotIn(at(20.3), [r[0] for r in d["ignored"]["lines"]])
+        self.assertAlmostEqual(before["ignored"]["net"] - d["ignored"]["net"], 75e6, places=0)
+        self.assertAlmostEqual(d["gap"], 0.0, places=0)
+        self.assertEqual(d["outside_master"]["owed"], before["outside_master"]["owed"])
+
+    def test_lp_in_stock_is_carried_at_the_buying_price(self):
+        """0.38.4 (owner, 2026-11-08): every LP in stock is worth 800 ISK, the price the corporation buys at, donated LP
+        the same. LP bought dearer books the difference at once; LP sold leave at 800."""
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_841, division=1, date=at(20), ref_type="corporation_account_withdrawal", amount=-9e6,
+                                        reason="10k LP", first_party_id=CORP, second_party_id=222)
+        d = books.compute()
+        self.assertEqual((d["lp_units"], round(d["lp_cost"])), (36_000, 36_000 * 800))
+        labels = {m[0]: m[1] for m in d["moves"]}
+        self.assertAlmostEqual(labels["LP bought"], -1e6)  # 9 M paid for LP carried at 8 M
+        move = next(m for m in d["moves"] if m[0] == "LP bought")
+        self.assertIn("carried at 800 ISK per LP; 1.0 M below what was paid", move[2])
+        self.assertIn("At 800 ISK per LP", next(g for g in d["asset_groups"] if g["key"] == "lp")["rows"][0][2])
+        self.assertAlmostEqual(d["gap"], 0.0, places=0)
+        with mock.patch.object(books.app_settings, "SHIPYARD_LP_STOCK_ISK_PER_LP", None):
+            d = books.compute()  # the old rule: at average cost
+        self.assertAlmostEqual(d["buyback"]["lp_avg"], 49e6 / 60_000)
+        self.assertAlmostEqual({m[0]: m[1] for m in d["moves"]}["LP bought"], 0.0)
 
     def test_corrected_withdrawal_is_dropped(self):
         # a mistyped LP purchase paid back a minute later with "correction" in the reason: neither line counts

@@ -318,18 +318,20 @@ def _drop_ignored(journal, cid):
     overrides = _repayment_overrides()
     kept, out = [], []
     for e in journal:
-        if e.division == 1 and e.amount < 0 and e.entry_id in overrides:
-            # part of the line repaid private project funding (0.38.0): that part stays, worded so that compute()
-            # counts it as ISK put into projects; the rest goes on through the flags and patterns
+        if e.division == 1 and e.amount != 0 and e.entry_id in overrides:
+            # part of the line repaid private project funding (0.38.0), or brought project money back in (0.38.4, the
+            # 75 M "correction" deposit of 3 November): that part stays, worded so that compute() counts it as ISK put
+            # into projects or coming back out of them; the rest goes on through the flags and patterns
+            sign = -1.0 if e.amount < 0 else 1.0
             repaid = min(overrides[e.entry_id], abs(e.amount))
             repay = copy.copy(e)
-            repay.amount = -repaid
+            repay.amount = sign * repaid
             repay.reason = f"{e.reason or ''} [correction projects: {repaid:,.0f} by SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES]"
             kept.append(repay)
             if repaid >= abs(e.amount):
                 continue
             e = copy.copy(e)
-            e.amount = e.amount + repaid
+            e.amount = e.amount - sign * repaid
         why, part = flagged.get((e.division, e.entry_id), (None, None))
         if why is None and e.reason and any(p.search(e.reason) for p in patterns) and not any(p.search(e.reason) for p in keep_patterns):
             why = f"reason: {e.reason}"
@@ -348,7 +350,8 @@ def _drop_ignored(journal, cid):
 
 
 def _repayment_overrides() -> dict:
-    """{entry id: ISK} of master-wallet withdrawals that repaid private project funding without saying so (0.38.0)."""
+    """{entry id: ISK} of master-wallet lines that moved project money without saying so: withdrawals that repaid private
+    funding (0.38.0) and deposits that brought project money back (0.38.4)."""
     return {int(k): float(v) for k, v in (app_settings.SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES or {}).items()}
 
 
@@ -565,7 +568,8 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
             others[rt] += e.amount
 
     # --- stock: every lot at cost, first in, first out ---------------------------------------------
-    lp_avg = (lp_cost / lp_units) if lp_units else 0.0
+    # 0.38.4 (owner, 2026-11-08): every LP is carried at the price the corporation buys at, donated LP the same
+    lp_avg = float(app_settings.SHIPYARD_LP_STOCK_ISK_PER_LP or 0) or ((lp_cost / lp_units) if lp_units else 0.0)
     lots = defaultdict(deque)
     stock_base = 0.0
     events = []  # (t, order, kind, payload): purchases and redemptions before the sales of the same moment
@@ -646,7 +650,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
                                 "list_price": last.list_price if last else None, "location": last.location_name if last else ""})
     bought_since = sum(s.units * (s.unit_cost or 0) for s in batches if s.bought_at > base and not _is_conversion(s))
     market_bought = sum(c for _, _, _, c, inp in market_buys if inp)
-    lp_left = lp_cost - (lp_used + lp_sold) * lp_avg
+    lp_left = (lp_units - lp_used - lp_sold) * lp_avg
 
     # --- project goods still held, split at the baseline -----------------------------------------
     led = projectbooks.ledger(cid, until=cut)
@@ -833,8 +837,11 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         moves.append(["Stock bought", bought_since - paid_in_books,
                       f"{bought_since / M:.1f} M of stock since the baseline, now held at buy value"
                       + (f"; {(bought_since - paid_in_books) / M:.1f} M of it not paid from a corporation wallet" if abs(bought_since - paid_in_books) >= 1 else "")])
-    if lp_cost - b.lp_cost:
-        moves.append(["LP bought", 0.0, f"{(lp_cost - b.lp_cost) / M:.1f} M paid for {lp_units - b.lp_units:,} LP, held at cost until used"])
+    if lp_cost - b.lp_cost or lp_units - b.lp_units:
+        bought_lp, paid_lp = lp_units - b.lp_units, lp_cost - b.lp_cost
+        diff = bought_lp * lp_avg - paid_lp  # what the LP are carried at against what was paid (0 when bought at the carrying price)
+        moves.append(["LP bought", diff, f"{paid_lp / M:.1f} M paid for {bought_lp:,} LP, carried at {lp_avg:,.0f} ISK per LP"
+                      + (f"; {abs(diff) / M:.1f} M {'below' if diff < 0 else 'above'} what was paid" if abs(diff) >= 1 else "")])
     for t, units, isk, who in lp_sales:
         if t >= base:
             cost = units * lp_avg
@@ -878,7 +885,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         moves.append(["Not explained", gap, "The journal and the position differ: a missing journal page or a new kind of entry"])
     outputs = {c["name"] for c in conversions}
     move_groups = _group_moves(moves, outputs)
-    asset_groups = _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held, held_value, lp_units - lp_used - lp_sold, lp_left)
+    asset_groups = _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held, held_value, lp_units - lp_used - lp_sold, lp_left, lp_avg)
 
     # --- outside the books -----------------------------------------------------------------------
     live = live_wallets()
@@ -916,7 +923,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
     hours = max(0.0, (cut - origin).total_seconds() / 3600)
 
     return {
-        "outside_master": outside_master(cid, origin) if now is None else {"lines": [], "open": [], "funded": 0.0, "corrected": 0.0, "owed": 0.0},
+        "outside_master": outside_master(cid, origin) if now is None else {"lines": [], "open": [], "funded": 0.0, "corrected": 0.0, "owed": 0.0, "journal_at": None},
         "cut": cut, "base": base, "origin": origin, "loan": loan, "period": b, "opening_result": b.opening_result,
         "since_label": b.source or f"the working-budget baseline of {origin.day} {origin:%B}, {origin:%H:%M} EVE", "period_fallback": period_fallback,
         "period_result": result - b.opening_result, "wallet": wallet, "other_divs": other_divs, "pool": pool, "n_projects": n_projects,
@@ -976,8 +983,17 @@ def outside_master(cid: int, origin, cut=None) -> dict:
             corrected += min(overrides[e.entry_id], -e.amount)
         elif any(p_.search(reason) for p_ in funding) or (e.first_party_id == cid and e.second_party_id == cid and any(p_.search(reason) for p_ in ignore)):
             corrected -= e.amount
-    return {"lines": lines, "open": [ln for ln in lines if ln["state"] != "Closed"],  # the box lists the open ones (owner, 0.35.1)
-            "funded": funded, "corrected": corrected, "owed": max(0.0, funded - corrected)}
+    # 0.38.4 (owner, 2026-11-08: the box named projects that were long settled while asking for two cancelled ones):
+    # the corrections cover the funding lines in date order, and the box lists the lines not yet covered, whatever
+    # the project's state. The time of the last journal line says how far behind EVE the box is.
+    left = corrected
+    for ln in lines:
+        covered = min(left, ln["amount"])
+        ln["covered"], ln["open_amount"] = covered, ln["amount"] - covered
+        left -= covered
+    journal_at = CorpJournalEntry.objects.filter(corporation_id=cid).order_by("-date").values_list("date", flat=True).first()
+    return {"lines": lines, "open": [ln for ln in lines if ln["open_amount"] >= 1],
+            "funded": funded, "corrected": corrected, "owed": max(0.0, funded - corrected), "journal_at": journal_at}
 
 
 def flag_outside_master() -> int:
@@ -1417,7 +1433,7 @@ def _group_moves(moves, outputs) -> list:
     return [g for g in groups.values() if g["rows"]]
 
 
-def _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held, held_value, lp_units, lp_left) -> list:
+def _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held, held_value, lp_units, lp_left, lp_avg=0.0) -> list:
     """Section 1 by category: liquid ISK, reward ISK in projects, stock listed for sale, physical items in stock
     (the inputs bought to convert), goods held from projects, loyalty points. Each with its items behind a click."""
     groups = []
@@ -1450,7 +1466,8 @@ def _group_assets(wallet, cash, orders, cut, pool, n_projects, stock_lines, held
                        "note": f"At what the projects paid for them; {held_value / M:,.1f} M at Jita's highest buy"})
     if lp_left:
         groups.append({"key": "lp", "label": "Loyalty points", "id": "as-lp", "total": lp_left,
-                       "rows": [[f"{lp_units:,} LP held for sale", lp_left, "At what the corporation paid per LP"]]})
+                       "rows": [[f"{lp_units:,} LP held for sale", lp_left,
+                                 f"At {lp_avg:,.0f} ISK per LP, the price the corporation buys at; donated LP count the same" if app_settings.SHIPYARD_LP_STOCK_ISK_PER_LP else "At what the corporation paid per LP"]]})
     return groups
 
 
