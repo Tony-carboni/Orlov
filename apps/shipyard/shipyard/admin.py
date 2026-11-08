@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, HangarItem, LpSnapshot
+from .models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, HangarItem, LpDonation, LpSnapshot
 from .models import (
     ScrapItem,
     BuildSnapshot, CharacterSync, Facility, IndustryJob, LocationName, LpFaction, MarketLocation, RefreshRun,
@@ -115,6 +115,16 @@ class LpSnapshotAdmin(admin.ModelAdmin):
     list_display = ("taken_at", "character_name", "corporation_name", "change", "loyalty_points", "is_first")
     list_filter = ("corporation_name", "character_name")
     search_fields = ("character_name", "corporation_name")
+
+
+@admin.register(LpDonation)
+class LpDonationAdmin(admin.ModelAdmin):
+    list_display = ("received_at", "units", "donor", "corporation_id", "note", "added_at")
+    search_fields = ("donor", "note")
+
+    def get_changeform_initial_data(self, request):
+        from .services import projects
+        return {"corporation_id": projects.corp_id()}
 
 
 @admin.register(BookIgnoredEntry)

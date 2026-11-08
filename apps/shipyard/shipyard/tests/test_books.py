@@ -8,7 +8,7 @@ from django.contrib.auth.models import Permission
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, ProjectContribution, ProjectSnapshot
+from ..models import BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, LpDonation, ProjectContribution, ProjectSnapshot
 from ..services import books
 
 CORP = 98843356
@@ -862,6 +862,42 @@ class BooksTests(TestCase):
             d = books.compute()  # the old rule: at average cost
         self.assertAlmostEqual(d["buyback"]["lp_avg"], 49e6 / 60_000)
         self.assertAlmostEqual({m[0]: m[1] for m in d["moves"]}["LP bought"], 0.0)
+
+    def test_donated_lp_count_in_stock_at_the_buying_price(self):
+        """0.39.0 (owner, 2026-11-08: the wallet holds 304,000 LP, the books knew 236,000 bought ones): a row of the LP donations
+        register adds its LP to the stock at 800 each from its date, as one "LP donated" movement of the period; the LP log
+        lists it; a period opened after the date carries it in the opening."""
+        before = books.compute()
+        LpDonation.objects.create(corporation_id=CORP, received_at=at(11.2), units=68_000, donor="Catherine Frey")  # inside the journal's range, like a stock batch
+        LpDonation.objects.create(corporation_id=CORP + 1, received_at=at(11.2), units=5, donor="someone else's corporation")
+        d = books.compute()
+        self.assertEqual((d["lp_units"], round(d["lp_cost"])), (94_000, 94_000 * 800))
+        labels = {m[0]: m[1] for m in d["moves"]}
+        self.assertAlmostEqual(labels["LP donated"], 68_000 * 800)
+        self.assertAlmostEqual(labels["LP bought"], 0.0)
+        move = next(m for m in d["moves"] if m[0] == "LP donated")
+        self.assertIn("68,000 LP given to the corporation, carried at 800 ISK per LP; from Catherine Frey", move[2])
+        self.assertIn(move, next(g for g in d["move_groups"] if g["key"] == "lp")["rows"])
+        self.assertAlmostEqual(d["result"], before["result"] + 68_000 * 800, places=0)
+        self.assertAlmostEqual(d["gap"], 0.0, places=0)
+        self.assertEqual((d["buyback"]["lp_left"], d["buyback"]["lp_units"]), (94_000, 118_000))
+        self.assertEqual([(e["lp"], e["balance"]) for e in d["lp_events"]], [(50_000, 50_000), (-24_000, 26_000), (68_000, 94_000)])
+        self.assertEqual(d["lp_events"][-1]["kind"], "donated")
+        later = books.compute(since=at(11.9), since_label="after the gift")  # the opening holds the donated LP; no movement
+        self.assertEqual((later["lp_units"], later["period"].lp_units), (94_000, 94_000))
+        self.assertNotIn("LP donated", [m[0] for m in later["moves"]])
+        self.assertAlmostEqual(later["gap"], 0.0, places=0)
+        from allianceauth.tests.auth_utils import AuthUtils
+        owner = get_user_model().objects.create_user("tony3", password="x")
+        AuthUtils.add_main_character_2(owner, "tony3 main", 9004, corp_id=CORP, corp_name="OARMI", alliance_id=None, alliance_name="")
+        for codename in ("basic_access", "manage_shipyard"):
+            owner.user_permissions.add(Permission.objects.get(codename=codename, content_type__app_label="shipyard"))
+        client = Client()
+        client.force_login(owner)
+        html = client.get(reverse("shipyard:finance_lp_log")).content.decode()
+        self.assertIn("94,000 LP", html)
+        self.assertIn("68,000 LP donated on top", html)
+        self.assertIn("Donated by Catherine Frey: 68,000 LP", html)
 
     def test_corrected_withdrawal_is_dropped(self):
         # a mistyped LP purchase paid back a minute later with "correction" in the reason: neither line counts

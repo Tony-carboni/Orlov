@@ -1006,3 +1006,26 @@ class BargainPrefs(models.Model):
 
     def __str__(self):
         return f"{self.user}: {len(self.ignored_paths)} paths, {len(self.ignored_types)} items ignored, {len(self.starred_types)} flagged"
+
+
+class LpDonation(models.Model):
+    """Loyalty points given to the corporation (0.39.0, owner, 2026-11-08: "there have been some direct LP donations that
+    do not have a purchase cost"). EVE's API has no corporation LP route and a donation writes nothing in the wallet
+    journal, so the books learn of it here: from its date the LP count in stock at the buying price
+    (SHIPYARD_LP_STOCK_ISK_PER_LP, 800), as one "LP donated" movement of the period that holds the date. Enter it in the
+    period that is open; a date before the period's start is not in the opening and makes the sheet show a gap."""
+
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    received_at = models.DateTimeField(help_text="When the LP arrived, EVE time (or when you counted them in the wallet); inside the period that is open")
+    units = models.PositiveIntegerField(help_text="Loyalty points received")
+    donor = models.CharField(max_length=100, blank=True, help_text="Who gave them, for the log")
+    note = models.CharField(max_length=200, blank=True)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["received_at"]
+        verbose_name = "LP donation"
+        verbose_name_plural = "LP donations"
+
+    def __str__(self):
+        return f"{self.units:,} LP from {self.donor or 'a member'}, {self.received_at:%Y-%m-%d %H:%M}"

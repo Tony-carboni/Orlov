@@ -182,13 +182,14 @@ def finance_lp_log(request):
         raise PermissionDenied
     d = books.compute()
     events = d["lp_events"]
-    bought = sum(e["lp"] for e in events if e["lp"] > 0)
-    bought_isk = sum(e["isk"] for e in events if e["lp"] > 0)
+    bought = sum(e["lp"] for e in events if e["lp"] > 0 and e.get("kind") != "donated")
+    bought_isk = sum(e["isk"] for e in events if e["lp"] > 0 and e.get("kind") != "donated")
+    donated = sum(e["lp"] for e in events if e.get("kind") == "donated")
     used = -sum(e["lp"] for e in events if e.get("kind") == "converted")
     sold = -sum(e["lp"] for e in events if e.get("kind") == "sold")
     sold_isk = sum(e["isk"] for e in events if e.get("kind") == "sold")
     return render(request, "shipyard/finance_lp_log.html", _context(
-        request, events=list(reversed(events)), balance=bought - used - sold, balance_value=d["buyback"]["lp_left_value"], bought=bought, bought_isk=bought_isk,
+        request, events=list(reversed(events)), balance=bought + donated - used - sold, balance_value=d["buyback"]["lp_left_value"], bought=bought, bought_isk=bought_isk, donated=donated,
         avg=(bought_isk / bought) if bought else 0, used=used, conversions=sum(1 for e in events if e.get("kind") == "converted"),
         sold=sold, sold_isk=sold_isk, sales=sum(1 for e in events if e.get("kind") == "sold"),
         can_manage=request.user.has_perm("shipyard.manage_shipyard"),

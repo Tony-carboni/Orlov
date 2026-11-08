@@ -34,7 +34,7 @@ from django.core.cache import cache
 from django.utils import timezone
 
 from .. import app_settings
-from ..models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, MarketLocation, Ore, PriceSnapshot
+from ..models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, CorpJournalEntry, CorpProject, CorpWalletTransaction, LpDonation, MarketLocation, Ore, PriceSnapshot
 from .directsales import CODE_RE
 from . import hangar, projectbooks, projects, reprocessing
 
@@ -567,6 +567,11 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         elif inp:
             others[rt] += e.amount
 
+    # --- donated LP (0.39.0): nothing in the journal, so from the register; the period's own count as a movement ------------
+    lp_donations = [[g.received_at, g.units, g.donor] for g in LpDonation.objects.filter(corporation_id=cid, received_at__gte=origin, received_at__lte=cut)]
+    lp_donated = sum(units for t, units, _ in lp_donations if t >= base)
+    lp_units += lp_donated
+
     # --- stock: every lot at cost, first in, first out ---------------------------------------------
     # 0.38.4 (owner, 2026-11-08): every LP is carried at the price the corporation buys at, donated LP the same
     lp_avg = float(app_settings.SHIPYARD_LP_STOCK_ISK_PER_LP or 0) or ((lp_cost / lp_units) if lp_units else 0.0)
@@ -837,11 +842,15 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         moves.append(["Stock bought", bought_since - paid_in_books,
                       f"{bought_since / M:.1f} M of stock since the baseline, now held at buy value"
                       + (f"; {(bought_since - paid_in_books) / M:.1f} M of it not paid from a corporation wallet" if abs(bought_since - paid_in_books) >= 1 else "")])
-    if lp_cost - b.lp_cost or lp_units - b.lp_units:
-        bought_lp, paid_lp = lp_units - b.lp_units, lp_cost - b.lp_cost
+    bought_lp, paid_lp = lp_units - b.lp_units - lp_donated, lp_cost - b.lp_cost
+    if bought_lp or paid_lp:
         diff = bought_lp * lp_avg - paid_lp  # what the LP are carried at against what was paid (0 when bought at the carrying price)
         moves.append(["LP bought", diff, f"{paid_lp / M:.1f} M paid for {bought_lp:,} LP, carried at {lp_avg:,.0f} ISK per LP"
                       + (f"; {abs(diff) / M:.1f} M {'below' if diff < 0 else 'above'} what was paid" if abs(diff) >= 1 else "")])
+    if lp_donated:
+        donors = sorted({who or "a member" for t, _, who in lp_donations if t >= base})
+        moves.append(["LP donated", lp_donated * lp_avg,
+                      f"{lp_donated:,} LP given to the corporation, carried at {lp_avg:,.0f} ISK per LP; from {', '.join(donors)} (the LP donations register)"])
     for t, units, isk, who in lp_sales:
         if t >= base:
             cost = units * lp_avg
@@ -870,6 +879,8 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
         lp_events.append({"t": t, "lp": units, "isk": isk, "kind": "bought", "what": f"Bought from {to}: {units:,} LP for {isk / M:.1f} M ({isk / units:,.0f} ISK per LP)" if units else f"Bought from {to}"})
     for t, units, isk, who in lp_sales:
         lp_events.append({"t": t, "lp": -units, "isk": isk, "kind": "sold", "what": f"Sold to {who}: {units:,} LP for {isk / M:.1f} M ({isk / units:,.0f} ISK per LP)"})
+    for t, units, who in lp_donations:
+        lp_events.append({"t": t, "lp": units, "isk": 0.0, "kind": "donated", "what": f"Donated by {who or 'a member'}: {units:,} LP (the LP donations register)"})
     for c in all_conv:
         if c["lp"]:
             lp_events.append({"t": c["t"], "lp": -c["lp"], "isk": 0.0, "kind": "converted",
@@ -1393,7 +1404,7 @@ def order_history() -> list:
 MOVE_GROUPS = [
     ("project_sales", "Project buyback sales", "What the corporation sold of the goods its projects bought from members"),
     ("project_rewards", "Project buyback rewards to members", "ISK the projects paid members, and the goods those rewards bought that are still held"),
-    ("lp", "LP conversion", "LP bought, what the LP store gave for it, the sales of those items, and LP sold directly"),
+    ("lp", "LP conversion", "LP bought or donated, what the LP store gave for it, the sales of those items, and LP sold directly"),
     ("stock", "Stock sales", "Stock bought to sell on (Heavy Water), and its sales"),
     ("market", "Market orders and fees", "Escrow of buy orders, items bought on the market, broker fees and sales tax"),
     ("structure", "Structure income", "Industry tax of the Raitaru, moved from the structure corporation to the corporation"),
@@ -1410,7 +1421,7 @@ def _group_moves(moves, outputs) -> list:
             return "project_sales"
         if label.startswith("Project rewards paid") or label.startswith("Goods those rewards bought") or label.startswith("Hangar count"):
             return "project_rewards"
-        if label.startswith("LP store:") or label.startswith("Paid in the LP store") or label == "LP bought" or label.startswith("LP sold directly"):
+        if label.startswith("LP store:") or label.startswith("Paid in the LP store") or label in ("LP bought", "LP donated") or label.startswith("LP sold directly"):
             return "lp"
         if label.endswith("sold, profit over its cost"):
             return "lp" if label[: -len(" sold, profit over its cost")] in outputs else "stock"
