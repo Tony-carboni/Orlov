@@ -337,3 +337,11 @@ ORLOVBOT_RADIO_STATIONS = [
 ]
 ORLOVBOT_RADIO_VOLUME = 0.3
 ORLOVBOT_RADIO_CHANNELS = ["music", "voice1"]   # the radio plays only in voice channels whose name contains one of these; [] = anywhere
+
+# --- Planned fleets (runbook 22): one always-current board in #planned-fleets, fed by /fleet add, edit, remove, list ---
+# Experiment phase (owner, 2026-11-09): the channel is visible to the owner only and only Alliance Directors may plan fleets.
+# For the rollout: set ORLOVBOT_FLEET_ROLES = ["Family Member"] and open the channel to members (read-only, like #moon-board).
+ORLOVBOT_FLEET_BOARD_CHANNEL = "planned-fleets"   # channel name; "" switches the board off
+ORLOVBOT_FLEET_ROLES = ["Alliance Director"]      # who may add and edit fleets
+ORLOVBOT_FLEET_ADMIN_ROLES = ["Alliance Director"]  # who may remove or edit anyone's fleet (the creator always may)
+ORLOVBOT_FLEET_KEEP_HOURS = 3                      # a fleet stays on the board this long after its formup time
