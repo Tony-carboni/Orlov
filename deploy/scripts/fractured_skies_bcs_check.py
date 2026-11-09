@@ -1,8 +1,10 @@
-"""Runs on the PC (plain Python, no Django). Read-only: are the four Fractured Skies navy attack battlecruisers
-known to ESI and EVE Ref yet, and do the militia LP stores list their blueprint copies?
+"""Plain Python, no Django; runs on the PC or in the container. Read-only: are the four Fractured Skies navy attack
+battlecruisers known to ESI and EVE Ref yet, and do the militia LP stores list their blueprint copies?
 Usage: python -I deploy/scripts/fractured_skies_bcs_check.py
+Exit code 0 when all four are in ESI and EVE Ref with a manufacturing blueprint (the catalog can load them), 3 otherwise.
 """
 import json
+import sys
 import urllib.request
 
 ESI = "https://esi.evetech.net/latest"
@@ -18,6 +20,7 @@ def get(url, data=None):
 
 ids = get(f"{ESI}/universe/ids/?datasource=tranquility", json.dumps(NAMES).encode())
 types = {t["name"]: t["id"] for t in ids.get("inventory_types", [])}
+ready = 0
 for n in NAMES:
     tid = types.get(n)
     if not tid:
@@ -28,6 +31,8 @@ for n in NAMES:
         d = get(f"https://ref-data.everef.net/types/{tid}")
         bps = d.get("produced_by_blueprints") or {}
         ref = f"EVE Ref ok, group {d.get('group_id')}, meta {d.get('meta_group_id')}, faction {d.get('faction_id')}, blueprint(s) {list(bps)}"
+        if d.get("published") and any((v or {}).get("blueprint_activity") == "manufacturing" for v in bps.values()):
+            ready += 1
     except Exception as exc:  # noqa: BLE001
         ref = f"EVE Ref: {type(exc).__name__} (not synced yet)"
     print(f"ESI    : {n} = {tid}; {ref}")
@@ -42,3 +47,5 @@ for store, cid in MILITIA.items():
         print(f"LP store {store}: type {o['type_id']} x{o['quantity']} for {o['lp_cost']:,} LP + {o['isk_cost']/1e6:.0f} M ISK, requires {o.get('required_items')}")
     if not hits:
         print(f"LP store {store}: no 52,000 LP + 13 M offer yet ({len(offers)} offers)")
+print(f"READY {ready} of {len(NAMES)}")
+sys.exit(0 if ready == len(NAMES) else 3)
