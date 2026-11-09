@@ -4,6 +4,22 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-11-09 (evening UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** the four Fractured Skies navy attack battlecruisers for the Shipyard dashboard (owner's ask of 9 November), and the EVE soundboard (8 November).
+
+**Battlecruisers, what is known.** Fractured Skies ships Tuesday 10 November 11:00 UTC. Expansion notes of 6 November: Naga Navy Issue (cruise missiles and torpedoes; BPC in the State Protectorate store), Oracle Navy Issue (24th Imperial Crusade), Talos Navy Issue (Federal Defense Union), Tornado Fleet Issue (Tribal Liberation Force); every blueprint copy 52,000 LP plus 13 million ISK, no tag mentioned, runs per copy not stated. Checked 9 November: the four names are not in ESI, EVE Ref has no type for them, and none of the four militia stores lists a 52,000 LP offer yet. The catalog needs nothing new: attack battlecruisers (group 1201) are already a hull group, navy hulls are active by default and get their militia LP faction pre-linked by `shipyard_load_ships`; the hourly refresh loads materials and prices for every active ship.
+
+**Prepared.** `deploy/scripts/fractured_skies_bcs_check.py` (PC, plain Python, read-only: ESI name lookup, EVE Ref type, the four stores' offers) and `deploy/scripts/fractured_skies_bcs_add.py` (Django shell on the server, after `shipyard_load_ships`: sets LP faction, 52,000 LP, 13 M ISK, 1 run and a note on the four ShipConfig rows; idempotent).
+
+**Next (local session, on 10 November once the check script shows all four in ESI and EVE Ref, usually a few hours after downtime).** Announce, then: backup with aa-backup.sh; `shipyard_load_ships` in the gunicorn container (rebuilds the catalog from EVE Ref, existing rows keep their flags and config); pipe the add script into the Django shell; `shipyard_refresh`; check the dashboard shows the four under Navy battlecruisers with a build cost and the LP route; compare the runs per copy with the State Protectorate offer in the LP conversion tab and fix `lp_runs` if a copy has more than one run.
+
+**Soundboard (8 November, done).** The owner's EVE client (`C:\CCP\EVE`) holds the English voice bank; its 1,221 clips were split out and named through Wwise's SoundBanksInfo from CCP's resource CDN, decoded with vgmstream. `C:\Users\Toon Budeners\Documents\EVE soundboard\soundboard.html` lists 488 clips in six groups (Aura's 50 spoken notifications, 376 tutorial Aura lines including capacitor none, shields low and down, armor damaged and loss, ammo low and none, plus alarms, targeting, warp and UI beeps); nothing of it is in git (CCP assets). Discord's server soundboard (eight slots at boost tier 0, OGG or MP3 only, converted with the container's ffmpeg, uploaded by the bot as Administrator) carries Target lock, Negative, Docking denied, Negative 3. Four slots free; the owner was asked which capacitor take and what else to put there.
+
+**Owner has to do by hand.** Pick the remaining four soundboard clips. Still open: the 75 M "correction" deposit of 3 November, the C2 entrance board inputs, more officers, the OARMI Director role, the 3-hour refresh, corp_GB44 and corp_1E3, DigitalOcean weekly backups, the stray #pings, the seven project graphs.
+
+---
+
 ## 2026-11-08 (18:05 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** Shipyard 0.39.0 and 0.39.1 (runbook 13 C): donated LP, and the red box that stayed open.
