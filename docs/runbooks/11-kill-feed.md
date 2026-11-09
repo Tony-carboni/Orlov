@@ -32,7 +32,7 @@ Considered and not used: the Alliance Auth app `aa-killtracker` (a full tracker 
 ## A. Create the channel (Discord, 3 min)
 
 1. In the `bots` category: **Create Channel** → Text → name `zkillboard` (exactly this).
-2. Channel → **Edit Channel → Permissions**: whoever should read it gets View Channel ✅ and Send Messages ❌; the bot's role `Orlov auth` needs View Channel ✅, Send Messages ✅, Embed Links ✅.
+2. Channel → **Edit Channel → Permissions**: whoever should read it gets View Channel ✅ and Send Messages ❌; the bot's role `Orlov auth` needs View Channel ✅, Send Messages ✅, Embed Links ✅. *Changed 2026-11-09 on the owner's instruction: `Family Member` may now also send messages, react and open public threads in `#zkillboard` (same as `#juicy-killmails`), so members can talk about the kills under the posts; `Family Friend` and `@everyone` keep read-only / no access.*
 3. **Save Changes**.
 
 ✅ Done when the channel exists and the bot may post. *Done 2026-10-05 by the owner.*
