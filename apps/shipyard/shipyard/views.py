@@ -197,6 +197,18 @@ def finance_lp_log(request):
 
 
 @login_required
+def director_view(request):
+    """The Director page (0.40.0, owner, 2026-11-14): the members who left, from the CEO's notifications; more sections later."""
+    from .services import members
+    if not request.user.has_perm("shipyard.director_access"):
+        raise PermissionDenied
+    days = _int(request.GET.get("days"), 0, 0, 3650)
+    return render(request, "shipyard/director.html", _context(
+        request, leavers=members.leavers(days=days), counts=members.counts(), last_read=members.last_read(), days=days,
+    ))
+
+
+@login_required
 def finance_pdf(request):
     from django.core.exceptions import PermissionDenied
     from django.http import HttpResponse

@@ -79,6 +79,11 @@
             <i class="fas fa-scale-balanced fa-fw"></i> Finance
         </a>
         {% endif %}
+        {% if perms.shipyard.director_access %}
+        <a class="nav-link {% if request.resolver_match.url_name == 'director' %}active{% endif %}" href="{% url 'shipyard:director' %}" title="For the corporation's directors: the members who left, more later">
+            <i class="fas fa-user-tie fa-fw"></i> Director
+        </a>
+        {% endif %}
     </nav>
     {% if data_notice %}
     <div class="alert alert-warning py-2"><i class="fas fa-triangle-exclamation fa-fw"></i> {{ data_notice }}</div>

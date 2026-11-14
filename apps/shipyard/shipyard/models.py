@@ -20,6 +20,7 @@ class General(models.Model):
             ("view_alliance_industry", "Can see the industry of everyone in the alliance"),
             ("books_access", "Can see the corporation's balance sheet (Finance tab)"),
             ("refresh_prices", "Can press Refresh on the dashboards (queues the Jita price refreshes, nothing else)"),
+            ("director_access", "Can open the Director page (the corporation's directors)"),
         )
 
 
@@ -1029,3 +1030,28 @@ class LpDonation(models.Model):
 
     def __str__(self):
         return f"{self.units:,} LP from {self.donor or 'a member'}, {self.received_at:%Y-%m-%d %H:%M}"
+
+
+class CorpMemberEvent(models.Model):
+    """A member message from the CEO's in-game notifications (0.40.0): who left the corporation, applied, was
+    accepted, withdrew or was invited. Stored because EVE keeps only the last few hundred notifications and tells
+    nobody but the CEO about a member leaving; the Director page lists the leavers from these rows."""
+
+    KINDS = [("left", "left the corporation"), ("applied", "applied"), ("accepted", "application accepted"), ("withdrawn", "withdrew the application"), ("invited", "invited")]
+
+    corporation_id = models.PositiveIntegerField(db_index=True)
+    notification_id = models.BigIntegerField(unique=True, help_text="EVE's notification id")
+    kind = models.CharField(max_length=10, choices=KINDS, db_index=True)
+    character_id = models.PositiveIntegerField(db_index=True)
+    character_name = models.CharField(max_length=100, blank=True)
+    timestamp = models.DateTimeField(db_index=True, help_text="EVE time of the notification")
+    text = models.CharField(max_length=500, blank=True, help_text="The application text, for applications")
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        verbose_name = "corp member event"
+        verbose_name_plural = "corp member events"
+
+    def __str__(self):
+        return f"{self.character_name or self.character_id} {self.get_kind_display()} {self.timestamp:%Y-%m-%d %H:%M}"

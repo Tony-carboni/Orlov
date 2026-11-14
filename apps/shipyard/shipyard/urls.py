@@ -31,6 +31,7 @@ urlpatterns = [
     path("finance/hangar/refresh/", views.hangar_refresh, name="hangar_refresh"),
     path("finance/direct-sale/", views.finance_direct_sale, name="finance_direct_sale"),
     path("finance/lp/", views.finance_lp_log, name="finance_lp_log"),
+    path("director/", views.director_view, name="director"),
     path("member/ship/<int:type_id>/", views.member_ship, name="member_ship"),
     path("income/connect/", views.wallet_connect, name="wallet_connect"),
     path("income/refresh/", views.wallet_refresh, name="wallet_refresh"),

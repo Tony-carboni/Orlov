@@ -16,9 +16,11 @@ LIMITED = {
     "shipyard.dashboard_access": {"index", "ship_detail", "api_simulate", "settings", "use_character", "set_facility", "set_bpc_price", "go"},
     "shipyard.reprocessing_access": {"reprocessing", "reprocessing_skills", "scrapmetal", "bargains", "bargains_pref", "use_character", "go"},
     "shipyard.books_access": {"finance", "finance_pdf", "finance_refresh", "hangar_refresh", "lplog", "go"},
+    "shipyard.director_access": {"director", "use_character", "go"},  # 0.40.0: the Director page (owner and Hamu)
 }
 # the tab a limited member lands on, in order of preference
-LANDING = [("shipyard.dashboard_access", "/shipyard/"), ("shipyard.reprocessing_access", "/shipyard/reprocessing/"), ("shipyard.books_access", "/shipyard/finance/")]
+LANDING = [("shipyard.dashboard_access", "/shipyard/"), ("shipyard.reprocessing_access", "/shipyard/reprocessing/"), ("shipyard.books_access", "/shipyard/finance/"),
+           ("shipyard.director_access", "/shipyard/director/")]
 ALL_TABS = ("index", "fuel", "reprocessing", "scrapmetal", "lp", "bargains", "industry", "business", "settings")
 
 

@@ -265,6 +265,20 @@ def refresh_hangar():
 
 
 @shared_task
+def refresh_member_events():
+    """The CEO's member notifications (left, applied, accepted) into CorpMemberEvent, for the Director page (beat entry shipyard_refresh_member_events, hourly)."""
+    from .services import members
+    run = _run("member_events")
+    try:
+        result = members.refresh()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("member events refresh failed: %s", exc)
+        _done(run, False, 0, str(exc))
+        return
+    _done(run, True, result["new"], f"{result['character']}")
+
+
+@shared_task
 def snapshot_lp():
     """Every character's loyalty points per NPC corporation, the changes kept as the LP log (beat entry shipyard_lp_snapshots, hourly)."""
     run = _run("lp_snapshots")

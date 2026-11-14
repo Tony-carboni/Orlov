@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, HangarItem, LpDonation, LpSnapshot
+from .models import BookDirectSale, BookIgnoredEntry, BooksBaseline, BookStock, CorpMemberEvent, HangarItem, LpDonation, LpSnapshot
 from .models import (
     ScrapItem,
     BuildSnapshot, CharacterSync, Facility, IndustryJob, LocationName, LpFaction, MarketLocation, RefreshRun,
@@ -115,6 +115,13 @@ class LpSnapshotAdmin(admin.ModelAdmin):
     list_display = ("taken_at", "character_name", "corporation_name", "change", "loyalty_points", "is_first")
     list_filter = ("corporation_name", "character_name")
     search_fields = ("character_name", "corporation_name")
+
+
+@admin.register(CorpMemberEvent)
+class CorpMemberEventAdmin(admin.ModelAdmin):
+    list_display = ("timestamp", "kind", "character_name", "character_id", "corporation_id", "notification_id")
+    list_filter = ("kind",)
+    search_fields = ("character_name", "character_id")
 
 
 @admin.register(LpDonation)
