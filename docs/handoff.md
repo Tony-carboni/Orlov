@@ -4,6 +4,20 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-11-14 (09:20 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** Shipyard 0.40.0 (runbook 13 C): the Director page with the members who left; Discord voice channel visibility (membership design changelog); the OARMI roster and in-game titles check.
+
+**Done.** Voice channels: everyone sees who is in all four, unauthed join only voice - public, Family Friend also Voice - music & relax, Family Member all four (bot script deploy/discord-admin/voice_channel_visibility.py; before, all four were joinable by anyone). Roster: Corp Stats lists 89 OARMI characters, 70 on Family Member accounts, 19 not in auth (10 known alts, 9 unknown: Abyussy DooDussy, Logan Xeen Ragnar, Master Hacer, Morgothy, Nosferatuss, Raikakailen Kashuken, Rainy Pidling, Tagger UK, Vin Diesely); four Family Member accounts without Discord (Jalan'Rook, Miguel Stevens, One of Few, Viktor Caughar); Tyke Almighty registered, Ladonie Divalone left (docs/reference/known-alts.md). Shipyard 0.40.0: EVE tells only the CEO that a member left (checked live: Hamu, Ryaku711 and Logan Grishnar get application messages only), so a new hourly task (beat shipyard_refresh_member_events, minute 12, in conf/local.py and deploy) stores Catherine Frey's member notifications as CorpMemberEvent (migration 0039), and /shipyard/director/ (tab "Director", permission director_access on the OARMI Director group: tony, Hamu) lists the leavers with what auth knows of them. Released per runbook 13 C (backup aa-db-2026-11-14-0907, 157 tests, server pinned at da661c4); first read stored 203 events, 15 leavers since 20 October, newest Eternity Emperor 14 Nov 00:13.
+
+**Findings.** No token in auth carries esi-corporations.read_titles.v1, so the in-game title "Family Member" can only be checked corporation-wide after Catherine Frey registers through the front door's "every scope" login (runbook 15 A); Member Audit covers 43 of 89 (33 hold the title, 10 do not: BanjoT, Naile Macor, Gewoon Rudi, Catherine Frey and the owner's six alts). The check script is ready in the desktop session (corp_titles.py: /corporations/{id}/members/titles with the CEO's token). The CEO-only leave notification could also be forwarded to #oarmi-directors through the Structures app (Add Owner with Catherine Frey, a webhook with the member types) if the owner wants a push instead of a page.
+
+**Owner by hand.** Catherine Frey's "every scope" login at shipyards.orlovfamily.space, My settings (gives the titles scope and whatever Structures would need). Open the Director tab once to see it; tell Hamu it exists.
+
+**Open.** The corporation-wide title check once the login is done; more sections for the Director page as the owner names them; still open from earlier entries: the C2 entrance board inputs, more officers, the OARMI Director role purpose, the 3-hour character refresh, corp_GB44/corp_1E3, DigitalOcean weekly backups, stray #pings, the seven project graphs, the hangar-vs-ledger gap, the radio sound confirmation.
+
+**Next.** When the owner says the login is done: run the title check and report who lacks the in-game title.
+
 ## 2026-11-09 (evening UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** the four Fractured Skies navy attack battlecruisers for the Shipyard dashboard (owner's ask of 9 November), and the EVE soundboard (8 November).
@@ -65,28 +79,5 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Owner has to do by hand.** Decide the 75 M. Still open from before: the C2 entrance board inputs (map id, share token, channel, staging system), more officers, the OARMI Director role, the 3-hour refresh, corp_GB44 and corp_1E3, DigitalOcean weekly backups, the stray #pings, the seven project graphs.
 
 **Next.** Nothing queued.
-
----
-## 2026-11-02 (08:20 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** **radio in comms** (runbook 21, research 10), from the owner's ask for background music in the voice channel that each member can switch off or turn down for themselves.
-
-**Done.** Research note `docs/research/10-discord-background-music.md` (options A own cog, B public radio bot, C Watch Together; the per-listener control is Discord's own user volume on the bot). Owner chose A. The custom image now carries ffmpeg and libopus0 (`deploy/custom.dockerfile`, apt as root for that layer) and `PyNaCl==1.5.0` (`conf/requirements.txt`); backup `aa-db-2026-11-02-0810.sql.gz`, images rebuilt, throwaway check: ffmpeg 7.1.5, PyNaCl, opus loaded, cog imports. Cog `orlovbot.cogs.radio` (`/radio on [station]`, `/radio next`, `/radio stations`, `/radio off`, `/radio volume`; Family Member role; leaves an empty channel within a minute; presence shows the station; a dropped stream rolls to the next). Settings `ORLOVBOT_RADIO_STATIONS` (SomaFM Space Station Soma, Drone Zone, Groove Salad; Nightwave Plaza) and `ORLOVBOT_RADIO_VOLUME = 0.3` in conf/local.py and the template. Containers recreated 08:13 UTC, the bot lists the cog among its loaded cogs, every container up. Stream decode test from the container: all stations decode. **Later the same morning:** py-cord 2.8 needs its voice extra (`PyNaCl 1.6`, `davey`); Discord refuses voice without end-to-end encryption (close code 4017), so DAVE stays on; davey 0.2.0 (published that day) gave silent audio with py-cord 2.8.1, pinned to **0.1.7**; the cog got a sequence guard (a stopped source no longer restarts the station loop), a deferred reply, a 20 s connect bound, the voice library's debug log in the container log, and `ORLOVBOT_RADIO_CHANNELS = ["music", "voice1"]` so it plays only in `Voice1 - music bot`. 21 stations by genre, Lofi first (the default). `#music-bot-instructions` holds the bot's embed with the instructions, read-only for everyone. **Not yet confirmed by the owner: that listeners hear sound after the davey pin.**
-
-**Owner has to do by hand.** Join a voice channel, `/radio on`, listen; right-click the bot for the personal level. Tell members (the member guide does not mention it yet). Still open from the earlier entries: the 3-hour character refresh, `corp_GB44` and `corp_1E3`, DigitalOcean weekly backups, the stray #pings, the seven project graphs, the `OARMI Director` role's purpose.
-
-**Next.** Nothing queued.
-
----
-
-## 2026-10-31 (20:15 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** Shipyard 0.37.0 (runbook 13 C; `docs/runbooks/13-shipyard-plugin.md` release paragraph), the blue alliance's wormhole map (`docs/research/09-blue-alliance-wormhole-map.md`), and a note on an unregistered pilot.
-
-**Done.** **Shipyard 0.37.0** (commit `d08157e` pinned, backup `aa-db-2026-10-31-2007.sql.gz`, migration 0036, 145 tests): new permission `shipyard.refresh_prices`; whoever holds it sees the Refresh button on the ship dashboard, Reprocessing and Scrapmetal and the "Read prices now" button on Bargains without manager rights. Granted to Hamu's account directly (his permissions are all direct: dashboard_access, reprocessing_access, refresh_prices); all four tabs rendered as him show the button. Observation during the checks: `makemigrations --check` keeps reporting an index rename on `lpsnapshot` (`shipyard_lp_charact_6b1f2e_idx` to `..._00de85_idx`); cosmetic, not in a migration, unchanged by this release. **Research 09:** the blue alliance maps on wormhole.systems (not Pathfinder); the doc has the access model (alliance-wide grants, our alliance id 99015337), the API (share token or personal token, GET /api/maps/{id} with home, statics, connections with mass and lifetime), the three built-in Discord alerts, and the proposed path: Viewer access for the alliance, an `entrance` cog for orlovbot that keeps a C2 entrance embed up to date, a proximity alert to our webhook. Mirroring in our own mapper rejected (no sync exists). **Zypher Komeer** (Discord helavade) asked to auth 2026-10-31, locked out of Discord; `docs/reference/known-alts.md`.
-
-**Owner has to do by hand.** For the entrance board: ask the blue alliance for alliance-level Viewer access (id 99015337), the map id, and a share token (or mint a personal token with one of our characters once access is granted); say which channel and which staging system to count jumps from. Open from before: more officers, the OARMI Director role's purpose, the 3-hour refresh, corp_GB44 and corp_1E3, DigitalOcean weekly backups, the stray #pings, the seven project graphs.
-
-**Next.** When the map id and token arrive: build the entrance cog (`deploy/orlovbot/cogs/`), runbook 21, settings in conf/local.py, restart the bot container.
 
 ---
