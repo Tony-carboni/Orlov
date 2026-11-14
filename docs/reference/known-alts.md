@@ -21,18 +21,22 @@ The owner sends in-game reminders to unregistered pilots. The next audit lists, 
 
 | Character | Reminder sent | Registered since |
 |---|---|---|
-| Tyke Almighty | 2026-10-30 | |
+| Tyke Almighty | 2026-10-30 | by 2026-11-14 (Family Member in auth, Discord linked) |
 | Tagger UK | 2026-10-30 | |
 | Master Hacer | 2026-10-30 | |
 | Rainy Pidling | 2026-10-30 | |
 | Morgothy | 2026-10-30 | |
-| Ladonie Divalone | 2026-10-30 | |
+| Ladonie Divalone | 2026-10-30 | no longer in the corporation (Corp Stats roster of 2026-11-14) |
 | Raikakailen Kashuken | 2026-10-30 | |
 | Zypher Komeer | 2026-10-31 | by 2026-11-06 (Family Member in auth; the in-game title too) |
 
 When one registers, fill in the date; when a reminder goes out again, add the date in the second column.
 
 Notes: **Zypher Komeer** is Discord user **helavade** (the owner's information, 2026-10-31); asked to auth on 2026-10-31 while locked out of their own Discord account; registered and Family Member by 2026-11-06 (seen in the in-game title check of that day).
+
+## Roster check of 2026-11-14
+
+Corp Stats roster (refreshed 06:00 UTC with Catherine Frey's token): 89 characters. 70 belong to auth accounts in the `Family Member` state (all mains plus registered alts), 19 are not in auth at all. Of the 19, ten are the known alts above; the other nine are Abyussy DooDussy, Logan Xeen Ragnar, Master Hacer, Morgothy, Nosferatuss, Raikakailen Kashuken, Rainy Pidling, Tagger UK and Vin Diesely. Four `Family Member` accounts have no Discord linked, so they hold the state without the Discord role: Jalan'Rook, Miguel Stevens, One of Few, Viktor Caughar.
 
 ## In-game title "Family Member" (check of 2026-11-06)
 
