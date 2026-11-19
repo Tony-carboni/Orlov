@@ -204,6 +204,9 @@ SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES = getattr(settings, "SHIPYARD_BOOKS_PRO
 # that is the price we would buy at; if we got it for free as a donation, consider it worth 800 while in stock"). LP bought
 # above or below it books the difference at once; LP sold or converted leave at it. 0 or None: at average cost (0.38.3).
 SHIPYARD_LP_STOCK_ISK_PER_LP = getattr(settings, "SHIPYARD_LP_STOCK_ISK_PER_LP", 800)
+# Every corporation withdrawal whose reason mentions LP bought them at this price: units = ISK / 800, whatever the reason
+# says (owner, 2026-11-19: "just assume 800 ISK/LP for each outgoing transaction"). 0 or None: read the units from the reason.
+SHIPYARD_LP_BUY_ISK_PER_LP = getattr(settings, "SHIPYARD_LP_BUY_ISK_PER_LP", 800)
 # Stock types the books no longer carry (owner, 2026-10-25: the leftover Cap Boosters bought to convert, too small to
 # matter; what they fetch later simply arrives as a deposit). Their lots are written off in one movement.
 SHIPYARD_BOOKS_STOCK_WRITTEN_OFF = getattr(settings, "SHIPYARD_BOOKS_STOCK_WRITTEN_OFF", [])  # type ids

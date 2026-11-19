@@ -75,7 +75,9 @@ class MemberEventTests(TestCase):
         self.assertEqual(rows[0]["now"], "now in Elsewhere Inc")
         self.assertEqual((rows[1]["auth"], rows[1]["returned"]), ("never registered", True))
         self.assertEqual(members.counts(days=3650)["left"], 2)
-        self.assertEqual(members.leavers(days=5), rows[:1])
+        # a window that holds the 14 November leaver but not the one of 2 November, whenever the test runs
+        days = (dt.datetime.now(dt.timezone.utc) - dt.datetime(2026, 11, 14, 0, 13, tzinfo=dt.timezone.utc)).days + 1
+        self.assertEqual(members.leavers(days=days), rows[:1])
 
     def test_the_page_needs_the_director_permission(self):
         self._refresh()

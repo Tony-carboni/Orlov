@@ -57,6 +57,22 @@ def lp_units_from(reason) -> int | None:
     if scale > 1 and re.fullmatch(r"\d+[.,]\d{1,2}", number):
         return int(round(float(number.replace(",", ".")) * scale))
     return int(re.sub(r"[.,]", "", number)) * scale
+
+
+# a withdrawal that mentions LP at all ("LP buy", "LP purchase", "buying LP", "57k State protectorate LP") bought LP at the
+# standard price: the units are the ISK divided by SHIPYARD_LP_BUY_ISK_PER_LP, whatever number the reason carries
+# (owner, 2026-11-19: "just assume 800 ISK/LP for each outgoing transaction"; 0.40.1)
+LP_MENTION = re.compile(r"\bLP\b|loyalty\s*points?", re.I)
+
+
+def lp_units_bought(reason, isk: float) -> int | None:
+    """The LP a withdrawal of `isk` bought, or None when its reason does not mention LP."""
+    if not LP_MENTION.search(reason or ""):
+        return None
+    rate = float(app_settings.SHIPYARD_LP_BUY_ISK_PER_LP or 0)
+    if rate <= 0:
+        return lp_units_from(reason)
+    return int(round(isk / rate))
 # "direct sale ..." or, since EVE's reason field holds 40 characters, "ds ..." (owner's test, 2026-10-21)
 DIRECT_SALE = re.compile(r"(?:direct\s+sale|^\s*ds\b)\s*[:\-]?\s*(.*)", re.I)
 ITEM_LEAD_QTY = re.compile(r"^(\d[\d.,]*)\s*([kKmM])?\s*[x×]?\s+(.+)$")   # "2,388 Zero-Point Condensate", "719k veld", "1.2M trit"
@@ -549,7 +565,7 @@ def compute(now=None, since=None, since_label: str = "") -> dict:
                 if inp:
                     project_net += e.amount
                 continue
-            units = lp_units_from(e.reason) if e.amount < 0 else None
+            units = lp_units_bought(e.reason, -e.amount) if e.amount < 0 else None
             if units:
                 lp_purchases.append([e.date, units, -e.amount, names.get(e.second_party_id, str(e.second_party_id))])
                 if inp:

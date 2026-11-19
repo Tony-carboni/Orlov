@@ -659,6 +659,19 @@ class BooksTests(TestCase):
         bb = books.compute()["buyback"]
         self.assertEqual((bb["lp_units"], bb["lp_left"]), (50_000 + 57_000, 26_000 + 57_000))
 
+    def test_lp_bought_is_the_isk_over_800_whatever_the_reason_says(self):
+        """0.40.1 (owner, 2026-11-19): a withdrawal that mentions LP at all bought ISK / 800 of them; "LP buy" without a number
+        counts too, and a reason with a different number is overridden."""
+        self.assertEqual(books.lp_units_bought("LP buy", 1_085_000_000), 1_356_250)
+        self.assertEqual(books.lp_units_bought("buying LP for the navy BPCs", 8_000_000), 10_000)
+        self.assertEqual(books.lp_units_bought("LP 16000", 12_000_000), 15_000)  # the reason's number loses
+        self.assertIsNone(books.lp_units_bought("raitaru tax income", 8_000_000))
+        CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_702, division=1, date=at(16), ref_type="corporation_account_withdrawal", amount=-1.085e9,
+                                        reason="LP buy", first_party_id=CORP, second_party_id=222)
+        d = books.compute()
+        self.assertEqual(d["lp_bought"], 50_000 + 1_356_250)
+        self.assertEqual(d["period_tiles"]["lp_units"], 50_000 + 1_356_250)
+
     def test_corporation_lp_log_change_by_change(self):
         """The LP page: a purchase from the journal, conversions from the stock batches, a running balance."""
         events = books.compute()["lp_events"]
@@ -857,6 +870,13 @@ class BooksTests(TestCase):
         the same. LP bought dearer books the difference at once; LP sold leave at 800."""
         CorpJournalEntry.objects.create(corporation_id=CORP, entry_id=99_841, division=1, date=at(20), ref_type="corporation_account_withdrawal", amount=-9e6,
                                         reason="10k LP", first_party_id=CORP, second_party_id=222)
+        d = books.compute()
+        # 0.40.1: a withdrawal buys ISK / 800 LP whatever its reason says, so 9 M is 11,250 LP at exactly 800 and nothing is booked
+        self.assertEqual((d["lp_units"], round(d["lp_cost"])), (26_000 + 11_250, (26_000 + 11_250) * 800))
+        self.assertAlmostEqual({m[0]: m[1] for m in d["moves"]}["LP bought"], 0.0)
+        patch_buy = mock.patch.object(books.app_settings, "SHIPYARD_LP_BUY_ISK_PER_LP", None)  # the reason's number counts again
+        patch_buy.start()
+        self.addCleanup(patch_buy.stop)
         d = books.compute()
         self.assertEqual((d["lp_units"], round(d["lp_cost"])), (36_000, 36_000 * 800))
         labels = {m[0]: m[1] for m in d["moves"]}
