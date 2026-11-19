@@ -4,6 +4,22 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-11-19 (12:50 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** runbook 23, the idle moon reminder (owner's ask of 19 November); Shipyard access for Incontinentia Deretana; the wormhole mapper question.
+
+**Done.** New bot cog orlovbot/cogs/moonreminder.py (registered in auth_hooks.py, settings block "Idle moon reminder" in conf/local.py and the deploy template, copy ~/backups/local.py.pre-moonreminder): every morning at 08:00 EVE the bot lists in #oarmi-directors, with a ping of the OARMI Director role, every Moon Mining refinery whose last extraction ended more than 24 hours ago with nothing new started; nothing is posted when all run; the day is remembered in the cache, a restart after 08:00 posts the missed note once; /idlemoons (Alliance Director) runs the check privately. Released 12:45 UTC: the first note listed Ambeke (popped 12 November) and Saatuban (13 November); Hamu answered within a minute. Shipyard: Incontinentia_Deretana got the user permission dashboard_access (same as Hamu and Olaf Ravenherz) on 16 November. Master Hacer confirmed as Master Selin's unregistered alt.
+
+**Findings.** Incontinentia Deretana offered to host a wormhole mapper (Pathfinder) on a VPS at 77.68.99.229 with an A record wormholes.orlovfamily.space pointing there. Advised against: auth's session and CSRF cookies are scoped to .orlovfamily.space (for the shipyards and doctrines front doors), so any host under the domain served by a third party receives members' auth session cookies. Proposed instead: host the mapper on the alliance's side (a second small droplet, the auth droplet has about 700 MB free and no swap) behind the proxy manager with the auth cookies stripped, the owner's own EVE application, and give Incontinentia admin inside the app; and check whether Pathfinder (unmaintained since 2020, public instance closed September 2026) is still the right tool versus eve-whmapper, Control Tower or wormhole.systems (research note 09). Waiting for the owner's choice of mapper and droplet.
+
+**Owner by hand.** Set the Ambeke and Saatuban extractions in the Structure Browser (the owner explained the note to Hamu in the channel at once). Still open from 14 November: Catherine Frey's "every scope" login for the title check.
+
+**Open.** The mapper decision; the planned fleets rollout (runbook 22 C); the Fractured Skies battlecruisers check (log ~/logs/fractured-skies-bcs.log, cron lines to remove); the items of earlier entries (C2 entrance board inputs, more officers, the 3-hour character refresh, corp_GB44/corp_1E3, DigitalOcean weekly backups, stray #pings, the seven project graphs, the hangar-vs-ledger gap).
+
+**Next.** Whichever session the owner opens: nothing pending on the server; if the owner picks a mapper, write runbook 24 for the second droplet.
+
+---
+
 ## 2026-11-14 (09:20 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** Shipyard 0.40.0 (runbook 13 C): the Director page with the members who left; Discord voice channel visibility (membership design changelog); the OARMI roster and in-game titles check.
@@ -63,21 +79,3 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Open.** Donated LP: the owner says members donated LP to the corporation without a purchase cost; the books only know LP from journal lines ("NNNk LP" withdrawals), and ESI has no corporation LP balance (only /characters/{id}/loyalty/points). They need a way in (a hand-kept register in the admin, or the owner names the units); once in, they count at 800 ISK each like the rest. Also still open from earlier entries: the C2 entrance board inputs, more officers, the OARMI Director role purpose, the 3-hour character refresh, corp_GB44/corp_1E3, DigitalOcean weekly backups, stray #pings, the seven project graphs, the hangar-vs-ledger gap, the radio sound confirmation.
 
 **Next.** Whichever session the owner answers in: build the donated-LP register once he says how many LP and from whom.
-
-## 2026-11-05 (10:15 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** the wallet reconciliation after the project corrections of 4 November (owner's request of 4 November 23:25), Shipyard 0.38.0 (runbook 13 C release paragraph).
-
-**Done.** Diagnostic script (scratchpad, read-only; journal since 2 November, every project since 1 October with its funding wallet and refunds, the owner-to-corp ledger since the 18 October baseline, books.compute). Findings: private project funding since the baseline 1,756.3 M, repaid 1,576.3 M with "correction projects" plus the 360 M "corrections" of 5 November 08:23 (laptop session's advice, executed by the owner) = the 180 M refund of the privately funded scordite project + the extra 180 M "correction" deposit of 4 November 22:22. Project side fully reconciled; sheet gap 0.0, live wallets equal the journal copy. **Shipyard 0.38.0** (commit `3ba8052` pinned, backup `aa-db-2026-11-05-1006.sql.gz`, 147 tests, no migration): `SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES` (entry id to ISK) counts part of a master-wallet withdrawal as project repayment; set on the server and in the deploy template to the 360 M line with 180 M (`conf/local.py`, copy `local.py.pre-repayment-entries`). The Finance tab's "owed to the funding wallet" box is gone (funded 1,756.3 = corrected 1,756.3). The 100 M LP-store purchase of 31 October 13:58 (24th Imperial Crusade, master wallet) flagged by id against the owner's 100 M "correction LP store purchase" deposit. The scheduled 01:27 run of 5 November never fired (session restarted overnight; session-only timers die with it); the 09:00 reminder task can be deleted.
-
-**Later the same day, Shipyard 0.38.1** (owner: "get rid of this whole section about cap boosters in the Finance page and report; bulk LP sales only going forward"): section 4 "LP buybacks and conversions" removed from the Finance tab and the PDF, Structure fuel is section 4, the position row reads "LP held for sale"; LP bought and sold still show in Movements, the period tiles and the position. No migration. Released per runbook 13 C at 17:05 UTC: commit 9bad3fc pinned, image rebuilt, 147 tests, backup aa-db-2026-11-05-1702.sql.gz, containers recreated, nginx restarted; the live Finance page shows sections 1 to 3 and "4. Structure fuel", the position row "39,000 LP held for sale", the PDF is built from the same module.
-
-**2026-11-06 08:40 UTC, Shipyard 0.38.2** (owner: "I still want the tiles about LP in stock, LP processed, net profit on LP; just not the cap boosters table"): section 4 is "Loyalty points" again on the Finance tab and in the PDF, Structure fuel is 5. Four tiles (net profit on LP, margin on what sold, LP processed since the period base with the LP sold and what it brought, LP in stock at cost) and one summary line per month; the per-month conversion and product-sales tables and "Buying now" are gone for good. Commit f3d2fbf pinned, 147 tests, backup aa-db-2026-11-06-0831.sql.gz, containers recreated, nginx restarted, verified live as the owner (November: 519,375 LP bought at 800 and sold at 866, +34.5 M; 39,000 LP in stock).
-
-**Open.** The 75 M "correction" deposit of 3 November 13:10 has no corp-side counterpart: the LP-store purchases of 2 November (500 M and 150 M) were paid from division 7, the owner's own wallet, and no master-wallet LP-store line exists around then. The sheet now shows it as "Wallet as EVE shows it, against the journal copy +75 M". Either the corp sends 75 M back to the owner, or the owner names what it settled and the lines get flagged.
-
-**Owner has to do by hand.** Decide the 75 M. Still open from before: the C2 entrance board inputs (map id, share token, channel, staging system), more officers, the OARMI Director role, the 3-hour refresh, corp_GB44 and corp_1E3, DigitalOcean weekly backups, the stray #pings, the seven project graphs.
-
-**Next.** Nothing queued.
-
----

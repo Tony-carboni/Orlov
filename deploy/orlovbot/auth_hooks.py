@@ -14,4 +14,5 @@ def register_cogs():
         "orlovbot.cogs.leaderboards",
         "orlovbot.cogs.radio",
         "orlovbot.cogs.fleets",
+        "orlovbot.cogs.moonreminder",
     ]

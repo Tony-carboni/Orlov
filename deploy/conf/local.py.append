@@ -350,3 +350,9 @@ ORLOVBOT_FLEET_BOARD_CHANNEL = "planned-fleets"   # channel name; "" switches th
 ORLOVBOT_FLEET_ROLES = ["Alliance Director"]      # who may add and edit fleets
 ORLOVBOT_FLEET_ADMIN_ROLES = ["Alliance Director"]  # who may remove or edit anyone's fleet (the creator always may)
 ORLOVBOT_FLEET_KEEP_HOURS = 3                      # a fleet stays on the board this long after its formup time
+
+# --- Idle moon reminder (runbook 23): a morning note in #oarmi-directors when a refinery has popped and no new extraction is set ---
+ORLOVBOT_MOON_REMINDER_CHANNEL = "oarmi-directors"  # channel name; "" switches the reminder off
+ORLOVBOT_MOON_REMINDER_HOUR = 8                      # EVE time (UTC) of the morning note
+ORLOVBOT_MOON_REMINDER_IDLE_HOURS = 24               # a refinery is listed once its last extraction ended this long ago
+ORLOVBOT_MOON_REMINDER_MENTION = "<@&1561411839336644780>"  # pings the OARMI Director role (tony, Hamu); "" for no ping
