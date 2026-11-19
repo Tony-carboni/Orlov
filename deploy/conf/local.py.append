@@ -356,3 +356,11 @@ ORLOVBOT_MOON_REMINDER_CHANNEL = "oarmi-directors"  # channel name; "" switches 
 ORLOVBOT_MOON_REMINDER_HOUR = 8                      # EVE time (UTC) of the morning note
 ORLOVBOT_MOON_REMINDER_IDLE_HOURS = 24               # a refinery is listed once its last extraction ended this long ago
 ORLOVBOT_MOON_REMINDER_MENTION = "<@&1561411839336644780>"  # pings the OARMI Director role (tony, Hamu); "" for no ping
+
+# --- OARMI leadership board (runbook 24): one message in #oarmi-leadership-team, redrawn once a day and at every bot start ---
+ORLOVBOT_LEADERSHIP_CHANNEL = "oarmi-leadership-team"  # channel name; "" switches the board off
+ORLOVBOT_LEADERSHIP_HOUR = 6                            # EVE time (UTC) of the daily redraw
+ORLOVBOT_LEADERSHIP_GROUPS = [                          # sections in this order: a heading and the auth group whose members it lists
+    {"title": "Directors", "group": "OARMI Director"},
+    {"title": "Officers", "group": "OARMI Officer"},
+]
