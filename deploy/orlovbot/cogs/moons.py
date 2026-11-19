@@ -12,6 +12,10 @@ Two things live here:
   auto-pop three hours later, and keeps an entry for twelve hours after the pop (owner, 2026-11-06:
   people who missed a pop must still see which moon it was), in a "Popped, ore is out" section on top.
   The owner posts the game's Upcoming Extractions list whenever new ones are published.
+- The schedule repeats (owner, 2026-11-19): the freeport athanors pull every four weeks, so each
+  entry is a forever-loop. ORLOVBOT_MOON_SCHEDULE_EVERY_DAYS (28) rolls every published moment
+  forward by whole periods until its pop is less than POPPED ago; an item's own "every_days"
+  overrides it (0 = one-off). The board shows the next pull of each moon and when it repeats.
 """
 
 import datetime as dt
@@ -78,14 +82,36 @@ def parse_moment(text: str):
     return None
 
 
+def cycle_days(item: dict) -> int:
+    """Days between two pulls of a scheduled moon: the item's every_days, else ORLOVBOT_MOON_SCHEDULE_EVERY_DAYS; 0 = one-off."""
+    return int(item.get("every_days", getattr(settings, "ORLOVBOT_MOON_SCHEDULE_EVERY_DAYS", 0)) or 0)
+
+
+def next_cycle(at, period_days: int, now):
+    """The published moment rolled forward by whole periods until its auto-pop is less than POPPED ago (the forever-loop)."""
+    if period_days <= 0:
+        return at
+    period = dt.timedelta(days=period_days)
+    cutoff = now - AUTO_POP - POPPED  # an arrival before this has popped and been listed long enough
+    if at < cutoff:
+        at += -((at - cutoff) // period) * period  # ceil of the periods to add
+    return at
+
+
+def every(period_days: int) -> str:
+    return f"every {period_days // 7} weeks" if period_days % 7 == 0 else f"every {period_days} days"
+
+
 def scheduled_entries(now) -> list:
-    """[(moment, lines, popped)] for the public moons published by date; a pop drops off POPPED after it happened."""
+    """[(moment, lines, popped)] for the public moons published by date; a one-off drops off POPPED after its pop, a repeating one rolls on."""
     entries = []
     for item in list(getattr(settings, "ORLOVBOT_MOON_SCHEDULE", []) or []):
         at = parse_moment(item.get("at", ""))
         if at is None:
             logger.warning("moon schedule: cannot read the moment of %s: %r", item.get("name"), item.get("at"))
             continue
+        period = cycle_days(item)
+        at = next_cycle(at, period, now)
         auto = at + AUTO_POP
         if now - auto > POPPED:
             continue
@@ -99,6 +125,9 @@ def scheduled_entries(now) -> list:
         else:
             soon = auto - now <= dt.timedelta(hours=1)
             block.append(("Auto-pop:", _until(auto, now), "orange" if soon else "blue", f"{auto:%a %d %b %H:%M} EVE"))
+        if period > 0:
+            following = at + dt.timedelta(days=period)
+            block.append(("Repeats:", f"{every(period)} (assumed)", "", f"then {following:%a %d %b %H:%M} EVE"))
         lines = [f"### {item.get('name', 'Public moon')} ({item.get('system', '')}, public moon)", _block(block)]
         entries.append((auto if auto <= now else at, lines, auto <= now))
     return entries

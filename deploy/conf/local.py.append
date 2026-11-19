@@ -108,8 +108,11 @@ ORLOVBOT_MOON_BOARD_CHANNEL = "moon-board"   # channel name; "" switches the boa
 # Public moons on a weekly timer (owner, 2026-10-25; weekday 0 = Monday). Empty since 2026-10-30: the published dates below replace them.
 ORLOVBOT_MOON_NO_TAX = ["Piekura - Orlov Mining Facility I", "Saatuban - Orlov Mining Facility II", "Ambeke - Orlov Mining Facility III"]  # exact refinery names shown as NO TAX; all other moons show 10% tax
 ORLOVBOT_MOON_RECURRING = []
-# Public moons by date (owner, 2026-10-30): the freeport refineries' published extractions (chunk arrival, EVE time); the board adds
-# the auto-pop three hours later and drops an entry three hours after that. The owner posts the game's Upcoming Extractions list when new ones are published; replace the list then.
+# Public moons by date (owner, 2026-10-30): the freeport athanors' published extractions (chunk arrival, EVE time); the board adds
+# the auto-pop three hours later and keeps a popped entry for twelve hours. A forever-loop (owner, 2026-11-19): every entry repeats
+# every ORLOVBOT_MOON_SCHEDULE_EVERY_DAYS days (four-week pulls), rolled forward from the published moment; an item's own
+# "every_days" overrides it (0 = one-off). The Piekura tatara (Freeport Prime T2 Refinery) is left out on purpose.
+ORLOVBOT_MOON_SCHEDULE_EVERY_DAYS = 28
 ORLOVBOT_MOON_SCHEDULE = [
     {"name": "Raussinen Freeport 1", "system": "Raussinen", "at": "2026-11-25 17:01"},
     {"name": "Raussinen Freeport 2", "system": "Raussinen", "at": "2026-11-04 17:00"},
@@ -119,7 +122,6 @@ ORLOVBOT_MOON_SCHEDULE = [
     {"name": "Piekura Freeport Moon 2", "system": "Piekura", "at": "2026-11-02 18:00"},
     {"name": "Piekura Freeport Moon 3", "system": "Piekura", "at": "2026-11-23 18:00"},
     {"name": "Piekura Freeport Moon 4", "system": "Piekura", "at": "2026-11-09 18:01"},
-    {"name": "Piekura Freeport Prime T2 Refinery", "system": "Piekura", "at": "2026-11-15 09:00"},
 ]
 
 # Bot log lines go to the container output: docker compose logs allianceauth_discordbot
