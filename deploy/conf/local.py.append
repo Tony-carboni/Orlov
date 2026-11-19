@@ -366,3 +366,4 @@ ORLOVBOT_LEADERSHIP_GROUPS = [                          # sections in this order
 ]
 ORLOVBOT_LEADERSHIP_PREFIX = "[OARMI] "               # before every name, like the Discord nicknames
 ORLOVBOT_LEADERSHIP_COLOURS = {"Directors": "red", "Officers": "orange"}  # heading colour per section: red, orange, green, blue, pink, cyan, white
+ORLOVBOT_LEADERSHIP_HEADING = "### "                   # markdown before each section title: "### " one size up, "## " two

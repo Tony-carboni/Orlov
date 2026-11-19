@@ -1,14 +1,16 @@
 """The OARMI leadership board: who the corp's directors and officers are, in #oarmi-leadership-team.
 
 One message (orlovbot/board.py) that the bot keeps current: a section per auth group named in
-ORLOVBOT_LEADERSHIP_GROUPS, listing the main character of every member of that group, sorted by
-name. Redrawn once a day at ORLOVBOT_LEADERSHIP_HOUR (EVE time) and at every bot start (owner,
-2026-11-19: "a message updated once a day: Directors, Officers"). The channel is read-only for
-OARMI members; the auth groups are the source, so the Discord roles and this board always agree.
+ORLOVBOT_LEADERSHIP_GROUPS, listing every member of that group, sorted by name. Redrawn once a
+day at ORLOVBOT_LEADERSHIP_HOUR (EVE time) and at every bot start (owner, 2026-11-19: "a message
+updated once a day: Directors, Officers"). The channel is read-only for OARMI members; the auth
+groups are the source, so the Discord roles and this board always agree.
 
-Each section is an ansi code block: the heading in the colour those members' names have in the
-member list, the names with the corp tag in front, as the Discord nicknames show them (owner,
-2026-11-19).
+Looks like the member list (owner, 2026-11-19): a heading per section (a Discord heading, so a
+size up from the names) and under it the members by their Discord display name ("[OARMI]
+Tony_Carboni", the nickname auth sets), in the colour their names have in the member list,
+inside an ansi code block. A member without a Discord link shows as the corp tag plus the main
+character's name.
 
 docs/runbooks/24-oarmi-leadership-board.md
 """
@@ -53,13 +55,20 @@ def _colours() -> dict:
 
 
 def _prefix() -> str:
-    """Put before every name: the corp tag of the Discord nicknames."""
+    """Before a name that does not come from Discord: the corp tag of the Discord nicknames."""
     return str(getattr(settings, "ORLOVBOT_LEADERSHIP_PREFIX", "[OARMI] "))
 
 
+def _heading() -> str:
+    """Markdown in front of each section title: '### ' is one size up from the text, '## ' two (owner: slightly bigger)."""
+    return str(getattr(settings, "ORLOVBOT_LEADERSHIP_HEADING", "### "))
+
+
 def members_by_group() -> list:
-    """[(title, [main character names])] in the configured order; a missing group gives an empty list."""
+    """[(title, [(discord uid or None, main character name)])] in the configured order; a missing group gives an empty list."""
     from django.contrib.auth.models import Group
+
+    from allianceauth.services.modules.discord.models import DiscordUser
 
     sections = []
     for item in _groups():
@@ -69,26 +78,33 @@ def members_by_group() -> list:
             logger.warning("leadership board: no auth group named %r", item["group"])
             sections.append((item["title"], []))
             continue
-        names = []
+        people = []
         for user in group.user_set.filter(is_active=True).select_related("profile__main_character"):
             main = user.profile.main_character
-            names.append(main.character_name if main else user.username)
-        sections.append((item["title"], sorted(names, key=str.lower)))
+            link = DiscordUser.objects.filter(user=user).first()
+            people.append((int(link.uid) if link else None, main.character_name if main else user.username))
+        sections.append((item["title"], people))
     return sections
 
 
+def display_names(guild, people: list) -> list:
+    """The Discord display name of each person (the nickname auth sets), else the corp tag and the main character; sorted."""
+    names = []
+    for uid, main in people:
+        member = guild.get_member(uid) if (guild and uid) else None
+        names.append(member.display_name if member else f"{_prefix()}{main}")
+    return sorted(names, key=lambda n: n.lower().split("] ", 1)[-1])
+
+
 def section_block(title: str, names: list) -> str:
-    """One ansi code block: the heading in its colour, then the names as the member list shows them."""
+    """A heading line, then one ansi code block with the names in the section's colour."""
     code = ANSI.get(_colours().get(title, ""), "1;37")
-    lines = [f"{ESC}[{code}m{title}{ESC}[0m"]
-    if names:
-        lines.extend(f"{_prefix()}{name}" for name in names)
-    else:
-        lines.append("nobody yet")
-    return "```ansi" + NL + NL.join(lines) + NL + "```"
+    lines = [f"{ESC}[{code}m{name}{ESC}[0m" for name in names] or ["nobody yet"]
+    return f"{_heading()}{title}" + NL + "```ansi" + NL + NL.join(lines) + NL + "```"
 
 
 def build_embed(sections: list) -> Embed:
+    """sections = [(title, [display names])]."""
     blocks = [section_block(title, names) for title, names in sections]
     embed = Embed(title=BOARD_TITLE, colour=Color.blue())
     embed.description = NL.join(blocks).strip()[:4096]
@@ -114,7 +130,9 @@ class Leadership(commands.Cog):
 
     async def refresh(self):
         try:
-            sections = await sync_to_async(members_by_group)()
+            guild = self.bot.get_guild(int(settings.DISCORD_GUILD_ID))
+            raw = await sync_to_async(members_by_group)()
+            sections = [(title, display_names(guild, people)) for title, people in raw]
             await self.board.update(build_embed(sections))
         except Exception:
             logger.exception("Leadership board update failed")
