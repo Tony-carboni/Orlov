@@ -284,8 +284,13 @@ def alliance_rows(blocks: list, leaders=()) -> list:
 def code_block(title, rows: list) -> str:
     """A heading line (none when title is None), then one ansi code block: each name in its own colour, the label after it."""
     width = max(len(name) for name, _, _ in rows) if rows else 0
-    lines = [_coloured(name.ljust(width), colour) + "  " + label for name, label, colour in rows] or ["nobody yet"]
-    code = "```ansi" + NL + NL.join(lines) + NL + "```"
+    lines, previous = [], None
+    for name, label, colour in rows:
+        if previous in ("CEO", "Director") and label not in ("CEO", "Director", LEADER_LABEL):
+            lines.append("")  # a blank line between the directors and the officers (owner, 2026-11-21)
+        lines.append(_coloured(name.ljust(width), colour) + "  " + label)
+        previous = label
+    code = "```ansi" + NL + NL.join(lines or ["nobody yet"]) + NL + "```"
     return code if title is None else f"{_heading()}{title}" + NL + code
 
 
