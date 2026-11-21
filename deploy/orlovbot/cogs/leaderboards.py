@@ -7,6 +7,8 @@ corporation's projects in the last ORLOVBOT_LEADERBOARD_DAYS days, from the Ship
 (a member's deliveries into a project times the project's reward per unit; payouts never touch the corporation
 journal). Per pilot: a character registered in Alliance Auth counts for its main character, so adding alts to
 auth pools their deliveries; an unregistered character stands on its own name.
+Under the totals, the ice blocks the corporation bought through its projects since the start (owner, 2026-11-21):
+the units delivered on projects whose item is in EVE's ice groups, one number with an ice cube.
 """
 
 import datetime as dt
@@ -38,15 +40,43 @@ def _mil(isk: float) -> str:
     return f"{isk / 1e6:,.1f} M"
 
 
+ICE_GROUPS = {465, 903}  # EVE item groups "Ice" (the ice ores and their compressed forms) and "Ancient Compressed Ice"
+_group_of: dict = {}  # type id -> EVE group id, remembered for the bot's lifetime
+
+
+def ice_type_ids(type_ids) -> set:
+    """The ids among type_ids that are ice (public ESI, asked once per type)."""
+    import requests
+
+    for tid in type_ids:
+        if tid and tid not in _group_of:
+            try:
+                r = requests.get(f"https://esi.evetech.net/latest/universe/types/{tid}/", params={"datasource": "tranquility"},
+                                 headers={"User-Agent": "orlovbot leaderboards"}, timeout=20)
+                r.raise_for_status()
+                _group_of[tid] = r.json().get("group_id")
+            except Exception:
+                logger.warning("leaderboards: could not read type %s from ESI", tid)
+    return {tid for tid in type_ids if _group_of.get(tid) in ICE_GROUPS}
+
+
+def ice_blocks(events) -> int:
+    """Ice blocks delivered through the corporation's projects, all time (owner, 2026-11-21: one total, an ice cube next to it)."""
+    ice = ice_type_ids({e["type_id"] for e in events})
+    return int(round(sum(e["units"] for e in events if e["type_id"] in ice)))
+
+
 def payout_rows(days: int) -> dict:
-    """Synchronous (Django ORM): {rows: [{name, isk, projects, deliveries, registered}], total, members, since, until}.
+    """Synchronous (Django ORM): {rows: [{name, isk, projects, deliveries, registered}], total, members, since, until, ice}.
+    ice = blocks of ice delivered through the projects since the start, not only the period.
     Rows per pilot, highest first."""
     from allianceauth.authentication.models import CharacterOwnership
     from shipyard.services import projectbooks
 
     until = timezone.now()
     since = until - dt.timedelta(days=days)
-    events = [e for e in projectbooks.payout_events() if e["t"] >= since]
+    all_events = projectbooks.payout_events()
+    events = [e for e in all_events if e["t"] >= since]
     ids = {e["member"] for e in events}
     main_of = {}
     for own in CharacterOwnership.objects.filter(character__character_id__in=ids).select_related("character", "user__profile__main_character"):
@@ -62,7 +92,8 @@ def payout_rows(days: int) -> dict:
     rows = sorted(pilots.values(), key=lambda r: -r["isk"])
     for r in rows:
         r["projects"] = len(r["projects"])
-    return {"rows": rows, "total": sum(e["isk"] for e in events), "members": len(rows), "since": since, "until": until}
+    return {"rows": rows, "total": sum(e["isk"] for e in events), "members": len(rows), "since": since, "until": until,
+            "ice": ice_blocks(all_events)}
 
 
 def _name(text: str, width: int) -> str:
@@ -86,6 +117,7 @@ def payouts_embed(data: dict, top: int) -> Embed:
     foot = [f"ISK earned from Orlov Arms International projects, {data['since']:%d %b} to {data['until']:%d %b}. "
             "Thank you for keeping the buyback running ❤️",
             f"{data['members']} pilots were paid {_mil(data['total'])} in total.",
+            f"🧊 Ice blocks bought through projects: **{data.get('ice', 0):,}** (all time)",
             "*(Alts registered in auth count for their main.)*"]
     embed.description = ("\n".join(lines) + "\n" + "\n".join(foot))[:4096]
     return embed

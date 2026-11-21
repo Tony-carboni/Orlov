@@ -49,8 +49,9 @@ DEFAULT_HOUR = 6  # EVE time
 LEADER_LABEL = "Leader"
 # Discord's ansi palette, bold.
 ANSI = {"red": "1;31", "yellow": "1;33", "green": "1;32", "blue": "1;34", "pink": "1;35", "cyan": "1;36", "white": "1;37"}
-# hue (degrees) -> the nearest of the palette: Corp Director's dark orange (24°) is red, Officer's amber (37°) yellow,
-# Family Member's blue and CEO's violet (256°) blue, Alliance Director's raspberry (340°) pink
+# hue (degrees) -> the palette colour (owner, 2026-11-21, after trying the alternatives): Alliance Director's raspberry (340°)
+# pink, Corp Director's dark orange (24°) red, Officer's amber (37°) the one yellow there is, Family Member's blue (204°) and
+# CEO's violet (256°) blue (a code block has no purple; the owner prefers blue over pink for the CEOs)
 HUE_BUCKETS = [(30, "red"), (75, "yellow"), (165, "green"), (195, "cyan"), (265, "blue"), (345, "pink"), (360, "red")]
 ESC = chr(27)
 NL = chr(10)
