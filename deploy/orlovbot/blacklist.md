@@ -8,4 +8,3 @@ Rules for the table: one row per pilot; the character ID is the EVE character id
 |---|---|---|---|---|
 | N1KO D95 | 1283156766 | | 2026-11-19 | Removed from OARMI (in the corp 10 to 19 November; auth account N1KO_D95 never linked Discord). Now in Omega Industrial Group, Forge Consortium. Owner's instruction 2026-11-21. |
 | Kitten Kerns | 95662236 | 1561149281300123808 | 2026-11-14 | Banned from the Discord server by the owner on 14 November (Discord dominikstarz); locked out of Family Member on 20 October, unlocked 31 October after his character left OARMI. Now in The Order of Omerta, Hole Control. Auth account Kitten_Kerns (Family Friend). |
-| zzioxx | 2124770412 | 1083839910185799782 | 2026-11-16 | Banned from the Discord server by the owner on 16 November (Discord .amaoui, auth account zzioxx, registered 10 October). Character still in OARMI on 21 November. |

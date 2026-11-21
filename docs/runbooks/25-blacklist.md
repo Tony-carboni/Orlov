@@ -15,9 +15,8 @@ Entries of 2026-11-21:
 |---|---|---|
 | N1KO D95 | removed from OARMI on 19 November after nine days in the corp; the owner's instruction of 21 November | Omega Industrial Group (Forge Consortium); auth account N1KO_D95 (Family Friend, no Discord link) |
 | Kitten Kerns | banned from the Discord server by the owner on 14 November (Discord dominikstarz); earlier locked out of Family Member on 20 October | The Order of Omerta (Hole Control); auth account Kitten_Kerns (Family Friend) |
-| zzioxx | banned from the Discord server by the owner on 16 November (Discord .amaoui); the link to auth was found in the database backups of before the ban (user 16) | still in OARMI and Family Member in auth on 21 November, so the check flags him until the corp drops him |
 
-Discord bans are read through the bot (Server Settings → Bans holds the same list); a banned account whose auth link is gone is matched through the nightly database backups, where the old Discord link still shows the auth user. Taken off again on 2026-11-21 (owner): Alexander Helugo, listed the same day; his character sits in Wartorn Industries, an alliance corporation, and the owner does not want the daily note for it.
+Discord bans are read through the bot (Server Settings → Bans holds the same list); a banned account whose auth link is gone is matched through the nightly database backups, where the old Discord link still shows the auth user. Taken off again on 2026-11-21 (owner): zzioxx, listed the same evening from the Discord ban list; the ban hit a duplicate Discord account, he authed with another one. Alexander Helugo, listed the same day; his character sits in Wartorn Industries, an alliance corporation, and the owner does not want the daily note for it.
 
 Looked at and not added: Eemar, Masterxxx and MrFreshy_Valterus (lost a director group on 29 October, not removed as members).
 
