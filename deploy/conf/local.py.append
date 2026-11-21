@@ -369,6 +369,8 @@ ORLOVBOT_LEADERSHIP_GROUPS = [                          # sections in this order
 ORLOVBOT_LEADERSHIP_PREFIX = "[OARMI] "               # before every name, like the Discord nicknames
 ORLOVBOT_LEADERSHIP_COLOURS = {"Directors": "red", "Officers": "orange"}  # heading colour per section: red, orange, green, blue, pink, cyan, white
 ORLOVBOT_LEADERSHIP_HEADING = "### "                   # markdown before each section title: "### " one size up, "## " two
+# Owner, 2026-11-21: two more sections, everyone in the CEO channel and one block per corporation (the CEO per ESI, then that corp's channel members).
+ORLOVBOT_LEADERSHIP_CEO_CHANNEL = "corporate-ceos"
 
 # Blacklist check (runbook 25): every morning the bot reads orlovbot/blacklist.md and reports in this channel any listed pilot
 # found in an alliance corporation (ESI), registered in auth with one of the states below, or on the Discord server.
