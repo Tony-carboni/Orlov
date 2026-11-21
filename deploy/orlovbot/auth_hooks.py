@@ -16,4 +16,5 @@ def register_cogs():
         "orlovbot.cogs.fleets",
         "orlovbot.cogs.moonreminder",
         "orlovbot.cogs.leadership",
+        "orlovbot.cogs.blacklist",
     ]
