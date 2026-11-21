@@ -16,8 +16,9 @@
 | T1 hauler, blockade runner, deep space transport | above 10 B |
 | Black ops | above 12 B |
 | Any other non-capital ship | above 10 B |
+| Structure (Upwell structure, starbase, customs office) | above 20 B (owner, 2026-11-21: at 10 B too many irrelevant structures came by; `ORLOVBOT_JUICY_STRUCTURE_B`) |
 
-Carriers, dreadnoughts, force auxiliaries, Rorquals and lancers are only posted as faction hulls above 20 B. The value is zKillboard's total value of the loss. The thresholds are settings (`ORLOVBOT_JUICY_*_B`, in billions); `ORLOVBOT_JUICY_EXTRA_TYPE_IDS` adds hulls that are posted whatever their value.
+Carriers, dreadnoughts, force auxiliaries, Rorquals and lancers are only posted as faction hulls above 20 B. A structure is told from a ship by its EVE category (65 Upwell structures, 23 starbases, 46 customs offices), read from ESI with the type. The value is zKillboard's total value of the loss. The thresholds are settings (`ORLOVBOT_JUICY_*_B`, in billions); `ORLOVBOT_JUICY_EXTRA_TYPE_IDS` adds hulls that are posted whatever their value.
 
 ## Known values
 

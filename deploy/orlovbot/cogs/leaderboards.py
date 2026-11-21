@@ -117,8 +117,10 @@ def payouts_embed(data: dict, top: int) -> Embed:
     foot = [f"ISK earned from Orlov Arms International projects, {data['since']:%d %b} to {data['until']:%d %b}. "
             "Thank you for keeping the buyback running ❤️",
             f"{data['members']} pilots were paid {_mil(data['total'])} in total.",
-            f"🧊 Ice blocks bought through projects: **{data.get('ice', 0):,}** (all time)",
-            "*(Alts registered in auth count for their main.)*"]
+            "*(Alts registered in auth count for their main.)*",
+            "",  # a blank line and a heading, so the ice total pops out (owner, 2026-11-21)
+            f"### 🧊 Ice blocks bought through projects: {data.get('ice', 0):,}",
+            "*(all time)*"]
     embed.description = ("\n".join(lines) + "\n" + "\n".join(foot))[:4096]
     return embed
 

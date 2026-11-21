@@ -28,6 +28,10 @@
 
 ✅ Done when the log shows `orlovbot.cogs.leaderboards` loaded and "Project payouts, top pilots of the last 30 days: board posted in #leaderboards-bot", and the board is in the channel.
 
+## B2. The ice total (2026-11-21)
+
+Under the totals and the alts note, after a blank line and as a heading so it pops out, the board shows "🧊 Ice blocks bought through projects: N" with "(all time)" under it (owner: "a total counter for the number of ice blocks the corp has bought via projects, just a total, with an ice cube; a space before it and a bigger font"). N is the sum of the units delivered, since the start, on projects whose item is in EVE's ice groups (465 Ice, which holds the compressed ice too, and 903 Ancient Compressed Ice); the group of each delivered type is read from ESI once per bot run. On 21 November: 6,217 (all Compressed White Glaze). The channel was renamed by the owner to `#buyback-leaderboards` on 19 November; `ORLOVBOT_LEADERBOARD_CHANNEL` follows since 21 November (the board stood still for two days).
+
 ## C. Changing it
 
 - Another window or a longer list: change `ORLOVBOT_LEADERBOARD_DAYS` or `_TOP`, restart the bot.

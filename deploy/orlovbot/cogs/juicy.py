@@ -14,11 +14,13 @@ rules (2026-10-22) and posts the ones that qualify, with the reason in the foote
 - a black ops above 12 B;
 - any other non-capital ship above 10 B (black ops and the Marshal have their own rules;
   carriers, dreadnoughts, force auxiliaries, Rorquals and lancers only count as faction
-  hulls above 20 B).
+  hulls above 20 B);
+- a structure (Upwell structures, starbases, customs offices) above 20 B, not 10 (owner,
+  2026-11-21: too many structures below that are not relevant).
 
 The value is zKillboard's total value of the loss. What was posted is remembered in the
-Django cache (redis), so a bot restart neither repeats nor floods. The ship's group and
-meta group come from ESI (cached a week). docs/runbooks/18-juicy-killmails.md
+Django cache (redis), so a bot restart neither repeats nor floods. The ship's group,
+meta group and category come from ESI (cached a week). docs/runbooks/18-juicy-killmails.md
 """
 
 import logging
@@ -41,7 +43,8 @@ logger = logging.getLogger(__name__)
 FEED_NAME = "Juicy killmails"
 SEEN_KEY = "orlovbot:juicy:seen"  # killmail id -> killmail time, kept in the cache
 TEST_KEY = "orlovbot:juicy:test"  # set to a killmail id to post that one once more, as a test
-TYPE_KEY = "orlovbot:juicy:type:{}"  # ship type -> (name, group id, meta group id)
+TYPE_KEY = "orlovbot:juicy:type2:{}"  # ship type -> (name, group id, meta group id, category id)
+GROUP_KEY = "orlovbot:juicy:group:{}"  # group id -> category id
 TYPE_TTL = 7 * 24 * 3600
 B = 1_000_000_000
 
@@ -54,6 +57,8 @@ BLACK_OPS = 898
 CAPITALS = {TITAN, SUPERCARRIER, CARRIER, DREADNOUGHT, FORCE_AUXILIARY, CAPITAL_INDUSTRIAL, LANCER, FREIGHTER, JUMP_FREIGHTER}
 MARSHAL = 44996
 META_FACTION = 4  # dogma attribute 1692 (metaGroupID): 1 T1, 2 T2, 4 faction, 14 T3
+# EVE's categories of the things that die: 6 ships; 65 Upwell structures, 23 starbases, 46 customs offices and the like
+STRUCTURE_CATEGORIES = {65, 23, 46}
 
 # The special edition market group (1612) as of 2026-10-22, without the hulls anyone can get
 # for nothing (Gnosis, Praxis, Sunesis, Metamorphosis, the shuttles and corvettes, the Quafe
@@ -77,8 +82,21 @@ def _threshold(name: str, default_b: float) -> float:
     return float(getattr(settings, name, default_b)) * B
 
 
+def group_category(group_id: int) -> int:
+    """The category of an item group, from ESI, cached a week. HTTP only."""
+    key = GROUP_KEY.format(int(group_id))
+    cached = cache.get(key)
+    if cached:
+        return int(cached)
+    response = requests.get(f"{kf.ESI}/universe/groups/{int(group_id)}/", headers=kf.HEADERS, timeout=30)
+    response.raise_for_status()
+    category = int(response.json().get("category_id") or 0)
+    cache.set(key, category, TYPE_TTL)
+    return category
+
+
 def ship_info(type_id: int) -> tuple:
-    """(name, group id, meta group id) of a ship type, from ESI, cached a week. HTTP only."""
+    """(name, group id, meta group id, category id) of a type, from ESI, cached a week. HTTP only."""
     key = TYPE_KEY.format(int(type_id))
     cached = cache.get(key)
     if cached:
@@ -87,14 +105,18 @@ def ship_info(type_id: int) -> tuple:
     response.raise_for_status()
     data = response.json()
     meta = next((int(a["value"]) for a in data.get("dogma_attributes") or [] if a.get("attribute_id") == 1692), 0)
-    info = (data.get("name") or f"Type {type_id}", int(data.get("group_id") or 0), meta)
+    group_id = int(data.get("group_id") or 0)
+    info = (data.get("name") or f"Type {type_id}", group_id, meta, group_category(group_id) if group_id else 0)
     cache.set(key, info, TYPE_TTL)
     return info
 
 
-def judge(value: float, type_id: int, group_id: int, meta: int) -> str | None:
+def judge(value: float, type_id: int, group_id: int, meta: int, category: int = 6) -> str | None:
     """The reason a loss is juicy, or None. Pure."""
     extra = set(getattr(settings, "ORLOVBOT_JUICY_EXTRA_TYPE_IDS", []) or [])
+    if category in STRUCTURE_CATEGORIES:
+        # structures have their own bar (owner, 2026-11-21: too many below it are not relevant)
+        return "Structure above 20 B" if value >= _threshold("ORLOVBOT_JUICY_STRUCTURE_B", 20) else None
     if group_id == TITAN:
         return "Titan"
     if group_id == SUPERCARRIER:
@@ -122,8 +144,8 @@ def assess(killmail: dict) -> str | None:
     if not type_id:
         return None
     value = float((killmail.get("zkb") or {}).get("totalValue") or 0)
-    _, group_id, meta = ship_info(type_id)
-    return judge(value, type_id, group_id, meta)
+    _, group_id, meta, category = ship_info(type_id)
+    return judge(value, type_id, group_id, meta, category)
 
 
 def build_embed(killmail: dict, reason: str, test: bool = False) -> Embed:
