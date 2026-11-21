@@ -1,21 +1,22 @@
-"""The leadership board in #oarmi-leadership-team: who leads the corp and the alliance.
+"""The leadership board in #leadership-team: who leads the alliance and its corporations.
 
 One message (orlovbot/board.py) that the bot keeps current, redrawn once a day at
-ORLOVBOT_LEADERSHIP_HOUR (EVE time) and at every bot start. Two sections (owner, 2026-11-19 and
+ORLOVBOT_LEADERSHIP_HOUR (EVE time) and at every bot start. Two sections (owner, 2026-11-19,
 2026-11-21):
 
-- OARMI leadership: a block per auth group named in ORLOVBOT_LEADERSHIP_GROUPS (Directors,
-  Officers), every member of the group by their Discord display name ("[OARMI] Tony_Carboni", the
-  nickname auth sets), in the colour the name has in the member list.
-- Alliance leadership: everyone who can see the CEO channel in one list, CEOs first.
-- Per corporation: a block per corporation, the corporation's CEO first (ESI says who that is;
-  shown by the Discord name of the account that owns the character, else the character's name and
-  "not on Discord"), then the other members of that corporation who can see the CEO channel
-  (ORLOVBOT_LEADERSHIP_CEO_CHANNEL, #corporate-ceos). The corporations are the alliance's (ESI)
-  plus any corporation a channel member belongs to, the executor corp first.
+- Alliance leadership: everyone who can see the CEO channel (ORLOVBOT_LEADERSHIP_CEO_CHANNEL,
+  #corporate-ceos), CEOs first, then directors. How the list is made is not stated on the board.
+- Per corporation: a block per corporation, the executor corp first. The corporation's CEO per ESI
+  (the Discord account that owns the character; when that character is not on Discord, the corp's
+  channel members with the CEO role stand in, an alt of theirs runs the corp), then the corp's other
+  channel members as Director. The ORLOVBOT_LEADERSHIP_GROUPS_CORP block (OARMI) also carries the
+  auth groups of ORLOVBOT_LEADERSHIP_GROUPS: the OARMI Directors and Officers. The corporations are
+  the alliance's (ESI) plus any corporation a channel member belongs to, minus
+  ORLOVBOT_LEADERSHIP_HIDE_CORPS.
 
-The channel is read-only for OARMI members; the auth groups and the channel permissions are the
-source, so the Discord roles and this board always agree.
+Names are Discord display names ("[OARMI] Tony_Carboni", the nickname auth sets) in the colour of
+their label inside an ansi code block: CEO pink, Director red, Officer orange. A group member
+without a Discord link shows as the corp tag plus the main character.
 
 docs/runbooks/24-oarmi-leadership-board.md
 """
@@ -45,7 +46,7 @@ DEFAULT_HOUR = 6  # EVE time
 # directors show Corp Director's dark orange (nearest: red) and the officers Officer's amber (orange).
 # CEO's violet is nearest to pink.
 ANSI = {"red": "1;31", "orange": "1;33", "yellow": "1;33", "green": "1;32", "blue": "1;34", "pink": "1;35", "cyan": "1;36", "white": "1;37"}
-DEFAULT_COLOURS = {"Directors": "red", "Officers": "orange", "CEO": "pink", "Director": "red", "Member": "white"}
+DEFAULT_COLOURS = {"Directors": "red", "Officers": "orange", "CEO": "pink", "Director": "red", "Officer": "orange", "Member": "white"}
 DIRECTOR_ROLES = ("Corp Director", "OARMI Director", "Alliance Director")
 ESC = chr(27)
 NL = chr(10)
@@ -95,6 +96,16 @@ def _corps_title() -> str:
 
 def _ceo_channel() -> str:
     return str(getattr(settings, "ORLOVBOT_LEADERSHIP_CEO_CHANNEL", "corporate-ceos"))
+
+
+def _groups_corp() -> int:
+    """The corporation whose block carries the auth groups (Directors, Officers): OARMI."""
+    return int(getattr(settings, "ORLOVBOT_LEADERSHIP_GROUPS_CORP", 98843356))
+
+
+def _hidden_corps() -> set:
+    """Corporation ids left off the board (owner, 2026-11-21: W T I, about to disband, no attention wanted)."""
+    return {int(c) for c in (getattr(settings, "ORLOVBOT_LEADERSHIP_HIDE_CORPS", None) or [])}
 
 
 def _alliance_id() -> int:
@@ -170,7 +181,7 @@ def corporations_for(channel_uids: list) -> list:
         corp_ids.add(main.corporation_id)
         by_corp.setdefault(main.corporation_id, []).append(int(link.uid))
     corps = []
-    for corp_id in corp_ids:
+    for corp_id in corp_ids - _hidden_corps():
         info = esi_get(f"/corporations/{corp_id}/")
         ceo_id = info["ceo_id"]
         own = CharacterOwnership.objects.filter(character__character_id=ceo_id).select_related("user", "character").first()
@@ -184,24 +195,34 @@ def corporations_for(channel_uids: list) -> list:
     return corps
 
 
-def alliance_blocks(guild, corps: list) -> list:
-    """[(title, [(display name, label)])] per corporation, the CEO first, then the others by name."""
+def alliance_blocks(guild, corps: list, group_sections=None) -> list:
+    """[(title, [(display name, label)])] per corporation, the CEO first, then the others by name;
+    group_sections = [(title, [display names])] from the auth groups, merged into the ORLOVBOT_LEADERSHIP_GROUPS_CORP block.
+
+    The CEO is the account that owns the corporation's CEO character (ESI). When that character is not
+    on Discord, the corporation's channel members with the CEO role stand in (an alt of theirs runs the
+    corp: NowhereClone for ThatOneClone, owner 2026-11-21); only when there is nobody at all is the
+    character named with "not on Discord". Everyone else in the channel is a Director (owner, 2026-11-21:
+    the channel is the leadership, so a member there without the CEO seat is a director).
+    """
     blocks = []
     for corp in corps:
         ceo_uid, ceo_name = corp["ceo"]
-        member = guild.get_member(ceo_uid) if (guild and ceo_uid) else None
-        if member is not None:
-            rows = [(member.display_name, "CEO" if member.display_name.endswith(ceo_name) else f"CEO ({ceo_name})")]
+        ceo_member = guild.get_member(ceo_uid) if (guild and ceo_uid) else None
+        others = [m for m in (guild.get_member(uid) for uid in corp["others"]) if m is not None] if guild else []
+        if ceo_member is not None:
+            ceos = [ceo_member]
         else:
-            rows = [(f"[{corp['ticker']}] {ceo_name}", "CEO, not on Discord")]
-        others = []
-        for uid in corp["others"]:
-            m = guild.get_member(uid) if guild else None
-            if m is None:
-                continue
-            is_director = any(role.name in DIRECTOR_ROLES for role in m.roles)
-            others.append((m.display_name, "Director" if is_director else "Member"))
-        rows.extend(sorted(others, key=lambda r: r[0].lower().split("] ", 1)[-1]))
+            ceos = [m for m in others if any(role.name == "CEO" for role in m.roles)]
+            others = [m for m in others if m not in ceos]
+        rows = [(m.display_name, "CEO") for m in ceos] or [(f"[{corp['ticker']}] {ceo_name}", "CEO, not on Discord")]
+        rows.extend(sorted(((m.display_name, "Director") for m in others), key=lambda r: r[0].lower().split("] ", 1)[-1]))
+        if corp["id"] == _groups_corp():
+            # the auth groups (Directors, Officers) live in this corporation's block, after the CEO and the channel's directors
+            listed = {name for name, _ in rows}
+            for title, names in group_sections or []:
+                label = title[:-1] if title.endswith("s") else title
+                rows.extend((name, label) for name in names if name not in listed)
         blocks.append((f"{corp['name']} [{corp['ticker']}]", rows))
     return blocks
 
@@ -219,37 +240,35 @@ def section_block(title: str, names: list) -> str:
     return f"{_heading()}{title}" + NL + "```ansi" + NL + NL.join(lines) + NL + "```"
 
 
-def corp_block(title: str, rows: list) -> str:
-    """A heading line, then one ansi code block: the name in the colour of its label, the label after it."""
+def corp_block(title, rows: list) -> str:
+    """A heading line (none when title is None), then one ansi code block: the name in the colour of its label, the label after it."""
     colours = _colours()
     width = max(len(name) for name, _ in rows) if rows else 0
     lines = []
     for name, label in rows:
         colour = colours.get(label.split(",")[0].split(" (")[0], "white")
         lines.append(_coloured(name.ljust(width), colour) + "  " + label)
-    return f"{_heading()}{title}" + NL + "```ansi" + NL + NL.join(lines or ["nobody yet"]) + NL + "```"
+    code = "```ansi" + NL + NL.join(lines or ["nobody yet"]) + NL + "```"
+    return code if title is None else f"{_heading()}{title}" + NL + code
 
 
 def everyone_rows(corp_sections: list) -> list:
     """All the channel members in one list, the CEOs first, then by name (the corp tag is in the nickname)."""
-    rows = [row for _, block in corp_sections for row in block if not row[1].endswith("not on Discord")]
+    rows = [row for _, block in corp_sections for row in block if row[1] in ("CEO", "Director")]
     return sorted(rows, key=lambda r: (not r[1].startswith("CEO"), r[0].lower().split("] ", 1)[-1]))
 
 
-def build_embed(group_sections: list, corp_sections: list) -> Embed:
-    """group_sections = [(title, [display names])]; corp_sections = [(title, [(display name, label)])].
+def build_embed(corp_sections: list) -> Embed:
+    """corp_sections = [(title, [(display name, label)])], the executor corp first.
 
-    Three sections, clearly marked (owner, 2026-11-21): the OARMI groups, everyone in the CEO channel,
-    then one block per corporation."""
-    parts = [f"{_section_heading()}{_oarmi_title()}"]
-    parts += [section_block(title, names) for title, names in group_sections]
-    parts.append(f"{_section_heading()}{_alliance_title()}")
-    parts.append(corp_block(f"Everyone in #{_ceo_channel()}", everyone_rows(corp_sections)))
+    Two sections (owner, 2026-11-21): the alliance leadership on top, then one block per corporation."""
+    parts = [f"{_section_heading()}{_alliance_title()}"]
+    parts.append(corp_block(None, everyone_rows(corp_sections)))  # no block title: the section heading says it (owner, 2026-11-21)
     parts.append(f"{_section_heading()}{_corps_title()}")
     parts += [corp_block(title, rows) for title, rows in corp_sections]
     embed = Embed(title=BOARD_TITLE, colour=Color.blue())
     embed.description = NL.join(parts).strip()[:4096]
-    embed.set_footer(text=f"Auth groups and the members of #{_ceo_channel()}; the CEOs per ESI. Redrawn once a day.")
+    embed.set_footer(text="Redrawn once a day.")
     return embed
 
 
@@ -283,7 +302,7 @@ class Leadership(commands.Cog):
             raw = await sync_to_async(members_by_group)()
             group_sections = [(title, display_names(guild, people)) for title, people in raw]
             corps = await sync_to_async(corporations_for)(self.channel_uids(guild))
-            await self.board.update(build_embed(group_sections, alliance_blocks(guild, corps)))
+            await self.board.update(build_embed(alliance_blocks(guild, corps, group_sections)))
         except Exception:
             logger.exception("Leadership board update failed")
             self.board.reset()

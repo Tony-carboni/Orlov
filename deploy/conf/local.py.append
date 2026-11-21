@@ -360,7 +360,7 @@ ORLOVBOT_MOON_REMINDER_IDLE_HOURS = 24               # a refinery is listed once
 ORLOVBOT_MOON_REMINDER_MENTION = "<@&1561411839336644780>"  # pings the OARMI Director role (tony, Hamu); "" for no ping
 
 # --- OARMI leadership board (runbook 24): one message in #oarmi-leadership-team, redrawn once a day and at every bot start ---
-ORLOVBOT_LEADERSHIP_CHANNEL = "oarmi-leadership-team"  # channel name; "" switches the board off
+ORLOVBOT_LEADERSHIP_CHANNEL = "leadership-team"        # channel name; "" switches the board off
 ORLOVBOT_LEADERSHIP_HOUR = 6                            # EVE time (UTC) of the daily redraw
 ORLOVBOT_LEADERSHIP_GROUPS = [                          # sections in this order: a heading and the auth group whose members it lists
     {"title": "Directors", "group": "OARMI Director"},
@@ -371,6 +371,7 @@ ORLOVBOT_LEADERSHIP_COLOURS = {"Directors": "red", "Officers": "orange"}  # head
 ORLOVBOT_LEADERSHIP_HEADING = "### "                   # markdown before each section title: "### " one size up, "## " two
 # Owner, 2026-11-21: two more sections, everyone in the CEO channel and one block per corporation (the CEO per ESI, then that corp's channel members).
 ORLOVBOT_LEADERSHIP_CEO_CHANNEL = "corporate-ceos"
+ORLOVBOT_LEADERSHIP_HIDE_CORPS = [98701264]  # corporation ids left off the board; Wartorn Industries [W T I] (owner, 2026-11-21: about to disband)
 
 # Blacklist check (runbook 25): every morning the bot reads orlovbot/blacklist.md and reports in this channel any listed pilot
 # found in an alliance corporation (ESI), registered in auth with one of the states below, or on the Discord server.
