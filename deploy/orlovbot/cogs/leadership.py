@@ -5,7 +5,8 @@ ORLOVBOT_LEADERSHIP_HOUR (EVE time) and at every bot start. Two sections (owner,
 2026-11-21):
 
 - Alliance leadership: everyone who can see the CEO channel (ORLOVBOT_LEADERSHIP_CEO_CHANNEL,
-  #corporate-ceos), CEOs first, then directors. How the list is made is not stated on the board.
+  #corporate-ceos): the holders of ORLOVBOT_LEADERSHIP_LEADER_ROLE (Alliance Director) first as
+  "Leader", then the CEOs, then the directors. How the list is made is not stated on the board.
 - Per corporation: a block per corporation, the executor corp first. The corporation's CEO per ESI
   (the Discord account that owns the character; when that character is not on Discord, the corp's
   channel members with the CEO role stand in, an alt of theirs runs the corp), then the corp's other
@@ -14,13 +15,16 @@ ORLOVBOT_LEADERSHIP_HOUR (EVE time) and at every bot start. Two sections (owner,
   the alliance's (ESI) plus any corporation a channel member belongs to, minus
   ORLOVBOT_LEADERSHIP_HIDE_CORPS.
 
-Names are Discord display names ("[OARMI] Tony_Carboni", the nickname auth sets) in the colour of
-their label inside an ansi code block: CEO pink, Director red, Officer orange. A group member
-without a Discord link shows as the corp tag plus the main character.
+Names are Discord display names ("[OARMI] Tony_Carboni", the nickname auth sets) inside an ansi
+code block, each in the colour the member has in the right-hand pane (owner, 2026-11-21: "to find
+them back easier"): the colour of their highest coloured role, mapped by hue to the nearest of
+Discord's eight text colours. A group member without a Discord link shows as the corp tag plus the
+main character, in white.
 
 docs/runbooks/24-oarmi-leadership-board.md
 """
 
+import colorsys
 import datetime as dt
 import logging
 
@@ -42,12 +46,12 @@ DEFAULT_GROUPS = [
     {"title": "Officers", "group": "OARMI Officer"},
 ]
 DEFAULT_HOUR = 6  # EVE time
-# Discord's ansi palette, bold. The OARMI roles carry no colour of their own; in the member list the
-# directors show Corp Director's dark orange (nearest: red) and the officers Officer's amber (orange).
-# CEO's violet is nearest to pink.
-ANSI = {"red": "1;31", "orange": "1;33", "yellow": "1;33", "green": "1;32", "blue": "1;34", "pink": "1;35", "cyan": "1;36", "white": "1;37"}
-DEFAULT_COLOURS = {"Directors": "red", "Officers": "orange", "CEO": "pink", "Director": "red", "Officer": "orange", "Member": "white"}
-DIRECTOR_ROLES = ("Corp Director", "OARMI Director", "Alliance Director")
+LEADER_LABEL = "Leader"
+# Discord's ansi palette, bold.
+ANSI = {"red": "1;31", "yellow": "1;33", "green": "1;32", "blue": "1;34", "pink": "1;35", "cyan": "1;36", "white": "1;37"}
+# hue (degrees) -> the nearest of the palette: Corp Director's dark orange (24°) is red, Officer's amber (37°) yellow,
+# Family Member's blue and CEO's violet (256°) blue, Alliance Director's raspberry (340°) pink
+HUE_BUCKETS = [(30, "red"), (75, "yellow"), (165, "green"), (195, "cyan"), (265, "blue"), (345, "pink"), (360, "red")]
 ESC = chr(27)
 NL = chr(10)
 ESI = "https://esi.evetech.net/latest"
@@ -61,10 +65,6 @@ def _groups() -> list:
 
 def _hour() -> int:
     return int(getattr(settings, "ORLOVBOT_LEADERSHIP_HOUR", DEFAULT_HOUR))
-
-
-def _colours() -> dict:
-    return dict(DEFAULT_COLOURS, **(getattr(settings, "ORLOVBOT_LEADERSHIP_COLOURS", None) or {}))
 
 
 def _prefix() -> str:
@@ -82,10 +82,6 @@ def _section_heading() -> str:
     return str(getattr(settings, "ORLOVBOT_LEADERSHIP_SECTION_HEADING", "## "))
 
 
-def _oarmi_title() -> str:
-    return str(getattr(settings, "ORLOVBOT_LEADERSHIP_OARMI_TITLE", "OARMI leadership"))
-
-
 def _alliance_title() -> str:
     return str(getattr(settings, "ORLOVBOT_LEADERSHIP_ALLIANCE_TITLE", "Alliance leadership"))
 
@@ -96,6 +92,11 @@ def _corps_title() -> str:
 
 def _ceo_channel() -> str:
     return str(getattr(settings, "ORLOVBOT_LEADERSHIP_CEO_CHANNEL", "corporate-ceos"))
+
+
+def _leader_role() -> str:
+    """The Discord role whose holders head the alliance list as Leader (owner, 2026-11-21: Tony_Carboni on top)."""
+    return str(getattr(settings, "ORLOVBOT_LEADERSHIP_LEADER_ROLE", "Alliance Director"))
 
 
 def _groups_corp() -> int:
@@ -124,7 +125,39 @@ def esi_post(path: str, payload):
     return r.json()
 
 
-# ---------------------------------------------------------------- OARMI leadership (auth groups)
+# ---------------------------------------------------------------- colours
+
+
+def palette_colour(value: int) -> str:
+    """The palette colour nearest to a role colour (0xRRGGBB), by hue; no colour (0) or a grey is white."""
+    if not value:
+        return "white"
+    r, g, b = ((value >> 16) & 255) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255
+    hue, _, saturation = colorsys.rgb_to_hls(r, g, b)
+    if saturation < 0.15:
+        return "white"
+    degrees = hue * 360
+    for upto, name in HUE_BUCKETS:
+        if degrees < upto:
+            return name
+    return "red"
+
+
+def member_colour(member) -> str:
+    """The colour the member has in the member list: their highest coloured role."""
+    return palette_colour(member.colour.value) if member is not None else "white"
+
+
+def _coloured(text: str, colour: str) -> str:
+    return f"{ESC}[{ANSI.get(colour, '1;37')}m{text}{ESC}[0m"
+
+
+def _sort_key(row) -> str:
+    """By the part after the corp tag."""
+    return row[0].lower().split("] ", 1)[-1]
+
+
+# ---------------------------------------------------------------- the auth groups (OARMI)
 
 
 def members_by_group() -> list:
@@ -150,23 +183,29 @@ def members_by_group() -> list:
     return sections
 
 
-def display_names(guild, people: list) -> list:
-    """The Discord display name of each person (the nickname auth sets), else the corp tag and the main character; sorted."""
-    names = []
-    for uid, main in people:
-        member = guild.get_member(uid) if (guild and uid) else None
-        names.append(member.display_name if member else f"{_prefix()}{main}")
-    return sorted(names, key=lambda n: n.lower().split("] ", 1)[-1])
+def group_rows(guild, sections: list) -> list:
+    """[(display name, label, colour)] for the group members: the label is the singular of the group's title."""
+    rows = []
+    for title, people in sections:
+        label = title[:-1] if title.endswith("s") else title
+        group = []
+        for uid, main in people:
+            member = guild.get_member(uid) if (guild and uid) else None
+            name = member.display_name if member else f"{_prefix()}{main}"
+            group.append((name, label, member_colour(member)))
+        rows.extend(sorted(group, key=_sort_key))
+    return rows
 
 
-# ---------------------------------------------------------------- Alliance leadership (CEO channel)
+# ---------------------------------------------------------------- the corporations (CEO channel)
 
 
 def corporations_for(channel_uids: list) -> list:
-    """[{id, name, ticker, ceo: (uid or None, name, on_discord), others: [(uid, is_director)]}], the executor corp first.
+    """[{id, name, ticker, ceo: (uid or None, name), others: [uid]}], the executor corp first.
 
     channel_uids: the Discord ids of the members who can see the CEO channel (bots excluded).
-    The corporations are the alliance's plus the corporation of every channel member's main character.
+    The corporations are the alliance's plus the corporation of every channel member's main character,
+    minus ORLOVBOT_LEADERSHIP_HIDE_CORPS.
     """
     from allianceauth.authentication.models import CharacterOwnership
     from allianceauth.services.modules.discord.models import DiscordUser
@@ -195,15 +234,14 @@ def corporations_for(channel_uids: list) -> list:
     return corps
 
 
-def alliance_blocks(guild, corps: list, group_sections=None) -> list:
-    """[(title, [(display name, label)])] per corporation, the CEO first, then the others by name;
-    group_sections = [(title, [display names])] from the auth groups, merged into the ORLOVBOT_LEADERSHIP_GROUPS_CORP block.
+def corp_blocks(guild, corps: list, groups: list) -> list:
+    """[(title, [(display name, label, colour)])] per corporation: the CEO first, the directors, then the group rows.
 
     The CEO is the account that owns the corporation's CEO character (ESI). When that character is not
     on Discord, the corporation's channel members with the CEO role stand in (an alt of theirs runs the
     corp: NowhereClone for ThatOneClone, owner 2026-11-21); only when there is nobody at all is the
-    character named with "not on Discord". Everyone else in the channel is a Director (owner, 2026-11-21:
-    the channel is the leadership, so a member there without the CEO seat is a director).
+    character named with "not on Discord". Everyone else in the channel is a Director (owner, 2026-11-21).
+    groups = [(display name, label, colour)] from the auth groups, merged into the ORLOVBOT_LEADERSHIP_GROUPS_CORP block.
     """
     blocks = []
     for corp in corps:
@@ -215,57 +253,50 @@ def alliance_blocks(guild, corps: list, group_sections=None) -> list:
         else:
             ceos = [m for m in others if any(role.name == "CEO" for role in m.roles)]
             others = [m for m in others if m not in ceos]
-        rows = [(m.display_name, "CEO") for m in ceos] or [(f"[{corp['ticker']}] {ceo_name}", "CEO, not on Discord")]
-        rows.extend(sorted(((m.display_name, "Director") for m in others), key=lambda r: r[0].lower().split("] ", 1)[-1]))
+        rows = [(m.display_name, "CEO", member_colour(m)) for m in ceos] or [(f"[{corp['ticker']}] {ceo_name}", "CEO, not on Discord", "white")]
+        rows.extend(sorted(((m.display_name, "Director", member_colour(m)) for m in others), key=_sort_key))
         if corp["id"] == _groups_corp():
-            # the auth groups (Directors, Officers) live in this corporation's block, after the CEO and the channel's directors
-            listed = {name for name, _ in rows}
-            for title, names in group_sections or []:
-                label = title[:-1] if title.endswith("s") else title
-                rows.extend((name, label) for name in names if name not in listed)
+            listed = {name for name, _, _ in rows}
+            rows.extend(row for row in groups if row[0] not in listed)
         blocks.append((f"{corp['name']} [{corp['ticker']}]", rows))
     return blocks
+
+
+def alliance_rows(blocks: list, leaders=()) -> list:
+    """The alliance list: the leaders first, then the CEOs, then the directors, each by name.
+
+    leaders: display names of the members holding the leader role; they are labelled Leader here
+    whatever their corporation label is (the corp block still shows them as the corp's CEO)."""
+    rows = []
+    for _, block in blocks:
+        for name, label, colour in block:
+            if name in leaders:
+                rows.append((name, LEADER_LABEL, colour))
+            elif label in ("CEO", "Director"):
+                rows.append((name, label, colour))
+    order = {LEADER_LABEL: 0, "CEO": 1, "Director": 2}
+    return sorted(rows, key=lambda r: (order[r[1]], _sort_key(r)))
 
 
 # ---------------------------------------------------------------- the embed
 
 
-def _coloured(name: str, colour: str) -> str:
-    return f"{ESC}[{ANSI.get(colour, '1;37')}m{name}{ESC}[0m"
-
-
-def section_block(title: str, names: list) -> str:
-    """A heading line, then one ansi code block with the names in the section's colour."""
-    lines = [_coloured(name, _colours().get(title, "")) for name in names] or ["nobody yet"]
-    return f"{_heading()}{title}" + NL + "```ansi" + NL + NL.join(lines) + NL + "```"
-
-
-def corp_block(title, rows: list) -> str:
-    """A heading line (none when title is None), then one ansi code block: the name in the colour of its label, the label after it."""
-    colours = _colours()
-    width = max(len(name) for name, _ in rows) if rows else 0
-    lines = []
-    for name, label in rows:
-        colour = colours.get(label.split(",")[0].split(" (")[0], "white")
-        lines.append(_coloured(name.ljust(width), colour) + "  " + label)
-    code = "```ansi" + NL + NL.join(lines or ["nobody yet"]) + NL + "```"
+def code_block(title, rows: list) -> str:
+    """A heading line (none when title is None), then one ansi code block: each name in its own colour, the label after it."""
+    width = max(len(name) for name, _, _ in rows) if rows else 0
+    lines = [_coloured(name.ljust(width), colour) + "  " + label for name, label, colour in rows] or ["nobody yet"]
+    code = "```ansi" + NL + NL.join(lines) + NL + "```"
     return code if title is None else f"{_heading()}{title}" + NL + code
 
 
-def everyone_rows(corp_sections: list) -> list:
-    """All the channel members in one list, the CEOs first, then by name (the corp tag is in the nickname)."""
-    rows = [row for _, block in corp_sections for row in block if row[1] in ("CEO", "Director")]
-    return sorted(rows, key=lambda r: (not r[1].startswith("CEO"), r[0].lower().split("] ", 1)[-1]))
-
-
-def build_embed(corp_sections: list) -> Embed:
-    """corp_sections = [(title, [(display name, label)])], the executor corp first.
+def build_embed(blocks: list, leaders=()) -> Embed:
+    """blocks = [(title, [(display name, label, colour)])], the executor corp first; leaders = the leaders' display names.
 
     Two sections (owner, 2026-11-21): the alliance leadership on top, then one block per corporation."""
     parts = [f"{_section_heading()}{_alliance_title()}"]
-    parts.append(corp_block(None, everyone_rows(corp_sections)))  # no block title: the section heading says it (owner, 2026-11-21)
+    parts.append(code_block(None, alliance_rows(blocks, leaders)))  # no block title: the section heading says it (owner, 2026-11-21)
     parts.append(f"{_section_heading()}{_corps_title()}")
-    parts += [corp_block(title, rows) for title, rows in corp_sections]
+    parts += [code_block(title, rows) for title, rows in blocks]
     embed = Embed(title=BOARD_TITLE, colour=Color.blue())
     embed.description = NL.join(parts).strip()[:4096]
     embed.set_footer(text="Redrawn once a day.")
@@ -296,13 +327,17 @@ class Leadership(commands.Cog):
             return []
         return [m.id for m in channel.members if not m.bot]
 
+    def leaders(self, guild) -> set:
+        """Display names of the members holding the leader role."""
+        role = discord.utils.get(guild.roles, name=_leader_role()) if guild else None
+        return {m.display_name for m in role.members if not m.bot} if role else set()
+
     async def refresh(self):
         try:
             guild = self.bot.get_guild(int(settings.DISCORD_GUILD_ID))
-            raw = await sync_to_async(members_by_group)()
-            group_sections = [(title, display_names(guild, people)) for title, people in raw]
+            groups = group_rows(guild, await sync_to_async(members_by_group)())
             corps = await sync_to_async(corporations_for)(self.channel_uids(guild))
-            await self.board.update(build_embed(alliance_blocks(guild, corps, group_sections)))
+            await self.board.update(build_embed(corp_blocks(guild, corps, groups), self.leaders(guild)))
         except Exception:
             logger.exception("Leadership board update failed")
             self.board.reset()
