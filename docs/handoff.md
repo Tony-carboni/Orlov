@@ -4,6 +4,22 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-11-21 (18:50 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** membership design changelog: Parallax Ultima [PARXU], Family Member and CEO for Auroraee and Raistlin Kano (owner's ask of 21 November).
+
+**Done.** Both authed today as Family Friend with the auto-group corp_PARXU (Parallax Ultima, corp 98846666, founded 14 October, 15 members, in-game CEO Raistlin Kano). ESI lists three corporations inside ORLOV (OARMI, MONO1, Wartorn Industries) and PARXU is not among them, so the alliance rule cannot give them Family Member; as with Go Browns on 6 October a one-off was made, per character this time: Auroraee and Raistlin Kano were added to the Family Member state's character list (not the corp), and both users were added to the CEO group. Discord followed at once: roles CEO, Family Member and corp_PARXU, nicknames [PARXU] Auroraee and [PARXU] Raistlin Kano; the CEO group holds tony, ThatOneClone, Auroraee and Raistlin_Kano. Backup aa-db-2026-11-21-1846 first. Recorded in docs/design/membership.md (corp table and changelog).
+
+**Findings.** Wartorn Industries (corp 98701264) is in ORLOV per ESI but has no row in the membership design's entity table; worth a look when a session next touches the table.
+
+**Owner by hand.** Nothing. Tell the two CEOs the CEO onboarding guide exists (docs/guides/corp-ceo-onboarding.md: the Corp Stats / Member Audit token) if PARXU is joining.
+
+**Open.** When ESI shows PARXU inside ORLOV: take the two characters off the Family Member state's character list so membership follows the alliance. Everything open from the 19 November entry (the mapper decision, the planned fleets rollout, the Fractured Skies cron lines, the earlier items).
+
+**Next.** Whichever session the owner opens: nothing pending on the server.
+
+---
+
 ## 2026-11-19 (18:10 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** runbook 23, the idle moon reminder, and runbook 24, the OARMI leadership board (owner's asks of 19 November); Shipyard access for Incontinentia Deretana; the wormhole mapper question.
@@ -65,17 +81,3 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Open.** Still open from earlier entries: the C2 entrance board inputs, more officers, the OARMI Director role purpose, the 3-hour character refresh, corp_GB44/corp_1E3, DigitalOcean weekly backups, stray #pings, the seven project graphs, the hangar-vs-ledger gap (−462 M at 17:35 EVE today), the radio sound confirmation.
 
 **Next.** Nothing queued; the next step is whatever the owner raises.
-
-## 2026-11-08 (16:20 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** Shipyard 0.38.3 and 0.38.4 (runbook 13 C), the finance confusion of 7–8 November, runbook 04 E (Eternity Emperor), runbook 09 (moon board, 6 November), runbook 20 (leaderboards hourly, 6 November).
-
-**Done.** 0.38.3: the "LP processed" and "LP in stock" tiles count in thousands (519k LP). 0.38.4: the outside-master box lets the corrections cover the funding lines in date order and lists only the lines still open with the amount open, whatever the project's state, plus the time of the last journal line; SHIPYARD_BOOKS_PROJECT_REPAYMENT_ENTRIES accepts deposits and names the 75 M "correction" deposit of 3 November 13:10 (entry 26228486232) as project money coming back (server conf/local.py and deploy/conf/local.py.append); new setting SHIPYARD_LP_STOCK_ISK_PER_LP = 800: LP in stock are carried at 800 ISK each, LP bought dearer or cheaper book the difference in the "LP bought" movement. Both released per runbook 13 C (backups aa-db-2026-11-08-1602 and -1616, no migration, 151 tests). Eternity Emperor refreshed (C.KC → OARMI, Family Member, nickname set). Earlier this week: moon board keeps a popped moon 12 hours (04b45ca), leaderboards bot refreshes hourly at xx:30 (f8bc576).
-
-**Findings.** The owner's routines, now in memory: a project funded from the wrong wallet is cancelled, remade from the master wallet, and the funding is paid back from the master wallet to the owner's character with "correction projects" (not to division 7); a deposit with a DS code is a direct sale. The confusion of 7–8 November came from the box: it listed the projects by state and named three settled ones while the 206 M it asked for belonged to two cancelled ones (coesite 56 M and Corp buyback Ice 150 M, funded from division 7 at 17:40 on 7 November). At 16:18 UTC the live master wallet is exactly 206 M below the journal copy, so that correction is paid and shows at the next journal read (journal read up to 13:11 UTC). Sheet then: gap 0, owed 0. The hourly flag sent the owner a notification about the two 17:40 lines after the restart.
-
-**Owner by hand.** Nothing. Check the Finance tab after the next journal read: the red box should be gone.
-
-**Open.** Donated LP: the owner says members donated LP to the corporation without a purchase cost; the books only know LP from journal lines ("NNNk LP" withdrawals), and ESI has no corporation LP balance (only /characters/{id}/loyalty/points). They need a way in (a hand-kept register in the admin, or the owner names the units); once in, they count at 800 ISK each like the rest. Also still open from earlier entries: the C2 entrance board inputs, more officers, the OARMI Director role purpose, the 3-hour character refresh, corp_GB44/corp_1E3, DigitalOcean weekly backups, stray #pings, the seven project graphs, the hangar-vs-ledger gap, the radio sound confirmation.
-
-**Next.** Whichever session the owner answers in: build the donated-LP register once he says how many LP and from whom.
