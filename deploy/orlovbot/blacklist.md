@@ -7,4 +7,3 @@ Rules for the table: one row per pilot; the character ID is the EVE character id
 | Pilot | Character ID | Discord ID | Removed | Reason |
 |---|---|---|---|---|
 | N1KO D95 | 1283156766 | | 2026-11-19 | Removed from OARMI (in the corp 10 to 19 November; auth account N1KO_D95 never linked Discord). Now in Omega Industrial Group, Forge Consortium. Owner's instruction 2026-11-21. |
-| Alexander Helugo | 2113586747 | | 2026-11-19 | Went AWOL, left the Discord server, unreachable; removed from every auth group (CEO) on the owner's instruction 2026-11-19. Character still in Wartorn Industries (W T I), an alliance corporation, as of 2026-11-21. |

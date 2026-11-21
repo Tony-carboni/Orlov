@@ -14,7 +14,8 @@ Entries of 2026-11-21:
 | Pilot | Why | Where the character is now |
 |---|---|---|
 | N1KO D95 | removed from OARMI on 19 November after nine days in the corp; the owner's instruction of 21 November | Omega Industrial Group (Forge Consortium); auth account N1KO_D95 (Family Friend, no Discord link) |
-| Alexander Helugo | AWOL, left the Discord server, removed from every auth group on 19 November (membership design changelog) | Wartorn Industries, an alliance corporation, so the check flags him every morning until that changes |
+
+Taken off again on 2026-11-21 (owner): Alexander Helugo, listed the same day; his character sits in Wartorn Industries, an alliance corporation, and the owner does not want the daily note for it.
 
 Looked at and not added: Kitten Kerns (locked out on 20 October, unlocked on 31 October, left the corporation by himself); Eemar, Masterxxx and MrFreshy_Valterus (lost a director group on 29 October, not removed as members).
 
