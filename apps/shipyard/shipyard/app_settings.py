@@ -210,3 +210,9 @@ SHIPYARD_LP_BUY_ISK_PER_LP = getattr(settings, "SHIPYARD_LP_BUY_ISK_PER_LP", 800
 # Stock types the books no longer carry (owner, 2026-10-25: the leftover Cap Boosters bought to convert, too small to
 # matter; what they fetch later simply arrives as a deposit). Their lots are written off in one movement.
 SHIPYARD_BOOKS_STOCK_WRITTEN_OFF = getattr(settings, "SHIPYARD_BOOKS_STOCK_WRITTEN_OFF", [])  # type ids
+
+# --- The Projects page (0.41.0, owner, 2026-11-25) -------------------------------------------------
+# A running project is flagged "nearly full" from this percentage up
+SHIPYARD_PROJECTS_NEARLY_PCT = getattr(settings, "SHIPYARD_PROJECTS_NEARLY_PCT", 75)
+# Ice is never priced from the market on that page: every block counts this much ISK (the corporation's own rate)
+SHIPYARD_PROJECTS_ICE_ISK = getattr(settings, "SHIPYARD_PROJECTS_ICE_ISK", 150_000)

@@ -20,6 +20,22 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-11-25 (09:30 UTC) — desktop session (PC) → any session
+
+**Runbook / topic:** Shipyard 0.41.0, the Projects page (runbook 13 C); earlier the same session: the blacklist (runbook 25), the leadership board (24), the leaderboards' ice total (20), the juicy feed's structure bar (18).
+
+**Done.** Shipyard 0.41.0: a Projects page at /shipyard/projects/board/ for the new permission projects_access (migration 0040), tab "Projects": the running projects fullest first with a progress bar and a Nearly full flag from 75 % (SHIPYARD_PROJECTS_NEARLY_PCT), the projects completed in the last 30 days with a Completed flag, and the ores the projects buy (highsec R4 moon ores, highsec asteroid ores with the II and III grades, ice; compressed) at Jita 4-4's best buy, ice fixed at 150,000 a block (SHIPYARD_PROJECTS_ICE_ISK). The hourly price refresh now covers those 24 ore types. services/projectsboard.py, template projects_board.html, 162 tests. Released per runbook 13 C (see the release note there for the backup and the pin). The permission sits on the auth group OARMI Officer (the six officers) and, through full access, on the owner; the officers see only this page and the character picker on the front door.
+
+**Findings.** A member with a limited permission who opens another Shipyard page is sent to their own tab (302), not refused (403); the test asserts the gate through access.allowed_url_names instead.
+
+**Owner by hand.** Open the Projects tab once; tell the officers it exists (front door, shipyards.orlovfamily.space, EVE login). Decide who else gets projects_access (auth admin → Groups → the group → permissions, or ask a session).
+
+**Open.** Everything of the 21 November entry (the mapper, the planned fleets rollout, the Fractured Skies check, the older items).
+
+**Next.** Whichever session the owner opens: nothing pending on the server.
+
+---
+
 ## 2026-11-21 (22:00 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** runbook 23, the idle moon reminder, and runbook 24, the OARMI leadership board (owner's asks of 19 November); Shipyard access for Incontinentia Deretana; the wormhole mapper question.

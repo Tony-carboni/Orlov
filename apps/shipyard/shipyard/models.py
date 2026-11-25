@@ -21,6 +21,7 @@ class General(models.Model):
             ("books_access", "Can see the corporation's balance sheet (Finance tab)"),
             ("refresh_prices", "Can press Refresh on the dashboards (queues the Jita price refreshes, nothing else)"),
             ("director_access", "Can open the Director page (the corporation's directors)"),
+            ("projects_access", "Can open the Projects page (the officers who manage the corporation's projects)"),
         )
 
 

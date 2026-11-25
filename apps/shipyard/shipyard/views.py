@@ -209,6 +209,24 @@ def director_view(request):
 
 
 @login_required
+@access.allows("projects_board")
+def projects_board_view(request):
+    """The Projects page (0.41.0, owner, 2026-11-25): the running projects with how full they are, flagged when nearly
+    full or completed, and the ores the projects buy with Jita's buy price (ice at the fixed rate)."""
+    from .services import projectsboard
+    done_days = _int(request.GET.get("days"), 30, 1, 3650)
+    return render(request, "shipyard/projects_board.html", _context(
+        request,
+        board=projectsboard.project_rows(done_days=done_days),
+        prices=projectsboard.ore_prices(),
+        nearly_pct=projectsboard.nearly_pct(),
+        ice_isk=projectsboard.ice_isk(),
+        done_days=done_days,
+        last_run=RefreshRun.objects.filter(step="projects").order_by("-started_at").first(),
+    ))
+
+
+@login_required
 def finance_pdf(request):
     from django.core.exceptions import PermissionDenied
     from django.http import HttpResponse

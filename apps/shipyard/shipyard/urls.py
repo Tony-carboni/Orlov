@@ -43,6 +43,7 @@ urlpatterns = [
     path("projects/", views.projects_view, name="projects"),
     path("projects/connect/", views.projects_connect, name="projects_connect"),
     path("projects/refresh/", views.projects_refresh, name="projects_refresh"),
+    path("projects/board/", views.projects_board_view, name="projects_board"),
     path("character/<int:character_id>/use/", views.use_character, name="use_character"),
     path("go/", views.go, name="go"),
     path("blueprints/", views.blueprints, name="blueprints"),

@@ -2,7 +2,8 @@
 
 `basic_access` opens every page. The limited permissions (owner, 2026-10-12, first for Hamu)
 open a few named pages each: `reprocessing_access` the Reprocessing, Scrapmetal (0.36.1, owner: for Hamu) and Bargains tabs, `dashboard_access`
-the ship dashboard with its ship pages and My settings (the character picker). A member
+the ship dashboard with its ship pages and My settings (the character picker), `director_access` the Director page,
+`projects_access` the Projects page (0.41.0, the officers who manage the corporation's projects). A member
 with limited access is sent from any other Shipyard page to their first tab, and the
 navigation shows only what they may open.
 """
@@ -17,10 +18,11 @@ LIMITED = {
     "shipyard.reprocessing_access": {"reprocessing", "reprocessing_skills", "scrapmetal", "bargains", "bargains_pref", "use_character", "go"},
     "shipyard.books_access": {"finance", "finance_pdf", "finance_refresh", "hangar_refresh", "lplog", "go"},
     "shipyard.director_access": {"director", "use_character", "go"},  # 0.40.0: the Director page (owner and Hamu)
+    "shipyard.projects_access": {"projects_board", "use_character", "go"},  # 0.41.0: the Projects page (the officers)
 }
 # the tab a limited member lands on, in order of preference
 LANDING = [("shipyard.dashboard_access", "/shipyard/"), ("shipyard.reprocessing_access", "/shipyard/reprocessing/"), ("shipyard.books_access", "/shipyard/finance/"),
-           ("shipyard.director_access", "/shipyard/director/")]
+           ("shipyard.director_access", "/shipyard/director/"), ("shipyard.projects_access", "/shipyard/projects/board/")]
 ALL_TABS = ("index", "fuel", "reprocessing", "scrapmetal", "lp", "bargains", "industry", "business", "settings")
 
 

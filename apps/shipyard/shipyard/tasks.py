@@ -10,7 +10,7 @@ from .models import (
     BuildSnapshot, Facility, MarketLocation, MaterialType, Ore, OreMarketStats, PriceSnapshot, RefreshRun,
     ScrapItem, Ship, ShipConfig, ShipMarketStats,
 )
-from .services import bargains, business, contracts, esi, everef, fuzzwork, hangar, industry, ledger, lplog, lpstore, nearbuy, projects, reprocessing, scrapmetal, wallet
+from .services import bargains, business, contracts, esi, everef, fuzzwork, hangar, industry, ledger, lplog, lpstore, nearbuy, projects, projectsboard, reprocessing, scrapmetal, wallet
 from .services.http import polite_pause
 
 logger = logging.getLogger(__name__)
@@ -116,6 +116,8 @@ def refresh_prices():
     # the scrapmetal tab: every module on the list and its minerals
     type_ids |= scrapmetal.type_ids()
     type_ids |= scrapmetal.output_type_ids()
+    # the Projects page (0.41.0): the compressed ores the projects buy
+    type_ids |= projectsboard.price_type_ids()
     n, errors = 0, []
     for loc in MarketLocation.objects.filter(is_active=True):
         try:
