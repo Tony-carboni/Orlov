@@ -30,7 +30,7 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 **Owner by hand.** Open the Projects tab once; tell the officers it exists (front door, shipyards.orlovfamily.space, EVE login). Decide who else gets projects_access (auth admin → Groups → the group → permissions, or ask a session).
 
-**Open.** Everything of the 21 November entry (the mapper, the planned fleets rollout, the Fractured Skies check, the older items).
+**Open.** `makemigrations --check` on the server wants a migration for Shipyard that only renames an auto-named index on LpSnapshot (shipyard_lp_charact_6b1f2e_idx to _00de85_idx; Django's naming changed, nothing in our models): harmless, add it with the next release that has a migration anyway. Everything of the 21 November entry (the mapper, the planned fleets rollout, the Fractured Skies check, the older items).
 
 **Next.** Whichever session the owner opens: nothing pending on the server.
 
