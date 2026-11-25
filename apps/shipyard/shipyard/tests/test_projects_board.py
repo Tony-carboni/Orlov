@@ -120,7 +120,15 @@ class ProjectsBoardTests(TestCase):
         self.assertIn("Remake, pays too much", html)
         self.assertIn('href="/shipyard/projects/board/"', html)  # the nav shows the tab
         from .. import access
-        self.assertEqual(access.allowed_url_names(officer), {"projects_board", "projects_board_refresh", "use_character", "go"})  # not the full Corp projects page
+        self.assertEqual(access.allowed_url_names(officer), {"projects_board", "projects_board_refresh", "use_character", "relogin_character", "go"})  # not the full Corp projects page
+        from allianceauth.authentication.models import CharacterOwnership
+        from allianceauth.eveonline.models import EveCharacter
+        CharacterOwnership.objects.create(user=officer, character=EveCharacter.objects.get(character_id=3002), owner_hash="h-3002")
+        r = client.post(reverse("shipyard:relogin_character", args=[3002]))  # "Every scope" on the picker goes to EVE's login
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("login.eveonline.com", r.url)
+        self.assertIn("esi-corporations.read_titles.v1", r.url.replace("%20", " ").replace("+", " "))
+        self.assertEqual(client.post(reverse("shipyard:relogin_character", args=[9999])).status_code, 404)  # not their character
         self.assertEqual(access.landing(officer), "/shipyard/projects/board/")
         # the button reads the projects, at most once every two minutes
         cache.delete("shipyard:projects_board_refresh")

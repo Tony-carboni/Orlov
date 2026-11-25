@@ -58,6 +58,11 @@ def has_full_access(user, character_id: int) -> bool:
     return token_for(user, character_id) is not None
 
 
+def has_every_scope(user, character_id: int) -> bool:
+    """A valid token of this user for this character with everything requested_scopes() asks for (0.41.6)."""
+    return Token.objects.filter(user=user, character_id=int(character_id)).require_scopes(requested_scopes()).require_valid().exists()
+
+
 def register_in_memberaudit(eve_character) -> bool:
     """Make sure the character is registered in Member Audit; True when it was added now."""
     if not apps.is_installed("memberaudit"):
@@ -147,5 +152,6 @@ def choices(user, settings: UserSettings) -> list[dict]:
             "character": character,
             "in_use": character.character_id == settings.skills_character_id,
             "full_access": has_full_access(user, character.character_id),
+            "every_scope": has_every_scope(user, character.character_id),
         })
     return rows

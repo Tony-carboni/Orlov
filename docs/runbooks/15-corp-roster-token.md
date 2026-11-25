@@ -21,7 +21,7 @@ How it works: EVE lets any member of a corporation read that corporation's membe
 
 ## A. Add the token (CEO or director, browser)
 
-**Do this first, once per character: register it with every scope.** Open **https://shipyards.orlovfamily.space**, log in with EVE, go to **My settings** and choose the character that is in your corp. EVE's login opens once and asks for every scope EVE offers (73); accept all. That one login covers Corp Stats, Member Audit and whatever auth gets later, so you never do this again for that character. (Already done it? Then skip to step 1.)
+**Do this first, once per character: register it with every scope.** Open **https://shipyards.orlovfamily.space**, log in with EVE, go to **My settings** and choose the character that is in your corp. EVE's login opens once and asks for every scope EVE offers (73); accept all. That one login covers Corp Stats, Member Audit and whatever auth gets later, so you never do this again for that character. (Already done it? Then skip to step 1.) Since Shipyard 0.41.6: a character registered earlier through Member Audit (33 scopes) shows "full access" and choosing it does not open the login; press its **Every scope** button on My settings instead, which asks EVE for the whole set.
 
 1. Log in to **https://auth.orlovfamily.space** with the EVE SSO button, using any character that is already on your auth account.
 2. Open **https://auth.orlovfamily.space/corpstats/add/**.

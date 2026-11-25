@@ -601,6 +601,19 @@ def refresh_now(request):
 
 
 @login_required
+@access.allows("relogin_character")
+@require_POST
+def relogin_character(request, character_id):
+    """"Log in again with every scope" on the picker (0.41.6, owner, 2026-11-25: Catherine Frey's 33-scope Member Audit token
+    counted as full access, so choosing her never opened EVE's login and the corporation titles scope was never granted).
+    Sends the member to EVE's login for requested_scopes() whatever token exists; the return lands in use_character."""
+    get_object_or_404(CharacterOwnership, user=request.user, character__character_id=character_id)
+    request.session[SSO_PENDING_KEY] = character_id
+    request.session[SSO_NEXT_KEY] = request.POST.get("next") or "settings"
+    return sso_redirect(request, scopes=characters.requested_scopes())
+
+
+@login_required
 @access.allows("use_character")
 def use_character(request, character_id):
     """Make one of the member's auth characters the dashboard's character.

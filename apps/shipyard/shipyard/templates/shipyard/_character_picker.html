@@ -9,7 +9,7 @@
                     <div class="fw-semibold">{{ row.character.character_name }}</div>
                     <div class="small text-muted">[{{ row.character.corporation_ticker }}]
                         {% if row.in_use %}<span class="badge bg-primary ms-1">in use</span>{% endif %}
-                        {% if row.full_access %}<span class="badge bg-success-subtle text-success-emphasis ms-1" title="A token with all scopes exists">full access</span>{% else %}<span class="badge bg-secondary-subtle text-secondary-emphasis ms-1" title="Choosing this character opens EVE's login once">needs login</span>{% endif %}
+                        {% if row.every_scope %}<span class="badge bg-success-subtle text-success-emphasis ms-1" title="A token with every scope EVE offers exists">every scope</span>{% elif row.full_access %}<span class="badge bg-success-subtle text-success-emphasis ms-1" title="A token with the Shipyard's scopes exists; the button below asks EVE for every scope">full access</span>{% else %}<span class="badge bg-secondary-subtle text-secondary-emphasis ms-1" title="Choosing this character opens EVE's login once">needs login</span>{% endif %}
                     </div>
                 </div>
             </div>
@@ -21,6 +21,13 @@
                         {% if row.in_use %}<i class="fas fa-rotate fa-fw"></i> Refresh now{% else %}<i class="fas fa-user-check fa-fw"></i> Use this character{% endif %}
                     </button>
                 </form>
+                {% if not row.every_scope %}
+                <form method="post" action="{% url 'shipyard:relogin_character' row.character.character_id %}" class="d-inline ms-1" title="Open EVE's login once more and accept every scope EVE offers (corporation titles, roster and the like); the character keeps working meanwhile">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ picker_next|default:'settings' }}">
+                    <button class="btn btn-sm btn-outline-warning"><i class="fas fa-key fa-fw"></i> Every scope</button>
+                </form>
+                {% endif %}
             </div>
         </div>
     </div>

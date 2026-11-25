@@ -46,6 +46,7 @@ urlpatterns = [
     path("projects/board/", views.projects_board_view, name="projects_board"),
     path("projects/board/refresh/", views.projects_board_refresh, name="projects_board_refresh"),
     path("character/<int:character_id>/use/", views.use_character, name="use_character"),
+    path("character/<int:character_id>/relogin/", views.relogin_character, name="relogin_character"),
     path("go/", views.go, name="go"),
     path("blueprints/", views.blueprints, name="blueprints"),
 ]
