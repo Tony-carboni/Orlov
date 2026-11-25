@@ -3,7 +3,7 @@ projects need at a glance.
 
 - Every running project with how full it is, flagged when nearly full (SHIPYARD_PROJECTS_NEARLY_PCT,
   75 % and up) and when completed; and its reward per unit against Jita's best buy, flagged for a remake
-  below SHIPYARD_PROJECTS_PRICE_LOW_PCT (85 %) or above SHIPYARD_PROJECTS_PRICE_HIGH_PCT (95 %), because
+  below SHIPYARD_PROJECTS_PRICE_LOW_PCT (80 %) or above SHIPYARD_PROJECTS_PRICE_HIGH_PCT (100 %), because
   prices move and a project's price goes stale (owner, 2026-11-25). Ice gets no price check.
 - The ores the corporation buys through its projects, each at SHIPYARD_PROJECTS_BUY_PCT (90 %) of Jita's
   best buy order, nothing else (owner, 2026-11-25: "just 90 % of Jita buy"):

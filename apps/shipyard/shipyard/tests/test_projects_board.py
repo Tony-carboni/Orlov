@@ -27,7 +27,7 @@ class ProjectsBoardTests(TestCase):
         CorpProject.objects.create(project_id="p-nearly", corporation_id=CORP, name="Veldspar", state="Active", details=_deliver(62516),
                                    progress_current=80_000, progress_desired=100_000, reward_per_contribution=1_000, reward_remaining=20e6, created=NOW)
         CorpProject.objects.create(project_id="p-young", corporation_id=CORP, name="Bitumens", state="Active", details=_deliver(62454),
-                                   progress_current=10, progress_desired=1_000, reward_per_contribution=9_600, reward_remaining=8.9e6, created=NOW)
+                                   progress_current=10, progress_desired=1_000, reward_per_contribution=10_200, reward_remaining=8.9e6, created=NOW)
         CorpProject.objects.create(project_id="p-done", corporation_id=CORP, name="White Glaze", state="Completed", details=_deliver(28444),
                                    progress_current=500, progress_desired=500, reward_per_contribution=150_000, finished=NOW - dt.timedelta(days=2), created=NOW)
         CorpProject.objects.create(project_id="p-old", corporation_id=CORP, name="Old one", state="Completed", details=_deliver(28444),
@@ -39,15 +39,17 @@ class ProjectsBoardTests(TestCase):
         board = projectsboard.project_rows()
         self.assertEqual([(r["project"].name, r["flag"], r["item"], r["left"]) for r in board["running"]],
                          [("Veldspar", "nearly", "Compressed Veldspar", 20_000), ("Bitumens", "", "Compressed Bitumens", 990)])
-        self.assertEqual(board["counts"], {"running": 2, "nearly": 1, "full": 0, "price": 2})  # the projects EVE closed are not listed
+        self.assertEqual(board["counts"], {"running": 2, "nearly": 1, "full": 0, "price": 1})  # the projects EVE closed are not listed
 
     def test_the_price_check_flags_a_stale_reward(self):
         rows = {r["project"].name: r for r in projectsboard.project_rows()["running"]}
-        self.assertEqual((round(rows["Veldspar"]["price_pct"], 1), rows["Veldspar"]["price_flag"]), (81.0, "low"))
-        self.assertEqual((round(rows["Bitumens"]["price_pct"], 1), rows["Bitumens"]["price_flag"]), (97.2, "high"))
+        self.assertEqual((round(rows["Veldspar"]["price_pct"], 1), rows["Veldspar"]["price_flag"]), (81.0, ""))  # 80 to 100 is fine
+        self.assertEqual((round(rows["Bitumens"]["price_pct"], 1), rows["Bitumens"]["price_flag"]), (103.3, "high"))
         self.assertEqual(projectsboard.price_check(900, 1_000), (90.0, ""))
-        self.assertEqual(projectsboard.price_check(850, 1_000), (85.0, ""))  # the band is inclusive
-        self.assertEqual(projectsboard.price_check(950, 1_000), (95.0, ""))
+        self.assertEqual(projectsboard.price_check(800, 1_000), (80.0, ""))  # the band is inclusive
+        self.assertEqual(projectsboard.price_check(799, 1_000), (79.9, "low"))
+        self.assertEqual(projectsboard.price_check(1_000, 1_000), (100.0, ""))
+        self.assertEqual(projectsboard.price_check(1_001, 1_000), (100.1, "high"))
         self.assertEqual(projectsboard.price_check(1_000, None), (None, ""))  # not priced: no check
         CorpProject.objects.create(project_id="p-ice", corporation_id=CORP, name="Ice", state="Active", details=_deliver(28444),
                                    progress_current=1, progress_desired=10, reward_per_contribution=150_000, created=NOW)
@@ -55,7 +57,7 @@ class ProjectsBoardTests(TestCase):
         ice = next(r for r in projectsboard.project_rows()["running"] if r["project"].name == "Ice")
         self.assertEqual((ice["price_pct"], ice["price_flag"]), (None, ""))  # the ice has its own rate
         sections = {s["family"]: s for s in projectsboard.project_rows()["sections"]}
-        self.assertEqual((sections["Veldspar"]["price"], sections["Ice"]["price"]), (1, 0))
+        self.assertEqual((sections["Bitumens"]["price"], sections["Veldspar"]["price"], sections["Ice"]["price"]), (1, 0, 0))
 
     def test_sections_per_ore_family_with_the_missing_grades(self):
         sections = {s["family"]: s for s in projectsboard.project_rows()["sections"]}
@@ -111,7 +113,6 @@ class ProjectsBoardTests(TestCase):
         self.assertNotIn("Completed projects", html)
         self.assertIn("Compressed White Glaze", html)
         self.assertIn("90 % of Jita buy", html)
-        self.assertIn("Remake, pays too little", html)
         self.assertIn("Remake, pays too much", html)
         self.assertIn('href="/shipyard/projects/board/"', html)  # the nav shows the tab
         from .. import access

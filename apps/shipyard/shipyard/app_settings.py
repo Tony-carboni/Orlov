@@ -219,6 +219,6 @@ SHIPYARD_PROJECTS_ICE_ISK = getattr(settings, "SHIPYARD_PROJECTS_ICE_ISK", 150_0
 # The ore prices on that page are this share of Jita's best buy order (owner, 2026-11-25: 90 %, no other value shown)
 SHIPYARD_PROJECTS_BUY_PCT = getattr(settings, "SHIPYARD_PROJECTS_BUY_PCT", 90)
 # A running project whose reward per unit is below the low or above the high share of Jita's best buy is flagged for a remake
-# (owner, 2026-11-25: "below 85 % Jita buy, above 95 % Jita buy; as prices fluctuate, project prices might become outdated")
-SHIPYARD_PROJECTS_PRICE_LOW_PCT = getattr(settings, "SHIPYARD_PROJECTS_PRICE_LOW_PCT", 85)
-SHIPYARD_PROJECTS_PRICE_HIGH_PCT = getattr(settings, "SHIPYARD_PROJECTS_PRICE_HIGH_PCT", 95)
+# (owner, 2026-11-25: "below 85 % Jita buy, above 95 % Jita buy; as prices fluctuate, project prices might become outdated"; widened the same day: 80 and 100)
+SHIPYARD_PROJECTS_PRICE_LOW_PCT = getattr(settings, "SHIPYARD_PROJECTS_PRICE_LOW_PCT", 80)
+SHIPYARD_PROJECTS_PRICE_HIGH_PCT = getattr(settings, "SHIPYARD_PROJECTS_PRICE_HIGH_PCT", 100)
