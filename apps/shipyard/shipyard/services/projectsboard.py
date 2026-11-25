@@ -7,7 +7,7 @@ projects need at a glance.
   prices move and a project's price goes stale (owner, 2026-11-25). Ice gets no price check.
 - The ores the corporation buys through its projects, each at SHIPYARD_PROJECTS_BUY_PCT (90 %) of Jita's
   best buy order, nothing else (owner, 2026-11-25: "just 90 % of Jita buy"):
-  the highsec R4 moon ores, the highsec asteroid ores (Veldspar, Scordite, Plagioclase, Omber, Kernite) and
+  the highsec R4 moon ores, the highsec asteroid ores (Veldspar, Scordite, Plagioclase, Omber, Kernite, Pyroxeres) and
   ice, all in their compressed form, which is what the projects take. Ice is not priced from the
   market: every block counts SHIPYARD_PROJECTS_ICE_ISK (150,000 ISK), the corporation's own rate.
 
@@ -33,6 +33,7 @@ ORE_GROUPS = [
         (62528, "Compressed Plagioclase"), (62529, "Compressed Plagioclase II-Grade"), (62530, "Compressed Plagioclase III-Grade"),
         (62532, "Compressed Omber"), (62533, "Compressed Omber II-Grade"), (62534, "Compressed Omber III-Grade"),
         (62536, "Compressed Kernite"), (62537, "Compressed Kernite II-Grade"), (62538, "Compressed Kernite III-Grade"),  # owner, 2026-11-25
+        (62524, "Compressed Pyroxeres"), (62525, "Compressed Pyroxeres II-Grade"), (62526, "Compressed Pyroxeres III-Grade"),  # owner, 2026-11-25
     ]),
     ("Ice", [
         (28444, "Compressed White Glaze"),  # the one ice the corporation buys (owner, 2026-11-25: just White Glaze)
@@ -108,7 +109,7 @@ def family_sections(running: list) -> list:
 
 ICE_GROUP = "Ice"
 # other things the projects deliver, named here too so the list never shows a bare type id
-OTHER_NAMES = {62524: "Compressed Pyroxeres", 62525: "Compressed Pyroxeres II-Grade", 62526: "Compressed Pyroxeres III-Grade"}
+OTHER_NAMES = {}
 NAMES = {**OTHER_NAMES, **{tid: name for _, items in ORE_GROUPS for tid, name in items}}
 
 

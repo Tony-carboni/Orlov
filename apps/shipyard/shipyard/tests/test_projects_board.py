@@ -99,7 +99,7 @@ class ProjectsBoardTests(TestCase):
         self.assertNotIn(28444, projectsboard.price_type_ids())  # the ice is never priced from the market
         self.assertIn(62467, projectsboard.price_type_ids())
         self.assertIn(62536, projectsboard.price_type_ids())  # Kernite is priced too (owner, 2026-11-25)
-        self.assertEqual([r["name"] for r in prices["groups"][1]["rows"]][-3:], ["Compressed Kernite", "Compressed Kernite II-Grade", "Compressed Kernite III-Grade"])
+        self.assertEqual([r["name"] for r in prices["groups"][1]["rows"]][-6:], ["Compressed Kernite", "Compressed Kernite II-Grade", "Compressed Kernite III-Grade", "Compressed Pyroxeres", "Compressed Pyroxeres II-Grade", "Compressed Pyroxeres III-Grade"])
 
     def test_the_page_needs_the_projects_permission(self):
         officer = get_user_model().objects.create_user("bern", password="x")
