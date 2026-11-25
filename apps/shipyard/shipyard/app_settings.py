@@ -216,3 +216,5 @@ SHIPYARD_BOOKS_STOCK_WRITTEN_OFF = getattr(settings, "SHIPYARD_BOOKS_STOCK_WRITT
 SHIPYARD_PROJECTS_NEARLY_PCT = getattr(settings, "SHIPYARD_PROJECTS_NEARLY_PCT", 75)
 # Ice is never priced from the market on that page: every block counts this much ISK (the corporation's own rate)
 SHIPYARD_PROJECTS_ICE_ISK = getattr(settings, "SHIPYARD_PROJECTS_ICE_ISK", 150_000)
+# The ore prices on that page are this share of Jita's best buy order (owner, 2026-11-25: 90 %, no other value shown)
+SHIPYARD_PROJECTS_BUY_PCT = getattr(settings, "SHIPYARD_PROJECTS_BUY_PCT", 90)

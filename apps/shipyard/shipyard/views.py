@@ -221,6 +221,10 @@ def projects_board_view(request):
         prices=projectsboard.ore_prices(),
         nearly_pct=projectsboard.nearly_pct(),
         ice_isk=projectsboard.ice_isk(),
+        buy_pct=projectsboard.buy_pct(),
+        families=projectsboard.FAMILIES,
+        grades=["Base", "II-Grade", "III-Grade", "Brimful", "Glistening"],
+        kinds=[(k, v) for k, v in projectsboard.KINDS.items() if k != "other"],
         done_days=done_days,
         last_run=RefreshRun.objects.filter(step="projects").order_by("-started_at").first(),
     ))

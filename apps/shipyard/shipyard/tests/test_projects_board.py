@@ -42,6 +42,20 @@ class ProjectsBoardTests(TestCase):
         self.assertEqual([(r["project"].name, r["flag"]) for r in board["done"]], [("White Glaze", "done")])  # the 90-day-old one is out
         self.assertEqual(board["counts"], {"running": 2, "nearly": 1, "done": 1})
 
+    def test_sections_per_ore_family_with_the_missing_grades(self):
+        sections = {s["family"]: s for s in projectsboard.project_rows()["sections"]}
+        self.assertEqual([s["family"] for s in projectsboard.project_rows()["sections"]],
+                         ["Veldspar", "Scordite", "Plagioclase", "Omber", "Kernite", "Pyroxeres", "Bitumens", "Coesite", "Sylvite", "Zeolites", "Ice"])
+        self.assertEqual([r["project"].name for r in sections["Veldspar"]["rows"]], ["Veldspar"])
+        self.assertEqual(sections["Veldspar"]["missing"], ["Compressed Veldspar II-Grade", "Compressed Veldspar III-Grade"])
+        self.assertEqual((sections["Veldspar"]["nearly"], sections["Veldspar"]["kind_label"]), (1, "Asteroid ore"))
+        self.assertEqual(sections["Bitumens"]["missing"], ["Compressed Brimful Bitumens", "Compressed Glistening Bitumens"])
+        self.assertEqual((sections["Ice"]["rows"], sections["Ice"]["missing"]), ([], ["Compressed White Glaze"]))
+        self.assertEqual(projectsboard.classify("Compressed Glistening Zeolites"), ("moon", "Zeolites", "Glistening"))
+        self.assertEqual(projectsboard.classify("Compressed Omber III-Grade"), ("asteroid", "Omber", "III-Grade"))
+        self.assertEqual(projectsboard.classify("Compressed White Glaze"), ("ice", "Ice", "White Glaze"))
+        self.assertEqual(projectsboard.classify("Zero-Point Condensate"), ("other", "Other", ""))
+
     def test_a_full_active_project_counts_as_done(self):
         p = CorpProject.objects.get(project_id="p-nearly")
         p.progress_current = p.progress_desired
@@ -49,14 +63,16 @@ class ProjectsBoardTests(TestCase):
         self.assertEqual(projectsboard.flag_of(p), "done")
         self.assertEqual([r["project"].name for r in projectsboard.project_rows()["done"]], ["Veldspar", "White Glaze"])
 
-    def test_ore_prices_are_jita_buy_and_the_ice_is_fixed(self):
+    def test_ore_prices_are_90_pct_of_jita_buy_and_the_ice_is_fixed(self):
         prices = projectsboard.ore_prices()
         by_name = {r["name"]: r for g in prices["groups"] for r in g["rows"]}
-        self.assertEqual(by_name["Compressed Veldspar"]["buy"], 1_234.5)
-        self.assertEqual(by_name["Compressed Bitumens"]["buy"], 9_876.0)
+        self.assertAlmostEqual(by_name["Compressed Veldspar"]["buy"], 1_111.05)  # 90 % of 1,234.5
+        self.assertAlmostEqual(by_name["Compressed Bitumens"]["buy"], 8_888.4)
         self.assertIsNone(by_name["Compressed Omber"]["buy"])  # not priced yet
         self.assertEqual((by_name["Compressed White Glaze"]["buy"], by_name["Compressed White Glaze"]["fixed"]), (150_000.0, True))
         self.assertEqual([g["title"] for g in prices["groups"]], ["Highsec R4 moon ores", "Highsec asteroid ores", "Ice"])
+        self.assertEqual([r["name"] for r in prices["groups"][2]["rows"]], ["Compressed White Glaze"])  # the one ice
+        self.assertEqual((by_name["Compressed Brimful Bitumens"]["family"], by_name["Compressed Brimful Bitumens"]["grade"]), ("Bitumens", "Brimful"))
         self.assertEqual(prices["fetched_at"], NOW)
         self.assertNotIn(28444, projectsboard.price_type_ids())  # the ice is never priced from the market
         self.assertIn(62467, projectsboard.price_type_ids())
@@ -75,6 +91,7 @@ class ProjectsBoardTests(TestCase):
         html = r.content.decode()
         self.assertIn("Nearly full", html)
         self.assertIn("Compressed White Glaze", html)
+        self.assertIn("90 % of Jita buy", html)
         self.assertIn('href="/shipyard/projects/board/"', html)  # the nav shows the tab
         from .. import access
         self.assertEqual(access.allowed_url_names(officer), {"projects_board", "use_character", "go"})  # not the full Corp projects page

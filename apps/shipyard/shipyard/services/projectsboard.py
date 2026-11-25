@@ -3,7 +3,8 @@ projects need at a glance.
 
 - Every running project with how full it is, flagged when nearly full (SHIPYARD_PROJECTS_NEARLY_PCT,
   75 % and up) and when completed.
-- The ores the corporation buys through its projects, each with Jita's best buy order, nothing else:
+- The ores the corporation buys through its projects, each at SHIPYARD_PROJECTS_BUY_PCT (90 %) of Jita's
+  best buy order, nothing else (owner, 2026-11-25: "just 90 % of Jita buy"):
   the highsec R4 moon ores, the highsec asteroid ores (Veldspar, Scordite, Plagioclase, Omber) and
   ice, all in their compressed form, which is what the projects take. Ice is not priced from the
   market: every block counts SHIPYARD_PROJECTS_ICE_ISK (150,000 ISK), the corporation's own rate.
@@ -35,9 +36,75 @@ ORE_GROUPS = [
         (62532, "Compressed Omber"), (62533, "Compressed Omber II-Grade"), (62534, "Compressed Omber III-Grade"),
     ]),
     ("Ice", [
-        (28433, "Compressed Blue Ice"), (28434, "Compressed Clear Icicle"), (28438, "Compressed Glacial Mass"), (28444, "Compressed White Glaze"),
+        (28444, "Compressed White Glaze"),  # the one ice the corporation buys (owner, 2026-11-25: just White Glaze)
     ]),
 ]
+# the ore families the projects are grouped by (owner, 2026-11-25: a section per ore type, so the missing or full ones show),
+# in this order; each family's expected items are the grades the projects usually run
+FAMILIES = [
+    ("asteroid", "Veldspar"), ("asteroid", "Scordite"), ("asteroid", "Plagioclase"), ("asteroid", "Omber"),
+    ("asteroid", "Kernite"), ("asteroid", "Pyroxeres"),
+    ("moon", "Bitumens"), ("moon", "Coesite"), ("moon", "Sylvite"), ("moon", "Zeolites"),
+    ("ice", "Ice"),
+]
+KINDS = {"asteroid": "Asteroid ore", "moon": "R4 moon ore", "ice": "Ice", "other": "Other"}
+ICE_NAMES = {"Blue Ice", "Clear Icicle", "Glacial Mass", "White Glaze", "Glare Crust", "Dark Glitter", "Gelidus", "Krystallos",
+             "Thick Blue Ice", "Enriched Clear Icicle", "Smooth Glacial Mass", "Pristine White Glaze"}
+
+
+def expected_items(kind: str, family: str) -> list:
+    """The item names a family's projects usually cover, in grade order."""
+    if kind == "asteroid":
+        return [f"Compressed {family}", f"Compressed {family} II-Grade", f"Compressed {family} III-Grade"]
+    if kind == "moon":
+        return [f"Compressed {family}", f"Compressed Brimful {family}", f"Compressed Glistening {family}"]
+    if kind == "ice":
+        return ["Compressed White Glaze"]
+    return []
+
+
+def classify(item: str) -> tuple:
+    """(kind, family, grade) of a delivered item by its name: ('asteroid', 'Veldspar', 'II-Grade'), ('moon', 'Zeolites', 'Brimful'),
+    ('ice', 'Ice', 'White Glaze'), else ('other', 'Other', '')."""
+    name = (item or "").replace("Compressed ", "").strip()
+    grade = ""
+    for suffix in (" II-Grade", " III-Grade"):
+        if name.endswith(suffix):
+            grade, name = suffix.strip(), name[: -len(suffix)]
+    for prefix in ("Brimful ", "Glistening "):
+        if name.startswith(prefix):
+            grade, name = prefix.strip(), name[len(prefix):]
+    if name in ICE_NAMES:
+        return "ice", "Ice", name
+    for kind, family in FAMILIES:
+        if name == family:
+            return kind, family, grade
+    return "other", "Other", ""
+
+
+def family_sections(running: list) -> list:
+    """[{kind, kind_label, family, rows, missing, nearly}] in FAMILIES order, then Other; rows in grade order.
+
+    missing = the family's expected items with no running project (the gaps the officers must fill)."""
+    by_family = {}
+    for row in running:
+        kind, family, grade = classify(row["item"])
+        row["family"], row["grade"] = family, grade
+        by_family.setdefault((kind, family), []).append(row)
+    sections = []
+    for kind, family in FAMILIES + [("other", "Other")]:
+        rows = by_family.get((kind, family), [])
+        expected = expected_items(kind, family)
+        order = {name: i for i, name in enumerate(expected)}
+        rows.sort(key=lambda r: (order.get(r["item"], len(order)), r["item"].lower(), r["project"].name.lower()))
+        have = {r["item"] for r in rows}
+        if not rows and kind == "other":
+            continue
+        sections.append({"kind": kind, "kind_label": KINDS[kind], "family": family, "rows": rows,
+                         "missing": [name for name in expected if name not in have],
+                         "nearly": sum(1 for r in rows if r["flag"] == "nearly")})
+    return sections
+
 ICE_GROUP = "Ice"
 # other things the projects deliver, named here too so the list never shows a bare type id
 OTHER_NAMES = {62524: "Compressed Pyroxeres", 62525: "Compressed Pyroxeres II-Grade", 62526: "Compressed Pyroxeres III-Grade",
@@ -58,12 +125,17 @@ def ice_isk() -> float:
     return float(app_settings.SHIPYARD_PROJECTS_ICE_ISK)
 
 
+def buy_pct() -> float:
+    """The share of Jita's best buy order the page shows (owner, 2026-11-25: 90 %, nothing else)."""
+    return float(app_settings.SHIPYARD_PROJECTS_BUY_PCT)
+
+
 def _market():
     return MarketLocation.objects.filter(is_active=True).order_by("-is_default", "name").first()
 
 
 def ore_prices() -> dict:
-    """{groups: [{title, rows: [{type_id, name, buy, fixed}]}], market, fetched_at}: Jita's best buy per unit, the ice at the fixed rate."""
+    """{groups: [{title, rows: [{type_id, name, buy, fixed, family, grade}]}], market, fetched_at}: buy_pct() of Jita's best buy per unit, the ice at the fixed rate."""
     market = _market()
     snaps = {p.type_id: p for p in PriceSnapshot.objects.filter(location=market, type_id__in=list(price_type_ids()))} if market else {}
     fetched = max((p.fetched_at for p in snaps.values()), default=None)
@@ -71,11 +143,13 @@ def ore_prices() -> dict:
     for title, items in ORE_GROUPS:
         rows = []
         for tid, name in items:
+            _, family, grade = classify(name)
             if title == ICE_GROUP:
-                rows.append({"type_id": tid, "name": name, "buy": ice_isk(), "fixed": True})
+                rows.append({"type_id": tid, "name": name, "buy": ice_isk(), "fixed": True, "family": family, "grade": grade})
             else:
                 snap = snaps.get(tid)
-                rows.append({"type_id": tid, "name": name, "buy": (snap.buy_max if snap else None), "fixed": False})
+                rows.append({"type_id": tid, "name": name, "buy": (snap.buy_max * buy_pct() / 100 if snap and snap.buy_max else None), "fixed": False,
+                             "family": family, "grade": grade or "Base"})
         groups.append({"title": title, "rows": rows})
     return {"groups": groups, "market": market, "fetched_at": fetched}
 
@@ -97,7 +171,7 @@ def flag_of(project) -> str:
 
 
 def project_rows(cid=None, done_days: int = 30) -> dict:
-    """{running: [...], done: [...], counts: {running, nearly, done}}; a row = {project, item, pct, flag, left}.
+    """{running: [...], done: [...], sections: [...], counts: {running, nearly, done}}; a row = {project, item, pct, flag, left, family, grade}.
 
     running: the active projects, fullest first. done: the completed ones of the last done_days days, newest first."""
     cid = cid or projects.corp_id()
@@ -117,5 +191,5 @@ def project_rows(cid=None, done_days: int = 30) -> dict:
             running.append(row)
     running.sort(key=lambda r: (-r["pct"], r["project"].name.lower()))
     done.sort(key=lambda r: (r["project"].finished or r["project"].last_modified or r["project"].created or since), reverse=True)
-    return {"running": running, "done": done,
+    return {"running": running, "done": done, "sections": family_sections(running),
             "counts": {"running": len(running), "nearly": sum(1 for r in running if r["flag"] == "nearly"), "done": len(done)}}
