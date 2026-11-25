@@ -27,7 +27,7 @@ class ProjectsBoardTests(TestCase):
         CorpProject.objects.create(project_id="p-nearly", corporation_id=CORP, name="Veldspar", state="Active", details=_deliver(62516),
                                    progress_current=80_000, progress_desired=100_000, reward_per_contribution=1_000, reward_remaining=20e6, created=NOW)
         CorpProject.objects.create(project_id="p-young", corporation_id=CORP, name="Bitumens", state="Active", details=_deliver(62454),
-                                   progress_current=10, progress_desired=1_000, reward_per_contribution=9_000, reward_remaining=8.9e6, created=NOW)
+                                   progress_current=10, progress_desired=1_000, reward_per_contribution=9_600, reward_remaining=8.9e6, created=NOW)
         CorpProject.objects.create(project_id="p-done", corporation_id=CORP, name="White Glaze", state="Completed", details=_deliver(28444),
                                    progress_current=500, progress_desired=500, reward_per_contribution=150_000, finished=NOW - dt.timedelta(days=2), created=NOW)
         CorpProject.objects.create(project_id="p-old", corporation_id=CORP, name="Old one", state="Completed", details=_deliver(28444),
@@ -36,11 +36,26 @@ class ProjectsBoardTests(TestCase):
         CorpProject.objects.create(project_id="p-other", corporation_id=1, name="Other corp", state="Active", progress_current=1, progress_desired=2)
 
     def test_running_projects_fullest_first_with_their_flags(self):
-        board = projectsboard.project_rows(done_days=30)
+        board = projectsboard.project_rows()
         self.assertEqual([(r["project"].name, r["flag"], r["item"], r["left"]) for r in board["running"]],
                          [("Veldspar", "nearly", "Compressed Veldspar", 20_000), ("Bitumens", "", "Compressed Bitumens", 990)])
-        self.assertEqual([(r["project"].name, r["flag"]) for r in board["done"]], [("White Glaze", "done")])  # the 90-day-old one is out
-        self.assertEqual(board["counts"], {"running": 2, "nearly": 1, "done": 1})
+        self.assertEqual(board["counts"], {"running": 2, "nearly": 1, "full": 0, "price": 2})  # the projects EVE closed are not listed
+
+    def test_the_price_check_flags_a_stale_reward(self):
+        rows = {r["project"].name: r for r in projectsboard.project_rows()["running"]}
+        self.assertEqual((round(rows["Veldspar"]["price_pct"], 1), rows["Veldspar"]["price_flag"]), (81.0, "low"))
+        self.assertEqual((round(rows["Bitumens"]["price_pct"], 1), rows["Bitumens"]["price_flag"]), (97.2, "high"))
+        self.assertEqual(projectsboard.price_check(900, 1_000), (90.0, ""))
+        self.assertEqual(projectsboard.price_check(850, 1_000), (85.0, ""))  # the band is inclusive
+        self.assertEqual(projectsboard.price_check(950, 1_000), (95.0, ""))
+        self.assertEqual(projectsboard.price_check(1_000, None), (None, ""))  # not priced: no check
+        CorpProject.objects.create(project_id="p-ice", corporation_id=CORP, name="Ice", state="Active", details=_deliver(28444),
+                                   progress_current=1, progress_desired=10, reward_per_contribution=150_000, created=NOW)
+        PriceSnapshot.objects.create(type_id=28444, location=self.market, buy_max=100_000, fetched_at=NOW)
+        ice = next(r for r in projectsboard.project_rows()["running"] if r["project"].name == "Ice")
+        self.assertEqual((ice["price_pct"], ice["price_flag"]), (None, ""))  # the ice has its own rate
+        sections = {s["family"]: s for s in projectsboard.project_rows()["sections"]}
+        self.assertEqual((sections["Veldspar"]["price"], sections["Ice"]["price"]), (1, 0))
 
     def test_sections_per_ore_family_with_the_missing_grades(self):
         sections = {s["family"]: s for s in projectsboard.project_rows()["sections"]}
@@ -56,12 +71,15 @@ class ProjectsBoardTests(TestCase):
         self.assertEqual(projectsboard.classify("Compressed White Glaze"), ("ice", "Ice", "White Glaze"))
         self.assertEqual(projectsboard.classify("Zero-Point Condensate"), ("other", "Other", ""))
 
-    def test_a_full_active_project_counts_as_done(self):
+    def test_a_full_active_project_stays_listed_as_full_until_eve_closes_it(self):
         p = CorpProject.objects.get(project_id="p-nearly")
         p.progress_current = p.progress_desired
         p.save()
         self.assertEqual(projectsboard.flag_of(p), "done")
-        self.assertEqual([r["project"].name for r in projectsboard.project_rows()["done"]], ["Veldspar", "White Glaze"])
+        board = projectsboard.project_rows()
+        self.assertEqual([(r["project"].name, r["flag"]) for r in board["running"]], [("Veldspar", "done"), ("Bitumens", "")])
+        self.assertEqual((board["counts"]["full"], board["counts"]["nearly"]), (1, 0))
+        self.assertEqual(next(s for s in board["sections"] if s["family"] == "Veldspar")["full"], 1)
 
     def test_ore_prices_are_90_pct_of_jita_buy_and_the_ice_is_fixed(self):
         prices = projectsboard.ore_prices()
@@ -90,8 +108,11 @@ class ProjectsBoardTests(TestCase):
         self.assertEqual(r.status_code, 200)
         html = r.content.decode()
         self.assertIn("Nearly full", html)
+        self.assertNotIn("Completed projects", html)
         self.assertIn("Compressed White Glaze", html)
         self.assertIn("90 % of Jita buy", html)
+        self.assertIn("Remake, pays too little", html)
+        self.assertIn("Remake, pays too much", html)
         self.assertIn('href="/shipyard/projects/board/"', html)  # the nav shows the tab
         from .. import access
         self.assertEqual(access.allowed_url_names(officer), {"projects_board", "use_character", "go"})  # not the full Corp projects page

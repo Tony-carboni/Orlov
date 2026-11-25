@@ -30,12 +30,14 @@
         var text = ($("#pb-text").val() || "").toLowerCase().trim();
         var kinds = selected("#pb-kind"), families = selected("#pb-family");
         var onlyNearly = $("#pb-nearly").is(":checked"), hideMissing = $("#pb-missing").is(":checked");
+        var onlyPrice = $("#pb-price").is(":checked");
         var visibleFamilies = {};
         $("#pb-table tbody tr.pb-row").each(function () {
             var d = this.dataset, show = true;
             if (kinds.length && kinds.indexOf(d.kind) < 0) { show = false; }
             if (families.length && families.indexOf(d.family) < 0) { show = false; }
-            if (onlyNearly && d.flag !== "nearly") { show = false; }
+            if (onlyNearly && d.flag !== "nearly" && d.flag !== "done") { show = false; }
+            if (onlyPrice && !d.price) { show = false; }
             if (hideMissing && d.flag === "missing") { show = false; }
             if (text && (d.text || "").indexOf(text) < 0) { show = false; }
             $(this).toggle(show);
@@ -44,7 +46,7 @@
         $("#pb-table tbody tr.pb-group-row").each(function () {
             var d = this.dataset, show = !!visibleFamilies[d.family];
             // with no text and no flag filter a family stays listed even when every grade is hidden, so the gap shows
-            if (!show && !text && !onlyNearly && !hideMissing) {
+            if (!show && !text && !onlyNearly && !onlyPrice && !hideMissing) {
                 show = (!kinds.length || kinds.indexOf(d.kind) >= 0) && (!families.length || families.indexOf(d.family) >= 0);
             }
             $(this).toggle(show);
@@ -71,10 +73,11 @@
         remember("#pb-family", "shipyard.projects.families");
         rememberSwitch("#pb-nearly", "shipyard.projects.nearly");
         rememberSwitch("#pb-missing", "shipyard.projects.hideMissing");
+        rememberSwitch("#pb-price", "shipyard.projects.price");
         remember("#pr-kind", "shipyard.projects.priceKinds");
         remember("#pr-grade", "shipyard.projects.priceGrades");
         $("#pb-text").on("input search", applyProjects);
-        $("#pb-kind input, #pb-family input, #pb-nearly, #pb-missing").on("change", applyProjects);
+        $("#pb-kind input, #pb-family input, #pb-nearly, #pb-price, #pb-missing").on("change", applyProjects);
         $("#pr-text").on("input search", applyPrices);
         $("#pr-kind input, #pr-grade input").on("change", applyPrices);
         applyProjects();

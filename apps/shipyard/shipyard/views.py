@@ -214,18 +214,17 @@ def projects_board_view(request):
     """The Projects page (0.41.0, owner, 2026-11-25): the running projects with how full they are, flagged when nearly
     full or completed, and the ores the projects buy with Jita's buy price (ice at the fixed rate)."""
     from .services import projectsboard
-    done_days = _int(request.GET.get("days"), 30, 1, 3650)
     return render(request, "shipyard/projects_board.html", _context(
         request,
-        board=projectsboard.project_rows(done_days=done_days),
+        board=projectsboard.project_rows(),
         prices=projectsboard.ore_prices(),
         nearly_pct=projectsboard.nearly_pct(),
         ice_isk=projectsboard.ice_isk(),
         buy_pct=projectsboard.buy_pct(),
+        price_band=projectsboard.price_band(),
         families=projectsboard.FAMILIES,
         grades=["Base", "II-Grade", "III-Grade", "Brimful", "Glistening"],
         kinds=[(k, v) for k, v in projectsboard.KINDS.items() if k != "other"],
-        done_days=done_days,
         last_run=RefreshRun.objects.filter(step="projects").order_by("-started_at").first(),
     ))
 

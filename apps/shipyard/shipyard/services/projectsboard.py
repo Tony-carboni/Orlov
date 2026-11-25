@@ -2,7 +2,9 @@
 projects need at a glance.
 
 - Every running project with how full it is, flagged when nearly full (SHIPYARD_PROJECTS_NEARLY_PCT,
-  75 % and up) and when completed.
+  75 % and up) and when completed; and its reward per unit against Jita's best buy, flagged for a remake
+  below SHIPYARD_PROJECTS_PRICE_LOW_PCT (85 %) or above SHIPYARD_PROJECTS_PRICE_HIGH_PCT (95 %), because
+  prices move and a project's price goes stale (owner, 2026-11-25). Ice gets no price check.
 - The ores the corporation buys through its projects, each at SHIPYARD_PROJECTS_BUY_PCT (90 %) of Jita's
   best buy order, nothing else (owner, 2026-11-25: "just 90 % of Jita buy"):
   the highsec R4 moon ores, the highsec asteroid ores (Veldspar, Scordite, Plagioclase, Omber) and
@@ -12,10 +14,6 @@ projects need at a glance.
 The projects come from the hourly read of services/projects.py; the prices from the hourly Jita
 refresh (tasks.refresh_prices includes these types).
 """
-
-import datetime as dt
-
-from django.utils import timezone
 
 from .. import app_settings
 from ..models import CorpProject, MarketLocation, MaterialType, PriceSnapshot
@@ -102,7 +100,9 @@ def family_sections(running: list) -> list:
             continue
         sections.append({"kind": kind, "kind_label": KINDS[kind], "family": family, "rows": rows,
                          "missing": [name for name in expected if name not in have],
-                         "nearly": sum(1 for r in rows if r["flag"] == "nearly")})
+                         "nearly": sum(1 for r in rows if r["flag"] == "nearly"),
+                         "full": sum(1 for r in rows if r["flag"] == "done"),
+                         "price": sum(1 for r in rows if r.get("price_flag"))})
     return sections
 
 ICE_GROUP = "Ice"
@@ -123,6 +123,20 @@ def nearly_pct() -> float:
 
 def ice_isk() -> float:
     return float(app_settings.SHIPYARD_PROJECTS_ICE_ISK)
+
+
+def price_band() -> tuple:
+    """(low, high): the share of Jita's best buy a project's reward per unit must stay within, in percent."""
+    return float(app_settings.SHIPYARD_PROJECTS_PRICE_LOW_PCT), float(app_settings.SHIPYARD_PROJECTS_PRICE_HIGH_PCT)
+
+
+def price_check(reward: float, jita_buy) -> tuple:
+    """(reward as a percentage of Jita's best buy, or None; 'low', 'high' or '') for a running project."""
+    if not jita_buy or not reward:
+        return None, ""
+    pct = 100.0 * reward / jita_buy
+    low, high = price_band()
+    return pct, ("low" if pct < low else "high" if pct > high else "")
 
 
 def buy_pct() -> float:
@@ -170,26 +184,27 @@ def flag_of(project) -> str:
     return ""
 
 
-def project_rows(cid=None, done_days: int = 30) -> dict:
-    """{running: [...], done: [...], sections: [...], counts: {running, nearly, done}}; a row = {project, item, pct, flag, left, family, grade}.
+def project_rows(cid=None) -> dict:
+    """{running: [...], sections: [...], counts: {running, nearly, full, price}};
+    a row = {project, item, pct, flag, left, price_pct, price_flag, family, grade}.
 
-    running: the active projects, fullest first. done: the completed ones of the last done_days days, newest first."""
+    running: the active projects, fullest first; a project whose deliveries reach the target stays listed with the flag
+    'done' (shown as Full) until EVE closes it, then it leaves the page (owner, 2026-11-25: no completed section)."""
     cid = cid or projects.corp_id()
-    since = timezone.now() - dt.timedelta(days=done_days)
-    qs = CorpProject.objects.filter(corporation_id=cid, missing=False)
+    qs = CorpProject.objects.filter(corporation_id=cid, missing=False, state="Active")
     type_ids = {projectbooks.delivered_type(p) for p in qs}
     names = dict(MaterialType.objects.filter(type_id__in=[t for t in type_ids if t]).values_list("type_id", "name"))
-    running, done = [], []
+    market = _market()
+    # Jita's best buy of every delivered type, for the price check; the ice is not priced from the market and gets no check
+    buys = dict(PriceSnapshot.objects.filter(location=market, type_id__in=[t for t in type_ids if t]).values_list("type_id", "buy_max")) if market else {}
+    ice_ids = {tid for title, items in ORE_GROUPS if title == ICE_GROUP for tid, _ in items}
+    running = []
     for p in qs:
-        flag = flag_of(p)
-        row = {"project": p, "item": _item_name(p, names), "pct": min(100.0, p.progress_pct), "flag": flag,
-               "left": max(0, p.progress_desired - p.progress_current)}
-        if flag == "done":
-            if (p.finished or p.last_modified or p.created or since) >= since:
-                done.append(row)
-        elif p.state == "Active":
-            running.append(row)
+        tid = projectbooks.delivered_type(p)
+        price_pct, price_flag = price_check(p.reward_per_contribution, None if tid in ice_ids else buys.get(tid))
+        running.append({"project": p, "item": _item_name(p, names), "pct": min(100.0, p.progress_pct), "flag": flag_of(p),
+                        "left": max(0, p.progress_desired - p.progress_current), "price_pct": price_pct, "price_flag": price_flag})
     running.sort(key=lambda r: (-r["pct"], r["project"].name.lower()))
-    done.sort(key=lambda r: (r["project"].finished or r["project"].last_modified or r["project"].created or since), reverse=True)
-    return {"running": running, "done": done, "sections": family_sections(running),
-            "counts": {"running": len(running), "nearly": sum(1 for r in running if r["flag"] == "nearly"), "done": len(done)}}
+    return {"running": running, "sections": family_sections(running),
+            "counts": {"running": len(running), "nearly": sum(1 for r in running if r["flag"] == "nearly"),
+                       "full": sum(1 for r in running if r["flag"] == "done"), "price": sum(1 for r in running if r["price_flag"])}}
