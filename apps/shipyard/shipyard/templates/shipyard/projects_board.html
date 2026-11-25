@@ -17,6 +17,7 @@
         <div class="shipyard-k small">The corporation's projects at a glance, for the officers who manage them: what runs and how full it is, per ore type so the missing and the full ones show, which project pays out of band against Jita and must be remade, and what the ores the projects buy pay at {{ buy_pct|floatformat:0 }} % of Jita buy.</div>
     </div>
     <div class="shipyard-k small text-end">
+        <form method="post" action="{% url 'shipyard:projects_board_refresh' %}" class="d-inline me-2">{% csrf_token %}<button class="btn btn-outline-light btn-sm py-0" title="Read the corporation's projects from EVE now (otherwise once an hour at :25); at most once every two minutes"><i class="fas fa-rotate fa-fw"></i> Read the projects now</button></form>
         {% if last_run %}Projects read {{ last_run.started_at|date:"j M H:i" }} EVE{% if not last_run.ok %}, <span class="text-danger">failed</span>{% endif %}, once an hour.{% else %}The projects have not been read yet.{% endif %}
         {% if prices.fetched_at %}<br>Jita prices of {{ prices.fetched_at|date:"j M H:i" }} EVE, once an hour.{% endif %}
     </div>
@@ -66,41 +67,36 @@
     </div>
 </div>
 <div class="table-responsive"><table class="table table-sm align-middle" id="pb-table">
-    <thead><tr><th>Project</th><th>Item</th><th style="min-width: 14rem">Filled</th><th class="text-end">Delivered</th><th class="text-end">Still wanted</th><th class="text-end">Reward / unit</th><th class="text-end" title="The reward per unit as a share of Jita's best buy order; a remake is due below {{ price_band.0|floatformat:0 }} % or above {{ price_band.1|floatformat:0 }} %">vs Jita buy</th><th class="text-end">Pool left</th><th>Expires</th><th>Flags</th></tr></thead>
+    <thead><tr><th>Item</th><th style="min-width: 14rem">Filled</th><th class="text-end">Still wanted</th><th class="text-end">Reward / unit</th><th class="text-end" title="The reward per unit as a share of Jita's best buy order; a remake is due below {{ price_band.0|floatformat:0 }} % or above {{ price_band.1|floatformat:0 }} %">vs Jita buy</th><th>Flags</th></tr></thead>
     <tbody>
     {% for s in board.sections %}
         <tr class="pb-group-row" data-kind="{{ s.kind }}" data-family="{{ s.family }}">
-            <td colspan="10"><i class="fas fa-folder-open fa-fw"></i> {{ s.family }} <span class="shipyard-k fw-normal small">· {{ s.kind_label }} · {{ s.rows|length }} running{% if s.nearly %}, <span class="text-warning">{{ s.nearly }} nearly full</span>{% endif %}{% if s.full %}, <span class="text-success">{{ s.full }} full</span>{% endif %}{% if s.price %}, <span class="text-danger">{{ s.price }} to remake</span>{% endif %}{% if s.missing %}, <span class="text-danger">{{ s.missing|length }} missing</span>{% endif %}</span></td>
+            <td colspan="6"><i class="fas fa-folder-open fa-fw"></i> {{ s.family }} <span class="shipyard-k fw-normal small">· {{ s.kind_label }} · {{ s.rows|length }} running{% if s.nearly %}, <span class="text-warning">{{ s.nearly }} nearly full</span>{% endif %}{% if s.full %}, <span class="text-success">{{ s.full }} full</span>{% endif %}{% if s.price %}, <span class="text-danger">{{ s.price }} to remake</span>{% endif %}{% if s.missing %}, <span class="text-danger">{{ s.missing|length }} missing</span>{% endif %}</span></td>
         </tr>
         {% for r in s.rows %}
         <tr class="pb-row{% if r.flag == 'nearly' %} table-warning{% elif r.flag == 'done' %} table-success{% endif %}" data-kind="{{ s.kind }}" data-family="{{ s.family }}" data-flag="{{ r.flag }}" data-price="{{ r.price_flag }}" data-text="{{ r.project.name|lower }} {{ r.item|lower }}">
-            <td class="text-nowrap" title="{{ r.project.description }}">{{ r.project.name }}</td>
-            <td class="small">{{ r.item }}</td>
+            <td class="text-nowrap" title="Project “{{ r.project.name }}”{% if r.project.description %}: {{ r.project.description }}{% endif %}">{{ r.item }}</td>
             <td>
-                <div class="progress pb-bar" title="{{ r.project.progress_pct|floatformat:1 }} %">
+                <div class="progress pb-bar" title="{{ r.project.progress_current|num:0 }} of {{ r.project.progress_desired|num:0 }} delivered ({{ r.project.progress_pct|floatformat:1 }} %)">
                     <div class="progress-bar {% if r.flag == 'nearly' %}bg-warning{% elif r.flag == 'done' %}bg-success{% else %}bg-info{% endif %}" role="progressbar" style="width: {{ r.pct|floatformat:0 }}%" aria-valuenow="{{ r.pct|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
                     <span class="pb-label">{{ r.project.progress_pct|floatformat:0 }} %</span>
                 </div>
             </td>
-            <td class="text-end text-nowrap">{{ r.project.progress_current|num:0 }} / {{ r.project.progress_desired|num:0 }}</td>
             <td class="text-end text-nowrap">{{ r.left|num:0 }}</td>
             <td class="text-end text-nowrap">{{ r.project.reward_per_contribution|isk_auto }}</td>
             <td class="text-end text-nowrap{% if r.price_flag %} text-danger fw-semibold{% endif %}">{% if r.price_pct is not None %}{{ r.price_pct|floatformat:1 }} %{% else %}<span class="shipyard-k">–</span>{% endif %}</td>
-            <td class="text-end text-nowrap">{{ r.project.reward_remaining|isk }}</td>
-            <td class="text-nowrap small">{% if r.project.expires %}{{ r.project.expires|date:"j M" }}{% else %}–{% endif %}</td>
             <td class="text-nowrap">{% if r.flag == 'nearly' %}<span class="badge text-bg-warning"><i class="fas fa-flag fa-fw"></i> Nearly full</span>{% elif r.flag == 'done' %}<span class="badge text-bg-success" title="Delivered in full; EVE has not closed it yet"><i class="fas fa-flag-checkered fa-fw"></i> Full</span>{% endif %}{% if r.price_flag == 'low' %} <span class="badge text-bg-danger" title="The reward per unit is below {{ price_band.0|floatformat:0 }} % of Jita buy: remake the project at today's price"><i class="fas fa-arrow-down fa-fw"></i> Remake, pays too little</span>{% elif r.price_flag == 'high' %} <span class="badge text-bg-danger" title="The reward per unit is above {{ price_band.1|floatformat:0 }} % of Jita buy: remake the project at today's price"><i class="fas fa-arrow-up fa-fw"></i> Remake, pays too much</span>{% endif %}</td>
         </tr>
         {% endfor %}
         {% for name in s.missing %}
         <tr class="pb-row pb-missing" data-kind="{{ s.kind }}" data-family="{{ s.family }}" data-flag="missing" data-text="{{ name|lower }} missing">
-            <td class="text-nowrap">–</td>
-            <td class="small">{{ name }}</td>
-            <td colspan="7">no running project</td>
+            <td class="text-nowrap">{{ name }}</td>
+            <td colspan="4">no running project</td>
             <td><span class="badge text-bg-danger"><i class="fas fa-circle-exclamation fa-fw"></i> Missing</span></td>
         </tr>
         {% endfor %}
     {% empty %}
-        <tr><td colspan="10" class="shipyard-k">No project is running.</td></tr>
+        <tr><td colspan="6" class="shipyard-k">No project is running.</td></tr>
     {% endfor %}
     </tbody>
 </table></div>

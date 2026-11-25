@@ -1,7 +1,9 @@
 """The Projects page (0.41.0): running projects with their flags, the completed ones, the ore prices, the permission gate."""
 import datetime as dt
+from unittest import mock
 
 from allianceauth.tests.auth_utils import AuthUtils
+from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.test import Client, TestCase, override_settings
@@ -96,6 +98,8 @@ class ProjectsBoardTests(TestCase):
         self.assertEqual(prices["fetched_at"], NOW)
         self.assertNotIn(28444, projectsboard.price_type_ids())  # the ice is never priced from the market
         self.assertIn(62467, projectsboard.price_type_ids())
+        self.assertIn(62536, projectsboard.price_type_ids())  # Kernite is priced too (owner, 2026-11-25)
+        self.assertEqual([r["name"] for r in prices["groups"][1]["rows"]][-3:], ["Compressed Kernite", "Compressed Kernite II-Grade", "Compressed Kernite III-Grade"])
 
     def test_the_page_needs_the_projects_permission(self):
         officer = get_user_model().objects.create_user("bern", password="x")
@@ -116,5 +120,14 @@ class ProjectsBoardTests(TestCase):
         self.assertIn("Remake, pays too much", html)
         self.assertIn('href="/shipyard/projects/board/"', html)  # the nav shows the tab
         from .. import access
-        self.assertEqual(access.allowed_url_names(officer), {"projects_board", "use_character", "go"})  # not the full Corp projects page
+        self.assertEqual(access.allowed_url_names(officer), {"projects_board", "projects_board_refresh", "use_character", "go"})  # not the full Corp projects page
         self.assertEqual(access.landing(officer), "/shipyard/projects/board/")
+        # the button reads the projects, at most once every two minutes
+        cache.delete("shipyard:projects_board_refresh")
+        with mock.patch("shipyard.services.projects.refresh", return_value={"projects": 25, "snapshots": 3, "contributions": 1}) as read:
+            r = client.post(reverse("shipyard:projects_board_refresh"))
+            self.assertEqual((r.status_code, r.url, read.call_count), (302, "/shipyard/projects/board/", 1))
+            r = client.post(reverse("shipyard:projects_board_refresh"))
+            self.assertEqual((r.status_code, read.call_count), (302, 1))  # the second press within two minutes does not read again
+        cache.delete("shipyard:projects_board_refresh")
+        self.assertEqual(client.get(reverse("shipyard:projects_board_refresh")).status_code, 405)  # POST only

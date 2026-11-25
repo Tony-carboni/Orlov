@@ -229,6 +229,32 @@ def projects_board_view(request):
     ))
 
 
+PROJECTS_BOARD_COOLDOWN_KEY = "shipyard:projects_board_refresh"
+PROJECTS_BOARD_COOLDOWN_SECONDS = 120
+
+
+@login_required
+@access.allows("projects_board_refresh")
+@require_POST
+def projects_board_refresh(request):
+    """The Projects page's "Read the projects now" (0.41.4, owner: "can we put a refresh button on the page"): the same read as
+    the hourly task, at most once every two minutes for everyone together (ESI does not cache the project routes, but a handful
+    of officers pressing it at once need not read 25 projects five times)."""
+    from .services import projects as projects_service
+    if cache.get(PROJECTS_BOARD_COOLDOWN_KEY):
+        messages.info(request, "The projects were read less than two minutes ago; the page shows that read.")
+        return redirect("shipyard:projects_board")
+    cache.set(PROJECTS_BOARD_COOLDOWN_KEY, timezone.now().isoformat(), PROJECTS_BOARD_COOLDOWN_SECONDS)
+    try:
+        result = projects_service.refresh()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("projects read by %s failed: %s", request.user, exc)
+        messages.error(request, f"The projects could not be read: {exc}")
+        return redirect("shipyard:projects_board")
+    messages.success(request, f"Projects read: {result['projects']} projects, {result['snapshots']} changed.")
+    return redirect("shipyard:projects_board")
+
+
 @login_required
 def finance_pdf(request):
     from django.core.exceptions import PermissionDenied

@@ -18,7 +18,7 @@ LIMITED = {
     "shipyard.reprocessing_access": {"reprocessing", "reprocessing_skills", "scrapmetal", "bargains", "bargains_pref", "use_character", "go"},
     "shipyard.books_access": {"finance", "finance_pdf", "finance_refresh", "hangar_refresh", "lplog", "go"},
     "shipyard.director_access": {"director", "use_character", "go"},  # 0.40.0: the Director page (owner and Hamu)
-    "shipyard.projects_access": {"projects_board", "use_character", "go"},  # 0.41.0: the Projects page (the officers)
+    "shipyard.projects_access": {"projects_board", "projects_board_refresh", "use_character", "go"},  # 0.41.0: the Projects page (the officers)
 }
 # the tab a limited member lands on, in order of preference
 LANDING = [("shipyard.dashboard_access", "/shipyard/"), ("shipyard.reprocessing_access", "/shipyard/reprocessing/"), ("shipyard.books_access", "/shipyard/finance/"),
