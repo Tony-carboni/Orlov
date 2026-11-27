@@ -31,6 +31,46 @@ MEMBER_ROLE = "Family Member"
 FFMPEG_BEFORE = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
 
 
+def _patch_member_leave_crash() -> bool:
+    """py-cord 2.8.1: when a member leaves the voice channel, VoiceClient._remove_ssrc calls
+    self._reader.speaking_timer although _reader only exists while recording. The AttributeError kills the voice
+    websocket's poll task without a log line, heartbeats go unanswered, and a minute later the connection is dead
+    while is_connected() still says True: the radio "plays" into nothing (found 2026-11-27, every time somebody
+    left the music channel). Replace the method with one that guards the reader, as the rest of that class does.
+    Only patched while the unguarded line is there, so a fixed py-cord is left alone."""
+    import inspect
+
+    from discord.voice import VoiceClient
+
+    try:
+        source = inspect.getsource(VoiceClient._remove_ssrc)
+    except (OSError, TypeError):
+        return False
+    if "self._reader.speaking_timer.drop_ssrc" not in source or "if self._reader" in source:
+        return False
+
+    def _remove_ssrc(self, *, user_id: int) -> None:
+        ssrc = self._id_to_ssrc.pop(user_id, None)
+        if ssrc:
+            if self._reader:
+                self._reader.speaking_timer.drop_ssrc(ssrc)
+            self._ssrc_to_id.pop(ssrc, None)
+
+    VoiceClient._remove_ssrc = _remove_ssrc
+    return True
+
+
+if _patch_member_leave_crash():
+    logger.info("radio: py-cord's member-leave crash patched (VoiceClient._remove_ssrc)")
+
+
+def connection_dead(voice) -> bool:
+    """True when the voice websocket's poll task has ended although the client still counts as connected:
+    nothing answers Discord's heartbeats any more, so nobody hears the stream."""
+    runner = getattr(getattr(voice, "_connection", None), "_runner", None)
+    return runner is not None and runner.done()
+
+
 def stations() -> list:
     """[{name, url}] from settings; an empty list switches the cog's commands off with a message."""
     return [dict(s) for s in getattr(settings, "ORLOVBOT_RADIO_STATIONS", []) or []]
@@ -138,6 +178,10 @@ class Radio(commands.Cog):
         await ctx.defer()  # the voice handshake can take longer than Discord's three seconds
         voice = self._voice()
         try:
+            if voice is not None and connection_dead(voice):
+                logger.warning("radio: the old voice connection was dead, starting a fresh one")
+                await self._stop()
+                voice = None
             if voice is None or not voice.is_connected():
                 voice = await state.channel.connect(timeout=20.0, reconnect=True)
             elif voice.channel != state.channel:
@@ -194,6 +238,17 @@ class Radio(commands.Cog):
         if not others:
             logger.info("radio: #%s is empty, leaving", voice.channel.name)
             await self._stop()
+            return
+        if getattr(voice, "_radio_wanted", False) and connection_dead(voice):
+            # the watchdog: a dead connection is rebuilt and the same station started again
+            channel = voice.channel
+            logger.warning("radio: the voice connection in #%s died, reconnecting", channel.name)
+            try:
+                await self._stop()
+                voice = await channel.connect(timeout=20.0, reconnect=True)
+                self._play(voice, stations()[self.index % max(1, len(stations()))])
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("radio: reconnect to #%s failed: %s", channel.name, exc)
 
 
 def setup(bot):

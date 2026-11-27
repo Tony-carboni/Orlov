@@ -4,6 +4,27 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-11-27 (20:40 UTC) — laptop session → any session
+
+**Runbook / topic:** runbook 21 (radio in comms): the radio went silent; and a read-only check of the corporation projects' delivery office (26 November).
+
+**Done.**
+- **Radio fixed.** Owner: "the radio bot does not seem to be playing music". The bot's voice log showed the cause to the second: at 20:27:06 a member left `Voice - music & relax` (voice op 13), after which no heartbeat was answered any more and the heartbeats stopped at 20:28:00; `/radio on` at 20:31 then "played" into the dead connection. py-cord 2.8.1 (the latest release, so nothing to upgrade to) raises an AttributeError in `VoiceClient._remove_ssrc` whenever a member leaves while the bot is only playing (`self._reader` is the MISSING sentinel), and that kills the voice websocket's poll task without a log line. Reproduced in a fresh process in the bot container. `deploy/orlovbot/cogs/radio.py`: the method is replaced at import by a guarded one (only while the unguarded line is there), `/radio on` drops a dead connection before reusing it, and the once-a-minute check reconnects and restarts the station when the poll task has ended. Installed on the server (old file: `~/backups/radio.py.pre-leave-crash-fix`), only the bot restarted, all 12 modules loaded, boards found, log line "py-cord's member-leave crash patched". Runbook 21 troubleshooting has the row.
+- **Projects check (26 November, nothing changed).** Of the 28 active corporation projects, 23 deliver to the office in Piekura - Freeport Giant Mini-Mart (office 1055911110036); five carry no office in EVE's record (brim bitumen, brim zeolites, compressed scordite III, scordite, veldspar II; read as "any corporation office", not confirmed in game). The corp has three offices: Piekura Mini-Mart, Isikano - Orlov Family Facilities, Sobaseki - T2 Refinery. Office → station comes from the corp assets (`OfficeFolder` rows: item_id = office, location_id = structure).
+
+**Findings.**
+- The bot logs "Structure board: could not read structure profiles from EVE: no valid structures token" at every check (287 times in two days). The board still posts; the profile line is what is missing. Not touched; needs the structure owner's token renewed (Structures → Add Owner) if the profile names matter.
+- Not yet proven with a real listener: that the music survives a member leaving. The next time somebody leaves the music channel while the radio plays, the bot's log should keep showing heartbeat answers.
+
+**Owner by hand.** `/radio on` in the music channel (the restart ended the dead session). Fix the five projects' delivery office in the client if they should be Piekura only.
+
+**Open.** Everything open from the earlier entries (the mapper decision, the planned fleets rollout, the Fractured Skies cron lines, PARXU's one-off).
+
+**Next.** Whichever session the owner opens: nothing pending on the server.
+
+
+---
+
 ## 2026-11-21 (18:50 UTC) — desktop session (PC) → any session
 
 **Runbook / topic:** membership design changelog: Parallax Ultima [PARXU], Family Member and CEO for Auroraee and Raistlin Kano (owner's ask of 21 November).
@@ -65,35 +86,3 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Open.** The corporation-wide title check once the login is done; more sections for the Director page as the owner names them; still open from earlier entries: the C2 entrance board inputs, more officers, the OARMI Director role purpose, the 3-hour character refresh, corp_GB44/corp_1E3, DigitalOcean weekly backups, stray #pings, the seven project graphs, the hangar-vs-ledger gap, the radio sound confirmation.
 
 **Next.** When the owner says the login is done: run the title check and report who lacks the in-game title.
-
-## 2026-11-09 (evening UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** the four Fractured Skies navy attack battlecruisers for the Shipyard dashboard (owner's ask of 9 November), and the EVE soundboard (8 November).
-
-**Battlecruisers, what is known.** Fractured Skies ships Tuesday 10 November 11:00 UTC. Expansion notes of 6 November: Naga Navy Issue (cruise missiles and torpedoes; BPC in the State Protectorate store), Oracle Navy Issue (24th Imperial Crusade), Talos Navy Issue (Federal Defense Union), Tornado Fleet Issue (Tribal Liberation Force); every blueprint copy 52,000 LP plus 13 million ISK, no tag mentioned, runs per copy not stated. Checked 9 November: the four names are not in ESI, EVE Ref has no type for them, and none of the four militia stores lists a 52,000 LP offer yet. The catalog needs nothing new: attack battlecruisers (group 1201) are already a hull group, navy hulls are active by default and get their militia LP faction pre-linked by `shipyard_load_ships`; the hourly refresh loads materials and prices for every active ship.
-
-**Prepared.** `deploy/scripts/fractured_skies_bcs_check.py` (PC, plain Python, read-only: ESI name lookup, EVE Ref type, the four stores' offers) and `deploy/scripts/fractured_skies_bcs_add.py` (Django shell on the server, after `shipyard_load_ships`: sets LP faction, 52,000 LP, 13 M ISK, 1 run and a note on the four ShipConfig rows; idempotent).
-
-**Scheduled on the server (owner's request, 9 November 09:15 UTC).** Cron runs `~/bin/fractured-skies-bcs.sh` (copy of `deploy/scripts/fractured-skies-bcs.sh`) every 30 minutes from 11:00 UTC on 10 November and all day on 11 November. Each run pipes the check script into the gunicorn container; once all four ships are in ESI and EVE Ref with a blueprint it takes a backup, runs `shipyard_load_ships --no-seed`, the add script and `shipyard_refresh`, writes the marker `~/aa-docker/.fractured_skies_bcs_done` and never acts again. Log: `~/logs/fractured-skies-bcs.log` (test run of 9 November: not ready yet). **Next (local session, 10 or 11 November):** read the log; when it says done, check the dashboard shows the four under Navy battlecruisers with a build cost and the LP route, compare the runs per copy with the State Protectorate offer in the LP conversion tab (fix `lp_runs` if a copy has more than one run), and remove the two cron lines.
-
-**Planned fleets (9 November 11:15 UTC, done; runbook 22).** Owner's ask: a channel listing upcoming fleets like the moon board, with simple commands to create an event, visible to nobody but the owner while he experiments. New cog `orlovbot.cogs.fleets`: `/fleet add name type when where [fc] [info]`, `/fleet edit number …`, `/fleet remove number`, `/fleet list`; the list lives in the Django cache (redis, on disk), the board is one edited message in `#planned-fleets` (id 1569309272565747772, category bots) in the moon board's style with sections Forming up now, Today, This week, month; a fleet drops off 3 hours after formup. `when` is EVE time: 11/11 19:00, 11/11/2026 19.00, tomorrow 20:00, sat 18:00, bare 19:00. Settings block "Planned fleets" (ORLOVBOT_FLEET_BOARD_CHANNEL, ORLOVBOT_FLEET_ROLES and ORLOVBOT_FLEET_ADMIN_ROLES both ["Alliance Director"] for now, ORLOVBOT_FLEET_KEEP_HOURS 3) appended to conf/local.py (copy local.py.pre-fleets) and the template. Channel overwrites deny View to everyone, Family Member and Family Friend; the owner has View, Send, History and Use application commands; Orlov auth the moon-board rights. Bot restarted 11:16 UTC, cog loaded, board posted; the owner added fleet #1 Thera Camp at 11:17. Rollout later: runbook 22 C (roles to Family Member, open the channel read-only). Also on 9 November: the owner asked which channels a Family Friend sees; computed from the live overwrites: how-to-get-roles, announcements, pings, the four bot boards (moon, leaderboards, zkillboard, juicy) read-only, public-chat read-write, music-bot-instructions and the three public voice channels; nothing under Member channels. The owner is reviewing whether that is still right.
-
-**Soundboard (8 November, done).** The owner's EVE client (`C:\CCP\EVE`) holds the English voice bank; its 1,221 clips were split out and named through Wwise's SoundBanksInfo from CCP's resource CDN, decoded with vgmstream. `C:\Users\Toon Budeners\Documents\EVE soundboard\soundboard.html` lists 488 clips in six groups (Aura's 50 spoken notifications, 376 tutorial Aura lines including capacitor none, shields low and down, armor damaged and loss, ammo low and none, plus alarms, targeting, warp and UI beeps); nothing of it is in git (CCP assets). Discord's server soundboard (eight slots at boost tier 0, OGG or MP3 only, converted with the container's ffmpeg, uploaded by the bot as Administrator) carries Target lock, Negative, Docking denied, Negative 3. Four slots free; the owner was asked which capacitor take and what else to put there.
-
-**Owner has to do by hand.** Pick the remaining four soundboard clips. Still open: the 75 M "correction" deposit of 3 November, the C2 entrance board inputs, more officers, the OARMI Director role, the 3-hour refresh, corp_GB44 and corp_1E3, DigitalOcean weekly backups, the stray #pings, the seven project graphs.
-
----
-
-## 2026-11-08 (18:05 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** Shipyard 0.39.0 and 0.39.1 (runbook 13 C): donated LP, and the red box that stayed open.
-
-**Done.** 0.39.0: EVE's API has no corporation LP route (checked the ESI spec: wallets return division and balance only, loyalty routes exist per character and for store offers), so donated LP go in through a new admin register, LP donations (model LpDonation, migration 0038: date, units, donor, note). From its date a row adds its LP to the stock at SHIPYARD_LP_STOCK_ISK_PER_LP (800) each, as one "LP donated" movement in the LP category; "LP bought" counts only paid LP; the corporation LP log lists donations and says how many were donated on top. Entered: 68,000 LP dated 8 November 12:00 EVE (the wallet shows 304,000 State Protectorate LP, the books knew 236,000 bought; the 299 Caldari Navy LP are ignored at the owner's word). 0.39.1: the 206 M correction of 15:56 (to Tommy McPhee) was typed "corrections projects" and the default SHIPYARD_BOOKS_PROJECT_FUNDING_REASONS matched only "correction project", so the line fell under the ignore rule and the box stayed at 206 M; default now corrections?\s+projects?. Released per runbook 13 C (backups aa-db-2026-11-08-1750 and -1757, migration 0038 applied, 152 tests, server pinned at 697d977). Sheet after: 304,000 LP in stock worth 243.2 M, "LP donated" +54.4 M, result 802.3 M, period +301.0 M, gap 0, owed 0, box gone (journal read up to 15:56 UTC).
-
-**Findings.** Like a stock batch, a donation dated after the journal's last line waits for the next journal read, so date it an hour or more back. The owner's correction reasons vary in number ("correction projects", "corrections projects"); the pattern now takes both, watch for other spellings in the ignored-lines list.
-
-**Owner by hand.** Nothing. When the wallet's State Protectorate figure and the Finance tab's "LP in stock" differ again, say the wallet figure: the difference goes in as a new LP donations row (admin, or ask a session).
-
-**Open.** Still open from earlier entries: the C2 entrance board inputs, more officers, the OARMI Director role purpose, the 3-hour character refresh, corp_GB44/corp_1E3, DigitalOcean weekly backups, stray #pings, the seven project graphs, the hangar-vs-ledger gap (−462 M at 17:35 EVE today), the radio sound confirmation.
-
-**Next.** Nothing queued; the next step is whatever the owner raises.
