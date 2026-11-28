@@ -4,6 +4,28 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 
 ---
 
+## 2026-11-28 (06:50 UTC) — laptop session → any session
+
+**Runbook / topic:** runbook 13 section C: Shipyard 0.42.0, the Mail tab (owner's ask of 28 November: read his EVE mail outside the game, on the Shipyard).
+
+**Done.** Built, tested and released; the release note in runbook 13 C has the detail. New: `services/mail.py` (headers per character with paging by `last_mail_id`, labels and mailing lists, sender names through `/universe/names/` with a split-on-404 fallback and a month's cache, `clean_body`, `read`), views `mail_view` and `mail_body` (both behind `access.allows("mail")`, so full-access members only), `templates/shipyard/mail.html`, `static/shipyard/mail.js`, the nav entry, `mail` in `access.ALL_TABS`, two cache settings, 15 tests (179 in total). No model, no migration, no beat entry. Server: commit `8600cb3` pinned, backup `aa-db-2026-11-28-0640.sql.gz`, build, collectstatic from the new image, `up -d`, nginx; the page answers 200 for the owner with 312 rows, the script is served, a visitor is sent to the SSO login, the bot found its boards again and reports the radio patch active.
+
+**Findings.**
+- Privacy rule built in and tested: a member reads only the mail of characters on their own account, through their own token; nothing is stored; no director, manager or superuser view exists. Keep it that way unless the owner says otherwise.
+- The live dry run printed counts only (no subjects, senders or bodies); do the same in later sessions.
+- `makemigrations shipyard --check` reports a pending index rename on `LpSnapshot` (`shipyard_lp_charact_6b1f2e_idx` → `…_00de85_idx`). It predates this release and was not touched; harmless at runtime, worth a small migration when the LP log is next worked on.
+- Test settings for a run before collectstatic: override `STORAGES["staticfiles"]` with the plain `StaticFilesStorage`, or the manifest storage raises on a new static file.
+- One of the owner's 11 characters has no token with the mail scope; the page names it.
+
+**Owner by hand.** Open https://shipyards.orlovfamily.space/shipyard/mail/ and look. `/radio on` if the radio was playing (the rollout restarted the bot).
+
+**Open.** Everything open from the 27 November entry (the five projects without a delivery office, the structures token, proof that the radio survives a member leaving) and from the earlier entries.
+
+**Next.** Whichever session the owner opens: nothing pending on the server.
+
+
+---
+
 ## 2026-11-27 (20:40 UTC) — laptop session → any session
 
 **Runbook / topic:** runbook 21 (radio in comms): the radio went silent; and a read-only check of the corporation projects' delivery office (26 November).
@@ -70,19 +92,3 @@ Shared notebook between the **cloud session** and the **local session** (rule in
 **Open.** The mapper decision; the planned fleets rollout (runbook 22 C); the Fractured Skies battlecruisers check (log ~/logs/fractured-skies-bcs.log, cron lines to remove); the items of earlier entries (C2 entrance board inputs, more officers, the 3-hour character refresh, corp_GB44/corp_1E3, DigitalOcean weekly backups, stray #pings, the seven project graphs, the hangar-vs-ledger gap).
 
 **Next.** Whichever session the owner opens: nothing pending on the server; if the owner picks a mapper, write runbook 24 for the second droplet.
-
----
-
-## 2026-11-14 (09:20 UTC) — desktop session (PC) → any session
-
-**Runbook / topic:** Shipyard 0.40.0 (runbook 13 C): the Director page with the members who left; Discord voice channel visibility (membership design changelog); the OARMI roster and in-game titles check.
-
-**Done.** Voice channels: everyone sees who is in all four, unauthed join only voice - public, Family Friend also Voice - music & relax, Family Member all four (bot script deploy/discord-admin/voice_channel_visibility.py; before, all four were joinable by anyone). Roster: Corp Stats lists 89 OARMI characters, 70 on Family Member accounts, 19 not in auth (10 known alts, 9 unknown: Abyussy DooDussy, Logan Xeen Ragnar, Master Hacer, Morgothy, Nosferatuss, Raikakailen Kashuken, Rainy Pidling, Tagger UK, Vin Diesely); four Family Member accounts without Discord (Jalan'Rook, Miguel Stevens, One of Few, Viktor Caughar); Tyke Almighty registered, Ladonie Divalone left (docs/reference/known-alts.md). Shipyard 0.40.0: EVE tells only the CEO that a member left (checked live: Hamu, Ryaku711 and Logan Grishnar get application messages only), so a new hourly task (beat shipyard_refresh_member_events, minute 12, in conf/local.py and deploy) stores Catherine Frey's member notifications as CorpMemberEvent (migration 0039), and /shipyard/director/ (tab "Director", permission director_access on the OARMI Director group: tony, Hamu) lists the leavers with what auth knows of them. Released per runbook 13 C (backup aa-db-2026-11-14-0907, 157 tests, server pinned at da661c4); first read stored 203 events, 15 leavers since 20 October, newest Eternity Emperor 14 Nov 00:13.
-
-**Findings.** No token in auth carries esi-corporations.read_titles.v1, so the in-game title "Family Member" can only be checked corporation-wide after Catherine Frey registers through the front door's "every scope" login (runbook 15 A); Member Audit covers 43 of 89 (33 hold the title, 10 do not: BanjoT, Naile Macor, Gewoon Rudi, Catherine Frey and the owner's six alts). The check script is ready in the desktop session (corp_titles.py: /corporations/{id}/members/titles with the CEO's token). The CEO-only leave notification could also be forwarded to #oarmi-directors through the Structures app (Add Owner with Catherine Frey, a webhook with the member types) if the owner wants a push instead of a page.
-
-**Owner by hand.** Catherine Frey's "every scope" login at shipyards.orlovfamily.space, My settings (gives the titles scope and whatever Structures would need). Open the Director tab once to see it; tell Hamu it exists.
-
-**Open.** The corporation-wide title check once the login is done; more sections for the Director page as the owner names them; still open from earlier entries: the C2 entrance board inputs, more officers, the OARMI Director role purpose, the 3-hour character refresh, corp_GB44/corp_1E3, DigitalOcean weekly backups, stray #pings, the seven project graphs, the hangar-vs-ledger gap, the radio sound confirmation.
-
-**Next.** When the owner says the login is done: run the title check and report who lacks the in-game title.
