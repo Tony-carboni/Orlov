@@ -108,6 +108,11 @@ SHIPYARD_PRODUCTION_SCOPES = getattr(settings, "SHIPYARD_PRODUCTION_SCOPES", ["e
 # {"Family": "highsec" | "lowsec" | "nullsec" | "anomaly"}.
 SHIPYARD_ORE_AREAS = getattr(settings, "SHIPYARD_ORE_AREAS", {})
 
+# Mail tab (0.42.0): how long a character's mail headers and an opened mail stay in the cache (seconds).
+# Nothing is stored in the database; see services/mail.py.
+SHIPYARD_MAIL_CACHE_SECONDS = getattr(settings, "SHIPYARD_MAIL_CACHE_SECONDS", 120)
+SHIPYARD_MAIL_BODY_CACHE_SECONDS = getattr(settings, "SHIPYARD_MAIL_BODY_CACHE_SECONDS", 600)
+
 # Cache lifetime for ad-hoc simulations on the detail page (seconds)
 SHIPYARD_SIM_CACHE_SECONDS = getattr(settings, "SHIPYARD_SIM_CACHE_SECONDS", 1800)
 

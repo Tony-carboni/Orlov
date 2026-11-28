@@ -213,3 +213,11 @@ def kilo(value):
 def split(value, sep=" "):
     """"7 14 30"|split -> ["7", "14", "30"]."""
     return str(value).split(sep)
+
+
+@register.filter
+def mail_kind(value):
+    """'corp' → 'Corp' on the Mail tab."""
+    from ..services.mail import KIND_LABELS
+
+    return KIND_LABELS.get(value, value)

@@ -23,7 +23,7 @@ from .models import (
     CorpProject, Facility, LpFaction, MarketLocation, MaterialType, MemberBlueprintPrice, PriceSnapshot, RefreshRun, Ship,
     ShipConfig, WalletDivision, WalletJournalEntry,
 )
-from .services import board, business, characters, industry, ledger, lplog, lpstore, projectbooks, projects, reprocessing, scrapmetal, wallet
+from .services import board, business, characters, industry, ledger, lplog, lpstore, mail, projectbooks, projects, reprocessing, scrapmetal, wallet
 from .services.pricing import tax_rates
 
 logger = logging.getLogger(__name__)
@@ -826,6 +826,32 @@ def industry_view(request):
         scope = "own"
     data = industry.overview(request.user, scope=scope)
     return render(request, "shipyard/industry.html", _context(request, settings=settings, notices=notices, **data))
+
+
+@login_required
+@access.allows("mail")
+def mail_view(request):
+    """Mail tab: the member's own EVE mail, read-only; POST = read from EVE again."""
+    settings = board.get_user_settings(request.user)
+    depth = _int(request.POST.get("depth") or request.GET.get("depth"), 1, 1, mail.MAX_PAGES)
+    data = mail.inbox(request.user, pages=depth, force=request.method == "POST")
+    if request.method == "POST":
+        return redirect(reverse("shipyard:mail") + (f"?depth={depth}" if depth > 1 else ""))
+    return render(request, "shipyard/mail.html", _context(request, settings=settings, **data))
+
+
+@login_required
+@access.allows("mail")
+def mail_body(request, character_id, mail_id):
+    """One mail as JSON for the reader pane. Only a mail of the member's own character is ever fetched."""
+    try:
+        data = mail.read(request.user, character_id, mail_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("mail %s of character %s not read: %s", mail_id, character_id, exc)
+        return JsonResponse({"ok": False, "error": "EVE did not answer; try again in a minute."}, status=502)
+    if data is None:
+        return JsonResponse({"ok": False, "error": "Not one of your characters' mails."}, status=404)
+    return JsonResponse({"ok": True, **data})
 
 
 @login_required

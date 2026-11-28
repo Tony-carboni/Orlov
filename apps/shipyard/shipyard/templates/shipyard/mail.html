@@ -1,0 +1,111 @@
+{% extends "shipyard/base.html" %}
+{% load static shipyard_tags %}
+
+{% block shipyard_title %}Shipyard · Mail{% endblock %}
+
+{% block shipyard_content %}
+<div class="shipyard-infobar mb-3">
+    <div class="d-flex flex-wrap align-items-center gap-3">
+        <div><i class="fas fa-envelope fa-fw text-info"></i> <strong>Your EVE mail</strong>
+            <span class="shipyard-k ms-2">{{ rows|length }} mails from {{ connected|length }} character{{ connected|length|pluralize }}{% if unread_total %} · <strong class="text-warning">{{ unread_total }} unread</strong>{% endif %}</span></div>
+        <form method="post" class="ms-auto">{% csrf_token %}<input type="hidden" name="depth" value="{{ pages }}"><button class="btn btn-sm btn-outline-primary"><i class="fas fa-rotate fa-fw"></i> Refresh</button></form>
+    </div>
+    <div class="shipyard-k small mt-1">
+        Read-only and yours alone: only the characters on your own account, read from EVE with your own login when you open this page (kept {{ cache_seconds }} seconds, nothing is stored).
+        No director or manager can see it. Opening a mail here does not mark it read in the game.
+    </div>
+</div>
+
+{% for b in boxes %}{% if b.error %}
+<div class="alert alert-warning py-2"><i class="fas fa-triangle-exclamation fa-fw"></i> <strong>{{ b.name }}:</strong> {{ b.error }}</div>
+{% endif %}{% endfor %}
+{% if unconnected %}
+<div class="alert alert-secondary py-2 small">
+    No mail access for {% for b in unconnected %}<strong>{{ b.name }}</strong>{% if not forloop.last %}, {% endif %}{% endfor %}.
+    Choose the character once under <a href="{% url 'shipyard:settings' %}">My settings</a> to log it in with the full scope set; its mail shows here from then on.
+</div>
+{% endif %}
+
+{% if not connected %}
+<div class="alert alert-info">None of your characters is logged in with mail access yet. Choose a character under <a href="{% url 'shipyard:settings' %}">My settings</a>.</div>
+{% else %}
+<div class="row g-2 mb-2 align-items-center">
+    <div class="col-auto">
+        <input type="search" id="mail-text" class="form-control form-control-sm" placeholder="Search sender, subject, character…" autocomplete="off" style="width: 18rem">
+    </div>
+    {% if connected|length > 1 %}
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm flex-wrap" role="group" id="mail-char" aria-label="Characters (tick any; none ticked shows all)">
+            {% for b in connected %}
+            <input type="checkbox" class="btn-check" id="mail-char-{{ b.character_id }}" value="{{ b.character_id }}" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="mail-char-{{ b.character_id }}">{{ b.name }}{% if b.unread %} <span class="badge text-bg-warning">{{ b.unread }}</span>{% endif %}</label>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    <div class="col-auto">
+        <div class="btn-group btn-group-sm" role="group" id="mail-kind" aria-label="Folders (tick any; none ticked shows everything received)">
+            {% for k, label in kinds %}{% if k != 'sent' %}
+            <input type="checkbox" class="btn-check" id="mail-kind-{{ k }}" value="{{ k }}" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="mail-kind-{{ k }}">{{ label }}</label>
+            {% endif %}{% endfor %}
+        </div>
+    </div>
+    <div class="col-auto form-check form-switch ms-2 mt-1">
+        <input class="form-check-input" type="checkbox" id="mail-unread">
+        <label class="form-check-label small" for="mail-unread">Unread only</label>
+    </div>
+    <div class="col-auto form-check form-switch ms-2 mt-1">
+        <input class="form-check-input" type="checkbox" id="mail-sent">
+        <label class="form-check-label small" for="mail-sent">Show sent</label>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-7">
+        <div class="table-responsive">
+        <table id="mail-table" class="table table-sm table-hover align-middle w-100">
+            <thead>
+                <tr>
+                    <th>Received</th>
+                    <th>To</th>
+                    <th>From</th>
+                    <th>Subject</th>
+                    <th>Folder</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for r in rows %}
+                <tr class="mail-row{% if not r.is_read %} mail-unread{% endif %}" data-char="{{ r.character_id }}" data-kind="{{ r.kind }}" data-unread="{{ r.is_read|yesno:'0,1' }}"
+                    data-url="{% url 'shipyard:mail_body' r.character_id r.mail_id %}">
+                    <td class="text-nowrap" data-order="{{ r.timestamp|date:'U' }}">{{ r.timestamp|date:"d M H:i" }}</td>
+                    <td class="text-nowrap">{{ r.character_name }}</td>
+                    <td>{{ r.from_name }}</td>
+                    <td>{% if not r.is_read %}<i class="fas fa-circle text-warning mail-dot" title="Unread in game"></i> {% endif %}{{ r.subject }}</td>
+                    <td class="small shipyard-k">{{ r.kind|mail_kind }}{% for f in r.folders %} · {{ f }}{% endfor %}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <div class="d-flex align-items-center gap-3 mt-2">
+            {% if more %}<a class="btn btn-sm btn-outline-secondary" href="?depth={{ pages|add:1 }}"><i class="fas fa-clock-rotate-left fa-fw"></i> Load older</a>{% endif %}
+            <span class="small shipyard-k">The newest {% widthratio pages 1 50 %} mails per character; times are EVE time.</span>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="card mail-reader" id="mail-reader">
+            <div class="card-header py-2">
+                <div class="fw-semibold" id="mail-subject">Select a mail</div>
+                <div class="small shipyard-k" id="mail-meta">Click a row on the left to read it here.</div>
+            </div>
+            <div class="card-body" id="mail-body"></div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block shipyard_js %}
+<script src="{% static 'shipyard/mail.js' %}"></script>
+{% endblock %}

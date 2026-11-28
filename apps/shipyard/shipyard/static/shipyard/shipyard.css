@@ -141,3 +141,9 @@ body.shipyard-resizing, body.shipyard-resizing * { cursor: col-resize !important
 .sy-fin-leg .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sy-fin-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
 @media (max-width: 480px) { .sy-fin-tiles { grid-template-columns: 1fr; } }
+/* Mail tab: the list on the left, the reader on the right staying in view */
+#mail-table tbody tr.mail-row { cursor: pointer; }
+#mail-table tr.mail-unread td { font-weight: 600; }
+#mail-table .mail-dot { font-size: .5rem; vertical-align: middle; }
+.mail-reader { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); display: flex; flex-direction: column; }
+.mail-reader .card-body { overflow-y: auto; overflow-wrap: anywhere; line-height: 1.5; min-height: 8rem; }

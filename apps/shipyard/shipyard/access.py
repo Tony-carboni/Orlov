@@ -23,7 +23,7 @@ LIMITED = {
 # the tab a limited member lands on, in order of preference
 LANDING = [("shipyard.dashboard_access", "/shipyard/"), ("shipyard.reprocessing_access", "/shipyard/reprocessing/"), ("shipyard.books_access", "/shipyard/finance/"),
            ("shipyard.director_access", "/shipyard/director/"), ("shipyard.projects_access", "/shipyard/projects/board/")]
-ALL_TABS = ("index", "fuel", "reprocessing", "scrapmetal", "lp", "bargains", "industry", "business", "settings")
+ALL_TABS = ("index", "fuel", "reprocessing", "scrapmetal", "lp", "bargains", "industry", "business", "mail", "settings")  # mail: full access only (0.42.0)
 
 
 def has_full_access(user) -> bool:
